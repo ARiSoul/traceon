@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<RootNamespace>Arisoul.Traceon.Maui.Infrastructure</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Traceon.Core\Traceon.Maui.Core.csproj" />
+	</ItemGroup>
+
+</Project>

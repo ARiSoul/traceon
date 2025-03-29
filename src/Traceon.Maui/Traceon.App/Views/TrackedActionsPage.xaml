@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Arisoul.Traceon.App.Views.TrackedActionsPage"
+             xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
+             xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
+             Title="Tracked Actions"
+             x:DataType="vm:TrackedActionsViewModel">
+    
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+
+            <Label Text="Actions List" FontSize="20" FontAttributes="Bold"/>
+            <CollectionView ItemsSource="{Binding Actions}" SelectionMode="Single"
+                            SelectionChanged="OnActionSelected">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="m:TrackedAction">
+                        <VerticalStackLayout Margin="0,10" Padding="10">
+                            <Label Text="{Binding Name}" FontSize="18" />
+                            <Label Text="{Binding Description}" FontSize="14" TextColor="Gray" />
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="Action Form" FontSize="20" FontAttributes="Bold" />
+            <Entry Placeholder="Name" Text="{Binding Name}" />
+            <Editor Placeholder="Description" AutoSize="TextChanges" HeightRequest="80"
+                    Text="{Binding Description}" />
+
+            <HorizontalStackLayout Spacing="10">
+                <Button Text="Save" Command="{Binding SaveActionCommand}" />
+                <Button Text="Delete" Command="{Binding DeleteActionCommand}" IsEnabled="{Binding SelectedAction, Converter={StaticResource NullToBoolConverter}}" />
+                <Button Text="New" Command="{Binding NewActionCommand}" />
+            </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
