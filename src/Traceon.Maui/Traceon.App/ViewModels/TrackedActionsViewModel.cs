@@ -24,24 +24,18 @@ public partial class TrackedActionsViewModel : ObservableObject
     public TrackedActionsViewModel(ITrackedActionRepository repository)
     {
         _repository = repository;
-        LoadActionsCommand = new AsyncRelayCommand(LoadActionsAsync);
-        SaveActionCommand = new AsyncRelayCommand(SaveActionAsync);
-        DeleteActionCommand = new AsyncRelayCommand(DeleteActionAsync);
-        NewActionCommand = new RelayCommand(PrepareNewAction);
     }
-
-    public IAsyncRelayCommand LoadActionsCommand { get; }
-    public IAsyncRelayCommand SaveActionCommand { get; }
-    public IAsyncRelayCommand DeleteActionCommand { get; }
-    public IRelayCommand NewActionCommand { get; }
 
     internal async Task LoadActionsAsync()
     {
         var userId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-        Actions = [.. (await _repository.GetAllAsync(userId))];
+        var all = await _repository.GetAllAsync(userId);
+
+        Actions = [.. all.OrderByDescending(a => a.CreatedAt)];
     }
 
-    private async Task SaveActionAsync()
+    [RelayCommand]
+    private async Task SaveAction()
     {
         if (string.IsNullOrWhiteSpace(Name))
             return;
@@ -70,7 +64,8 @@ public partial class TrackedActionsViewModel : ObservableObject
         await LoadActionsAsync();
     }
 
-    private async Task DeleteActionAsync()
+    [RelayCommand]
+    private async Task DeleteAction()
     {
         if (SelectedAction != null)
         {
@@ -80,6 +75,7 @@ public partial class TrackedActionsViewModel : ObservableObject
         }
     }
 
+    [RelayCommand]
     private void PrepareNewAction()
     {
         SelectedAction = null;

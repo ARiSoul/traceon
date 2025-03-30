@@ -60,12 +60,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Arisoul.Core.Maui" Version="3.0.4" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.50" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.3" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\..\Traceon.Shared\Traceon.Localization\Traceon.Localization\Traceon.Localization.csproj" />
 	  <ProjectReference Include="..\Traceon.Core\Traceon.Maui.Core.csproj" />
 	  <ProjectReference Include="..\Traceon.Maui.Infrastructure\Traceon.Maui.Infrastructure.csproj" />
 	</ItemGroup>

@@ -3,16 +3,21 @@ using Arisoul.Traceon.Maui.Infrastructure.Services;
 using Arisoul.Traceon.Maui.Infrastructure.Storage;
 using Microsoft.Extensions.Logging;
 using Arisoul.Traceon.App.ViewModels;
+using System.Globalization;
+using CommunityToolkit.Maui;
+using Arisoul.Core.Maui;
 
 namespace Arisoul.Traceon.App;
 
 public static class MauiProgram
 {
-	public static MauiApp CreateMauiApp()
+    public static MauiApp CreateMauiApp()
 	{
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
+            .UseArisoulMaui()
 			.ConfigureFonts(fonts =>
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -30,6 +35,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<TrackedActionsViewModel>();
 
         builder.Services.AddTransient<Views.TrackedActionsPage>();
+
+        CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
+        CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
 
 #if DEBUG
         builder.Logging.AddDebug();

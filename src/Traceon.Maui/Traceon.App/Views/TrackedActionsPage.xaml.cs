@@ -1,5 +1,6 @@
 using Arisoul.Traceon.App.ViewModels;
 using Arisoul.Traceon.Maui.Core.Entities;
+using Arisoul.Traceon.Localization;
 
 namespace Arisoul.Traceon.App.Views;
 

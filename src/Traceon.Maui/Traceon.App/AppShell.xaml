@@ -5,16 +5,18 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:Arisoul.Traceon.App"
     xmlns:views="clr-namespace:Arisoul.Traceon.App.Views"
-    Title="Traceon.App"
+    xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
+    Title="T R A C E O N"
     Shell.FlyoutBehavior="Flyout">
 
     <ShellContent
-        Title="Home"
+        Title="{x:Static locArisoul:Messages.Home}"
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
 
     <ShellContent
-        Title="Actions"
+        Title="{x:Static locTraceon:Strings.Actions}"
         ContentTemplate="{DataTemplate views:TrackedActionsPage}"
         Route="TrackedActionsPage" />
 
