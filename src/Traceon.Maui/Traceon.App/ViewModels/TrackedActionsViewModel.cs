@@ -2,6 +2,7 @@
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Threading.Tasks;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
@@ -65,14 +66,13 @@ public partial class TrackedActionsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task DeleteAction()
+    private async Task DeleteAction(TrackedAction action)
     {
-        if (SelectedAction != null)
-        {
-            await _repository.DeleteAsync(SelectedAction.Id);
-            ClearForm();
-            await LoadActionsAsync();
-        }
+        if (action is null)
+            return;
+
+        await _repository.DeleteAsync(action.Id);
+        await LoadActionsAsync();
     }
 
     [RelayCommand]
@@ -81,6 +81,17 @@ public partial class TrackedActionsViewModel : ObservableObject
         SelectedAction = null;
         Name = string.Empty;
         Description = string.Empty;
+    }
+
+    [RelayCommand]
+    private async void CreateOrEditAction(TrackedAction? action)
+    {
+        action ??= new TrackedAction();
+
+        await Shell.Current.GoToAsync(nameof(Views.TrackedActionCreateOrEditPage), true, new Dictionary<string, object> 
+        {
+            { nameof(TrackedAction), action } 
+        });
     }
 
     private void ClearForm()

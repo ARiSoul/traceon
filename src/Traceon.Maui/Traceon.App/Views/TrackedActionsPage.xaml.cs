@@ -1,6 +1,7 @@
 using Arisoul.Traceon.App.ViewModels;
 using Arisoul.Traceon.Maui.Core.Entities;
 using Arisoul.Traceon.Localization;
+using CommunityToolkit.Maui.Views;
 
 namespace Arisoul.Traceon.App.Views;
 
@@ -12,8 +13,6 @@ public partial class TrackedActionsPage : ContentPage
 	{
 		InitializeComponent();
         BindingContext = _viewModel = viewModel;
-
-        Task.Run(_viewModel.LoadActionsAsync);
     }
 
     private void OnActionSelected(object sender, SelectionChangedEventArgs e)
@@ -22,5 +21,11 @@ public partial class TrackedActionsPage : ContentPage
         {
             (BindingContext as TrackedActionsViewModel)?.SelectAction(action);
         }
+    }
+
+    protected override async void OnAppearing()
+    {
+        await _viewModel.LoadActionsAsync().ConfigureAwait(false);
+        base.OnAppearing();
     }
 }

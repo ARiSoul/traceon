@@ -3,6 +3,7 @@
     x:Class="Arisoul.Traceon.App.Views.TrackedActionsPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
     xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
@@ -11,79 +12,79 @@
     x:DataType="vm:TrackedActionsViewModel">
 
     <Grid
-        Padding="20"
-        RowDefinitions="Auto,*"
+        Padding="20,0,20,0"
+        RowDefinitions="0.90*,0.1*"
         RowSpacing="16">
 
-        <!--  Static form area  -->
-        <VerticalStackLayout Grid.Row="0" Spacing="10">
-            <Label
-                FontAttributes="Bold"
-                FontSize="20"
-                Text="{x:Static locTraceon:Strings.ActionsForm}" />
-            <Entry Placeholder="{x:Static locArisoul:Messages.Name}" Text="{Binding Name}" />
-            <Editor
-                AutoSize="TextChanges"
-                HeightRequest="80"
-                Placeholder="{x:Static locArisoul:Messages.Description}"
-                Text="{Binding Description}" />
-
-            <HorizontalStackLayout Spacing="10">
-                <Button Command="{Binding SaveActionCommand}" Text="{x:Static locArisoul:Messages.Save}" />
-                <Button Command="{Binding PrepareNewActionCommand}" Text="{x:Static locTraceon:Strings.New_F}" />
-            </HorizontalStackLayout>
-        </VerticalStackLayout>
-
         <!--  Scrollable list area  -->
-        <ScrollView Grid.Row="1">
+        <ScrollView Grid.Row="0">
             <VerticalStackLayout>
-                <Label
-                    FontAttributes="Bold"
-                    FontSize="20"
-                    Text="{x:Static locTraceon:Strings.ActionsList}" />
                 <CollectionView
                     ItemsSource="{Binding Actions}"
                     SelectionChanged="OnActionSelected"
                     SelectionMode="Single">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="m:TrackedAction">
-                            <Grid ColumnDefinitions="*,auto"
-                                  HorizontalOptions="Fill">
+                            <Grid ColumnDefinitions="*,auto" HorizontalOptions="Fill">
 
-                                <VerticalStackLayout Grid.Column="0" Margin="0,10" Padding="10">
+                                <VerticalStackLayout
+                                    Grid.Column="0"
+                                    Margin="0,10"
+                                    Padding="10">
                                     <Label
-                                    FontAttributes="Bold"
-                                    FontSize="18"
-                                    Text="{Binding Name}" />
+                                        FontAttributes="Bold"
+                                        FontSize="18"
+                                        Text="{Binding Name}" />
                                     <HorizontalStackLayout>
                                         <Label
-                                        Margin="0,0,5,0"
-                                        FontSize="14"
-                                        Text="{x:Static locTraceon:Strings.CreateAt}"
-                                        TextColor="Gray" />
+                                            Margin="0,0,5,0"
+                                            FontSize="14"
+                                            Text="{x:Static locTraceon:Strings.CreateAt}"
+                                            TextColor="Gray" />
                                         <Label
-                                        FontSize="14"
-                                        Text="{Binding CreatedAt}"
-                                        TextColor="Gray" />
+                                            FontSize="14"
+                                            Text="{Binding CreatedAt}"
+                                            TextColor="Gray" />
                                     </HorizontalStackLayout>
                                     <Label
-                                    FontSize="13"
-                                    Text="{Binding Description}"
-                                    TextColor="Gray" />
+                                        FontSize="13"
+                                        Text="{Binding Description}"
+                                        TextColor="Gray" />
                                     <BoxView HeightRequest="1" Color="White" />
                                 </VerticalStackLayout>
 
-                                <HorizontalStackLayout Grid.Column="1" Spacing="3" Padding="15">
-                                    <Button Command="{Binding DeleteActionCommand}"
-                                            IsEnabled="{Binding SelectedAction}"
-                                            Text="{x:Static locArisoul:Messages.Delete}" />
+                                <HorizontalStackLayout
+                                    Grid.Column="1"
+                                    Padding="15"
+                                    Spacing="3">
+
+                                    <ImageButton
+                                        BackgroundColor="Transparent"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=DeleteActionCommand}"
+                                        CommandParameter="{Binding .}">
+                                        <ImageButton.Source>
+                                            <FontImageSource
+                                                FontFamily="FAR"
+                                                Glyph="{x:Static fonts:IconFont.TrashCan}"
+                                                Size="24"
+                                                Color="Red" />
+                                        </ImageButton.Source>
+                                    </ImageButton>
                                 </HorizontalStackLayout>
+
                             </Grid>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
             </VerticalStackLayout>
         </ScrollView>
+
+        <Grid
+            Grid.Row="1"
+            ColumnDefinitions="Auto"
+            HorizontalOptions="Center">
+            <Button Command="{Binding CreateOrEditActionCommand}" Text="Add Action" />
+        </Grid>
     </Grid>
 
 </ContentPage>

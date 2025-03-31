@@ -18,11 +18,13 @@ public static class MauiProgram
 			.UseMauiApp<App>()
             .UseMauiCommunityToolkit()
             .UseArisoulMaui()
-			.ConfigureFonts(fonts =>
-			{
-				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-				fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-			});
+            .ConfigureFonts(fonts =>
+            {
+                fonts.AddFont("fa-brands-400.ttf", "FAB");
+                fonts.AddFont("fa-regular-400.ttf", "FAR");
+                fonts.AddFont("fa-solid-900.ttf", "FAS");
+                fonts.AddFont("fa-v4compatibility.ttf", "FACOMP");
+            });
 
         // TODO: replace with real userId (from auth or config)
         var userId = "demo";
@@ -32,9 +34,11 @@ public static class MauiProgram
         builder.Services.AddSingleton<IActionEntryRepository>(_ => new JsonActionEntryRepository(userId));
         builder.Services.AddSingleton<IAnalyticsService, BasicAnalyticsService>();
 
-        builder.Services.AddSingleton<TrackedActionsViewModel>();
+        builder.Services.AddTransient<TrackedActionsViewModel>();
+        builder.Services.AddTransient<TrackedActionCreateOrEditViewModel>();
 
         builder.Services.AddTransient<Views.TrackedActionsPage>();
+        builder.Services.AddTransient<Views.TrackedActionCreateOrEditPage>();
 
         CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
         CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");

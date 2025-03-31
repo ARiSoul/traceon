@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Arisoul.Traceon.App.Views.TrackedActionCreateOrEditPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:loc="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
+    Title="{Binding Title}"
+    x:DataType="vm:TrackedActionCreateOrEditViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Margin="20" Spacing="5">
+
+            <Label Text="{x:Static loc:Messages.Name}" />
+            <Entry IsTextPredictionEnabled="True" Text="{Binding TrackedAction.Name}" />
+
+            <Label Text="{x:Static loc:Messages.Description}" />
+            <Entry IsTextPredictionEnabled="True" Text="{Binding TrackedAction.Description}" />
+
+            <Button
+                Margin="0,5"
+                Command="{Binding SaveActionCommand}"
+                Text="{x:Static loc:Messages.Save}" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
