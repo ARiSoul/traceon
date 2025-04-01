@@ -7,7 +7,7 @@ namespace Arisoul.Traceon.App.Views;
 
 public partial class TrackedActionsPage : ContentPage
 {
-	TrackedActionsViewModel _viewModel;
+    private readonly TrackedActionsViewModel _viewModel;
 
 	public TrackedActionsPage(TrackedActionsViewModel viewModel)
 	{
@@ -15,17 +15,15 @@ public partial class TrackedActionsPage : ContentPage
         BindingContext = _viewModel = viewModel;
     }
 
-    private void OnActionSelected(object sender, SelectionChangedEventArgs e)
-    {
-        if (e.CurrentSelection.FirstOrDefault() is TrackedAction action)
-        {
-            (BindingContext as TrackedActionsViewModel)?.SelectAction(action);
-        }
-    }
-
     protected override async void OnAppearing()
     {
         await _viewModel.LoadActionsAsync().ConfigureAwait(false);
         base.OnAppearing();
+    }
+
+    private void SearchBarTop_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_viewModel.SearchCommand.CanExecute(e.NewTextValue))
+            _viewModel.SearchCommand.Execute(e.NewTextValue);
     }
 }

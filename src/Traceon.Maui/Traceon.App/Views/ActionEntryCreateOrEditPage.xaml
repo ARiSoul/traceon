@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Arisoul.Traceon.App.Views.ActionEntryCreateOrEditPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
+    x:DataType="vm:ActionEntryCreateOrEditViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <Label
+                FontAttributes="Bold"
+                FontSize="20"
+                Text="TODO: action name" />
+
+            <DatePicker Date="{Binding EntryDate}" />
+            <TimePicker Time="{Binding EntryTime}" />
+            <TimePicker Time="{Binding ActionEntry.Duration}" />
+
+            <Entry
+                Keyboard="Numeric"
+                Placeholder="Quantity"
+                Text="{Binding ActionEntry.Quantity}" />
+            <Entry
+                Keyboard="Numeric"
+                Placeholder="Cost"
+                Text="{Binding ActionEntry.Cost}" />
+            <Editor
+                AutoSize="TextChanges"
+                HeightRequest="100"
+                Placeholder="Notes"
+                Text="{Binding ActionEntry.Notes}" />
+
+            <Button Command="{Binding SaveCommand}" Text="Save" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

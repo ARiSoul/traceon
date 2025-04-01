@@ -1,26 +1,23 @@
-﻿using Arisoul.Traceon.Maui.Core.Entities;
+﻿using Arisoul.Core.Maui.Models;
+using Arisoul.Traceon.Maui.Core.Entities;
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
-public partial class TrackedActionsViewModel : ObservableObject
+public partial class TrackedActionsViewModel
+    : ArisoulMauiBaseViewModel
 {
     private readonly ITrackedActionRepository _repository;
+    private List<TrackedAction> _allActions = [];
 
-    [ObservableProperty]
-    private List<TrackedAction> _actions = [];
+    [ObservableProperty] private string _searchQuery = string.Empty;
+    [ObservableProperty] private TrackedAction? _selectedAction;
 
-    [ObservableProperty]
-    private string _name = string.Empty;
-
-    [ObservableProperty]
-    private string _description = string.Empty;
-
-    [ObservableProperty]
-    private TrackedAction? _selectedAction;
+    public ObservableCollection<TrackedAction> Actions { get; private set; } = [];
 
     public TrackedActionsViewModel(ITrackedActionRepository repository)
     {
@@ -32,37 +29,15 @@ public partial class TrackedActionsViewModel : ObservableObject
         var userId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var all = await _repository.GetAllAsync(userId);
 
-        Actions = [.. all.OrderByDescending(a => a.CreatedAt)];
-    }
+        _allActions = [.. all.OrderBy(a => a.Name)];
 
-    [RelayCommand]
-    private async Task SaveAction()
-    {
-        if (string.IsNullOrWhiteSpace(Name))
-            return;
+        Actions.Clear();
 
-        if (SelectedAction == null) // new
-        {
-            var action = new TrackedAction
-            {
-                Id = Guid.NewGuid(),
-                UserId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
-                Name = Name,
-                Description = Description,
-                CreatedAt = DateTime.UtcNow
-            };
+        foreach (var action in _allActions)
+            Actions.Add(action);
 
-            await _repository.AddAsync(action);
-        }
-        else // update
-        {
-            SelectedAction.Name = Name;
-            SelectedAction.Description = Description;
-            await _repository.UpdateAsync(SelectedAction);
-        }
-
-        ClearForm();
-        await LoadActionsAsync();
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+            Search(SearchQuery);
     }
 
     [RelayCommand]
@@ -76,35 +51,54 @@ public partial class TrackedActionsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void PrepareNewAction()
-    {
-        SelectedAction = null;
-        Name = string.Empty;
-        Description = string.Empty;
-    }
-
-    [RelayCommand]
     private async void CreateOrEditAction(TrackedAction? action)
     {
         action ??= new TrackedAction();
 
-        await Shell.Current.GoToAsync(nameof(Views.TrackedActionCreateOrEditPage), true, new Dictionary<string, object> 
+        await Shell.Current.GoToAsync(nameof(Views.TrackedActionCreateOrEditPage), true, new Dictionary<string, object>
         {
-            { nameof(TrackedAction), action } 
+            { nameof(TrackedAction), action }
         });
     }
 
-    private void ClearForm()
+    [RelayCommand]
+    private void Search(string query)
     {
-        SelectedAction = null;
-        Name = string.Empty;
-        Description = string.Empty;
+        List<TrackedAction> actions = [];
+
+        Actions.Clear();
+
+        if (string.IsNullOrWhiteSpace(query))
+            actions = [.. _allActions.OrderBy(x => x.Name)];
+        else
+        {
+            actions = [.. _allActions
+                .Where(x => x.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+                || (x.Description is not null && x.Description.Contains(query, StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(x => x.Name)];
+        }
+
+        foreach (var action in actions)
+            Actions.Add(action);
     }
 
-    public void SelectAction(TrackedAction action)
+    [RelayCommand]
+    private async void HandleSelection()
     {
-        SelectedAction = action;
-        Name = action.Name;
-        Description = action.Description ?? string.Empty;
+        if (SelectedAction is not null)
+        {
+            var actionEntry = new ActionEntry
+            {
+                TrackedActionId = SelectedAction.Id,
+                Timestamp = DateTime.UtcNow
+            };
+
+            var parameters = new Dictionary<string, object>
+            {
+                { nameof(ActionEntry), actionEntry },
+            };
+
+            await Shell.Current.GoToAsync(nameof(Views.ActionEntryCreateOrEditPage), true, parameters);
+        }
     }
 }

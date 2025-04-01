@@ -5,7 +5,7 @@ public class ActionEntry
     public Guid Id { get; set; }
     public Guid TrackedActionId { get; set; }
 
-    public DateTime Timestamp { get; set; }
+    public DateTime? Timestamp { get; set; }
     public TimeSpan? Duration { get; set; }
     public double? Quantity { get; set; }
     public decimal? Cost { get; set; }

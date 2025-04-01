@@ -29,7 +29,7 @@ public class BasicAnalyticsService(IActionEntryRepository entryRepository)
         var entries = await _entryRepository.GetAllByActionIdAsync(trackedActionId);
 
         var grouped = entries
-            .GroupBy(e => new DateTime(e.Timestamp.Year, e.Timestamp.Month, 1))
+            .GroupBy(e => new DateTime(e.Timestamp!.Value.Year, e.Timestamp.Value.Month, 1))
             .Select(g => new TrendPoint
             {
                 PeriodStart = g.Key,

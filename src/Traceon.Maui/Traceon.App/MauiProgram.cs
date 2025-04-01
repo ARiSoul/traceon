@@ -36,9 +36,11 @@ public static class MauiProgram
 
         builder.Services.AddTransient<TrackedActionsViewModel>();
         builder.Services.AddTransient<TrackedActionCreateOrEditViewModel>();
+        builder.Services.AddTransient<ActionEntryCreateOrEditViewModel>();
 
         builder.Services.AddTransient<Views.TrackedActionsPage>();
         builder.Services.AddTransient<Views.TrackedActionCreateOrEditPage>();
+        builder.Services.AddTransient<Views.ActionEntryCreateOrEditPage>();
 
         CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
         CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");

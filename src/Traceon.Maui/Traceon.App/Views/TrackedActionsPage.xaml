@@ -13,15 +13,25 @@
 
     <Grid
         Padding="20,0,20,0"
-        RowDefinitions="0.90*,0.1*"
+        RowDefinitions="0.1*, 0.90*,0.1*"
         RowSpacing="16">
 
+        <SearchBar
+            x:Name="searchBarTop"
+            HeightRequest="40"
+            Placeholder="{x:Static locArisoul:Messages.Search}"
+            SearchCommand="{Binding SearchCommand}"
+            SearchCommandParameter="{Binding Text, Source={x:Reference searchBarTop}}"
+            Text="{Binding SearchQuery, Mode=TwoWay}"
+            TextChanged="SearchBarTop_TextChanged" />
+
         <!--  Scrollable list area  -->
-        <ScrollView Grid.Row="0">
+        <ScrollView Grid.Row="1">
             <VerticalStackLayout>
                 <CollectionView
                     ItemsSource="{Binding Actions}"
-                    SelectionChanged="OnActionSelected"
+                    SelectedItem="{Binding SelectedAction, Mode=TwoWay}"
+                    SelectionChangedCommand="{Binding HandleSelectionCommand}"
                     SelectionMode="Single">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="m:TrackedAction">
@@ -60,6 +70,19 @@
 
                                     <ImageButton
                                         BackgroundColor="Transparent"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=CreateOrEditActionCommand}"
+                                        CommandParameter="{Binding .}">
+                                        <ImageButton.Source>
+                                            <FontImageSource
+                                                FontFamily="FAR"
+                                                Glyph="{x:Static fonts:IconFont.PenToSquare}"
+                                                Size="24"
+                                                Color="Green" />
+                                        </ImageButton.Source>
+                                    </ImageButton>
+
+                                    <ImageButton
+                                        BackgroundColor="Transparent"
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=DeleteActionCommand}"
                                         CommandParameter="{Binding .}">
                                         <ImageButton.Source>
@@ -80,7 +103,7 @@
         </ScrollView>
 
         <Grid
-            Grid.Row="1"
+            Grid.Row="2"
             ColumnDefinitions="Auto"
             HorizontalOptions="Center">
             <Button Command="{Binding CreateOrEditActionCommand}" Text="Add Action" />
