@@ -12,4 +12,6 @@ public class TrackedAction
     public List<Tag> Tags { get; set; } = [];
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public List<ActionEntry> Entries { get; set; } = [];
 }

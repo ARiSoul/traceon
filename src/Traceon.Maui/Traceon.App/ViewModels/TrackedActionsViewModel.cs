@@ -87,18 +87,29 @@ public partial class TrackedActionsViewModel
     {
         if (SelectedAction is not null)
         {
-            var actionEntry = new ActionEntry
-            {
-                TrackedActionId = SelectedAction.Id,
-                Timestamp = DateTime.UtcNow
-            };
-
-            var parameters = new Dictionary<string, object>
-            {
-                { nameof(ActionEntry), actionEntry },
-            };
-
-            await Shell.Current.GoToAsync(nameof(Views.ActionEntryCreateOrEditPage), true, parameters);
+            await HandleSelectionCoreAsync(SelectedAction);
         }
+    }
+
+    [RelayCommand]
+    private async void HandleSelectedAction(TrackedAction action)
+    {
+        if (action is not null)
+        {
+            await HandleSelectionCoreAsync(action);
+        }
+    }
+
+    private async Task HandleSelectionCoreAsync(TrackedAction action)
+    {
+        var parameters = new Dictionary<string, object>
+            {
+                { nameof(TrackedAction), action },
+                { "EntryId", Guid.Empty.ToString() }
+            };
+
+        // TODO: apply more controls from syncfusion (first check the time and date pickers)
+
+        await Shell.Current.GoToAsync(nameof(Views.ActionEntryCreateOrEditPage), true, parameters);
     }
 }

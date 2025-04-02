@@ -4,14 +4,15 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
-    x:DataType="vm:ActionEntryCreateOrEditViewModel">
+    x:DataType="vm:ActionEntryCreateOrEditViewModel"
+    Title="{Binding Title}">
 
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="16">
             <Label
                 FontAttributes="Bold"
                 FontSize="20"
-                Text="TODO: action name" />
+                Text="{Binding TrackedAction.Name}" />
 
             <DatePicker Date="{Binding EntryDate}" />
             <TimePicker Time="{Binding EntryTime}" />

@@ -3,6 +3,7 @@ using Arisoul.Traceon.Maui.Infrastructure.Services;
 using Arisoul.Traceon.Maui.Infrastructure.Storage;
 using Microsoft.Extensions.Logging;
 using Arisoul.Traceon.App.ViewModels;
+using Syncfusion.Maui.Core.Hosting;
 using System.Globalization;
 using CommunityToolkit.Maui;
 using Arisoul.Core.Maui;
@@ -12,10 +13,10 @@ namespace Arisoul.Traceon.App;
 public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
-	{
-		var builder = MauiApp.CreateBuilder();
-		builder
-			.UseMauiApp<App>()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder
+            .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
             .UseArisoulMaui()
             .ConfigureFonts(fonts =>
@@ -31,7 +32,6 @@ public static class MauiProgram
 
         // Dependency injection
         builder.Services.AddSingleton<ITrackedActionRepository>(_ => new JsonTrackedActionRepository(userId));
-        builder.Services.AddSingleton<IActionEntryRepository>(_ => new JsonActionEntryRepository(userId));
         builder.Services.AddSingleton<IAnalyticsService, BasicAnalyticsService>();
 
         builder.Services.AddTransient<TrackedActionsViewModel>();
@@ -45,10 +45,13 @@ public static class MauiProgram
         CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
         CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
 
+        // Add Syncfusion
+        builder.ConfigureSyncfusionCore();
+
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
 
-		return builder.Build();
-	}
+        return builder.Build();
+    }
 }

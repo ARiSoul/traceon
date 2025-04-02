@@ -7,36 +7,56 @@ using System.ComponentModel;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
-[QueryProperty(nameof(ActionEntry), nameof(ActionEntry))]
+[QueryProperty(nameof(TrackedAction), nameof(TrackedAction))]
+[QueryProperty("EntryId", "EntryId")]
 public partial class ActionEntryCreateOrEditViewModel
     : ArisoulMauiBaseViewModel
 {
-    private IActionEntryRepository _actionEntryRepository;
+    private ITrackedActionRepository _actionRepository;
+
+    [ObservableProperty]
+    TrackedAction _trackedAction;
+
+    [ObservableProperty]
+    string _entryId;
+
+    [ObservableProperty]
+    DateTime _entryDate;
+
+    [ObservableProperty]
+    TimeSpan? _entryTime;
 
     [ObservableProperty]
     ActionEntry _actionEntry;
 
-    [ObservableProperty]
-    DateOnly _entryDate;
-
-    [ObservableProperty]
-    TimeOnly _entryTime;
-
-    public ActionEntryCreateOrEditViewModel(IActionEntryRepository trackedActionRepository)
+    public ActionEntryCreateOrEditViewModel(ITrackedActionRepository trackedActionRepository)
     {
         Title = "Create or Edit Action Entry";
 
-        _actionEntryRepository = trackedActionRepository;
+        _actionRepository = trackedActionRepository;
     }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);
 
-        if (e.PropertyName == nameof(ActionEntry))
+        if (e.PropertyName == nameof(EntryId))
         {
-            EntryDate = ActionEntry?.Timestamp is null ? DateOnly.FromDateTime(DateTime.UtcNow) : DateOnly.FromDateTime(ActionEntry.Timestamp.Value);
-            EntryTime = ActionEntry?.Timestamp is null ? TimeOnly.FromDateTime(DateTime.UtcNow) : TimeOnly.FromDateTime(ActionEntry.Timestamp.Value);
+            Guid entryId = Guid.Parse(EntryId);
+            if (entryId == Guid.Empty)
+            {
+                ActionEntry = new ActionEntry
+                {
+                    TrackedActionId = TrackedAction.Id
+                };
+            }
+            else
+            {
+                ActionEntry = TrackedAction.Entries.FirstOrDefault(e => e.Id == entryId);
+            }
+
+            EntryDate = ActionEntry?.Timestamp is null ? DateTime.UtcNow : ActionEntry.Timestamp.Value;
+            EntryTime = ActionEntry?.Timestamp is null ? null : TimeSpan.FromTicks(ActionEntry!.Timestamp.Value.Ticks);
         }
     }
 
@@ -46,18 +66,18 @@ public partial class ActionEntryCreateOrEditViewModel
         if (ActionEntry == null)
             return;
 
-        ActionEntry.Timestamp = new DateTime(EntryDate.Year, EntryDate.Month, EntryDate.Day, EntryTime.Hour, EntryTime.Minute, EntryTime.Second);
+        ActionEntry.Timestamp = new DateTime(EntryDate.Year, EntryDate.Month, EntryDate.Day, EntryTime!.Value.Hours, EntryTime!.Value.Minutes, EntryTime!.Value.Seconds);
 
         if (ActionEntry.Id == Guid.Empty) // new
         {
             ActionEntry.Id = Guid.NewGuid();
             ActionEntry.CreatedAt = DateTime.UtcNow;
 
-            await _actionEntryRepository.AddAsync(ActionEntry);
+            await _actionRepository.AddActionEntryAsync(TrackedAction.Id, ActionEntry);
         }
         else // update
         {
-            await _actionEntryRepository.UpdateAsync(ActionEntry);
+            await _actionRepository.UpdateActionEntryAsync(TrackedAction.Id, ActionEntry);
         }
 
         await Shell.Current.GoToAsync("..");

@@ -2,14 +2,14 @@
 
 namespace Arisoul.Traceon.Maui.Infrastructure.Services;
 
-public class BasicAnalyticsService(IActionEntryRepository entryRepository) 
+public class BasicAnalyticsService(ITrackedActionRepository actionRespository) 
     : IAnalyticsService
 {
-    private readonly IActionEntryRepository _entryRepository = entryRepository;
+    private readonly ITrackedActionRepository _actionRepository = actionRespository;
 
     public async Task<AnalyticsSummary> GetSummaryAsync(Guid trackedActionId)
     {
-        var entries = (await _entryRepository.GetAllByActionIdAsync(trackedActionId)).ToList();
+        var entries = (await _actionRepository.GetActionEntriesAsync(trackedActionId)).ToList();
 
         if (!entries.Any())
             return new AnalyticsSummary();
@@ -26,7 +26,7 @@ public class BasicAnalyticsService(IActionEntryRepository entryRepository)
 
     public async Task<IEnumerable<TrendPoint>> GetTrendAsync(Guid trackedActionId)
     {
-        var entries = await _entryRepository.GetAllByActionIdAsync(trackedActionId);
+        var entries = await _actionRepository.GetActionEntriesAsync(trackedActionId);
 
         var grouped = entries
             .GroupBy(e => new DateTime(e.Timestamp!.Value.Year, e.Timestamp.Value.Month, 1))
