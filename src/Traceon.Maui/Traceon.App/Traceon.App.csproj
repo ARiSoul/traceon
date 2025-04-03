@@ -69,6 +69,7 @@
 		<PackageReference Include="Syncfusion.Maui.Expander" Version="29.1.35" />
 		<PackageReference Include="Syncfusion.Maui.TreeView" Version="29.1.35" />
 		<PackageReference Include="Syncfusion.Maui.DataForm" Version="29.1.35" />
+		<PackageReference Include="Syncfusion.Maui.Picker" Version="29.1.35" />
 	</ItemGroup>
 
 	<ItemGroup>

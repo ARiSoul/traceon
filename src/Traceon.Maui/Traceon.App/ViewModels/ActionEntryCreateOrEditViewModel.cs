@@ -21,12 +21,6 @@ public partial class ActionEntryCreateOrEditViewModel
     string _entryId;
 
     [ObservableProperty]
-    DateTime _entryDate;
-
-    [ObservableProperty]
-    TimeSpan? _entryTime;
-
-    [ObservableProperty]
     ActionEntry _actionEntry;
 
     public ActionEntryCreateOrEditViewModel(ITrackedActionRepository trackedActionRepository)
@@ -54,9 +48,6 @@ public partial class ActionEntryCreateOrEditViewModel
             {
                 ActionEntry = TrackedAction.Entries.FirstOrDefault(e => e.Id == entryId);
             }
-
-            EntryDate = ActionEntry?.Timestamp is null ? DateTime.UtcNow : ActionEntry.Timestamp.Value;
-            EntryTime = ActionEntry?.Timestamp is null ? null : TimeSpan.FromTicks(ActionEntry!.Timestamp.Value.Ticks);
         }
     }
 
@@ -65,8 +56,6 @@ public partial class ActionEntryCreateOrEditViewModel
     {
         if (ActionEntry == null)
             return;
-
-        ActionEntry.Timestamp = new DateTime(EntryDate.Year, EntryDate.Month, EntryDate.Day, EntryTime!.Value.Hours, EntryTime!.Value.Minutes, EntryTime!.Value.Seconds);
 
         if (ActionEntry.Id == Guid.Empty) // new
         {
