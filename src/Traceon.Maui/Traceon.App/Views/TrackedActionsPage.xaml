@@ -139,6 +139,7 @@
 
         <Grid
             Grid.Row="2"
+            Padding="0,0,0,10"
             ColumnDefinitions="Auto"
             HorizontalOptions="Center">
             <Button Command="{Binding CreateOrEditActionCommand}" Text="Add Action" />
