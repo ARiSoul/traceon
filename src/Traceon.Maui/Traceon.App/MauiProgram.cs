@@ -7,6 +7,8 @@ using Syncfusion.Maui.Core.Hosting;
 using System.Globalization;
 using CommunityToolkit.Maui;
 using Arisoul.Core.Maui;
+using Arisoul.Traceon.Maui.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Arisoul.Traceon.App;
 
@@ -41,6 +43,9 @@ public static class MauiProgram
         builder.Services.AddTransient<Views.TrackedActionsPage>();
         builder.Services.AddTransient<Views.TrackedActionCreateOrEditPage>();
         builder.Services.AddTransient<Views.ActionEntryCreateOrEditPage>();
+
+        builder.Services.AddDbContext<TraceonDbContext>(options =>
+            options.UseSqlite("Filename=traceon.db"));
 
         CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
         CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");

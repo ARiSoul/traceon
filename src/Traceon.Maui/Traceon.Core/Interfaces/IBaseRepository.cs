@@ -1,10 +1,11 @@
 ﻿namespace Arisoul.Traceon.Maui.Core.Interfaces;
 
-public interface IBaseRepository<T> 
-    where T : class
+public interface IBaseRepository<TEntity> 
+    where TEntity : class
 {
-    Task<T?> GetByIdAsync(Guid id);
-    Task AddAsync(T entity);
-    Task UpdateAsync(T entity);
+    Task<IEnumerable<TEntity>> GetAllAsync();
+    Task<TEntity?> GetByIdAsync(Guid id);
+    Task AddAsync(TEntity entity);
+    Task UpdateAsync(TEntity entity);
     Task DeleteAsync(Guid id);
 }
