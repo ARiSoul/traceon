@@ -1,8 +1,8 @@
 ﻿namespace Arisoul.Traceon.Maui.Core.Entities;
 
-public class ActionEntry
+public class ActionEntry 
+    : BaseEntityWithId
 {
-    public Guid Id { get; set; }
     public Guid ActionId { get; set; }
     public TrackedAction Action { get; set; } = null!;
 

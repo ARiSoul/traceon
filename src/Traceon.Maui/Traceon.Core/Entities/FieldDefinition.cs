@@ -1,8 +1,8 @@
 ﻿namespace Arisoul.Traceon.Maui.Core.Entities;
 
 public class FieldDefinition
+    : BaseEntityWithId
 {
-    public Guid Id { get; set; }
     public string DefaultName { get; set; } = string.Empty;
     public string? DefaultDescription { get; set; }
     public FieldType Type { get; set; }

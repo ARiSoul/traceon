@@ -9,6 +9,5 @@ public interface ITrackedActionRepository
     Task DeleteActionEntryAsync(Guid actionId, Guid id);
     Task<IEnumerable<ActionEntry>> GetActionEntriesAsync(Guid actionId);
     Task<ActionEntry?> GetActionEntryAsync(Guid actionId, Guid id);
-    Task<IEnumerable<TrackedAction>> GetAllAsync(Guid userId);
     Task UpdateActionEntryAsync(Guid actionId, ActionEntry entry);
 }

@@ -4,14 +4,13 @@ using Arisoul.Traceon.Maui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
-public partial class TrackedActionsViewModel
-    : ArisoulMauiBaseViewModel
+public partial class TrackedActionsViewModel(IUnitOfWork unitOfWork)
+        : ArisoulMauiBaseViewModel
 {
-    private readonly ITrackedActionRepository _repository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private List<TrackedAction> _allActions = [];
 
     [ObservableProperty] private string _searchQuery = string.Empty;
@@ -19,15 +18,9 @@ public partial class TrackedActionsViewModel
 
     public ObservableCollection<TrackedAction> Actions { get; private set; } = [];
 
-    public TrackedActionsViewModel(ITrackedActionRepository repository)
-    {
-        _repository = repository;
-    }
-
     internal async Task LoadActionsAsync()
     {
-        var userId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-        var all = await _repository.GetAllAsync(userId);
+        var all = await _unitOfWork.TrackedActions.GetAllAsync();
 
         _allActions = [.. all.OrderBy(a => a.Name)];
 
@@ -41,17 +34,19 @@ public partial class TrackedActionsViewModel
     }
 
     [RelayCommand]
-    private async Task DeleteAction(TrackedAction action)
+    private async Task DeleteActionAsync(TrackedAction action)
     {
         if (action is null)
             return;
 
-        await _repository.DeleteAsync(action.Id);
+        await _unitOfWork.TrackedActions.DeleteAsync(action.Id);
+        await _unitOfWork.SaveChangesAsync();
+
         await LoadActionsAsync();
     }
 
     [RelayCommand]
-    private async void CreateOrEditAction(TrackedAction? action)
+    private async Task CreateOrEditActionAsync(TrackedAction? action)
     {
         action ??= new TrackedAction();
 
@@ -83,7 +78,7 @@ public partial class TrackedActionsViewModel
     }
 
     [RelayCommand]
-    private async void HandleSelection()
+    private async Task HandleSelectionAsync()
     {
         if (SelectedAction is not null)
         {
@@ -92,7 +87,7 @@ public partial class TrackedActionsViewModel
     }
 
     [RelayCommand]
-    private async void HandleSelectedAction(TrackedAction action)
+    private async Task HandleSelectedActionAsync(TrackedAction action)
     {
         if (action is not null)
         {

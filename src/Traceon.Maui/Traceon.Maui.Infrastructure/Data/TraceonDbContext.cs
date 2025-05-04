@@ -1,11 +1,14 @@
-﻿using Arisoul.Traceon.Maui.Core.Entities;
+﻿// Ignore Spelling: Traceon
+
+using Arisoul.Traceon.Maui.Core.Entities;
+using Arisoul.Traceon.Maui.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Text.Json;
 
 namespace Arisoul.Traceon.Maui.Infrastructure.Data;
 
-public class TraceonDbContext : DbContext
+public class TraceonDbContext(DbContextOptions<TraceonDbContext> options) : DbContext(options)
 {
     public DbSet<TrackedAction> TrackedActions => Set<TrackedAction>();
     public DbSet<ActionEntry> ActionEntries => Set<ActionEntry>();
@@ -13,12 +16,7 @@ public class TraceonDbContext : DbContext
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<ActionField> ActionFields => Set<ActionField>();
     public DbSet<FieldDefinition> FieldDefinitions => Set<FieldDefinition>();
-    public DbSet<Core.Entities.Audit> Audits => Set<Core.Entities.Audit>();
-
-    public TraceonDbContext(DbContextOptions<TraceonDbContext> options)
-    : base(options)
-    {
-    }
+    public DbSet<Audit> Audits => Set<Audit>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,31 +63,50 @@ public class TraceonDbContext : DbContext
     {
         var auditEntries = OnBeforeSaveChanges();
         var result = await base.SaveChangesAsync(cancellationToken);
-        if (auditEntries.Any())
+
+        if (auditEntries.Count != 0)
         {
-            await Audits.AddRangeAsync(auditEntries);
+            await Audits.AddRangeAsync(auditEntries, cancellationToken);
             await base.SaveChangesAsync(cancellationToken);
         }
         return result;
     }
 
-    private List<Core.Entities.Audit> OnBeforeSaveChanges()
+    private List<Audit> OnBeforeSaveChanges()
     {
         ChangeTracker.DetectChanges();
-        var auditEntries = new List<Core.Entities.Audit>();
+        var auditEntries = new List<Audit>();
 
         foreach (var entry in ChangeTracker.Entries())
         {
-            if (entry.Entity is Core.Entities.Audit || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+            if (entry.Entity is Audit || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
                 continue;
 
-            var audit = new Core.Entities.Audit
+            var audit = new Audit
             {
                 Entity = entry.Entity.GetType().Name,
                 Operation = entry.State.ToString().ToLowerInvariant(),
                 Timestamp = DateTime.UtcNow,
                 User = "system" // Replace with your user context when available
             };
+
+            if (entry.Entity is IEntityWithId entityWithId)
+            {
+                audit.EntityId = entityWithId.Id.ToString();
+            }
+            else if (entry.Entity is IActionChildEntity actionChildEntity)
+            {
+                audit.EntityId = actionChildEntity.ActionId.ToString();
+
+                if (entry.Entity is ActionField actionField)
+                {
+                    audit.EntityId = $"{audit.EntityId}-{actionField.FieldDefinitionId}";
+                }
+                else if (entry.Entity is ActionTag actionTag)
+                {
+                    audit.EntityId = $"{audit.EntityId}-{actionTag.TagId}";
+                }
+            }
 
             switch (entry.State)
             {
@@ -113,7 +130,7 @@ public class TraceonDbContext : DbContext
         return auditEntries;
     }
 
-    private string SerializeValues(PropertyValues values)
+    private static string SerializeValues(PropertyValues values)
     {
         var dict = new Dictionary<string, object?>();
         foreach (var property in values.Properties)

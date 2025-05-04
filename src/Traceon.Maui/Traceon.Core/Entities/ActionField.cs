@@ -1,10 +1,8 @@
 ﻿namespace Arisoul.Traceon.Maui.Core.Entities;
 
 public class ActionField
+    : BaseActionChildEntity
 {
-    public Guid ActionId { get; set; }
-    public TrackedAction Action { get; set; } = null!;
-
     public Guid FieldDefinitionId { get; set; }
     public FieldDefinition FieldDefinition { get; set; } = null!;
 

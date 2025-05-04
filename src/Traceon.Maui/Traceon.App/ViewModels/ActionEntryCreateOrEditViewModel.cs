@@ -12,7 +12,7 @@ namespace Arisoul.Traceon.App.ViewModels;
 public partial class ActionEntryCreateOrEditViewModel
     : ArisoulMauiBaseViewModel
 {
-    private ITrackedActionRepository _actionRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
     [ObservableProperty]
     TrackedAction _trackedAction;
@@ -23,11 +23,11 @@ public partial class ActionEntryCreateOrEditViewModel
     [ObservableProperty]
     ActionEntry _actionEntry;
 
-    public ActionEntryCreateOrEditViewModel(ITrackedActionRepository trackedActionRepository)
+    public ActionEntryCreateOrEditViewModel(IUnitOfWork unitOfWork)
     {
         Title = "Create or Edit Action Entry";
 
-        _actionRepository = trackedActionRepository;
+        _unitOfWork = unitOfWork;
     }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -41,7 +41,7 @@ public partial class ActionEntryCreateOrEditViewModel
             {
                 ActionEntry = new ActionEntry
                 {
-                    TrackedActionId = TrackedAction.Id
+                    ActionId = TrackedAction.Id
                 };
             }
             else
@@ -60,14 +60,15 @@ public partial class ActionEntryCreateOrEditViewModel
         if (ActionEntry.Id == Guid.Empty) // new
         {
             ActionEntry.Id = Guid.NewGuid();
-            ActionEntry.CreatedAt = DateTime.UtcNow;
 
-            await _actionRepository.AddActionEntryAsync(TrackedAction.Id, ActionEntry);
+            await _unitOfWork.TrackedActions.AddActionEntryAsync(TrackedAction.Id, ActionEntry).ConfigureAwait(false);
         }
         else // update
         {
-            await _actionRepository.UpdateActionEntryAsync(TrackedAction.Id, ActionEntry);
+            await _unitOfWork.TrackedActions.UpdateActionEntryAsync(TrackedAction.Id, ActionEntry).ConfigureAwait(false);
         }
+
+        await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
 
         await Shell.Current.GoToAsync("..");
     }

@@ -1,6 +1,7 @@
 ﻿using Arisoul.Core.Maui.Models;
 using Arisoul.Traceon.Maui.Core.Entities;
 using Arisoul.Traceon.Maui.Core.Interfaces;
+using Arisoul.Traceon.Maui.Infrastructure.UnitOfWork;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -10,16 +11,16 @@ namespace Arisoul.Traceon.App.ViewModels;
 public partial class TrackedActionCreateOrEditViewModel 
     : ArisoulMauiBaseViewModel
 {
-    private ITrackedActionRepository _trackedActionRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
     [ObservableProperty]
     TrackedAction _trackedAction;
 
-    public TrackedActionCreateOrEditViewModel(ITrackedActionRepository trackedActionRepository)
+    public TrackedActionCreateOrEditViewModel(IUnitOfWork unitOfWork)
     {
         Title = "Create or Edit Tracked Action";
 
-        _trackedActionRepository = trackedActionRepository;
+        _unitOfWork = unitOfWork;
     }
 
     [RelayCommand]
@@ -31,15 +32,15 @@ public partial class TrackedActionCreateOrEditViewModel
         if (TrackedAction.Id == Guid.Empty) // new
         {
             TrackedAction.Id = Guid.NewGuid();
-            TrackedAction.UserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-            TrackedAction.CreatedAt = DateTime.UtcNow;
             
-            await _trackedActionRepository.AddAsync(TrackedAction);
+            await _unitOfWork.TrackedActions.CreateAsync(TrackedAction).ConfigureAwait(false);
         }
         else // update
         {
-            await _trackedActionRepository.UpdateAsync(TrackedAction);
+            await _unitOfWork.TrackedActions.UpdateAsync(TrackedAction).ConfigureAwait(false);
         }
+
+        await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
 
         await Shell.Current.GoToAsync("..");
     }

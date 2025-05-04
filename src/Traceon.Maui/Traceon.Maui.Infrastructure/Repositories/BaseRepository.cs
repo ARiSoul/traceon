@@ -4,12 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Arisoul.Traceon.Maui.Infrastructure.Repositories;
 
-public class Repository<TEntity> : IBaseRepository<TEntity> where TEntity : class
+public class BaseRepository<TEntity> 
+    : IBaseRepository<TEntity> where TEntity : class
 {
     protected readonly TraceonDbContext _context;
     protected readonly DbSet<TEntity> _dbSet;
 
-    public Repository(TraceonDbContext context)
+    public BaseRepository(TraceonDbContext context)
     {
         _context = context;
         _dbSet = context.Set<TEntity>();
@@ -21,7 +22,7 @@ public class Repository<TEntity> : IBaseRepository<TEntity> where TEntity : clas
     public async Task<TEntity?> GetByIdAsync(Guid id) =>
         await _dbSet.FindAsync(id);
 
-    public async Task AddAsync(TEntity entity)
+    public async Task CreateAsync(TEntity entity)
     {
         await _dbSet.AddAsync(entity);
     }

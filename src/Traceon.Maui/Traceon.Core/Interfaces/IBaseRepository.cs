@@ -5,7 +5,7 @@ public interface IBaseRepository<TEntity>
 {
     Task<IEnumerable<TEntity>> GetAllAsync();
     Task<TEntity?> GetByIdAsync(Guid id);
-    Task AddAsync(TEntity entity);
+    Task CreateAsync(TEntity entity);
     Task UpdateAsync(TEntity entity);
     Task DeleteAsync(Guid id);
 }

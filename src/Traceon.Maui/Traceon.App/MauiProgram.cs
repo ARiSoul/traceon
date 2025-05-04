@@ -1,14 +1,14 @@
-﻿using Arisoul.Traceon.Maui.Core.Interfaces;
-using Arisoul.Traceon.Maui.Infrastructure.Services;
-using Arisoul.Traceon.Maui.Infrastructure.Storage;
-using Microsoft.Extensions.Logging;
+﻿using Arisoul.Core.Maui;
 using Arisoul.Traceon.App.ViewModels;
+using Arisoul.Traceon.Maui.Core.Interfaces;
+using Arisoul.Traceon.Maui.Infrastructure.Data;
+using Arisoul.Traceon.Maui.Infrastructure.Repositories;
+using Arisoul.Traceon.Maui.Infrastructure.UnitOfWork;
+using CommunityToolkit.Maui;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Syncfusion.Maui.Core.Hosting;
 using System.Globalization;
-using CommunityToolkit.Maui;
-using Arisoul.Core.Maui;
-using Arisoul.Traceon.Maui.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace Arisoul.Traceon.App;
 
@@ -29,12 +29,11 @@ public static class MauiProgram
                 fonts.AddFont("fa-v4compatibility.ttf", "FACOMP");
             });
 
-        // TODO: replace with real userId (from auth or config)
-        var userId = "demo";
-
         // Dependency injection
-        builder.Services.AddSingleton<ITrackedActionRepository>(_ => new JsonTrackedActionRepository(userId));
-        builder.Services.AddSingleton<IAnalyticsService, BasicAnalyticsService>();
+        builder.Services.AddScoped<ITrackedActionRepository, TrackedActionRepository>();
+        builder.Services.AddScoped<IFieldDefinitionRepository, FieldDefinitionRepository>();
+        builder.Services.AddScoped<ITagRepository, TagRepository>();
+        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         builder.Services.AddTransient<TrackedActionsViewModel>();
         builder.Services.AddTransient<TrackedActionCreateOrEditViewModel>();
@@ -57,6 +56,16 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        return builder.Build();
+        var app = builder.Build();
+
+        // Ensure database is created and migrations applied
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<TraceonDbContext>();
+            dbContext.Database.Migrate();
+        }
+
+
+        return app;
     }
 }

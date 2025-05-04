@@ -25,7 +25,7 @@
             <TimePicker Time="{Binding EntryTime}" />-->
             <!--<TimePicker Time="{Binding ActionEntry.Duration}" />-->
 
-            <Label Text="Quantity" />
+            <!--<Label Text="Quantity" />
             <Entry
                 Keyboard="Numeric"
                 Placeholder="Quantity"
@@ -40,7 +40,7 @@
                 AutoSize="TextChanges"
                 HeightRequest="100"
                 Placeholder="Notes"
-                Text="{Binding ActionEntry.Notes}" />
+                Text="{Binding ActionEntry.Notes}" />-->
 
             <Button Command="{Binding SaveCommand}" Text="Save" />
         </VerticalStackLayout>
