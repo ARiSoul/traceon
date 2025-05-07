@@ -10,5 +10,6 @@ public partial class AppShell : Shell
 
         Routing.RegisterRoute(nameof(TrackedActionCreateOrEditPage), typeof(TrackedActionCreateOrEditPage));
         Routing.RegisterRoute(nameof(ActionEntryCreateOrEditPage), typeof(ActionEntryCreateOrEditPage));
+        Routing.RegisterRoute(nameof(FieldDefinitionCreateOrEditPage), typeof(FieldDefinitionCreateOrEditPage));
     }
 }

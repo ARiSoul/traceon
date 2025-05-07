@@ -79,6 +79,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Views\FieldDefinitionCreateOrEditPage.xaml.cs">
+	    <DependentUpon>FieldDefinitionCreateOrEditPage.xaml</DependentUpon>
+	  </Compile>
 	  <Compile Update="Views\TrackedActionCreateOrEditPage.xaml.cs">
 	    <DependentUpon>TrackedActionCreateOrEditPage.xaml</DependentUpon>
 	  </Compile>
@@ -86,6 +89,12 @@
 
 	<ItemGroup>
 	  <MauiXaml Update="Views\ActionEntryCreateOrEditPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\FieldDefinitionsPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\FieldDefinitionCreateOrEditPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\TrackedActionCreateOrEditPage.xaml">

@@ -4,7 +4,9 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
+    xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
+    xmlns:loc="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     Title="{Binding Title}"
     x:DataType="vm:ActionEntryCreateOrEditViewModel">
 
@@ -41,8 +43,11 @@
                 HeightRequest="100"
                 Placeholder="Notes"
                 Text="{Binding ActionEntry.Notes}" />-->
-
-            <Button Command="{Binding SaveCommand}" Text="Save" />
+            
+            <btns:SfButton
+                Margin="0,5"
+                Command="{Binding SaveCommand}"
+                Text="{x:Static loc:Messages.Save}" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

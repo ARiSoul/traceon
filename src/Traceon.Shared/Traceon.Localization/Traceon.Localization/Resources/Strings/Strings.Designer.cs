@@ -61,6 +61,15 @@ namespace Arisoul.Traceon.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Action.
+        /// </summary>
+        public static string Action {
+            get {
+                return ResourceManager.GetString("Action", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Actions.
         /// </summary>
         public static string Actions {
@@ -93,6 +102,42 @@ namespace Arisoul.Traceon.Localization {
         public static string CreateAt {
             get {
                 return ResourceManager.GetString("CreateAt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Field Definition.
+        /// </summary>
+        public static string Field_Definition {
+            get {
+                return ResourceManager.GetString("Field Definition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Field Definitions.
+        /// </summary>
+        public static string FieldDefinitions {
+            get {
+                return ResourceManager.GetString("FieldDefinitions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Field Definitions Form.
+        /// </summary>
+        public static string FieldDefinitionsForm {
+            get {
+                return ResourceManager.GetString("FieldDefinitionsForm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Field Definitions List.
+        /// </summary>
+        public static string FieldDefinitionsList {
+            get {
+                return ResourceManager.GetString("FieldDefinitionsList", resourceCulture);
             }
         }
         

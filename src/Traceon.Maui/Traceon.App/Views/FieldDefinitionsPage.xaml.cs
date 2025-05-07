@@ -1,15 +1,12 @@
 using Arisoul.Traceon.App.ViewModels;
-using Arisoul.Traceon.Maui.Core.Entities;
-using Arisoul.Traceon.Localization;
-using CommunityToolkit.Maui.Views;
 
 namespace Arisoul.Traceon.App.Views;
 
-public partial class TrackedActionsPage : ContentPage
+public partial class FieldDefinitionsPage : ContentPage
 {
-    private readonly TrackedActionsViewModel _viewModel;
+    private readonly FieldDefinitionsViewModel _viewModel;
 
-	public TrackedActionsPage(TrackedActionsViewModel viewModel)
+    public FieldDefinitionsPage(FieldDefinitionsViewModel viewModel)
 	{
 		InitializeComponent();
         BindingContext = _viewModel = viewModel;
@@ -17,7 +14,7 @@ public partial class TrackedActionsPage : ContentPage
 
     protected override async void OnAppearing()
     {
-        await _viewModel.LoadActionsAsync();
+        await _viewModel.LoadFieldDefinitionsAsync();
         base.OnAppearing();
     }
 

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Arisoul.Traceon.App.Views.FieldDefinitionCreateOrEditPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
+    xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
+    xmlns:loc="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
+    xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
+    Title="{Binding Title}"
+    x:DataType="vm:FieldDefinitionCreateOrEditViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Margin="20" Spacing="5">
+
+            <Label Text="Default Name" />
+            <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultName}" />
+
+            <Label Text="Default Description" />
+            <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultDescription}" />
+
+            <btns:SfCheckBox
+                x:Name="isRequiredCheckBox"
+                IsChecked="{Binding FieldDefinition.DefaultIsRequired}"
+                Text="Is required by default"
+                TextColor="White"/>
+
+            <Label Text="Field Type" />
+            <Label Text="TODO" />
+
+            <Label Text="Default Max. Value" />
+            <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultMaxValue}" />
+
+            <Label Text="Default Min. Value" />
+            <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultMinValue}" />
+
+            <Label Text="Dropdown Values (split by;)" />
+            <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DropdownValues}" />
+
+            <btns:SfButton
+                Margin="0,5"
+                Command="{Binding SaveFieldCommand}"
+                Text="{x:Static loc:Messages.Save}"
+                VerticalOptions="End" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

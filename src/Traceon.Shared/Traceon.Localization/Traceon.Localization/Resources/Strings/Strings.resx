@@ -135,4 +135,19 @@
   <data name="New_M" xml:space="preserve">
     <value>New</value>
   </data>
+  <data name="FieldDefinitions" xml:space="preserve">
+    <value>Field Definitions</value>
+  </data>
+  <data name="Field Definition" xml:space="preserve">
+    <value>Field Definition</value>
+  </data>
+  <data name="Action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="FieldDefinitionsList" xml:space="preserve">
+    <value>Field Definitions List</value>
+  </data>
+  <data name="FieldDefinitionsForm" xml:space="preserve">
+    <value>Field Definitions Form</value>
+  </data>
 </root>

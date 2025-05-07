@@ -1,8 +1,11 @@
-﻿using Arisoul.Traceon.Maui.Core.Interfaces;
+﻿using Arisoul.Core.Root.Models.Base;
+using Arisoul.Traceon.Maui.Core.Interfaces;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Arisoul.Traceon.Maui.Core.Entities;
 
-public class BaseEntityWithId : IEntityWithId
+public partial class BaseEntityWithId 
+    : BaseObservableValidator, IEntityWithId
 {
-    public Guid Id { get; set; }
+    [ObservableProperty] Guid _id;
 }

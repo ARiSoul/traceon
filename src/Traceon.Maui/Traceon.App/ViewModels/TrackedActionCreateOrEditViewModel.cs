@@ -1,7 +1,6 @@
 ﻿using Arisoul.Core.Maui.Models;
 using Arisoul.Traceon.Maui.Core.Entities;
 using Arisoul.Traceon.Maui.Core.Interfaces;
-using Arisoul.Traceon.Maui.Infrastructure.UnitOfWork;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 

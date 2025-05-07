@@ -35,13 +35,19 @@ public static class MauiProgram
         builder.Services.AddScoped<ITagRepository, TagRepository>();
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        // View models
         builder.Services.AddTransient<TrackedActionsViewModel>();
         builder.Services.AddTransient<TrackedActionCreateOrEditViewModel>();
         builder.Services.AddTransient<ActionEntryCreateOrEditViewModel>();
+        builder.Services.AddTransient<FieldDefinitionsViewModel>();
+        builder.Services.AddTransient<FieldDefinitionCreateOrEditViewModel>();
 
+        // Pages
         builder.Services.AddTransient<Views.TrackedActionsPage>();
         builder.Services.AddTransient<Views.TrackedActionCreateOrEditPage>();
         builder.Services.AddTransient<Views.ActionEntryCreateOrEditPage>();
+        builder.Services.AddTransient<Views.FieldDefinitionsPage>();
+        builder.Services.AddTransient<Views.FieldDefinitionCreateOrEditPage>();
 
         builder.Services.AddDbContext<TraceonDbContext>(options =>
             options.UseSqlite("Filename=traceon.db"));

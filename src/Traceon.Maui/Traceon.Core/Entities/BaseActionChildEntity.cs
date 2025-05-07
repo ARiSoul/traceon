@@ -1,10 +1,13 @@
-﻿using Arisoul.Traceon.Maui.Core.Interfaces;
+﻿using Arisoul.Core.Root.Models.Base;
+using Arisoul.Traceon.Maui.Core.Interfaces;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Arisoul.Traceon.Maui.Core.Entities;
 
-public class BaseActionChildEntity
-    : IActionChildEntity
+public partial class BaseActionChildEntity
+    : BaseObservableValidator, IActionChildEntity
 {
-    public Guid ActionId { get; set; }
+    [ObservableProperty] Guid _actionId;
+
     public TrackedAction Action { get; set; } = null!;
 }

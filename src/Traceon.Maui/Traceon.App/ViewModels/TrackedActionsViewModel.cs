@@ -7,14 +7,18 @@ using System.Collections.ObjectModel;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
-public partial class TrackedActionsViewModel(IUnitOfWork unitOfWork)
-        : ArisoulMauiBaseViewModel
+public partial class TrackedActionsViewModel : ArisoulMauiBaseViewModel
 {
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
     private List<TrackedAction> _allActions = [];
 
     [ObservableProperty] private string _searchQuery = string.Empty;
     [ObservableProperty] private TrackedAction? _selectedAction;
+
+    public TrackedActionsViewModel(IUnitOfWork unitOfWork)
+    {
+        _unitOfWork = unitOfWork;
+    }
 
     public ObservableCollection<TrackedAction> Actions { get; private set; } = [];
 
@@ -24,13 +28,7 @@ public partial class TrackedActionsViewModel(IUnitOfWork unitOfWork)
 
         _allActions = [.. all.OrderBy(a => a.Name)];
 
-        Actions.Clear();
-
-        foreach (var action in _allActions)
-            Actions.Add(action);
-
-        if (!string.IsNullOrWhiteSpace(SearchQuery))
-            Search(SearchQuery);
+        Search(SearchQuery);
     }
 
     [RelayCommand]
@@ -105,6 +103,6 @@ public partial class TrackedActionsViewModel(IUnitOfWork unitOfWork)
 
         // TODO: apply more controls from syncfusion (first check the time and date pickers)
 
-        await Shell.Current.GoToAsync(nameof(Views.ActionEntryCreateOrEditPage), true, parameters);
+        await Shell.Current.GoToAsync(nameof(Views.ActionEntryCreateOrEditPage), true, parameters).ConfigureAwait(false);
     }
 }
