@@ -5,7 +5,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
     xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
-    xmlns:loc="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
     Title="{Binding Title}"
@@ -14,10 +15,10 @@
     <ScrollView>
         <VerticalStackLayout Margin="20" Spacing="5">
 
-            <Label Text="{x:Static loc:Messages.Name}" />
+            <Label Text="{x:Static locArisoul:Messages.Name}" />
             <Entry IsTextPredictionEnabled="True" Text="{Binding TrackedAction.Name}" />
 
-            <Label Text="{x:Static loc:Messages.Description}" />
+            <Label Text="{x:Static locArisoul:Messages.Description}" />
             <Entry IsTextPredictionEnabled="True" Text="{Binding TrackedAction.Description}" />
 
 
@@ -130,7 +131,7 @@
             <btns:SfButton
                 Margin="0,5"
                 Command="{Binding SaveActionCommand}"
-                Text="{x:Static loc:Messages.Save}"
+                Text="{x:Static locArisoul:Messages.Save}"
                 VerticalOptions="End" />
         </VerticalStackLayout>
     </ScrollView>

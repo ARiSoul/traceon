@@ -6,7 +6,8 @@
     xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
     xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
-    xmlns:loc="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     Title="{Binding Title}"
     x:DataType="vm:ActionEntryCreateOrEditViewModel">
 
@@ -47,7 +48,7 @@
             <btns:SfButton
                 Margin="0,5"
                 Command="{Binding SaveCommand}"
-                Text="{x:Static loc:Messages.Save}" />
+                Text="{x:Static locArisoul:Messages.Save}" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

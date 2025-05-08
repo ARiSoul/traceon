@@ -150,4 +150,28 @@
   <data name="FieldDefinitionsForm" xml:space="preserve">
     <value>Field Definitions Form</value>
   </data>
+  <data name="DefaultName" xml:space="preserve">
+    <value>Default Name</value>
+  </data>
+  <data name="DefaultDescription" xml:space="preserve">
+    <value>Default Description</value>
+  </data>
+  <data name="DefaultIsRequired" xml:space="preserve">
+    <value>Is required by default</value>
+  </data>
+  <data name="FieldType" xml:space="preserve">
+    <value>Field Type</value>
+  </data>
+  <data name="DefaultMaxValue" xml:space="preserve">
+    <value>Default Max. Value</value>
+  </data>
+  <data name="DefaultMinValue" xml:space="preserve">
+    <value>Default Min. Value</value>
+  </data>
+  <data name="DropdownValuesSplitBy" xml:space="preserve">
+    <value>Dropdown Values (split by ;)</value>
+  </data>
+  <data name="SelectType" xml:space="preserve">
+    <value>Select Type</value>
+  </data>
 </root>

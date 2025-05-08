@@ -106,6 +106,60 @@ namespace Arisoul.Traceon.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Default Description.
+        /// </summary>
+        public static string DefaultDescription {
+            get {
+                return ResourceManager.GetString("DefaultDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is required by default.
+        /// </summary>
+        public static string DefaultIsRequired {
+            get {
+                return ResourceManager.GetString("DefaultIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Default Max. Value.
+        /// </summary>
+        public static string DefaultMaxValue {
+            get {
+                return ResourceManager.GetString("DefaultMaxValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Default Min. Value.
+        /// </summary>
+        public static string DefaultMinValue {
+            get {
+                return ResourceManager.GetString("DefaultMinValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Default Name.
+        /// </summary>
+        public static string DefaultName {
+            get {
+                return ResourceManager.GetString("DefaultName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dropdown Values (split by ;).
+        /// </summary>
+        public static string DropdownValuesSplitBy {
+            get {
+                return ResourceManager.GetString("DropdownValuesSplitBy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Field Definition.
         /// </summary>
         public static string Field_Definition {
@@ -142,6 +196,15 @@ namespace Arisoul.Traceon.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Field Type.
+        /// </summary>
+        public static string FieldType {
+            get {
+                return ResourceManager.GetString("FieldType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to New.
         /// </summary>
         public static string New_F {
@@ -156,6 +219,15 @@ namespace Arisoul.Traceon.Localization {
         public static string New_M {
             get {
                 return ResourceManager.GetString("New_M", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select Type.
+        /// </summary>
+        public static string SelectType {
+            get {
+                return ResourceManager.GetString("SelectType", resourceCulture);
             }
         }
     }

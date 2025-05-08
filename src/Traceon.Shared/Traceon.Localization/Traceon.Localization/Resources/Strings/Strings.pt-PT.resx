@@ -150,4 +150,28 @@
   <data name="FieldDefinitionsForm" xml:space="preserve">
     <value>Formulário de Definição de Campos</value>
   </data>
+  <data name="DefaultName" xml:space="preserve">
+    <value>Nome por Defeito</value>
+  </data>
+  <data name="DefaultDescription" xml:space="preserve">
+    <value>Descrição por Defeito</value>
+  </data>
+  <data name="DefaultIsRequired" xml:space="preserve">
+    <value>Obrigatório por defeito</value>
+  </data>
+  <data name="FieldType" xml:space="preserve">
+    <value>Tipo de Campo</value>
+  </data>
+  <data name="DefaultMaxValue" xml:space="preserve">
+    <value>Valor Max. por Defeito</value>
+  </data>
+  <data name="DefaultMinValue" xml:space="preserve">
+    <value>Valor Min. por Defeito</value>
+  </data>
+  <data name="DropdownValuesSplitBy" xml:space="preserve">
+    <value>Lista de Valores (separados por ;)</value>
+  </data>
+  <data name="SelectType" xml:space="preserve">
+    <value>Seleccionar Tipo</value>
+  </data>
 </root>

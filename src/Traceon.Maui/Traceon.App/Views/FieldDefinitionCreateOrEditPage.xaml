@@ -5,8 +5,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
     xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
-    xmlns:loc="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
+    xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
     Title="{Binding Title}"
     x:DataType="vm:FieldDefinitionCreateOrEditViewModel">
@@ -14,34 +16,38 @@
     <ScrollView>
         <VerticalStackLayout Margin="20" Spacing="5">
 
-            <Label Text="Default Name" />
+            <Label Text="{x:Static locTraceon:Strings.DefaultName}" />
             <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultName}" />
 
-            <Label Text="Default Description" />
+            <Label Text="{x:Static locTraceon:Strings.DefaultDescription}" />
             <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultDescription}" />
 
             <btns:SfCheckBox
                 x:Name="isRequiredCheckBox"
                 IsChecked="{Binding FieldDefinition.DefaultIsRequired}"
-                Text="Is required by default"
-                TextColor="White"/>
+                Text="{x:Static locTraceon:Strings.DefaultIsRequired}"
+                TextColor="White" />
 
-            <Label Text="Field Type" />
-            <Label Text="TODO" />
+            <Label Text="{x:Static locTraceon:Strings.FieldType}" />
+            <picker:SfPicker x:Name="picker">
+                <picker:SfPicker.HeaderView>
+                    <picker:PickerHeaderView Height="40" Text="{x:Static locTraceon:Strings.SelectType}" />
+                </picker:SfPicker.HeaderView>
+            </picker:SfPicker>
 
-            <Label Text="Default Max. Value" />
+            <Label Text="{x:Static locTraceon:Strings.DefaultMaxValue}" />
             <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultMaxValue}" />
 
-            <Label Text="Default Min. Value" />
+            <Label Text="{x:Static locTraceon:Strings.DefaultMinValue}" />
             <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultMinValue}" />
 
-            <Label Text="Dropdown Values (split by;)" />
+            <Label Text="{x:Static locTraceon:Strings.DropdownValuesSplitBy}" />
             <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DropdownValues}" />
 
             <btns:SfButton
                 Margin="0,5"
                 Command="{Binding SaveFieldCommand}"
-                Text="{x:Static loc:Messages.Save}"
+                Text="{x:Static locArisoul:Messages.Save}"
                 VerticalOptions="End" />
         </VerticalStackLayout>
     </ScrollView>
