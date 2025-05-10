@@ -70,6 +70,24 @@ namespace Arisoul.Traceon.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Action Entries.
+        /// </summary>
+        public static string ActionEntries {
+            get {
+                return ResourceManager.GetString("ActionEntries", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Action Entry.
+        /// </summary>
+        public static string ActionEntry {
+            get {
+                return ResourceManager.GetString("ActionEntry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Actions.
         /// </summary>
         public static string Actions {
@@ -162,9 +180,9 @@ namespace Arisoul.Traceon.Localization {
         /// <summary>
         ///   Looks up a localized string similar to Field Definition.
         /// </summary>
-        public static string Field_Definition {
+        public static string FieldDefinition {
             get {
-                return ResourceManager.GetString("Field Definition", resourceCulture);
+                return ResourceManager.GetString("FieldDefinition", resourceCulture);
             }
         }
         
@@ -201,6 +219,60 @@ namespace Arisoul.Traceon.Localization {
         public static string FieldType {
             get {
                 return ResourceManager.GetString("FieldType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Boolean.
+        /// </summary>
+        public static string FieldType_Boolean {
+            get {
+                return ResourceManager.GetString("FieldType_Boolean", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Date.
+        /// </summary>
+        public static string FieldType_Date {
+            get {
+                return ResourceManager.GetString("FieldType_Date", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Decimal.
+        /// </summary>
+        public static string FieldType_Decimal {
+            get {
+                return ResourceManager.GetString("FieldType_Decimal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dropdown.
+        /// </summary>
+        public static string FieldType_Dropdown {
+            get {
+                return ResourceManager.GetString("FieldType_Dropdown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Integer.
+        /// </summary>
+        public static string FieldType_Integer {
+            get {
+                return ResourceManager.GetString("FieldType_Integer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Text.
+        /// </summary>
+        public static string FieldType_Text {
+            get {
+                return ResourceManager.GetString("FieldType_Text", resourceCulture);
             }
         }
         

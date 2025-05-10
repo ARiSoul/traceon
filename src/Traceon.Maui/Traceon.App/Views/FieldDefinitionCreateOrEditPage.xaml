@@ -4,7 +4,10 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
+    xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
+    xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
     xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
+    xmlns:inputLayout="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
@@ -16,11 +19,13 @@
     <ScrollView>
         <VerticalStackLayout Margin="20" Spacing="5">
 
-            <Label Text="{x:Static locTraceon:Strings.DefaultName}" />
-            <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultName}" />
+            <inputLayout:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultName}">
+                <Entry IsTextPredictionEnabled="True" TextColor="Black" Text="{Binding FieldDefinition.DefaultName}" />
+            </inputLayout:SfTextInputLayout>
 
-            <Label Text="{x:Static locTraceon:Strings.DefaultDescription}" />
-            <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultDescription}" />
+            <inputLayout:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultDescription}">
+                <Editor IsTextPredictionEnabled="True" TextColor="Black" Text="{Binding FieldDefinition.DefaultDescription}" />
+            </inputLayout:SfTextInputLayout>
 
             <btns:SfCheckBox
                 x:Name="isRequiredCheckBox"
@@ -29,20 +34,32 @@
                 TextColor="White" />
 
             <Label Text="{x:Static locTraceon:Strings.FieldType}" />
-            <picker:SfPicker x:Name="picker">
-                <picker:SfPicker.HeaderView>
-                    <picker:PickerHeaderView Height="40" Text="{x:Static locTraceon:Strings.SelectType}" />
-                </picker:SfPicker.HeaderView>
-            </picker:SfPicker>
+            <editors:SfComboBox
+                x:Name="comboBox"
+                IsClearButtonVisible="False"
+                ItemsSource="{Binding FieldTypes}"
+                SelectedItem="{Binding SelectedFieldType}" />
 
-            <Label Text="{x:Static locTraceon:Strings.DefaultMaxValue}" />
-            <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultMaxValue}" />
+            <VerticalStackLayout IsVisible="{Binding IsIntegerTypeSelected}">
+                <Label Text="{x:Static locTraceon:Strings.DefaultMaxValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0" Value="{Binding DefaultIntegerMaxValue}" />
 
-            <Label Text="{x:Static locTraceon:Strings.DefaultMinValue}" />
-            <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultMinValue}" />
+                <Label Text="{x:Static locTraceon:Strings.DefaultMinValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0" Value="{Binding DefaultIntegerMinValue}" />
+            </VerticalStackLayout>
 
-            <Label Text="{x:Static locTraceon:Strings.DropdownValuesSplitBy}" />
-            <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DropdownValues}" />
+            <VerticalStackLayout IsVisible="{Binding IsDecimalTypeSelected}">
+                <Label Text="{x:Static locTraceon:Strings.DefaultMaxValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0.00######" Value="{Binding DefaultDecimalMaxValue}" />
+
+                <Label Text="{x:Static locTraceon:Strings.DefaultMinValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0.00######" Value="{Binding DefaultDecimalMinValue}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout IsVisible="{Binding IsDropdownTypeSelected}">
+                <Label Text="{x:Static locTraceon:Strings.DropdownValuesSplitBy}" />
+                <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DropdownValues}" />
+            </VerticalStackLayout>
 
             <btns:SfButton
                 Margin="0,5"

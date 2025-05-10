@@ -25,9 +25,20 @@ public partial class ActionEntryCreateOrEditViewModel
 
     public ActionEntryCreateOrEditViewModel(IUnitOfWork unitOfWork)
     {
-        Title = "Create or Edit Action Entry";
-
         _unitOfWork = unitOfWork;
+        SetTitle();
+    }
+
+    private void SetTitle()
+    {
+        if (ActionEntry == null)
+            return;
+
+        string actionName = $"{Arisoul.Localization.Strings.Messages.Create}";
+        if (ActionEntry.Id != Guid.Empty)
+            actionName = $"{Arisoul.Localization.Strings.Messages.Edit}";
+
+        Title = $"{actionName} - {Localization.Strings.ActionEntry}";
     }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)

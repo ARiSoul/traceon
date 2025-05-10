@@ -9,4 +9,8 @@
     <PackageReference Include="Arisoul.Core" Version="3.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Traceon.Shared\Traceon.Localization\Traceon.Localization\Traceon.Localization.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -17,9 +17,23 @@ public partial class TrackedActionCreateOrEditViewModel
 
     public TrackedActionCreateOrEditViewModel(IUnitOfWork unitOfWork)
     {
-        Title = "Create or Edit Tracked Action";
-
         _unitOfWork = unitOfWork;
+
+        PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(TrackedAction))
+                if (TrackedAction != null)
+                    SetTitle();
+        };
+    }
+
+    private void SetTitle()
+    {
+        string actionName = $"{Arisoul.Localization.Strings.Messages.Create}";
+        if (TrackedAction.Id != Guid.Empty)
+            actionName = $"{Arisoul.Localization.Strings.Messages.Edit}";
+
+        Title = $"{actionName} - {Localization.Strings.Action}";
     }
 
     [RelayCommand]
