@@ -17,6 +17,7 @@ public partial class FieldDefinitionsViewModel : ArisoulMauiBaseViewModel
     [ObservableProperty] private string _searchQuery = string.Empty;
     [ObservableProperty] private FieldDefinition? _selectedFieldDefinition;
     [ObservableProperty] private bool _isSelectionMode;
+    [ObservableProperty] private List<Guid> _fieldsToHide;
 
     public FieldDefinitionsViewModel(IUnitOfWork unitOfWork)
     {
@@ -28,6 +29,12 @@ public partial class FieldDefinitionsViewModel : ArisoulMauiBaseViewModel
     internal async Task LoadFieldDefinitionsAsync()
     {
         var all = await _unitOfWork.FieldDefinitions.GetAllAsync();
+
+        if (FieldsToHide.Count > 0)
+        {
+            all = [.. all.Where(fd => !FieldsToHide.Any(fth => fth.Equals(fd.Id)))];
+        }
+
         _allFieldDefinitions = [.. all.OrderBy(a => a.DefaultName)];
         Search(SearchQuery);
     }

@@ -1,9 +1,7 @@
 ﻿using Arisoul.Core.Maui.Models;
 using Arisoul.Traceon.App.Messages;
-using Arisoul.Traceon.App.Views;
 using Arisoul.Traceon.Maui.Core.Entities;
 using Arisoul.Traceon.Maui.Core.Interfaces;
-using Arisoul.Traceon.Maui.Infrastructure.UnitOfWork;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -33,7 +31,15 @@ public partial class TrackedActionCreateOrEditViewModel
         WeakReferenceMessenger.Default.Register<FieldDefinitionSelectedMessage>(this, (r, m) =>
         {
             var selected = m.Value;
-            // Handle the selected field definition
+            TrackedAction.Fields.Add(new ActionField
+            {
+                Description = selected.DefaultDescription,
+                FieldDefinitionId = selected.Id,
+                IsRequired = selected.DefaultIsRequired,
+                MaxValue = selected.DefaultMaxValue,
+                MinValue = selected.DefaultMinValue,
+                Name = selected.DefaultName
+            });
         });
     }
 
@@ -69,16 +75,12 @@ public partial class TrackedActionCreateOrEditViewModel
     }
 
     [RelayCommand]
-    async Task AddActionFieldAsync()
+    void AddActionField()
     {
         if (TrackedAction == null)
             return;
 
-        var fieldDefinitionsViewModel = new FieldDefinitionsViewModel(_unitOfWork)
-        {
-            IsSelectionMode = true
-        };
-
-        await Shell.Current.Navigation.PushAsync(new FieldDefinitionsPage(fieldDefinitionsViewModel));
+        var fieldsToHide = TrackedAction.Fields.Select(f => f.FieldDefinitionId).ToList();
+        WeakReferenceMessenger.Default.Send(new NavigateToFieldDefinitionsMessage(_unitOfWork, true, fieldsToHide));
     }
 }

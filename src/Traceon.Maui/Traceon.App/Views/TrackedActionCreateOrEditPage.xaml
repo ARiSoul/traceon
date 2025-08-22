@@ -8,6 +8,7 @@
     xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
+    xmlns:sf="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
     Title="{Binding Title}"
     x:DataType="vm:TrackedActionCreateOrEditViewModel">
@@ -33,10 +34,10 @@
                             VerticalOptions="Center" />
                         <btns:SfButton
                             Margin="0,5"
+                            Command="{Binding AddActionFieldCommand}"
                             FontFamily="FAR"
                             HorizontalOptions="End"
-                            Text="{x:Static fonts:IconFont.SquarePlus}"
-                            Command="{Binding AddActionFieldCommand}"/>
+                            Text="{x:Static fonts:IconFont.SquarePlus}" />
                     </Grid>
                 </CollectionView.Header>
                 <CollectionView.ItemTemplate>
@@ -47,81 +48,49 @@
                                 Grid.Column="0"
                                 Margin="0,10"
                                 Padding="10"
-                                ColumnDefinitions="*,auto"
+                                RowSpacing="3"
                                 RowDefinitions="*,*,*">
-                                <Label
+                                <sf:SfTextInputLayout
                                     Grid.Row="0"
                                     Grid.Column="0"
-                                    FontAttributes="Bold"
-                                    FontSize="18"
-                                    Text="{Binding Name, Mode=TwoWay}" />
-                                <Label
+                                    Hint="{x:Static locArisoul:Messages.Name}">
+                                    <Entry Text="{Binding Name, Mode=TwoWay}"/>
+                                </sf:SfTextInputLayout>
+                                <sf:SfTextInputLayout
                                     Grid.Row="1"
-                                    Grid.RowSpan="2"
                                     Grid.Column="0"
-                                    FontSize="13"
-                                    Text="{Binding Description, Mode=TwoWay}"
-                                    TextColor="Gray" />
-                                <Label
-                                    Grid.Row="0"
-                                    Grid.Column="1"
-                                    FontSize="16"
-                                    HorizontalTextAlignment="Center"
-                                    Text="Entries" />
-                                <btns:SfButton
-                                    Grid.Row="1"
-                                    Grid.Column="1"
-                                    Background="LimeGreen"
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=HandleSelectedActionCommand}"
-                                    CommandParameter="{Binding .}"
-                                    CornerRadius="40"
-                                    WidthRequest="40">
-                                    <Label
-                                        FontAttributes="Bold"
-                                        FontSize="16"
-                                        HorizontalOptions="Center"
-                                        Text="{Binding Entries.Count}"
-                                        TextColor="White"
-                                        VerticalOptions="Center" />
-                                </btns:SfButton>
-                                <BoxView
-                                    Grid.Row="2"
-                                    Grid.ColumnSpan="3"
-                                    HeightRequest="1"
-                                    Color="White" />
+                                    Hint="{x:Static locArisoul:Messages.Description}">
+                                    <Entry Text="{Binding Description, Mode=TwoWay}"/>
+                                </sf:SfTextInputLayout>
+                                <Grid Grid.Row="2" ColumnDefinitions="*,*,*" ColumnSpacing="3">
+                                    <Entry
+                                        Grid.Column="0"
+                                        Placeholder="{x:Static locTraceon:Strings.DefaultMaxValue}"
+                                        Text="{Binding MaxValue, Mode=TwoWay}" />
+                                    <Entry
+                                        Grid.Column="1"
+                                        Placeholder="{x:Static locTraceon:Strings.DefaultMinValue}"
+                                        Text="{Binding MinValue, Mode=TwoWay}" />
+                                    <HorizontalStackLayout Grid.Column="2" Padding="10,0,0,0">
+                                        <Label Text="{x:Static locTraceon:Strings.DefaultIsRequired}" VerticalOptions="Center" />
+                                        <CheckBox IsChecked="{Binding IsRequired, Mode=TwoWay}" />
+                                    </HorizontalStackLayout>
+                                </Grid>
                             </Grid>
 
-                            <HorizontalStackLayout
+                            <ImageButton
                                 Grid.Column="1"
-                                Padding="15"
-                                Spacing="3">
-
-                                <ImageButton
-                                    BackgroundColor="Transparent"
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=CreateOrEditActionCommand}"
-                                    CommandParameter="{Binding .}">
-                                    <ImageButton.Source>
-                                        <FontImageSource
-                                            FontFamily="FAR"
-                                            Glyph="{x:Static fonts:IconFont.PenToSquare}"
-                                            Size="24"
-                                            Color="Green" />
-                                    </ImageButton.Source>
-                                </ImageButton>
-
-                                <ImageButton
-                                    BackgroundColor="Transparent"
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=DeleteActionCommand}"
-                                    CommandParameter="{Binding .}">
-                                    <ImageButton.Source>
-                                        <FontImageSource
-                                            FontFamily="FAR"
-                                            Glyph="{x:Static fonts:IconFont.TrashCan}"
-                                            Size="24"
-                                            Color="Red" />
-                                    </ImageButton.Source>
-                                </ImageButton>
-                            </HorizontalStackLayout>
+                                BackgroundColor="Transparent"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=DeleteActionCommand}"
+                                CommandParameter="{Binding .}">
+                                <ImageButton.Source>
+                                    <FontImageSource
+                                        FontFamily="FAR"
+                                        Glyph="{x:Static fonts:IconFont.TrashCan}"
+                                        Size="32"
+                                        Color="Red" />
+                                </ImageButton.Source>
+                            </ImageButton>
 
                         </Grid>
                     </DataTemplate>
