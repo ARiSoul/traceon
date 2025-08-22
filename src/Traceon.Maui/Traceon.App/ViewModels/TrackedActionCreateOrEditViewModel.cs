@@ -1,8 +1,12 @@
 ﻿using Arisoul.Core.Maui.Models;
+using Arisoul.Traceon.App.Messages;
+using Arisoul.Traceon.App.Views;
 using Arisoul.Traceon.Maui.Core.Entities;
 using Arisoul.Traceon.Maui.Core.Interfaces;
+using Arisoul.Traceon.Maui.Infrastructure.UnitOfWork;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
@@ -25,6 +29,12 @@ public partial class TrackedActionCreateOrEditViewModel
                 if (TrackedAction != null)
                     SetTitle();
         };
+
+        WeakReferenceMessenger.Default.Register<FieldDefinitionSelectedMessage>(this, (r, m) =>
+        {
+            var selected = m.Value;
+            // Handle the selected field definition
+        });
     }
 
     private void SetTitle()
@@ -56,5 +66,19 @@ public partial class TrackedActionCreateOrEditViewModel
         await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
 
         await Shell.Current.GoToAsync("..");
+    }
+
+    [RelayCommand]
+    async Task AddActionFieldAsync()
+    {
+        if (TrackedAction == null)
+            return;
+
+        var fieldDefinitionsViewModel = new FieldDefinitionsViewModel(_unitOfWork)
+        {
+            IsSelectionMode = true
+        };
+
+        await Shell.Current.Navigation.PushAsync(new FieldDefinitionsPage(fieldDefinitionsViewModel));
     }
 }

@@ -1,8 +1,10 @@
 ﻿using Arisoul.Core.Maui.Models;
+using Arisoul.Traceon.App.Messages;
 using Arisoul.Traceon.Maui.Core.Entities;
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Collections.ObjectModel;
 
 namespace Arisoul.Traceon.App.ViewModels;
@@ -14,7 +16,8 @@ public partial class FieldDefinitionsViewModel : ArisoulMauiBaseViewModel
     
     [ObservableProperty] private string _searchQuery = string.Empty;
     [ObservableProperty] private FieldDefinition? _selectedFieldDefinition;
-    
+    [ObservableProperty] private bool _isSelectionMode;
+
     public FieldDefinitionsViewModel(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
@@ -92,6 +95,12 @@ public partial class FieldDefinitionsViewModel : ArisoulMauiBaseViewModel
 
     private async Task HandleSelectionCoreAsync(FieldDefinition field)
     {
-        await CreateOrEditFieldDefinitionAsync(field);
+        if (IsSelectionMode)
+        {
+            WeakReferenceMessenger.Default.Send(new FieldDefinitionSelectedMessage(field));
+            await Shell.Current.GoToAsync("..");
+        }
+        else
+            await CreateOrEditFieldDefinitionAsync(field);
     }
 }

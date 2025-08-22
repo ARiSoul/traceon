@@ -8,9 +8,16 @@
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
+             xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
     Title="{x:Static locTraceon:Strings.FieldDefinitions}"
     x:DataType="vm:FieldDefinitionsViewModel">
 
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    
     <Grid
         Padding="20,0,20,0"
         RowDefinitions="0.1*, 0.90*,0.1*"
@@ -61,7 +68,8 @@
                                 <HorizontalStackLayout
                                     Grid.Column="1"
                                     Padding="15"
-                                    Spacing="3">
+                                    Spacing="3"
+                                    IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:FieldDefinitionsViewModel}}, Path=IsSelectionMode, Converter={StaticResource InverseBoolConverter}}">
 
                                     <ImageButton
                                         BackgroundColor="Transparent"

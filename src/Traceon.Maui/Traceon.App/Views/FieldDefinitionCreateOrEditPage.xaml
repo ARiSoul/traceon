@@ -30,8 +30,7 @@
             <btns:SfCheckBox
                 x:Name="isRequiredCheckBox"
                 IsChecked="{Binding FieldDefinition.DefaultIsRequired}"
-                Text="{x:Static locTraceon:Strings.DefaultIsRequired}"
-                TextColor="White" />
+                Text="{x:Static locTraceon:Strings.DefaultIsRequired}" />
 
             <Label Text="{x:Static locTraceon:Strings.FieldType}" />
             <editors:SfComboBox

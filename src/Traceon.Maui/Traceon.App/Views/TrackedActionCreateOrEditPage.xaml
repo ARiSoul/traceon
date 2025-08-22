@@ -25,7 +25,6 @@
             <!--  SelectedItem="{Binding SelectedActionField, Mode=TwoWay}"  -->
             <CollectionView ItemsSource="{Binding TrackedAction.Fields}" SelectionMode="Single">
                 <CollectionView.Header>
-                    <!--  Command="{Binding AddActionFieldCommand}"  -->
                     <Grid>
                         <Label
                             FontAttributes="Bold"
@@ -36,7 +35,8 @@
                             Margin="0,5"
                             FontFamily="FAR"
                             HorizontalOptions="End"
-                            Text="{x:Static fonts:IconFont.SquarePlus}" />
+                            Text="{x:Static fonts:IconFont.SquarePlus}"
+                            Command="{Binding AddActionFieldCommand}"/>
                     </Grid>
                 </CollectionView.Header>
                 <CollectionView.ItemTemplate>
