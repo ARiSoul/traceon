@@ -1,26 +1,25 @@
 ﻿using Arisoul.Traceon.Maui.Core.Interfaces;
 using Arisoul.Traceon.Maui.Infrastructure.Data;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Arisoul.Traceon.Maui.Infrastructure.UnitOfWork;
 
 public class UnitOfWork : IUnitOfWork
 {
     private readonly TraceonDbContext _context;
+    private readonly IServiceProvider _serviceProvider;
 
-    public IFieldDefinitionRepository FieldDefinitions { get; }
-    public ITagRepository Tags { get; }
-    public ITrackedActionRepository TrackedActions { get; }
+    public IFieldDefinitionRepository FieldDefinitions => _serviceProvider.GetRequiredService<IFieldDefinitionRepository>();
+    public ITagRepository Tags => _serviceProvider.GetRequiredService<ITagRepository>();
+    public ITrackedActionRepository TrackedActions => _serviceProvider.GetRequiredService<ITrackedActionRepository>();
+    public IActionFieldRepository ActionFields => _serviceProvider.GetRequiredService<IActionFieldRepository>();
 
     public UnitOfWork(
         TraceonDbContext context,
-        IFieldDefinitionRepository fieldDefinitions,
-        ITagRepository tags,
-        ITrackedActionRepository trackedActions)
+        IServiceProvider serviceProvider)
     {
         _context = context;
-        FieldDefinitions = fieldDefinitions;
-        Tags = tags;
-        TrackedActions = trackedActions;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<int> SaveChangesAsync()

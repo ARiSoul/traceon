@@ -198,4 +198,13 @@
   <data name="ActionEntries" xml:space="preserve">
     <value>Registos de Acção</value>
   </data>
+  <data name="MaxValue" xml:space="preserve">
+    <value>Valor Max.</value>
+  </data>
+  <data name="MinValue" xml:space="preserve">
+    <value>Valor Min.</value>
+  </data>
+  <data name="IsRequired" xml:space="preserve">
+    <value>Obrigatório</value>
+  </data>
 </root>

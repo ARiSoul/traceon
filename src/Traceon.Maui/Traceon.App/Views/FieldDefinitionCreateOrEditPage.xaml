@@ -7,7 +7,7 @@
     xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
     xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
     xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
-    xmlns:inputLayout="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
+    xmlns:sfCore="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
@@ -19,13 +19,13 @@
     <ScrollView>
         <VerticalStackLayout Margin="20" Spacing="5">
 
-            <inputLayout:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultName}">
+            <sfCore:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultName}">
                 <Entry IsTextPredictionEnabled="True" TextColor="Black" Text="{Binding FieldDefinition.DefaultName}" />
-            </inputLayout:SfTextInputLayout>
+            </sfCore:SfTextInputLayout>
 
-            <inputLayout:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultDescription}">
+            <sfCore:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultDescription}">
                 <Editor IsTextPredictionEnabled="True" TextColor="Black" Text="{Binding FieldDefinition.DefaultDescription}" />
-            </inputLayout:SfTextInputLayout>
+            </sfCore:SfTextInputLayout>
 
             <btns:SfCheckBox
                 x:Name="isRequiredCheckBox"
@@ -41,18 +41,18 @@
 
             <VerticalStackLayout IsVisible="{Binding IsIntegerTypeSelected}">
                 <Label Text="{x:Static locTraceon:Strings.DefaultMaxValue}" />
-                <editors:SfNumericEntry CustomFormat="#,0" Value="{Binding DefaultIntegerMaxValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0" Value="{Binding DefaultIntegerMaxValue}" UpDownPlacementMode="Inline" />
 
                 <Label Text="{x:Static locTraceon:Strings.DefaultMinValue}" />
-                <editors:SfNumericEntry CustomFormat="#,0" Value="{Binding DefaultIntegerMinValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0" Value="{Binding DefaultIntegerMinValue}" UpDownPlacementMode="Inline" />
             </VerticalStackLayout>
 
             <VerticalStackLayout IsVisible="{Binding IsDecimalTypeSelected}">
                 <Label Text="{x:Static locTraceon:Strings.DefaultMaxValue}" />
-                <editors:SfNumericEntry CustomFormat="#,0.00######" Value="{Binding DefaultDecimalMaxValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0.00######" Value="{Binding DefaultDecimalMaxValue}" UpDownPlacementMode="Inline" />
 
                 <Label Text="{x:Static locTraceon:Strings.DefaultMinValue}" />
-                <editors:SfNumericEntry CustomFormat="#,0.00######" Value="{Binding DefaultDecimalMinValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0.00######" Value="{Binding DefaultDecimalMinValue}" UpDownPlacementMode="Inline" />
             </VerticalStackLayout>
 
             <VerticalStackLayout IsVisible="{Binding IsDropdownTypeSelected}">

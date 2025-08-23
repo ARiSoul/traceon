@@ -4,14 +4,22 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
+    xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
+    xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
     xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
     xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
-    xmlns:sf="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
+    xmlns:sfCore="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
     Title="{Binding Title}"
     x:DataType="vm:TrackedActionCreateOrEditViewModel">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <ScrollView>
         <VerticalStackLayout Margin="20" Spacing="5">
@@ -42,46 +50,81 @@
                 </CollectionView.Header>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="m:ActionField">
-                        <Grid ColumnDefinitions="*,auto" HorizontalOptions="Fill">
+                        <Grid ColumnDefinitions="*,*" HorizontalOptions="Fill">
 
                             <Grid
                                 Grid.Column="0"
                                 Margin="0,10"
                                 Padding="10"
-                                RowSpacing="3"
-                                RowDefinitions="*,*,*">
-                                <sf:SfTextInputLayout
+                                RowDefinitions="*,*,*"
+                                RowSpacing="3">
+                                <sfCore:SfTextInputLayout
                                     Grid.Row="0"
                                     Grid.Column="0"
                                     Hint="{x:Static locArisoul:Messages.Name}">
-                                    <Entry Text="{Binding Name, Mode=TwoWay}"/>
-                                </sf:SfTextInputLayout>
-                                <sf:SfTextInputLayout
+                                    <Entry Text="{Binding Name, Mode=TwoWay}" />
+                                </sfCore:SfTextInputLayout>
+                                <sfCore:SfTextInputLayout
                                     Grid.Row="1"
                                     Grid.Column="0"
                                     Hint="{x:Static locArisoul:Messages.Description}">
-                                    <Entry Text="{Binding Description, Mode=TwoWay}"/>
-                                </sf:SfTextInputLayout>
-                                <Grid Grid.Row="2" ColumnDefinitions="*,*,*" ColumnSpacing="3">
-                                    <Entry
-                                        Grid.Column="0"
-                                        Placeholder="{x:Static locTraceon:Strings.DefaultMaxValue}"
-                                        Text="{Binding MaxValue, Mode=TwoWay}" />
-                                    <Entry
-                                        Grid.Column="1"
-                                        Placeholder="{x:Static locTraceon:Strings.DefaultMinValue}"
-                                        Text="{Binding MinValue, Mode=TwoWay}" />
-                                    <HorizontalStackLayout Grid.Column="2" Padding="10,0,0,0">
-                                        <Label Text="{x:Static locTraceon:Strings.DefaultIsRequired}" VerticalOptions="Center" />
-                                        <CheckBox IsChecked="{Binding IsRequired, Mode=TwoWay}" />
-                                    </HorizontalStackLayout>
+                                    <Entry Text="{Binding Description, Mode=TwoWay}" />
+                                </sfCore:SfTextInputLayout>
+                                <Grid
+                                    Grid.Row="2"
+                                    ColumnDefinitions="*,*,*"
+                                    ColumnSpacing="3"
+                                    IsVisible="{Binding CanHaveMaxAndMinValues}">
+                                    <VerticalStackLayout Grid.Column="0" IsVisible="{Binding IsIntegerType}">
+                                        <Label Text="{x:Static locTraceon:Strings.MaxValue}" />
+                                        <editors:SfNumericEntry
+                                            CustomFormat="#,0"
+                                            UpDownPlacementMode="Inline"
+                                            Value="{Binding MaxValue}" />
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Column="1" IsVisible="{Binding IsIntegerType}">
+                                        <Label Text="{x:Static locTraceon:Strings.MinValue}" />
+                                        <editors:SfNumericEntry
+                                            CustomFormat="#,0"
+                                            UpDownPlacementMode="Inline"
+                                            Value="{Binding MinValue}" />
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Column="0" IsVisible="{Binding IsDecimalType}">
+                                        <Label Text="{x:Static locTraceon:Strings.MaxValue}" />
+                                        <editors:SfNumericEntry
+                                            CustomFormat="#,0.00######"
+                                            UpDownPlacementMode="Inline"
+                                            Value="{Binding MaxValue}" />
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Column="1" IsVisible="{Binding IsDecimalType}">
+                                        <Label Text="{x:Static locTraceon:Strings.MinValue}" />
+                                        <editors:SfNumericEntry
+                                            CustomFormat="#,0.00######"
+                                            UpDownPlacementMode="Inline"
+                                            Value="{Binding MinValue}" />
+                                    </VerticalStackLayout>
+
+                                    <btns:SfCheckBox
+                                        Grid.Column="2"
+                                        IsChecked="{Binding IsRequired}"
+                                        Text="{x:Static locTraceon:Strings.IsRequired}"
+                                        VerticalOptions="End" />
+
                                 </Grid>
+                                <btns:SfCheckBox
+                                    Grid.Row="2"
+                                    IsChecked="{Binding IsRequired}"
+                                    IsVisible="{Binding CanHaveMaxAndMinValues, Converter={StaticResource InverseBoolConverter}}"
+                                    Text="{x:Static locTraceon:Strings.IsRequired}" />
                             </Grid>
 
                             <ImageButton
                                 Grid.Column="1"
                                 BackgroundColor="Transparent"
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=DeleteActionCommand}"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionCreateOrEditViewModel}}, Path=DeleteActionFieldCommand}"
                                 CommandParameter="{Binding .}">
                                 <ImageButton.Source>
                                     <FontImageSource

@@ -1,5 +1,6 @@
 ﻿// Ignore Spelling: Traceon
 
+using Arisoul.Core.Root.Extensions;
 using Arisoul.Traceon.Maui.Core.Entities;
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -124,7 +125,8 @@ public class TraceonDbContext(DbContextOptions<TraceonDbContext> options) : DbCo
                     break;
             }
 
-            auditEntries.Add(audit);
+            if (audit.OldValues != audit.NewValues)
+                auditEntries.Add(audit);
         }
 
         return auditEntries;

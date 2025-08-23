@@ -4,10 +4,7 @@ using Arisoul.Traceon.Maui.Infrastructure.Data;
 
 namespace Arisoul.Traceon.Maui.Infrastructure.Repositories;
 
-public class FieldDefinitionRepository
-    : BaseRepository<FieldDefinition>, IFieldDefinitionRepository
+public class FieldDefinitionRepository(TraceonDbContext context)
+        : BaseRepository<FieldDefinition>(context), IFieldDefinitionRepository
 {
-    public FieldDefinitionRepository(TraceonDbContext context) : base(context)
-    {
-    }
 }

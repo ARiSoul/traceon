@@ -4,11 +4,7 @@ using Arisoul.Traceon.Maui.Infrastructure.Data;
 
 namespace Arisoul.Traceon.Maui.Infrastructure.Repositories;
 
-public class TagRepository
-    : BaseRepository<Tag>, ITagRepository
+public class TagRepository(TraceonDbContext context)
+        : BaseRepository<Tag>(context), ITagRepository
 {
-    public TagRepository(TraceonDbContext context) 
-        : base(context)
-    {
-    }
 }

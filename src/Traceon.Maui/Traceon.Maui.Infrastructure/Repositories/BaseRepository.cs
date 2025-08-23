@@ -16,24 +16,24 @@ public class BaseRepository<TEntity>
         _dbSet = context.Set<TEntity>();
     }
 
-    public async Task<IEnumerable<TEntity>> GetAllAsync() =>
-        await _dbSet.ToListAsync();
+    public virtual async Task<IEnumerable<TEntity>> GetAllAsync() =>
+        await _dbSet.AsNoTracking().ToListAsync();
 
-    public async Task<TEntity?> GetByIdAsync(Guid id) =>
+    public virtual async Task<TEntity?> GetByIdAsync(Guid id) =>
         await _dbSet.FindAsync(id);
 
-    public async Task CreateAsync(TEntity entity)
+    public virtual async Task CreateAsync(TEntity entity)
     {
         await _dbSet.AddAsync(entity);
     }
 
-    public Task UpdateAsync(TEntity entity)
+    public virtual Task UpdateAsync(TEntity entity)
     {
         _dbSet.Update(entity);
         return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Guid id)
+    public virtual async Task DeleteAsync(Guid id)
     {
         var entity = await GetByIdAsync(id);
         if (entity != null)

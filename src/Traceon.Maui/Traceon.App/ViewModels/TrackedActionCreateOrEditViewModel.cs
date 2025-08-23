@@ -5,6 +5,7 @@ using Arisoul.Traceon.Maui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using System.Threading.Tasks;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
@@ -38,7 +39,8 @@ public partial class TrackedActionCreateOrEditViewModel
                 IsRequired = selected.DefaultIsRequired,
                 MaxValue = selected.DefaultMaxValue,
                 MinValue = selected.DefaultMinValue,
-                Name = selected.DefaultName
+                Name = selected.DefaultName,
+                FieldDefinition = selected
             });
         });
     }
@@ -82,5 +84,16 @@ public partial class TrackedActionCreateOrEditViewModel
 
         var fieldsToHide = TrackedAction.Fields.Select(f => f.FieldDefinitionId).ToList();
         WeakReferenceMessenger.Default.Send(new NavigateToFieldDefinitionsMessage(_unitOfWork, true, fieldsToHide));
+    }
+
+    [RelayCommand]
+    async Task DeleteActionField(ActionField actionField)
+    {
+        if (actionField is null)
+            return;
+
+        TrackedAction.Fields.Remove(actionField);
+
+        await _unitOfWork.ActionFields.DeleteAsync(actionField.ActionId, actionField.FieldDefinitionId).ConfigureAwait(false);
     }
 }

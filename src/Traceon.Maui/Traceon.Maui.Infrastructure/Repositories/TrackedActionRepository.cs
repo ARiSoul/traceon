@@ -2,15 +2,45 @@
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using Arisoul.Traceon.Maui.Infrastructure.Data;
 using Arisoul.Traceon.Maui.Infrastructure.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace Arisoul.Traceon.Maui.Infrastructure.Repositories;
 
-public class TrackedActionRepository 
-    : BaseRepository<TrackedAction>, ITrackedActionRepository
+public class TrackedActionRepository(TraceonDbContext context)
+        : BaseRepository<TrackedAction>(context), ITrackedActionRepository
 {
-    public TrackedActionRepository(TraceonDbContext context) : base(context) { }
 
     #region Public Methods
+
+    #region Actions Overrides
+
+    public override async Task<IEnumerable<TrackedAction>> GetAllAsync()
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(a => a.Tags)
+            .Include(a => a.Entries)
+            .Include(a => a.Fields)
+                .ThenInclude(af => af.FieldDefinition)
+                .ToListAsync()
+                .ConfigureAwait(false);
+    }
+
+    public override async Task<TrackedAction?> GetByIdAsync(Guid id)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(a => a.Tags)
+            .Include(a => a.Entries)
+            .Include(a => a.Fields)
+                .ThenInclude(af => af.FieldDefinition)
+            .FirstOrDefaultAsync(a => a.Id == id)
+            .ConfigureAwait(false);
+    }
+
+    #endregion Actions Overrides
 
     #region Entries
 

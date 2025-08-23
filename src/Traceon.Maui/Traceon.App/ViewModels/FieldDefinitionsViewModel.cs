@@ -17,7 +17,7 @@ public partial class FieldDefinitionsViewModel : ArisoulMauiBaseViewModel
     [ObservableProperty] private string _searchQuery = string.Empty;
     [ObservableProperty] private FieldDefinition? _selectedFieldDefinition;
     [ObservableProperty] private bool _isSelectionMode;
-    [ObservableProperty] private List<Guid> _fieldsToHide;
+    [ObservableProperty] private List<Guid> _fieldsToHide = [];
 
     public FieldDefinitionsViewModel(IUnitOfWork unitOfWork)
     {
