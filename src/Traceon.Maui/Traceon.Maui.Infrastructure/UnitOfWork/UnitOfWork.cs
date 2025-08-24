@@ -24,7 +24,11 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task<int> SaveChangesAsync()
     {
-        return await _context.SaveChangesAsync();
+        var affected = await _context.SaveChangesAsync().ConfigureAwait(false);
+
+        _context.ChangeTracker.Clear();
+
+        return affected;
     }
 
     public void Dispose()
