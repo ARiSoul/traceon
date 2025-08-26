@@ -52,7 +52,8 @@ public partial class ActionEntryCreateOrEditViewModel
             {
                 ActionEntry = new ActionEntry
                 {
-                    ActionId = TrackedAction.Id
+                    ActionId = TrackedAction.Id,
+                    Timestamp = DateTime.Now
                 };
             }
             else

@@ -3,11 +3,11 @@
     x:Class="Arisoul.Traceon.App.Views.ActionEntryCreateOrEditPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
     xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
-    xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
     xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
+    xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
+    xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
     Title="{Binding Title}"
     x:DataType="vm:ActionEntryCreateOrEditViewModel">
 
@@ -22,7 +22,8 @@
                 x:Name="picker"
                 DateFormat="dd_MMM_yyyy"
                 SelectedDate="{Binding ActionEntry.Timestamp, Mode=TwoWay}"
-                TextDisplayMode="FadeAndShrink" />
+                TextDisplayMode="FadeAndShrink"
+                TimeFormat="HH_mm" />
 
             <!--<DatePicker Date="{Binding EntryDate}" />
             <TimePicker Time="{Binding EntryTime}" />-->
@@ -44,7 +45,7 @@
                 HeightRequest="100"
                 Placeholder="Notes"
                 Text="{Binding ActionEntry.Notes}" />-->
-            
+
             <btns:SfButton
                 Margin="0,5"
                 Command="{Binding SaveCommand}"

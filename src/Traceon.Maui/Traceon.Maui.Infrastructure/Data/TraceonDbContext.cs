@@ -25,11 +25,10 @@ public class TraceonDbContext(DbContextOptions<TraceonDbContext> options) : DbCo
 
         // JSON conversion for FieldValues
         modelBuilder.Entity<ActionEntry>()
-            .Property(e => e.FieldValues)
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, (JsonSerializerOptions?)null))
-            .HasColumnType("TEXT");
+            .HasMany(e => e.Fields)
+            .WithOne(e => e.ActionEntry)
+            .HasForeignKey(e => e.ActionEntryId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Composite key for ActionTag (many-to-many)
         modelBuilder.Entity<ActionTag>()
