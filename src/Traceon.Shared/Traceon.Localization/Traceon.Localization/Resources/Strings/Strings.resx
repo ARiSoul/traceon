@@ -207,4 +207,7 @@
   <data name="IsRequired" xml:space="preserve">
     <value>Is Required</value>
   </data>
+  <data name="Fields" xml:space="preserve">
+    <value>Fields</value>
+  </data>
 </root>

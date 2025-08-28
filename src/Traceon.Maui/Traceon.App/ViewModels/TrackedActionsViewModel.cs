@@ -101,8 +101,6 @@ public partial class TrackedActionsViewModel : ArisoulMauiBaseViewModel
                 { "EntryId", Guid.Empty.ToString() }
             };
 
-        // TODO: apply more controls from syncfusion (first check the time and date pickers)
-
         await Shell.Current.GoToAsync(nameof(Views.ActionEntryCreateOrEditPage), true, parameters).ConfigureAwait(false);
     }
 }

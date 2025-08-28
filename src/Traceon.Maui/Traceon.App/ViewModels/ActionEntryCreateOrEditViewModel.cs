@@ -55,6 +55,18 @@ public partial class ActionEntryCreateOrEditViewModel
                     ActionId = TrackedAction.Id,
                     Timestamp = DateTime.Now
                 };
+
+                foreach (var actionField in TrackedAction.Fields)
+                {
+                    ActionEntry.Fields.Add(new ActionEntryField
+                    {
+                        FieldDefinitionId = actionField.FieldDefinitionId,
+                        FieldDefinition = actionField.FieldDefinition,
+                        ActionEntryId = ActionEntry.Id,
+                        ActionField = actionField,
+                        Value = string.Empty
+                    });
+                }
             }
             else
             {

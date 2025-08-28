@@ -4,13 +4,25 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
+    xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
     xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
+    xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Entities;assembly=Traceon.Maui.Core"
     xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
+    xmlns:sfCore="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
+    xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
     Title="{Binding Title}"
     x:DataType="vm:ActionEntryCreateOrEditViewModel">
 
+    <ContentPage.Resources>
+        <conv:InverseBoolConverter x:Key="invBool" />
+        <conv:MaxIntegerValueConverter x:Key="maxInt" />
+        <conv:MinIntegerValueConverter x:Key="minInt" />
+        <conv:MaxDecimalValueConverter x:Key="maxDec" />
+        <conv:MinDecimalValueConverter x:Key="minDec" />
+    </ContentPage.Resources>
+    
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="16">
             <Label
@@ -25,26 +37,78 @@
                 TextDisplayMode="FadeAndShrink"
                 TimeFormat="HH_mm" />
 
-            <!--<DatePicker Date="{Binding EntryDate}" />
-            <TimePicker Time="{Binding EntryTime}" />-->
-            <!--<TimePicker Time="{Binding ActionEntry.Duration}" />-->
+            <CollectionView ItemsSource="{Binding ActionEntry.Fields}" SelectionMode="Single">
+                <CollectionView.Header>
+                    <Grid>
+                        <Label
+                            FontAttributes="Bold"
+                            HorizontalOptions="Center"
+                            Text="{x:Static locTraceon:Strings.Fields}"
+                            VerticalOptions="Center" />
+                    </Grid>
+                </CollectionView.Header>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="m:ActionEntryField">
+                        <Grid HorizontalOptions="Fill" RowDefinitions="*,*" RowSpacing="3">
 
-            <!--<Label Text="Quantity" />
-            <Entry
-                Keyboard="Numeric"
-                Placeholder="Quantity"
-                Text="{Binding ActionEntry.Quantity}" />
+                            <Label
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Text="{Binding ActionField.Name}" />
 
-            <Label Text="Cost" />
-            <Entry
-                Keyboard="Numeric"
-                Placeholder="Cost"
-                Text="{Binding ActionEntry.Cost}" />
-            <Editor
-                AutoSize="TextChanges"
-                HeightRequest="100"
-                Placeholder="Notes"
-                Text="{Binding ActionEntry.Notes}" />-->
+                            <editors:SfNumericEntry
+                                Grid.Row="1"
+                                CustomFormat="#,0"
+                                IsVisible="{Binding ActionField.IsIntegerType}"
+                                UpDownPlacementMode="Inline"
+                                AllowNull="{Binding ActionField.IsRequired, Converter={StaticResource invBool}}"
+                                Maximum="{Binding ActionField.MaxValue, Converter={StaticResource maxInt}}"
+                                Minimum="{Binding ActionField.MinValue, Converter={StaticResource minInt}}"
+                                Value="{Binding Value, Mode=TwoWay}" />
+
+                            <editors:SfNumericEntry
+                                Grid.Row="1"
+                                CustomFormat="#,0.00######"
+                                IsVisible="{Binding ActionField.IsDecimalType}"
+                                UpDownPlacementMode="Inline"
+                                AllowNull="{Binding ActionField.IsRequired, Converter={StaticResource invBool}}"
+                                Maximum="{Binding ActionField.MaxValue, Converter={StaticResource maxDec}}"
+                                Minimum="{Binding ActionField.MinValue, Converter={StaticResource minDec}}"
+                                Value="{Binding Value, Mode=TwoWay}" />
+
+                            <sfCore:SfTextInputLayout
+                                Grid.Row="1"
+                                ContainerType="Filled"
+                                IsVisible="{Binding ActionField.IsTextType}">
+                                <Editor
+                                    IsTextPredictionEnabled="True"
+                                    Text="{Binding Value, Mode=TwoWay}"
+                                    TextColor="Black" />
+                            </sfCore:SfTextInputLayout>
+
+                            <picker:SfDateTimePicker
+                                    Grid.Row="1"
+                                    IsVisible="{Binding ActionField.IsDateType}"
+                                    DateFormat="dd_MMM_yyyy"
+                                    SelectedDate="{Binding Value, Mode=TwoWay}"
+                                    TextDisplayMode="FadeAndShrink"
+                                    TimeFormat="HH_mm" />
+
+                            <btns:SfCheckBox
+                                    Grid.Row="1"
+                                    IsVisible="{Binding ActionField.IsBooleanType}"
+                                    IsChecked="{Binding Value}" />
+
+                            <editors:SfComboBox
+                                    Grid.Row="1"
+                                    IsVisible="{Binding ActionField.IsDropdownType}"
+                                    IsClearButtonVisible="False"
+                                    ItemsSource="{Binding ActionField.DropdownValuesList}"
+                                    SelectedItem="{Binding Value}" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
 
             <btns:SfButton
                 Margin="0,5"

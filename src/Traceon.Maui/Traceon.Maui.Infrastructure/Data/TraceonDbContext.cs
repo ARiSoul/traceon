@@ -23,7 +23,52 @@ public class TraceonDbContext(DbContextOptions<TraceonDbContext> options) : DbCo
     {
         base.OnModelCreating(modelBuilder);
 
-        // JSON conversion for FieldValues
+        // TrackedAction configuration
+        modelBuilder.Entity<TrackedAction>()
+            .ToTable("TrackedActions");
+
+        modelBuilder.Entity<TrackedAction>()
+            .HasKey(t => t.Id);
+
+        modelBuilder.Entity<TrackedAction>()
+            .HasMany(t => t.Entries)
+            .WithOne(e => e.Action)
+            .HasForeignKey(e => e.ActionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TrackedAction>()
+            .HasMany(t => t.Tags)
+            .WithOne(e => e.Action)
+            .HasForeignKey(e => e.ActionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TrackedAction>()
+            .HasMany(t => t.Fields)
+            .WithOne(e => e.Action)
+            .HasForeignKey(e => e.ActionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // FieldDefinition configuration
+        modelBuilder.Entity<FieldDefinition>()
+            .ToTable("FieldDefinitions");
+
+        modelBuilder.Entity<FieldDefinition>()
+            .HasKey(fd => fd.Id);
+
+        // Tag configuration
+        modelBuilder.Entity<Tag>()
+            .ToTable("Tags");
+
+        modelBuilder.Entity<Tag>()
+            .HasKey(t => t.Id);
+
+        // ActionEntry configuration
+        modelBuilder.Entity<ActionEntry>()
+            .ToTable("ActionEntries");
+
+        modelBuilder.Entity<ActionEntry>()
+            .HasKey(ae => ae.Id);
+
         modelBuilder.Entity<ActionEntry>()
             .HasMany(e => e.Fields)
             .WithOne(e => e.ActionEntry)
@@ -31,6 +76,9 @@ public class TraceonDbContext(DbContextOptions<TraceonDbContext> options) : DbCo
             .OnDelete(DeleteBehavior.Cascade);
 
         // Composite key for ActionTag (many-to-many)
+        modelBuilder.Entity<ActionTag>()
+            .ToTable("ActionTags");
+
         modelBuilder.Entity<ActionTag>()
             .HasKey(at => new { at.ActionId, at.TagId });
 
@@ -44,9 +92,12 @@ public class TraceonDbContext(DbContextOptions<TraceonDbContext> options) : DbCo
             .WithMany()
             .HasForeignKey(at => at.TagId);
 
-        // Composite key for ActionField (linking to FieldDefinition)
+        // ActionField configuration
         modelBuilder.Entity<ActionField>()
-            .HasKey(af => new { af.ActionId, af.FieldDefinitionId });
+            .ToTable("ActionFields");
+
+        modelBuilder.Entity<ActionField>()
+            .HasKey(af => af.Id);
 
         modelBuilder.Entity<ActionField>()
             .HasOne(af => af.Action)
@@ -57,6 +108,23 @@ public class TraceonDbContext(DbContextOptions<TraceonDbContext> options) : DbCo
             .HasOne(af => af.FieldDefinition)
             .WithMany()
             .HasForeignKey(af => af.FieldDefinitionId);
+
+        // ActionEntryField configuration
+        modelBuilder.Entity<ActionEntryField>()
+            .ToTable("ActionEntryFields");
+
+        modelBuilder.Entity<ActionEntryField>()
+            .HasKey(aef => aef.Id);
+
+        modelBuilder.Entity<ActionEntryField>()
+            .HasOne(aef => aef.ActionField)
+            .WithMany()
+            .HasForeignKey(aef => aef.ActionFieldId);
+
+        modelBuilder.Entity<ActionEntryField>()
+            .HasOne(aef => aef.FieldDefinition)
+            .WithMany()
+            .HasForeignKey(aef => aef.FieldDefinitionId);
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

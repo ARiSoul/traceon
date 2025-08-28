@@ -9,7 +9,7 @@ public class FieldDefinition
     public string DefaultName { get; set; } = string.Empty;
     public string? DefaultDescription { get; set; }
     public FieldType Type { get; set; }
-    public string? DropdownValues { get; set; } // comma-separated or JSON array
+    public string? DropdownValues { get; set; } // comma-separated
 
     public decimal? DefaultMaxValue { get; set; }
     public decimal? DefaultMinValue { get; set; }

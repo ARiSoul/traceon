@@ -3,6 +3,7 @@ using System;
 using Arisoul.Traceon.Maui.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Arisoul.Traceon.Maui.Infrastructure.Migrations
 {
     [DbContext(typeof(TraceonDbContext))]
-    partial class TraceonDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250827203114_AddActionEntryFields")]
+    partial class AddActionEntryFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.4");

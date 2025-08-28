@@ -31,7 +31,6 @@
             <Entry IsTextPredictionEnabled="True" Text="{Binding TrackedAction.Description}" />
 
 
-            <!--  SelectedItem="{Binding SelectedActionField, Mode=TwoWay}"  -->
             <CollectionView ItemsSource="{Binding TrackedAction.Fields}" SelectionMode="Single">
                 <CollectionView.Header>
                     <Grid>

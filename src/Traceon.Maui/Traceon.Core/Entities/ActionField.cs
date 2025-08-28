@@ -3,6 +3,8 @@
 public class ActionField
     : BaseActionChildEntity
 {
+    public Guid Id { get; set; }
+
     public Guid FieldDefinitionId { get; set; }
     public FieldDefinition FieldDefinition { get; set; } = null!;
 
@@ -19,7 +21,7 @@ public class ActionField
     public bool IsBooleanType => FieldDefinition != null && FieldDefinition.Type == FieldType.Boolean;
     public bool IsDropdownType => FieldDefinition != null && FieldDefinition.Type == FieldType.Dropdown;
     public List<string> DropdownValuesList => FieldDefinition != null && !string.IsNullOrWhiteSpace(FieldDefinition.DropdownValues)
-        ? [.. FieldDefinition.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]
+        ? [.. FieldDefinition.DropdownValues.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]
         : [];
     public bool CanHaveMaxAndMinValues => IsIntegerType || IsDecimalType;
 }

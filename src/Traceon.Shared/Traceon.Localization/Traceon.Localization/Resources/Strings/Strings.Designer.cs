@@ -214,6 +214,15 @@ namespace Arisoul.Traceon.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Fields.
+        /// </summary>
+        public static string Fields {
+            get {
+                return ResourceManager.GetString("Fields", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Field Type.
         /// </summary>
         public static string FieldType {
