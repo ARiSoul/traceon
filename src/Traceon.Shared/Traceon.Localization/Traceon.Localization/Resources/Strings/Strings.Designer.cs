@@ -178,6 +178,15 @@ namespace Arisoul.Traceon.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to There was an error while loading data. Please, try again. If the error persists, contact your administrator..
+        /// </summary>
+        public static string ErrorLoadingData {
+            get {
+                return ResourceManager.GetString("ErrorLoadingData", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Field Definition.
         /// </summary>
         public static string FieldDefinition {

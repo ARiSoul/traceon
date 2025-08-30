@@ -1,5 +1,5 @@
 ﻿using Arisoul.Core.Maui.Models;
-using Arisoul.Traceon.Maui.Core.Entities;
+using Arisoul.Traceon.Maui.Core.Models;
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,7 +17,7 @@ public partial class FieldDefinitionCreateOrEditViewModel
     [NotifyPropertyChangedFor(nameof(IsDropdownTypeSelected))]
     [NotifyPropertyChangedFor(nameof(IsIntegerTypeSelected))]
     [NotifyPropertyChangedFor(nameof(IsDecimalTypeSelected))]
-    FieldType _selectedFieldType;
+    Maui.Core.Entities.FieldType _selectedFieldType;
 
     [ObservableProperty] FieldDefinition _fieldDefinition;
     [ObservableProperty] int? _defaultIntegerMaxValue;
@@ -25,11 +25,11 @@ public partial class FieldDefinitionCreateOrEditViewModel
     [ObservableProperty] decimal? _defaultDecimalMaxValue;
     [ObservableProperty] decimal? _defaultDecimalMinValue;
 
-    public bool IsDropdownTypeSelected => SelectedFieldType == FieldType.Dropdown;
-    public bool IsIntegerTypeSelected => SelectedFieldType == FieldType.Integer;
-    public bool IsDecimalTypeSelected => SelectedFieldType == FieldType.Decimal;
+    public bool IsDropdownTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Dropdown;
+    public bool IsIntegerTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Integer;
+    public bool IsDecimalTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Decimal;
 
-    public ObservableCollection<FieldType> FieldTypes { get; private set; } = [];
+    public ObservableCollection<Maui.Core.Entities.FieldType> FieldTypes { get; private set; } = [];
 
     public FieldDefinitionCreateOrEditViewModel(IUnitOfWork unitOfWork)
     {
@@ -107,6 +107,6 @@ public partial class FieldDefinitionCreateOrEditViewModel
 
     private void LoadFieldTypes()
     {
-        FieldTypes = [.. Enum.GetValues<FieldType>().Cast<FieldType>()];
+        FieldTypes = [.. Enum.GetValues<Maui.Core.Entities.FieldType>().Cast<Maui.Core.Entities.FieldType>()];
     }
 }

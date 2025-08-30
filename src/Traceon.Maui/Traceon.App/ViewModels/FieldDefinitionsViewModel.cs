@@ -1,6 +1,6 @@
 ﻿using Arisoul.Core.Maui.Models;
 using Arisoul.Traceon.App.Messages;
-using Arisoul.Traceon.Maui.Core.Entities;
+using Arisoul.Traceon.Maui.Core.Models;
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -28,14 +28,22 @@ public partial class FieldDefinitionsViewModel : ArisoulMauiBaseViewModel
     
     internal async Task LoadFieldDefinitionsAsync()
     {
-        var all = await _unitOfWork.FieldDefinitions.GetAllAsync();
+        var getAllResult = await _unitOfWork.FieldDefinitions.GetAllAsync();
+
+        if (getAllResult.Failed)
+        {
+            await this.Dialogs.ShowError(Localization.Strings.ErrorLoadingData);
+            return;
+        }
+
+        var fields = getAllResult.Value!;
 
         if (FieldsToHide.Count > 0)
         {
-            all = [.. all.Where(fd => !FieldsToHide.Any(fth => fth.Equals(fd.Id)))];
+            fields = [.. fields.Where(fd => !FieldsToHide.Any(fth => fth.Equals(fd.Id)))];
         }
 
-        _allFieldDefinitions = [.. all.OrderBy(a => a.DefaultName)];
+        _allFieldDefinitions = [.. fields.OrderBy(a => a.DefaultName)];
         Search(SearchQuery);
     }
     

@@ -3,6 +3,6 @@
 namespace Arisoul.Traceon.Maui.Core.Interfaces;
 
 public interface ITagRepository 
-    : IBaseRepository<Tag>
+    : IBaseRepository<Tag, Models.Tag>
 {
 }

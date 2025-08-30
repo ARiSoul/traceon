@@ -210,4 +210,7 @@
   <data name="Fields" xml:space="preserve">
     <value>Fields</value>
   </data>
+  <data name="ErrorLoadingData" xml:space="preserve">
+    <value>There was an error while loading data. Please, try again. If the error persists, contact your administrator.</value>
+  </data>
 </root>

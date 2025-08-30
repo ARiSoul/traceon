@@ -1,4 +1,4 @@
-﻿using Arisoul.Traceon.Maui.Core.Entities;
+﻿using Arisoul.Traceon.Maui.Core.Models;
 using CommunityToolkit.Mvvm.Messaging.Messages;
 
 namespace Arisoul.Traceon.App.Messages;

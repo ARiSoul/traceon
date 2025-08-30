@@ -1,5 +1,5 @@
 ﻿using Arisoul.Core.Maui.Models;
-using Arisoul.Traceon.Maui.Core.Entities;
+using Arisoul.Traceon.Maui.Core.Models;
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -24,9 +24,15 @@ public partial class TrackedActionsViewModel : ArisoulMauiBaseViewModel
 
     internal async Task LoadActionsAsync()
     {
-        var all = await _unitOfWork.TrackedActions.GetAllAsync();
+        var getAllResult = await _unitOfWork.TrackedActions.GetAllAsync();
 
-        _allActions = [.. all.OrderBy(a => a.Name)];
+        if (getAllResult.Failed)
+        {
+            await this.Dialogs.ShowError(Localization.Strings.ErrorLoadingData);
+            return;
+        }
+
+        _allActions = [.. getAllResult.Value.OrderBy(a => a.Name)];
 
         Search(SearchQuery);
     }

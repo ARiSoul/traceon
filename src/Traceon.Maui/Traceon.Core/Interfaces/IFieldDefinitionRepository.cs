@@ -3,6 +3,6 @@
 namespace Arisoul.Traceon.Maui.Core.Interfaces;
 
 public interface IFieldDefinitionRepository 
-    : IBaseRepository<FieldDefinition>
+    : IBaseRepository<FieldDefinition, Models.FieldDefinition>
 {
 }

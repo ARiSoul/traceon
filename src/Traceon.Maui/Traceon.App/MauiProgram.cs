@@ -1,5 +1,6 @@
 ﻿using Arisoul.Core.Maui;
 using Arisoul.Traceon.App.ViewModels;
+using Arisoul.Traceon.Maui.Core;
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using Arisoul.Traceon.Maui.Infrastructure.Data;
 using Arisoul.Traceon.Maui.Infrastructure.Repositories;
@@ -29,7 +30,7 @@ public static class MauiProgram
                 fonts.AddFont("fa-v4compatibility.ttf", "FACOMP");
             });
 
-        // Dependency injection
+        // Repositories and Unit of Work
         builder.Services.AddScoped<ITrackedActionRepository, TrackedActionRepository>();
         builder.Services.AddScoped<IFieldDefinitionRepository, FieldDefinitionRepository>();
         builder.Services.AddScoped<ITagRepository, TagRepository>();
@@ -50,8 +51,12 @@ public static class MauiProgram
         builder.Services.AddTransient<Views.FieldDefinitionsPage>();
         builder.Services.AddTransient<Views.FieldDefinitionCreateOrEditPage>();
 
+        // Database context
         builder.Services.AddDbContext<TraceonDbContext>(options =>
-            options.UseSqlite("Filename=traceon.db")); 
+            options.UseSqlite("Filename=traceon.db"));
+
+        // Singleton services
+        builder.Services.AddSingleton<MapperlyConfiguration>();
 
         CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
         CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");

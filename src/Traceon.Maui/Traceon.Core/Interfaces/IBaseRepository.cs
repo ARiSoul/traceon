@@ -1,11 +1,17 @@
-﻿namespace Arisoul.Traceon.Maui.Core.Interfaces;
+﻿using Arisoul.Core.Root.Models;
 
-public interface IBaseRepository<TEntity> 
+namespace Arisoul.Traceon.Maui.Core.Interfaces;
+
+public interface IBaseRepository<TEntity, TModel> 
     where TEntity : class
+    where TModel : class
 {
-    Task<IEnumerable<TEntity>> GetAllAsync();
-    Task<TEntity?> GetByIdAsync(Guid id);
-    Task CreateAsync(TEntity entity);
-    Task UpdateAsync(TEntity entity);
-    Task DeleteAsync(Guid id);
+    Task<Result<IEnumerable<TModel>>> GetAllAsync();
+    Task<Result<TModel>> GetByIdAsync(Guid id);
+    Task<Result> CreateAsync(TModel model);
+    Task<Result> UpdateAsync(TModel model);
+    Task<Result> DeleteAsync(Guid id);
+    IEnumerable<TModel> MapEntityToModelCollection(IEnumerable<TEntity> entities);
+    TModel MapEntityToModel(TEntity entity);
+    TEntity MapModelToEntity(TModel model);
 }

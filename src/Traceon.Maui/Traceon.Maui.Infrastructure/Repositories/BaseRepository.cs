@@ -1,42 +1,70 @@
-﻿using Arisoul.Traceon.Maui.Core.Interfaces;
+﻿using Arisoul.Core.Root.Models;
+using Arisoul.Core.Root.Models.Results;
+using Arisoul.Traceon.Maui.Core;
+using Arisoul.Traceon.Maui.Core.Interfaces;
 using Arisoul.Traceon.Maui.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Arisoul.Traceon.Maui.Infrastructure.Repositories;
 
-public class BaseRepository<TEntity> 
-    : IBaseRepository<TEntity> where TEntity : class
+public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, MapperlyConfiguration mapper)
+    : IBaseRepository<TEntity, TModel>
+    where TEntity : class
+    where TModel : class
 {
-    protected readonly TraceonDbContext _context;
-    protected readonly DbSet<TEntity> _dbSet;
+    protected TraceonDbContext Context = context;
+    protected DbSet<TEntity> DbSet = context.Set<TEntity>();
+    protected MapperlyConfiguration Mapper = mapper;
 
-    public BaseRepository(TraceonDbContext context)
+    public abstract IEnumerable<TModel> MapEntityToModelCollection(IEnumerable<TEntity> entities);
+    public abstract TModel MapEntityToModel(TEntity entity);
+    public abstract TEntity MapModelToEntity(TModel model);
+
+    public virtual async Task<Result<IEnumerable<TModel>>> GetAllAsync()
     {
-        _context = context;
-        _dbSet = context.Set<TEntity>();
+        var entities = await DbSet.AsNoTracking().ToListAsync();
+
+        return Result.Success(this.MapEntityToModelCollection(entities));
     }
 
-    public virtual async Task<IEnumerable<TEntity>> GetAllAsync() =>
-        await _dbSet.AsNoTracking().ToListAsync();
-
-    public virtual async Task<TEntity?> GetByIdAsync(Guid id) =>
-        await _dbSet.FindAsync(id);
-
-    public virtual async Task CreateAsync(TEntity entity)
+    public virtual async Task<Result<TModel>> GetByIdAsync(Guid id)
     {
-        await _dbSet.AddAsync(entity);
+        var entity = await DbSet.FindAsync(id);
+
+        if (entity == null)
+            return new ResultNotFoundError($"{typeof(TEntity).Name} with Id '{id}' not found.");
+
+        return this.MapEntityToModel(entity);
     }
 
-    public virtual Task UpdateAsync(TEntity entity)
+    public virtual async Task<Result> CreateAsync(TModel model)
     {
-        _dbSet.Update(entity);
-        return Task.CompletedTask;
+        var entity = this.MapModelToEntity(model);
+
+        await DbSet.AddAsync(entity);
+
+        return Result.Success();
     }
 
-    public virtual async Task DeleteAsync(Guid id)
+    public virtual Task<Result> UpdateAsync(TModel model)
     {
-        var entity = await GetByIdAsync(id);
+        var entity = this.MapModelToEntity(model);
+
+        DbSet.Update(entity);
+        
+        return Task.FromResult(Result.Success());
+    }
+
+    public virtual async Task<Result> DeleteAsync(Guid id)
+    {
+        var entity = await DbSet.FindAsync(id);
+
+        if (entity == null)
+            return new ResultNotFoundError($"{typeof(TEntity).Name} with Id '{id}' not found.");
+
         if (entity != null)
-            _dbSet.Remove(entity);
+            DbSet.Remove(entity);
+
+        return Result.Success();
     }
 }
