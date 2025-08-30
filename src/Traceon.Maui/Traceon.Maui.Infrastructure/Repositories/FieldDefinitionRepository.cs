@@ -9,11 +9,11 @@ public class FieldDefinitionRepository(TraceonDbContext context, MapperlyConfigu
         : BaseRepository<FieldDefinition, Core.Models.FieldDefinition>(context, mapper), IFieldDefinitionRepository
 {
     public override IEnumerable<Core.Models.FieldDefinition> MapEntityToModelCollection(IEnumerable<FieldDefinition> entities)
-       => Mapper.Map(entities);
+       => Mapper.MapToModelCollection(entities);
 
     public override Core.Models.FieldDefinition MapEntityToModel(FieldDefinition entity)
-        => Mapper.Map(entity);
+        => Mapper.MapToModel(entity);
 
     public override FieldDefinition MapModelToEntity(Core.Models.FieldDefinition model)
-        => Mapper.Map(model);
+        => Mapper.MapToEntity(model);
 }

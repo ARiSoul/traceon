@@ -9,11 +9,11 @@ public class TagRepository(TraceonDbContext context, MapperlyConfiguration mappe
         : BaseRepository<Tag, Core.Models.Tag>(context, mapper), ITagRepository
 {
     public override IEnumerable<Core.Models.Tag> MapEntityToModelCollection(IEnumerable<Tag> entities)
-       => Mapper.Map(entities);
+       => Mapper.MapToModelCollection(entities);
 
     public override Core.Models.Tag MapEntityToModel(Tag entity)
-        => Mapper.Map(entity);
+        => Mapper.MapToModel(entity);
 
     public override Tag MapModelToEntity(Core.Models.Tag model)
-        => Mapper.Map(model);
+        => Mapper.MapToEntity(model);
 }

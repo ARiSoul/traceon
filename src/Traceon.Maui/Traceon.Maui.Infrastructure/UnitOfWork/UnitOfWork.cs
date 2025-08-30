@@ -26,8 +26,6 @@ public class UnitOfWork : IUnitOfWork
     {
         var affected = await _context.SaveChangesAsync().ConfigureAwait(false);
 
-        _context.ChangeTracker.Clear();
-
         return affected;
     }
 

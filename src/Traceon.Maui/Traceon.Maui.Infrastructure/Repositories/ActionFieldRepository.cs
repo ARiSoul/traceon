@@ -11,13 +11,13 @@ public class ActionFieldRepository(TraceonDbContext context, MapperlyConfigurati
         : BaseRepository<ActionField, Core.Models.ActionField>(context, mapper), IActionFieldRepository
 {
     public override IEnumerable<Core.Models.ActionField> MapEntityToModelCollection(IEnumerable<ActionField> entities)
-      => Mapper.Map(entities);
+      => Mapper.MapToModelCollection(entities);
 
     public override Core.Models.ActionField MapEntityToModel(ActionField entity)
-        => Mapper.Map(entity);
+        => Mapper.MapToModel(entity);
 
     public override ActionField MapModelToEntity(Core.Models.ActionField model)
-        => Mapper.Map(model);
+        => Mapper.MapToEntity(model);
 
     public Task<Result> DeleteAsync(Guid actionId, Guid fieldDefinitionId)
     {

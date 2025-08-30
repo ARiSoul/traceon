@@ -3,7 +3,7 @@ using Arisoul.Traceon.Localization;
 
 namespace Arisoul.Traceon.Maui.Core.Entities;
 
-public class FieldDefinition
+public partial class FieldDefinition
     : BaseEntityWithId
 {
     public string DefaultName { get; set; } = string.Empty;

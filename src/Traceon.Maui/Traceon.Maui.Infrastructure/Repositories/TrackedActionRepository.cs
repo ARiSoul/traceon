@@ -17,13 +17,13 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
     #region Actions Overrides
 
     public override IEnumerable<Core.Models.TrackedAction> MapEntityToModelCollection(IEnumerable<TrackedAction> entities)
-        => Mapper.Map(entities);
+        => Mapper.MapToModelCollection(entities);
 
     public override Core.Models.TrackedAction MapEntityToModel(TrackedAction entity)
-        => Mapper.Map(entity);
+        => Mapper.MapToModel(entity);
 
     public override TrackedAction MapModelToEntity(Core.Models.TrackedAction model)
-        => Mapper.Map(model);
+        => Mapper.MapToEntity(model);
 
     public override async Task<Result<IEnumerable<Core.Models.TrackedAction>>> GetAllAsync()
     {

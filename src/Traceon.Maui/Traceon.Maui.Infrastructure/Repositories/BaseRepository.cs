@@ -46,13 +46,19 @@ public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, 
         return Result.Success();
     }
 
-    public virtual Task<Result> UpdateAsync(TModel model)
+    public virtual async Task<Result> UpdateAsync(TModel model)
     {
-        var entity = this.MapModelToEntity(model);
+        var id = (model as dynamic).Id;
+        var existingEntity = await DbSet.FindAsync(id);
 
-        DbSet.Update(entity);
-        
-        return Task.FromResult(Result.Success());
+        if (existingEntity == null)
+            return new ResultNotFoundError($"{typeof(TEntity).Name} with Id '{id}' not found.");
+
+        var modifiedEntity = this.MapModelToEntity(model);
+
+        DbSet.Entry(existingEntity).CurrentValues.SetValues(modifiedEntity);
+
+        return Result.Success();
     }
 
     public virtual async Task<Result> DeleteAsync(Guid id)

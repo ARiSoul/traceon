@@ -6,32 +6,65 @@ namespace Arisoul.Traceon.Maui.Core;
 [Mapper(UseDeepCloning = true)]
 public partial class MapperlyConfiguration
 {
-    public partial TrackedAction Map(Models.TrackedAction source);
-    public partial IEnumerable<TrackedAction> Map(IEnumerable<Models.TrackedAction> source);
-    public partial Models.TrackedAction Map(TrackedAction source);
-    public partial IEnumerable<Models.TrackedAction> Map(IEnumerable<TrackedAction> source);
-    public partial ActionField Map(Models.ActionField source);
-    public partial IEnumerable<ActionField> Map(IEnumerable<Models.ActionField> source);
-    public partial Models.ActionField Map(ActionField source);
-    public partial IEnumerable<Models.ActionField> Map(IEnumerable<ActionField> source);
-    public partial ActionTag Map(Models.ActionTag source);
-    public partial IEnumerable<ActionTag> Map(IEnumerable<Models.ActionTag> source);
-    public partial Models.ActionTag Map(ActionTag source);
-    public partial IEnumerable<Models.ActionTag> Map(IEnumerable<ActionTag> source);
-    public partial ActionEntry Map(Models.ActionEntry source);
-    public partial IEnumerable<ActionEntry> Map(IEnumerable<Models.ActionEntry> source);
-    public partial Models.ActionEntry Map(ActionEntry source);
-    public partial IEnumerable<Models.ActionEntry> Map(IEnumerable<ActionEntry> source);
-    public partial ActionEntryField Map(Models.ActionEntryField source);
-    public partial IEnumerable<ActionEntryField> Map(IEnumerable<Models.ActionEntryField> source);
-    public partial Models.ActionEntryField Map(ActionEntryField source);
-    public partial IEnumerable<Models.ActionEntryField> Map(IEnumerable<ActionEntryField> source);
-    public partial FieldDefinition Map(Models.FieldDefinition source);
-    public partial IEnumerable<FieldDefinition> Map(IEnumerable<Models.FieldDefinition> source);
-    public partial Models.FieldDefinition Map(FieldDefinition source);
-    public partial IEnumerable<Models.FieldDefinition> Map(IEnumerable<FieldDefinition> source);
-    public partial Tag Map(Models.Tag source);
-    public partial IEnumerable<Tag> Map(IEnumerable<Models.Tag> source);
-    public partial Models.Tag Map(Tag source);
-    public partial IEnumerable<Models.Tag> Map(IEnumerable<Tag> source);
+    // TrackedAction
+    public partial TrackedAction MapToEntity(Models.TrackedAction source);
+    public partial IEnumerable<TrackedAction> MapToEntityCollection(IEnumerable<Models.TrackedAction> source);
+    public partial Models.TrackedAction MapToModel(TrackedAction source);
+    public partial IEnumerable<Models.TrackedAction> MapToModelCollection(IEnumerable<TrackedAction> source);
+
+    // ActionField
+    [MapperIgnoreSource(nameof(ActionField.Action))]
+    [MapperIgnoreTarget(nameof(ActionField.Action))]
+    public partial ActionField MapToEntity(Models.ActionField source);
+    public partial IEnumerable<ActionField> MapToEntityCollection(IEnumerable<Models.ActionField> source);
+
+    [MapperIgnoreSource(nameof(ActionField.Action))]
+    [MapperIgnoreTarget(nameof(ActionField.Action))]
+    public partial Models.ActionField MapToModel(ActionField source);
+    public partial IEnumerable<Models.ActionField> MapToModelCollection(IEnumerable<ActionField> source);
+
+    // ActionTag
+    [MapperIgnoreSource(nameof(ActionTag.Action))]
+    [MapperIgnoreTarget(nameof(ActionTag.Action))]
+    public partial ActionTag MapToEntity(Models.ActionTag source);
+    public partial IEnumerable<ActionTag> MapToEntityCollection(IEnumerable<Models.ActionTag> source);
+
+    [MapperIgnoreSource(nameof(ActionTag.Action))]
+    [MapperIgnoreTarget(nameof(ActionTag.Action))]
+    public partial Models.ActionTag MapToModel(ActionTag source);
+    public partial IEnumerable<Models.ActionTag> MapToModelCollection(IEnumerable<ActionTag> source);
+
+    // ActionEntry
+    [MapperIgnoreSource(nameof(ActionEntry.Action))]
+    [MapperIgnoreTarget(nameof(ActionEntry.Action))]
+    public partial ActionEntry MapToEntity(Models.ActionEntry source);
+    public partial IEnumerable<ActionEntry> MapToEntityCollection(IEnumerable<Models.ActionEntry> source);
+
+    [MapperIgnoreSource(nameof(ActionEntry.Action))]
+    [MapperIgnoreTarget(nameof(ActionEntry.Action))]
+    public partial Models.ActionEntry MapToModel(ActionEntry source);
+    public partial IEnumerable<Models.ActionEntry> MapToModelCollection(IEnumerable<ActionEntry> source);
+
+    // ActionEntryField
+    [MapperIgnoreSource(nameof(ActionEntryField.ActionEntry))]
+    [MapperIgnoreTarget(nameof(ActionEntryField.ActionEntry))]
+    public partial ActionEntryField MapToEntity(Models.ActionEntryField source);
+    public partial IEnumerable<ActionEntryField> MapToEntityCollection(IEnumerable<Models.ActionEntryField> source);
+
+    [MapperIgnoreSource(nameof(ActionEntryField.ActionEntry))]
+    [MapperIgnoreTarget(nameof(ActionEntryField.ActionEntry))]
+    public partial Models.ActionEntryField MapToModel(ActionEntryField source);
+    public partial IEnumerable<Models.ActionEntryField> MapToModelCollection(IEnumerable<ActionEntryField> source);
+
+    // FieldDefinition
+    public partial FieldDefinition MapToEntity(Models.FieldDefinition source);
+    public partial IEnumerable<FieldDefinition> MapToEntityCollection(IEnumerable<Models.FieldDefinition> source);
+    public partial Models.FieldDefinition MapToModel(FieldDefinition source);
+    public partial IEnumerable<Models.FieldDefinition> MapToModelCollection(IEnumerable<FieldDefinition> source);
+
+    // Tag
+    public partial Tag MapToEntity(Models.Tag source);
+    public partial IEnumerable<Tag> MapToEntityCollection(IEnumerable<Models.Tag> source);
+    public partial Models.Tag MapToModel(Tag source);
+    public partial IEnumerable<Models.Tag> MapToModelCollection(IEnumerable<Tag> source);
 }
