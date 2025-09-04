@@ -39,8 +39,7 @@ public partial class TrackedActionCreateOrEditViewModel
                 IsRequired = selected.DefaultIsRequired,
                 MaxValue = selected.DefaultMaxValue,
                 MinValue = selected.DefaultMinValue,
-                Name = selected.DefaultName,
-                FieldDefinition = selected
+                Name = selected.DefaultName
             });
         });
     }
@@ -59,6 +58,9 @@ public partial class TrackedActionCreateOrEditViewModel
     {
         if (TrackedAction == null)
             return;
+
+        foreach (var field in TrackedAction.Fields)
+            field.ActionId = TrackedAction.Id;
 
         if (TrackedAction.Id == Guid.Empty) // new
         {

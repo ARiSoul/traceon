@@ -1,7 +1,9 @@
-﻿namespace Arisoul.Traceon.Maui.Core.Models;
+﻿using Arisoul.Traceon.Maui.Core.Interfaces;
+
+namespace Arisoul.Traceon.Maui.Core.Models;
 
 public class ActionField
-    : Entities.BaseActionChildEntity
+    : Entities.BaseActionChildEntity, IEntityWithId
 {
     public Guid Id { get; set; }
 

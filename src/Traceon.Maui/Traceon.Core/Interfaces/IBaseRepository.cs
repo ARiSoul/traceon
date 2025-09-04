@@ -3,8 +3,8 @@
 namespace Arisoul.Traceon.Maui.Core.Interfaces;
 
 public interface IBaseRepository<TEntity, TModel> 
-    where TEntity : class
-    where TModel : class
+    where TEntity : class, IEntityWithId
+    where TModel : class, IEntityWithId
 {
     Task<Result<IEnumerable<TModel>>> GetAllAsync();
     Task<Result<TModel>> GetByIdAsync(Guid id);
@@ -14,4 +14,6 @@ public interface IBaseRepository<TEntity, TModel>
     IEnumerable<TModel> MapEntityToModelCollection(IEnumerable<TEntity> entities);
     TModel MapEntityToModel(TEntity entity);
     TEntity MapModelToEntity(TModel model);
+    void OnAfterUpdateValuesInEntity(TModel model, TEntity updatedEntity);
+    void OnAfterAddEntity(TModel model, TEntity createdEntity);
 }

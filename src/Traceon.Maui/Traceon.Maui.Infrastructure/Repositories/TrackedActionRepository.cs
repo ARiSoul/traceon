@@ -62,6 +62,43 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
         return MapEntityToModel(entity);
     }
 
+    public override void OnAfterUpdateValuesInEntity(Core.Models.TrackedAction model, TrackedAction updatedEntity)
+    {
+        // Compare fields and update the collection accordingly
+        foreach (var field in model.Fields)
+        {
+            var existingField = updatedEntity.Fields.FirstOrDefault(f => f.Id == field.Id);
+            if (existingField != null)
+            {
+                // Update existing field
+                existingField.Name = field.Name;
+                existingField.Description = field.Description;
+                existingField.IsRequired = field.IsRequired;
+                existingField.MinValue = field.MinValue;
+                existingField.MaxValue = field.MaxValue;
+                existingField.FieldDefinitionId = field.FieldDefinitionId;
+            }
+            else
+            {
+                // Add new field
+                updatedEntity.Fields.Add(Mapper.MapToEntity(field));
+            }
+        }
+
+        // Remove fields that are no longer present
+        var fieldsToRemove = updatedEntity.Fields.Where(f => !model.Fields.Any(mf => mf.Id == f.Id)).ToList();
+        foreach (var fieldToRemove in fieldsToRemove)
+            updatedEntity.Fields.Remove(fieldToRemove);
+    }
+
+    public override void OnAfterAddEntity(Core.Models.TrackedAction model, TrackedAction createdEntity)
+    {
+        // Ensure all fields from the model are added to the created entity
+        foreach (var field in model.Fields)
+            if (!createdEntity.Fields.Any(f => f.Id == field.Id))
+                createdEntity.Fields.Add(Mapper.MapToEntity(field));
+    }
+
     #endregion Actions Overrides
 
     #region Entries

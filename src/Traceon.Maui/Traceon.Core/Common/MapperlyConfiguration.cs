@@ -15,11 +15,15 @@ public partial class MapperlyConfiguration
     // ActionField
     [MapperIgnoreSource(nameof(ActionField.Action))]
     [MapperIgnoreTarget(nameof(ActionField.Action))]
+    [MapperIgnoreSource(nameof(ActionField.FieldDefinition))]
+    [MapperIgnoreTarget(nameof(ActionField.FieldDefinition))]
     public partial ActionField MapToEntity(Models.ActionField source);
     public partial IEnumerable<ActionField> MapToEntityCollection(IEnumerable<Models.ActionField> source);
 
     [MapperIgnoreSource(nameof(ActionField.Action))]
     [MapperIgnoreTarget(nameof(ActionField.Action))]
+    [MapperIgnoreSource(nameof(ActionField.FieldDefinition))]
+    [MapperIgnoreTarget(nameof(ActionField.FieldDefinition))]
     public partial Models.ActionField MapToModel(ActionField source);
     public partial IEnumerable<Models.ActionField> MapToModelCollection(IEnumerable<ActionField> source);
 

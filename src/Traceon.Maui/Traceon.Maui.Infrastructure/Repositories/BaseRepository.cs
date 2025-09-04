@@ -9,8 +9,8 @@ namespace Arisoul.Traceon.Maui.Infrastructure.Repositories;
 
 public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, MapperlyConfiguration mapper)
     : IBaseRepository<TEntity, TModel>
-    where TEntity : class
-    where TModel : class
+    where TEntity : class, IEntityWithId
+    where TModel : class, IEntityWithId
 {
     protected TraceonDbContext Context = context;
     protected DbSet<TEntity> DbSet = context.Set<TEntity>();
@@ -29,7 +29,7 @@ public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, 
 
     public virtual async Task<Result<TModel>> GetByIdAsync(Guid id)
     {
-        var entity = await DbSet.FindAsync(id);
+        var entity = await DbSet.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
 
         if (entity == null)
             return new ResultNotFoundError($"{typeof(TEntity).Name} with Id '{id}' not found.");
@@ -43,22 +43,35 @@ public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, 
 
         await DbSet.AddAsync(entity);
 
+        OnAfterAddEntity(model, entity);
+
         return Result.Success();
+    }
+
+    public virtual void OnAfterAddEntity(TModel model, TEntity createdEntity)
+    {
+        return;
     }
 
     public virtual async Task<Result> UpdateAsync(TModel model)
     {
-        var id = (model as dynamic).Id;
-        var existingEntity = await DbSet.FindAsync(id);
+        var existingEntity = await DbSet.FindAsync(model.Id);
 
         if (existingEntity == null)
-            return new ResultNotFoundError($"{typeof(TEntity).Name} with Id '{id}' not found.");
+            return new ResultNotFoundError($"{typeof(TEntity).Name} with Id '{model.Id}' not found.");
 
         var modifiedEntity = this.MapModelToEntity(model);
 
         DbSet.Entry(existingEntity).CurrentValues.SetValues(modifiedEntity);
 
+        OnAfterUpdateValuesInEntity(model, existingEntity);
+
         return Result.Success();
+    }
+
+    public virtual void OnAfterUpdateValuesInEntity(TModel model, TEntity updatedEntity)
+    {
+        return;
     }
 
     public virtual async Task<Result> DeleteAsync(Guid id)
