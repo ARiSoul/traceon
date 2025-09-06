@@ -17,7 +17,7 @@ public partial class TrackedActionsPage : ContentPage
 
     protected override async void OnAppearing()
     {
-        await _viewModel.LoadActionsAsync().ConfigureAwait(false);
+        await _viewModel.LoadActionsAsync();
         base.OnAppearing();
     }
 

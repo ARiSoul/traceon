@@ -1,17 +1,14 @@
-﻿namespace Arisoul.Traceon.Maui.Core.Entities;
+﻿using System.Collections.ObjectModel;
+
+namespace Arisoul.Traceon.Maui.Core.Entities;
 
 public class TrackedAction
+    : BaseEntityWithId
 {
-    public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
 
-    public List<CustomFieldDefinition> CustomFields { get; set; } = [];
-    public List<Tag> Tags { get; set; } = [];
-
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
+    public ObservableCollection<ActionField> Fields { get; set; } = [];
+    public List<ActionTag> Tags { get; set; } = [];
     public List<ActionEntry> Entries { get; set; } = [];
 }

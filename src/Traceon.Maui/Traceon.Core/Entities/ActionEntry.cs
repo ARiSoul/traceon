@@ -1,17 +1,14 @@
-﻿namespace Arisoul.Traceon.Maui.Core.Entities;
+﻿using System.Collections.ObjectModel;
 
-public class ActionEntry
+namespace Arisoul.Traceon.Maui.Core.Entities;
+
+public class ActionEntry 
+    : BaseEntityWithId
 {
-    public Guid Id { get; set; }
-    public Guid TrackedActionId { get; set; }
+    public Guid ActionId { get; set; }
+    public TrackedAction Action { get; set; } = null!;
 
-    public DateTime Timestamp { get; set; } = DateTime.Now;
-    public TimeSpan Duration { get; set; } = TimeSpan.Zero;
-    public double Quantity { get; set; } = 0;
-    public decimal Cost { get; set; } = 0;
-    public string Notes { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; }
 
-    public Dictionary<string, string>? CustomValues { get; set; } = [];
-
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public ObservableCollection<ActionEntryField> Fields { get; set; } = [];
 }

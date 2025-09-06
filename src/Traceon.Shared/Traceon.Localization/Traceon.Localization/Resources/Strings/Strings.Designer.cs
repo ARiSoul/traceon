@@ -61,6 +61,33 @@ namespace Arisoul.Traceon.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Action.
+        /// </summary>
+        public static string Action {
+            get {
+                return ResourceManager.GetString("Action", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Action Entries.
+        /// </summary>
+        public static string ActionEntries {
+            get {
+                return ResourceManager.GetString("ActionEntries", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Action Entry.
+        /// </summary>
+        public static string ActionEntry {
+            get {
+                return ResourceManager.GetString("ActionEntry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Actions.
         /// </summary>
         public static string Actions {
@@ -97,6 +124,231 @@ namespace Arisoul.Traceon.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Default Description.
+        /// </summary>
+        public static string DefaultDescription {
+            get {
+                return ResourceManager.GetString("DefaultDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is required by default.
+        /// </summary>
+        public static string DefaultIsRequired {
+            get {
+                return ResourceManager.GetString("DefaultIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Default Max. Value.
+        /// </summary>
+        public static string DefaultMaxValue {
+            get {
+                return ResourceManager.GetString("DefaultMaxValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Default Min. Value.
+        /// </summary>
+        public static string DefaultMinValue {
+            get {
+                return ResourceManager.GetString("DefaultMinValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Default Name.
+        /// </summary>
+        public static string DefaultName {
+            get {
+                return ResourceManager.GetString("DefaultName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dropdown Values (split by ;).
+        /// </summary>
+        public static string DropdownValuesSplitBy {
+            get {
+                return ResourceManager.GetString("DropdownValuesSplitBy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Required Fields.
+        /// </summary>
+        public static string ERROR_RequiredFieldsTitle {
+            get {
+                return ResourceManager.GetString("ERROR_RequiredFieldsTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The following fields are required: {0}.
+        /// </summary>
+        public static string ERROR_TheFollowingFieldsAreRequired {
+            get {
+                return ResourceManager.GetString("ERROR_TheFollowingFieldsAreRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There was an error while loading data. Please, try again. If the error persists, contact your administrator..
+        /// </summary>
+        public static string ErrorLoadingData {
+            get {
+                return ResourceManager.GetString("ErrorLoadingData", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Field Definition.
+        /// </summary>
+        public static string FieldDefinition {
+            get {
+                return ResourceManager.GetString("FieldDefinition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Field Definitions.
+        /// </summary>
+        public static string FieldDefinitions {
+            get {
+                return ResourceManager.GetString("FieldDefinitions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Field Definitions Form.
+        /// </summary>
+        public static string FieldDefinitionsForm {
+            get {
+                return ResourceManager.GetString("FieldDefinitionsForm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Field Definitions List.
+        /// </summary>
+        public static string FieldDefinitionsList {
+            get {
+                return ResourceManager.GetString("FieldDefinitionsList", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Fields.
+        /// </summary>
+        public static string Fields {
+            get {
+                return ResourceManager.GetString("Fields", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Field Type.
+        /// </summary>
+        public static string FieldType {
+            get {
+                return ResourceManager.GetString("FieldType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Boolean.
+        /// </summary>
+        public static string FieldType_Boolean {
+            get {
+                return ResourceManager.GetString("FieldType_Boolean", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Date.
+        /// </summary>
+        public static string FieldType_Date {
+            get {
+                return ResourceManager.GetString("FieldType_Date", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Decimal.
+        /// </summary>
+        public static string FieldType_Decimal {
+            get {
+                return ResourceManager.GetString("FieldType_Decimal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dropdown.
+        /// </summary>
+        public static string FieldType_Dropdown {
+            get {
+                return ResourceManager.GetString("FieldType_Dropdown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Integer.
+        /// </summary>
+        public static string FieldType_Integer {
+            get {
+                return ResourceManager.GetString("FieldType_Integer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Text.
+        /// </summary>
+        public static string FieldType_Text {
+            get {
+                return ResourceManager.GetString("FieldType_Text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to in action:.
+        /// </summary>
+        public static string InAction {
+            get {
+                return ResourceManager.GetString("InAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is Required.
+        /// </summary>
+        public static string IsRequired {
+            get {
+                return ResourceManager.GetString("IsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Max. Value.
+        /// </summary>
+        public static string MaxValue {
+            get {
+                return ResourceManager.GetString("MaxValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Min. Value.
+        /// </summary>
+        public static string MinValue {
+            get {
+                return ResourceManager.GetString("MinValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to New.
         /// </summary>
         public static string New_F {
@@ -111,6 +363,15 @@ namespace Arisoul.Traceon.Localization {
         public static string New_M {
             get {
                 return ResourceManager.GetString("New_M", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select Type.
+        /// </summary>
+        public static string SelectType {
+            get {
+                return ResourceManager.GetString("SelectType", resourceCulture);
             }
         }
     }

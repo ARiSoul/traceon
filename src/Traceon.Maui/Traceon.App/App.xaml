@@ -2,12 +2,21 @@
 <Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:Arisoul.Traceon.App"
+             xmlns:syncTheme="clr-namespace:Syncfusion.Maui.Themes;assembly=Syncfusion.Maui.Core"
+             xmlns:met="clr-namespace:Arisoul.Core.Maui.Themes;assembly=Arisoul.Core.Maui"
              x:Class="Arisoul.Traceon.App.App">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+                <met:DarkTheme />
+                <syncTheme:SyncfusionThemeResourceDictionary VisualTheme="MaterialDark"/>
+                <ResourceDictionary>
+                    <x:String x:Key="SfButtonTheme">CommonTheme</x:String>
+                    <Color x:Key="SfButtonNormalBackground">White</Color>
+                    <Color x:Key="SfButtonNormalTextColor">Black</Color>
+                </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

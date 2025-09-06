@@ -3,46 +3,106 @@
     x:Class="Arisoul.Traceon.App.Views.ActionEntryCreateOrEditPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
+    xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
+    xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
+    xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
+    xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Models;assembly=Traceon.Maui.Core"
     xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
+    xmlns:sfCore="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
     Title="{Binding Title}"
     x:DataType="vm:ActionEntryCreateOrEditViewModel">
 
+    <ContentPage.Resources>
+        <conv:InverseBoolConverter x:Key="invBool" />
+        <conv:MaxIntegerValueConverter x:Key="maxInt" />
+        <conv:MinIntegerValueConverter x:Key="minInt" />
+        <conv:MaxDecimalValueConverter x:Key="maxDec" />
+        <conv:MinDecimalValueConverter x:Key="minDec" />
+    </ContentPage.Resources>
+
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="16">
-            <Label
-                FontAttributes="Bold"
-                FontSize="20"
-                Text="{Binding TrackedAction.Name}" />
+            <CollectionView ItemsSource="{Binding ActionEntry.Fields}" SelectionMode="Single">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="m:ActionEntryField">
+                        <Grid
+                            HorizontalOptions="Fill"
+                            RowDefinitions="*,*"
+                            RowSpacing="3">
+
+                            <Label
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Text="{Binding ActionField.Name}" />
+
+                            <editors:SfNumericEntry
+                                Grid.Row="1"
+                                AllowNull="{Binding ActionField.IsRequired, Converter={StaticResource invBool}}"
+                                CustomFormat="#,0"
+                                IsVisible="{Binding ActionField.IsIntegerType}"
+                                Maximum="{Binding ActionField.MaxValue, Converter={StaticResource maxInt}}"
+                                Minimum="{Binding ActionField.MinValue, Converter={StaticResource minInt}}"
+                                UpDownPlacementMode="Inline"
+                                Value="{Binding Value, Mode=TwoWay}" />
+
+                            <editors:SfNumericEntry
+                                Grid.Row="1"
+                                AllowNull="{Binding ActionField.IsRequired, Converter={StaticResource invBool}}"
+                                CustomFormat="#,0.00######"
+                                IsVisible="{Binding ActionField.IsDecimalType}"
+                                Maximum="{Binding ActionField.MaxValue, Converter={StaticResource maxDec}}"
+                                Minimum="{Binding ActionField.MinValue, Converter={StaticResource minDec}}"
+                                UpDownPlacementMode="Inline"
+                                Value="{Binding Value, Mode=TwoWay}" />
+
+                            <sfCore:SfTextInputLayout
+                                Grid.Row="1"
+                                ContainerType="Filled"
+                                IsVisible="{Binding ActionField.IsTextType}">
+                                <Editor
+                                    IsTextPredictionEnabled="True"
+                                    Text="{Binding Value, Mode=TwoWay}"
+                                    TextColor="Black" />
+                            </sfCore:SfTextInputLayout>
+
+                            <picker:SfDateTimePicker
+                                Grid.Row="1"
+                                DateFormat="dd_MMM_yyyy"
+                                IsVisible="{Binding ActionField.IsDateType}"
+                                SelectedDate="{Binding Value, Mode=TwoWay}"
+                                TextDisplayMode="FadeAndShrink"
+                                TimeFormat="HH_mm" />
+
+                            <btns:SfCheckBox
+                                Grid.Row="1"
+                                IsChecked="{Binding Value}"
+                                IsVisible="{Binding ActionField.IsBooleanType}" />
+
+                            <editors:SfComboBox
+                                Grid.Row="1"
+                                IsClearButtonVisible="False"
+                                IsVisible="{Binding ActionField.IsDropdownType}"
+                                ItemsSource="{Binding ActionField.DropdownValuesList}"
+                                SelectedItem="{Binding Value}" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
 
             <picker:SfDateTimePicker
                 x:Name="picker"
                 DateFormat="dd_MMM_yyyy"
                 SelectedDate="{Binding ActionEntry.Timestamp, Mode=TwoWay}"
-                TextDisplayMode="FadeAndShrink" />
+                TextDisplayMode="FadeAndShrink"
+                TimeFormat="HH_mm" />
 
-            <!--<DatePicker Date="{Binding EntryDate}" />
-            <TimePicker Time="{Binding EntryTime}" />-->
-            <!--<TimePicker Time="{Binding ActionEntry.Duration}" />-->
-
-            <Label Text="Quantity" />
-            <Entry
-                Keyboard="Numeric"
-                Placeholder="Quantity"
-                Text="{Binding ActionEntry.Quantity}" />
-
-            <Label Text="Cost" />
-            <Entry
-                Keyboard="Numeric"
-                Placeholder="Cost"
-                Text="{Binding ActionEntry.Cost}" />
-            <Editor
-                AutoSize="TextChanges"
-                HeightRequest="100"
-                Placeholder="Notes"
-                Text="{Binding ActionEntry.Notes}" />
-
-            <Button Command="{Binding SaveCommand}" Text="Save" />
+            <btns:SfButton
+                Margin="0,5"
+                Command="{Binding SaveCommand}"
+                Text="{x:Static locArisoul:Messages.Save}" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

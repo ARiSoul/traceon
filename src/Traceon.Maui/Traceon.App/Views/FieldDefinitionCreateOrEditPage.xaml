@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Arisoul.Traceon.App.Views.FieldDefinitionCreateOrEditPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
+    xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
+    xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
+    xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
+    xmlns:sfCore="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
+    xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
+    xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Models;assembly=Traceon.Maui.Core"
+    xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
+    xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
+    Title="{Binding Title}"
+    x:DataType="vm:FieldDefinitionCreateOrEditViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Margin="20" Spacing="5">
+
+            <sfCore:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultName}">
+                <Entry IsTextPredictionEnabled="True" TextColor="Black" Text="{Binding FieldDefinition.DefaultName}" />
+            </sfCore:SfTextInputLayout>
+
+            <sfCore:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultDescription}">
+                <Editor IsTextPredictionEnabled="True" TextColor="Black" Text="{Binding FieldDefinition.DefaultDescription}" />
+            </sfCore:SfTextInputLayout>
+
+            <btns:SfCheckBox
+                x:Name="isRequiredCheckBox"
+                IsChecked="{Binding FieldDefinition.DefaultIsRequired}"
+                Text="{x:Static locTraceon:Strings.DefaultIsRequired}" />
+
+            <Label Text="{x:Static locTraceon:Strings.FieldType}" />
+            <editors:SfComboBox
+                x:Name="comboBox"
+                IsClearButtonVisible="False"
+                ItemsSource="{Binding FieldTypes}"
+                SelectedItem="{Binding SelectedFieldType}" />
+
+            <VerticalStackLayout IsVisible="{Binding IsIntegerTypeSelected}">
+                <Label Text="{x:Static locTraceon:Strings.DefaultMaxValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0" Value="{Binding DefaultIntegerMaxValue}" UpDownPlacementMode="Inline" />
+
+                <Label Text="{x:Static locTraceon:Strings.DefaultMinValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0" Value="{Binding DefaultIntegerMinValue}" UpDownPlacementMode="Inline" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout IsVisible="{Binding IsDecimalTypeSelected}">
+                <Label Text="{x:Static locTraceon:Strings.DefaultMaxValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0.00######" Value="{Binding DefaultDecimalMaxValue}" UpDownPlacementMode="Inline" />
+
+                <Label Text="{x:Static locTraceon:Strings.DefaultMinValue}" />
+                <editors:SfNumericEntry CustomFormat="#,0.00######" Value="{Binding DefaultDecimalMinValue}" UpDownPlacementMode="Inline" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout IsVisible="{Binding IsDropdownTypeSelected}">
+                <Label Text="{x:Static locTraceon:Strings.DropdownValuesSplitBy}" />
+                <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DropdownValues}" />
+            </VerticalStackLayout>
+
+            <btns:SfButton
+                Margin="0,5"
+                Command="{Binding SaveFieldCommand}"
+                Text="{x:Static locArisoul:Messages.Save}"
+                VerticalOptions="End" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

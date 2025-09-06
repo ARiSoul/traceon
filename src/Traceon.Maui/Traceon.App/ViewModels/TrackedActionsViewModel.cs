@@ -1,57 +1,56 @@
 ﻿using Arisoul.Core.Maui.Models;
-using Arisoul.Traceon.Maui.Core.Entities;
+using Arisoul.Traceon.Maui.Core.Models;
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
-public partial class TrackedActionsViewModel
-    : ArisoulMauiBaseViewModel
+public partial class TrackedActionsViewModel : ArisoulMauiBaseViewModel
 {
-    private readonly ITrackedActionRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
     private List<TrackedAction> _allActions = [];
 
     [ObservableProperty] private string _searchQuery = string.Empty;
     [ObservableProperty] private TrackedAction? _selectedAction;
 
-    public ObservableCollection<TrackedAction> Actions { get; private set; } = [];
-
-    public TrackedActionsViewModel(ITrackedActionRepository repository)
+    public TrackedActionsViewModel(IUnitOfWork unitOfWork)
     {
-        _repository = repository;
+        _unitOfWork = unitOfWork;
     }
+
+    public ObservableCollection<TrackedAction> Actions { get; private set; } = [];
 
     internal async Task LoadActionsAsync()
     {
-        var userId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-        var all = await _repository.GetAllAsync(userId);
+        var getAllResult = await _unitOfWork.TrackedActions.GetAllAsync(asNoTracking: true);
 
-        _allActions = [.. all.OrderBy(a => a.Name)];
+        if (getAllResult.Failed)
+        {
+            await this.Dialogs.ShowError(Localization.Strings.ErrorLoadingData);
+            return;
+        }
 
-        Actions.Clear();
+        _allActions = [.. getAllResult.Value.OrderBy(a => a.Name)];
 
-        foreach (var action in _allActions)
-            Actions.Add(action);
-
-        if (!string.IsNullOrWhiteSpace(SearchQuery))
-            Search(SearchQuery);
+        Search(SearchQuery);
     }
 
     [RelayCommand]
-    private async Task DeleteAction(TrackedAction action)
+    private async Task DeleteActionAsync(TrackedAction action)
     {
         if (action is null)
             return;
 
-        await _repository.DeleteAsync(action.Id);
+        await _unitOfWork.TrackedActions.DeleteAsync(action.Id);
+        await _unitOfWork.SaveChangesAsync();
+
         await LoadActionsAsync();
     }
 
     [RelayCommand]
-    private async void CreateOrEditAction(TrackedAction? action)
+    private async Task CreateOrEditActionAsync(TrackedAction? action)
     {
         action ??= new TrackedAction();
 
@@ -83,7 +82,7 @@ public partial class TrackedActionsViewModel
     }
 
     [RelayCommand]
-    private async void HandleSelection()
+    private async Task HandleSelectionAsync()
     {
         if (SelectedAction is not null)
         {
@@ -92,7 +91,7 @@ public partial class TrackedActionsViewModel
     }
 
     [RelayCommand]
-    private async void HandleSelectedAction(TrackedAction action)
+    private async Task HandleSelectedActionAsync(TrackedAction action)
     {
         if (action is not null)
         {
@@ -108,8 +107,6 @@ public partial class TrackedActionsViewModel
                 { "EntryId", Guid.Empty.ToString() }
             };
 
-        // TODO: apply more controls from syncfusion (first check the time and date pickers)
-
-        await Shell.Current.GoToAsync(nameof(Views.ActionEntryCreateOrEditPage), true, parameters);
+        await Shell.Current.GoToAsync(nameof(Views.ActionEntryCreateOrEditPage), true, parameters).ConfigureAwait(false);
     }
 }

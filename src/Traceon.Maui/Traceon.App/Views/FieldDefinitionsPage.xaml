@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Arisoul.Traceon.App.Views.FieldDefinitionsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
+    xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
+    xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
+    xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+    xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
+    xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Models;assembly=Traceon.Maui.Core"
+    xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
+    Title="{x:Static locTraceon:Strings.FieldDefinitions}"
+    x:DataType="vm:FieldDefinitionsViewModel">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid
+        Padding="20,0,20,0"
+        RowDefinitions="0.1*, 0.90*,0.1*"
+        RowSpacing="16">
+
+        <SearchBar
+            x:Name="searchBarTop"
+            HeightRequest="40"
+            Placeholder="{x:Static locArisoul:Messages.Search}"
+            SearchCommand="{Binding SearchCommand}"
+            SearchCommandParameter="{Binding Text, Source={x:Reference searchBarTop}}"
+            Text="{Binding SearchQuery, Mode=TwoWay}"
+            TextChanged="SearchBarTop_TextChanged" />
+
+        <!--  Scrollable list area  -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout>
+                <CollectionView
+                    ItemsSource="{Binding FieldDefinitions}"
+                    SelectedItem="{Binding SelectedFieldDefinition, Mode=TwoWay}"
+                    SelectionChangedCommand="{Binding HandleSelectionCommand}"
+                    SelectionMode="Single">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="m:FieldDefinition">
+                            <Grid ColumnDefinitions="*,auto" HorizontalOptions="Fill">
+
+                                <Grid
+                                    Grid.Column="0"
+                                    Margin="0,10"
+                                    Padding="10"
+                                    ColumnDefinitions="*,auto"
+                                    RowDefinitions="*,*">
+                                    <Label
+                                        Grid.Row="0"
+                                        Grid.Column="0"
+                                        FontAttributes="Bold"
+                                        FontSize="18"
+                                        Text="{Binding DefaultName, Mode=TwoWay}" />
+                                    <Label
+                                        Grid.Row="1"
+                                        Grid.RowSpan="2"
+                                        Grid.Column="0"
+                                        FontSize="13"
+                                        Text="{Binding DefaultDescription, Mode=TwoWay}"
+                                        TextColor="Gray" />
+                                </Grid>
+
+                                <HorizontalStackLayout
+                                    Grid.Column="1"
+                                    Padding="15"
+                                    IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:FieldDefinitionsViewModel}}, Path=IsSelectionMode, Converter={StaticResource InverseBoolConverter}}"
+                                    Spacing="3">
+
+                                    <ImageButton
+                                        BackgroundColor="Transparent"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FieldDefinitionsViewModel}}, Path=CreateOrEditFieldDefinitionCommand}"
+                                        CommandParameter="{Binding .}">
+                                        <ImageButton.Source>
+                                            <FontImageSource
+                                                FontFamily="FAR"
+                                                Glyph="{x:Static fonts:IconFont.PenToSquare}"
+                                                Size="24"
+                                                Color="Green" />
+                                        </ImageButton.Source>
+                                    </ImageButton>
+
+                                    <ImageButton
+                                        BackgroundColor="Transparent"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FieldDefinitionsViewModel}}, Path=DeleteFieldDefinitionCommand}"
+                                        CommandParameter="{Binding .}">
+                                        <ImageButton.Source>
+                                            <FontImageSource
+                                                FontFamily="FAR"
+                                                Glyph="{x:Static fonts:IconFont.TrashCan}"
+                                                Size="24"
+                                                Color="Red" />
+                                        </ImageButton.Source>
+                                    </ImageButton>
+                                </HorizontalStackLayout>
+
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid
+            Grid.Row="2"
+            Padding="0,0,0,10"
+            ColumnDefinitions="Auto"
+            HorizontalOptions="Center">
+            <btns:SfButton Command="{Binding CreateOrEditFieldDefinitionCommand}" Text="{x:Static locArisoul:Messages.New}" />
+        </Grid>
+    </Grid>
+</ContentPage>

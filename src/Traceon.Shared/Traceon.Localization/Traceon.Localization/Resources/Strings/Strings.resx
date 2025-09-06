@@ -135,4 +135,91 @@
   <data name="New_M" xml:space="preserve">
     <value>New</value>
   </data>
+  <data name="FieldDefinitions" xml:space="preserve">
+    <value>Field Definitions</value>
+  </data>
+  <data name="FieldDefinition" xml:space="preserve">
+    <value>Field Definition</value>
+  </data>
+  <data name="Action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="FieldDefinitionsList" xml:space="preserve">
+    <value>Field Definitions List</value>
+  </data>
+  <data name="FieldDefinitionsForm" xml:space="preserve">
+    <value>Field Definitions Form</value>
+  </data>
+  <data name="DefaultName" xml:space="preserve">
+    <value>Default Name</value>
+  </data>
+  <data name="DefaultDescription" xml:space="preserve">
+    <value>Default Description</value>
+  </data>
+  <data name="DefaultIsRequired" xml:space="preserve">
+    <value>Is required by default</value>
+  </data>
+  <data name="FieldType" xml:space="preserve">
+    <value>Field Type</value>
+  </data>
+  <data name="DefaultMaxValue" xml:space="preserve">
+    <value>Default Max. Value</value>
+  </data>
+  <data name="DefaultMinValue" xml:space="preserve">
+    <value>Default Min. Value</value>
+  </data>
+  <data name="DropdownValuesSplitBy" xml:space="preserve">
+    <value>Dropdown Values (split by ;)</value>
+  </data>
+  <data name="SelectType" xml:space="preserve">
+    <value>Select Type</value>
+  </data>
+  <data name="FieldType_Text" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="FieldType_Integer" xml:space="preserve">
+    <value>Integer</value>
+  </data>
+  <data name="FieldType_Decimal" xml:space="preserve">
+    <value>Decimal</value>
+  </data>
+  <data name="FieldType_Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="FieldType_Boolean" xml:space="preserve">
+    <value>Boolean</value>
+  </data>
+  <data name="FieldType_Dropdown" xml:space="preserve">
+    <value>Dropdown</value>
+  </data>
+  <data name="ActionEntry" xml:space="preserve">
+    <value>Action Entry</value>
+  </data>
+  <data name="ActionEntries" xml:space="preserve">
+    <value>Action Entries</value>
+  </data>
+  <data name="MaxValue" xml:space="preserve">
+    <value>Max. Value</value>
+  </data>
+  <data name="MinValue" xml:space="preserve">
+    <value>Min. Value</value>
+  </data>
+  <data name="IsRequired" xml:space="preserve">
+    <value>Is Required</value>
+  </data>
+  <data name="Fields" xml:space="preserve">
+    <value>Fields</value>
+  </data>
+  <data name="ErrorLoadingData" xml:space="preserve">
+    <value>There was an error while loading data. Please, try again. If the error persists, contact your administrator.</value>
+  </data>
+  <data name="InAction" xml:space="preserve">
+    <value>in action:</value>
+  </data>
+  <data name="ERROR_RequiredFieldsTitle" xml:space="preserve">
+    <value>Required Fields</value>
+  </data>
+  <data name="ERROR_TheFollowingFieldsAreRequired" xml:space="preserve">
+    <value>The following fields are required: {0}</value>
+  </data>
 </root>

@@ -5,4 +5,13 @@
 	  <RootNamespace>Arisoul.Traceon.Maui.Core</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Arisoul.Core" Version="3.0.4" />
+    <PackageReference Include="Riok.Mapperly" Version="4.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Traceon.Shared\Traceon.Localization\Traceon.Localization\Traceon.Localization.csproj" />
+  </ItemGroup>
+
 </Project>

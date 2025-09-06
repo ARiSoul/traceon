@@ -20,4 +20,9 @@
         ContentTemplate="{DataTemplate views:TrackedActionsPage}"
         Route="TrackedActionsPage" />
 
+    <ShellContent
+        Title="{x:Static locTraceon:Strings.FieldDefinitions}"
+        ContentTemplate="{DataTemplate views:FieldDefinitionsPage}"
+        Route="FieldDefinitionsPage" />
+
 </Shell>

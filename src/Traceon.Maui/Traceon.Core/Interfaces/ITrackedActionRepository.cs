@@ -1,14 +1,14 @@
-﻿using Arisoul.Traceon.Maui.Core.Entities;
+﻿using Arisoul.Core.Root.Models;
+using Arisoul.Traceon.Maui.Core.Entities;
 
 namespace Arisoul.Traceon.Maui.Core.Interfaces;
 
 public interface ITrackedActionRepository 
-    : IBaseRepository<TrackedAction>
+    : IBaseRepository<TrackedAction, Models.TrackedAction>
 {
-    Task AddActionEntryAsync(Guid actionId, ActionEntry entry);
-    Task DeleteActionEntryAsync(Guid actionId, Guid id);
-    Task<IEnumerable<ActionEntry>> GetActionEntriesAsync(Guid actionId);
-    Task<ActionEntry?> GetActionEntryAsync(Guid actionId, Guid id);
-    Task<IEnumerable<TrackedAction>> GetAllAsync(Guid userId);
-    Task UpdateActionEntryAsync(Guid actionId, ActionEntry entry);
+    Task<Result> AddActionEntryAsync(Guid actionId, Models.ActionEntry entry);
+    Task<Result> DeleteActionEntryAsync(Guid actionId, Guid id);
+    Task<Result<IEnumerable<Models.ActionEntry>>> GetActionEntriesAsync(Guid actionId, bool asNoTracking);
+    Task<Result<Models.ActionEntry>> GetActionEntryAsync(Guid actionId, Guid id, bool asNoTracking);
+    Task<Result> UpdateActionEntryAsync(Guid actionId, Models.ActionEntry entry);
 }

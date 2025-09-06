@@ -33,6 +33,8 @@
 		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
 		<WindowsPackageType>None</WindowsPackageType>
 
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
@@ -70,6 +72,7 @@
 		<PackageReference Include="Syncfusion.Maui.TreeView" Version="29.1.35" />
 		<PackageReference Include="Syncfusion.Maui.DataForm" Version="29.1.35" />
 		<PackageReference Include="Syncfusion.Maui.Picker" Version="29.1.35" />
+		<PackageReference Include="Syncfusion.Maui.Inputs" Version="29.1.35" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -79,6 +82,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Views\FieldDefinitionCreateOrEditPage.xaml.cs">
+	    <DependentUpon>FieldDefinitionCreateOrEditPage.xaml</DependentUpon>
+	  </Compile>
 	  <Compile Update="Views\TrackedActionCreateOrEditPage.xaml.cs">
 	    <DependentUpon>TrackedActionCreateOrEditPage.xaml</DependentUpon>
 	  </Compile>
@@ -86,6 +92,12 @@
 
 	<ItemGroup>
 	  <MauiXaml Update="Views\ActionEntryCreateOrEditPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\FieldDefinitionsPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\FieldDefinitionCreateOrEditPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\TrackedActionCreateOrEditPage.xaml">
