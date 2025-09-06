@@ -26,19 +26,25 @@ public partial class ActionEntryCreateOrEditViewModel
     public ActionEntryCreateOrEditViewModel(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        SetTitle();
+
+        this.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(TrackedAction))
+                if (TrackedAction != null)
+                    SetTitle();
+        };
     }
 
     private void SetTitle()
     {
-        if (ActionEntry == null)
+        if (TrackedAction == null)
             return;
 
         string actionName = $"{Arisoul.Localization.Strings.Messages.Create}";
-        if (ActionEntry.Id != Guid.Empty)
+        if (ActionEntry != null && ActionEntry.Id != Guid.Empty)
             actionName = $"{Arisoul.Localization.Strings.Messages.Edit}";
 
-        Title = $"{actionName} - {Localization.Strings.ActionEntry}";
+        Title = $"{actionName} - {Localization.Strings.ActionEntry} in action {TrackedAction.Name}";
     }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -53,7 +59,7 @@ public partial class ActionEntryCreateOrEditViewModel
                 ActionEntry = new ActionEntry
                 {
                     ActionId = TrackedAction.Id,
-                    Timestamp = DateTime.Now
+                    Timestamp = DateTime.Now,
                 };
 
                 foreach (var actionField in TrackedAction.Fields)
@@ -64,6 +70,7 @@ public partial class ActionEntryCreateOrEditViewModel
                         FieldDefinition = actionField.FieldDefinition,
                         ActionEntryId = ActionEntry.Id,
                         ActionField = actionField,
+                        ActionFieldId = actionField.Id,
                         Value = string.Empty
                     });
                 }
@@ -81,6 +88,9 @@ public partial class ActionEntryCreateOrEditViewModel
         if (ActionEntry == null)
             return;
 
+        if (!await ValidateRequiredFieldsAsync())
+            return;
+
         if (ActionEntry.Id == Guid.Empty) // new
         {
             ActionEntry.Id = Guid.NewGuid();
@@ -95,5 +105,22 @@ public partial class ActionEntryCreateOrEditViewModel
         await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
 
         await Shell.Current.GoToAsync("..");
+    }
+
+    private async Task<bool> ValidateRequiredFieldsAsync()
+    {
+        IList<string> requiredFields = [];
+        foreach (var field in ActionEntry.Fields)
+            if (field.ActionField.IsRequired && string.IsNullOrWhiteSpace(field.Value))
+                requiredFields.Add(field.ActionField.Name);
+
+        if (requiredFields.Count > 0)
+        {
+            await this.Dialogs.ShowError(string.Format(Localization.Strings.ERROR_TheFollowingFieldsAreRequired, string.Join(", ", requiredFields)), Localization.Strings.ERROR_RequiredFieldsTitle);
+
+            return false;
+        }
+
+        return true;
     }
 }

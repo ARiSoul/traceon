@@ -213,4 +213,13 @@
   <data name="ErrorLoadingData" xml:space="preserve">
     <value>There was an error while loading data. Please, try again. If the error persists, contact your administrator.</value>
   </data>
+  <data name="InAction" xml:space="preserve">
+    <value>in action:</value>
+  </data>
+  <data name="ERROR_RequiredFieldsTitle" xml:space="preserve">
+    <value>Required Fields</value>
+  </data>
+  <data name="ERROR_TheFollowingFieldsAreRequired" xml:space="preserve">
+    <value>The following fields are required: {0}</value>
+  </data>
 </root>

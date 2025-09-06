@@ -8,7 +8,7 @@ public interface ITrackedActionRepository
 {
     Task<Result> AddActionEntryAsync(Guid actionId, Models.ActionEntry entry);
     Task<Result> DeleteActionEntryAsync(Guid actionId, Guid id);
-    Task<Result<IEnumerable<Models.ActionEntry>>> GetActionEntriesAsync(Guid actionId);
-    Task<Result<Models.ActionEntry>> GetActionEntryAsync(Guid actionId, Guid id);
+    Task<Result<IEnumerable<Models.ActionEntry>>> GetActionEntriesAsync(Guid actionId, bool asNoTracking);
+    Task<Result<Models.ActionEntry>> GetActionEntryAsync(Guid actionId, Guid id, bool asNoTracking);
     Task<Result> UpdateActionEntryAsync(Guid actionId, Models.ActionEntry entry);
 }

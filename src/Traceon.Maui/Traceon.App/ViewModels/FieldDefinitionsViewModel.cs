@@ -28,7 +28,7 @@ public partial class FieldDefinitionsViewModel : ArisoulMauiBaseViewModel
     
     internal async Task LoadFieldDefinitionsAsync()
     {
-        var getAllResult = await _unitOfWork.FieldDefinitions.GetAllAsync();
+        var getAllResult = await _unitOfWork.FieldDefinitions.GetAllAsync(asNoTracking: true);
 
         if (getAllResult.Failed)
         {

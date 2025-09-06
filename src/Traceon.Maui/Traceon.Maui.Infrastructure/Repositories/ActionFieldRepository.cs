@@ -10,13 +10,13 @@ namespace Arisoul.Traceon.Maui.Infrastructure.Repositories;
 public class ActionFieldRepository(TraceonDbContext context, MapperlyConfiguration mapper)
         : BaseRepository<ActionField, Core.Models.ActionField>(context, mapper), IActionFieldRepository
 {
-    public override IEnumerable<Core.Models.ActionField> MapEntityToModelCollection(IEnumerable<ActionField> entities)
+    protected override IEnumerable<Core.Models.ActionField> MapEntityToModelCollection(IEnumerable<ActionField> entities)
       => Mapper.MapToModelCollection(entities);
 
-    public override Core.Models.ActionField MapEntityToModel(ActionField entity)
+    protected override Core.Models.ActionField MapEntityToModel(ActionField entity)
         => Mapper.MapToModel(entity);
 
-    public override ActionField MapModelToEntity(Core.Models.ActionField model)
+    protected override ActionField MapModelToEntity(Core.Models.ActionField model)
         => Mapper.MapToEntity(model);
 
     public Task<Result> DeleteAsync(Guid actionId, Guid fieldDefinitionId)

@@ -178,6 +178,24 @@ namespace Arisoul.Traceon.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Required Fields.
+        /// </summary>
+        public static string ERROR_RequiredFieldsTitle {
+            get {
+                return ResourceManager.GetString("ERROR_RequiredFieldsTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The following fields are required: {0}.
+        /// </summary>
+        public static string ERROR_TheFollowingFieldsAreRequired {
+            get {
+                return ResourceManager.GetString("ERROR_TheFollowingFieldsAreRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to There was an error while loading data. Please, try again. If the error persists, contact your administrator..
         /// </summary>
         public static string ErrorLoadingData {
@@ -291,6 +309,15 @@ namespace Arisoul.Traceon.Localization {
         public static string FieldType_Text {
             get {
                 return ResourceManager.GetString("FieldType_Text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to in action:.
+        /// </summary>
+        public static string InAction {
+            get {
+                return ResourceManager.GetString("InAction", resourceCulture);
             }
         }
         

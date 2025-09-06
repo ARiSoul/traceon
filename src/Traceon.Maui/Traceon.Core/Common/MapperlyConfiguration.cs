@@ -22,8 +22,6 @@ public partial class MapperlyConfiguration
 
     [MapperIgnoreSource(nameof(ActionField.Action))]
     [MapperIgnoreTarget(nameof(ActionField.Action))]
-    [MapperIgnoreSource(nameof(ActionField.FieldDefinition))]
-    [MapperIgnoreTarget(nameof(ActionField.FieldDefinition))]
     public partial Models.ActionField MapToModel(ActionField source);
     public partial IEnumerable<Models.ActionField> MapToModelCollection(IEnumerable<ActionField> source);
 
@@ -52,11 +50,17 @@ public partial class MapperlyConfiguration
     // ActionEntryField
     [MapperIgnoreSource(nameof(ActionEntryField.ActionEntry))]
     [MapperIgnoreTarget(nameof(ActionEntryField.ActionEntry))]
+    [MapperIgnoreSource(nameof(ActionEntryField.ActionField))]
+    [MapperIgnoreTarget(nameof(ActionEntryField.ActionField))]
+    [MapperIgnoreSource(nameof(ActionEntryField.FieldDefinition))]
+    [MapperIgnoreTarget(nameof(ActionEntryField.FieldDefinition))]
     public partial ActionEntryField MapToEntity(Models.ActionEntryField source);
     public partial IEnumerable<ActionEntryField> MapToEntityCollection(IEnumerable<Models.ActionEntryField> source);
 
     [MapperIgnoreSource(nameof(ActionEntryField.ActionEntry))]
     [MapperIgnoreTarget(nameof(ActionEntryField.ActionEntry))]
+    [MapperIgnoreSource(nameof(ActionEntryField.ActionField))]
+    [MapperIgnoreTarget(nameof(ActionEntryField.ActionField))]
     public partial Models.ActionEntryField MapToModel(ActionEntryField source);
     public partial IEnumerable<Models.ActionEntryField> MapToModelCollection(IEnumerable<ActionEntryField> source);
 

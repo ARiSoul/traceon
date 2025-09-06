@@ -16,53 +16,31 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
 
     #region Actions Overrides
 
-    public override IEnumerable<Core.Models.TrackedAction> MapEntityToModelCollection(IEnumerable<TrackedAction> entities)
+    protected override IEnumerable<Core.Models.TrackedAction> MapEntityToModelCollection(IEnumerable<TrackedAction> entities)
         => Mapper.MapToModelCollection(entities);
 
-    public override Core.Models.TrackedAction MapEntityToModel(TrackedAction entity)
+    protected override Core.Models.TrackedAction MapEntityToModel(TrackedAction entity)
         => Mapper.MapToModel(entity);
 
-    public override TrackedAction MapModelToEntity(Core.Models.TrackedAction model)
+    protected override TrackedAction MapModelToEntity(Core.Models.TrackedAction model)
         => Mapper.MapToEntity(model);
 
-    public override async Task<Result<IEnumerable<Core.Models.TrackedAction>>> GetAllAsync()
+    protected override IQueryable<TrackedAction> IncludeNavigationProperties(DbSet<TrackedAction> dbSet, bool asNoTracking)
     {
-        var entities = await this.DbSet
-            .AsNoTracking()
-            .AsSplitQuery()
+        var query = base.IncludeNavigationProperties(dbSet, asNoTracking);
+
+        query = query
             .Include(a => a.Tags)
             .Include(a => a.Entries)
-            .ThenInclude(e => e.Fields)
-                .ThenInclude(ef => ef.FieldDefinition)
+                .ThenInclude(e => e.Fields)
+                    .ThenInclude(ef => ef.FieldDefinition)
             .Include(a => a.Fields)
-                .ThenInclude(af => af.FieldDefinition)
-                .ToListAsync()
-                .ConfigureAwait(false);
+                .ThenInclude(af => af.FieldDefinition);
 
-        return Result.Success(MapEntityToModelCollection(entities));
+        return query;
     }
 
-    public override async Task<Result<Core.Models.TrackedAction>> GetByIdAsync(Guid id)
-    {
-        var entity = await DbSet
-            .AsNoTracking()
-            .AsSplitQuery()
-            .Include(a => a.Tags)
-            .Include(a => a.Entries)
-            .ThenInclude(e => e.Fields)
-                .ThenInclude(ef => ef.FieldDefinition)
-            .Include(a => a.Fields)
-                .ThenInclude(af => af.FieldDefinition)
-            .FirstOrDefaultAsync(a => a.Id == id)
-            .ConfigureAwait(false);
-
-        if (entity == null)
-            return new ResultNotFoundError($"{typeof(TrackedAction).Name} with Id '{id}' not found.");
-
-        return MapEntityToModel(entity);
-    }
-
-    public override void OnAfterUpdateValuesInEntity(Core.Models.TrackedAction model, TrackedAction updatedEntity)
+    protected override void OnAfterUpdateValuesInEntity(Core.Models.TrackedAction model, TrackedAction updatedEntity)
     {
         // Compare fields and update the collection accordingly
         foreach (var field in model.Fields)
@@ -91,21 +69,13 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
             updatedEntity.Fields.Remove(fieldToRemove);
     }
 
-    public override void OnAfterAddEntity(Core.Models.TrackedAction model, TrackedAction createdEntity)
-    {
-        // Ensure all fields from the model are added to the created entity
-        foreach (var field in model.Fields)
-            if (!createdEntity.Fields.Any(f => f.Id == field.Id))
-                createdEntity.Fields.Add(Mapper.MapToEntity(field));
-    }
-
     #endregion Actions Overrides
 
     #region Entries
 
-    public async Task<Result<IEnumerable<Core.Models.ActionEntry>>> GetActionEntriesAsync(Guid actionId)
+    public async Task<Result<IEnumerable<Core.Models.ActionEntry>>> GetActionEntriesAsync(Guid actionId, bool asNoTracking)
     {
-        var actionResult = await GetByIdAsync(actionId).ConfigureAwait(false);
+        var actionResult = await GetByIdAsync(actionId, asNoTracking).ConfigureAwait(false);
 
         if (actionResult.Failed)
             return actionResult.Error!;
@@ -113,9 +83,9 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
         return actionResult.Value.Entries;
     }
 
-    public async Task<Result<Core.Models.ActionEntry>> GetActionEntryAsync(Guid actionId, Guid id)
+    public async Task<Result<Core.Models.ActionEntry>> GetActionEntryAsync(Guid actionId, Guid id, bool asNoTracking)
     {
-        var actionResult = await GetByIdAsync(actionId).ConfigureAwait(false);
+        var actionResult = await GetByIdAsync(actionId, asNoTracking).ConfigureAwait(false);
 
         if (actionResult.Failed)
             return actionResult.Error!;
@@ -130,24 +100,19 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
 
     public async Task<Result> AddActionEntryAsync(Guid actionId, Core.Models.ActionEntry entry)
     {
-        var actionResult = await GetByIdAsync(actionId).ConfigureAwait(false);
+        var actionResult = await GetByIdAsync(actionId, false).ConfigureAwait(false);
 
         if (actionResult.Failed)
             return actionResult.Error!;
 
-        actionResult.Value.Entries.Add(entry);
-
-        var updateResult = await UpdateAsync(actionResult.Value).ConfigureAwait(false);
-
-        if (updateResult.Failed)
-            return updateResult.Error!;
+        this.Context.ActionEntries.Add(Mapper.MapToEntity(entry));
 
         return Result.Success();
     }
 
     public async Task<Result> UpdateActionEntryAsync(Guid actionId, Core.Models.ActionEntry entry)
     {
-        var actionResult = await GetByIdAsync(actionId).ConfigureAwait(false);
+        var actionResult = await GetByIdAsync(actionId, false).ConfigureAwait(false);
 
         if (actionResult.Failed)
             return actionResult.Error!;
@@ -168,7 +133,7 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
 
     public async Task<Result> DeleteActionEntryAsync(Guid actionId, Guid id)
     {
-        var actionResult = await GetByIdAsync(actionId).ConfigureAwait(false);
+        var actionResult = await GetByIdAsync(actionId, false).ConfigureAwait(false);
 
         if (actionResult.Failed)
             return actionResult.Error!;

@@ -24,7 +24,7 @@ public partial class TrackedActionsViewModel : ArisoulMauiBaseViewModel
 
     internal async Task LoadActionsAsync()
     {
-        var getAllResult = await _unitOfWork.TrackedActions.GetAllAsync();
+        var getAllResult = await _unitOfWork.TrackedActions.GetAllAsync(asNoTracking: true);
 
         if (getAllResult.Failed)
         {

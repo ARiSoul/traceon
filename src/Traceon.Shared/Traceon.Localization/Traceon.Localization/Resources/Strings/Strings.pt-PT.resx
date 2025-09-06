@@ -213,4 +213,13 @@
   <data name="ErrorLoadingData" xml:space="preserve">
     <value>Houve um erro ao carregar os dados. Por favor, tente novamente. Se o erro persistir, contacte o seu administrador.</value>
   </data>
+  <data name="InAction" xml:space="preserve">
+    <value>na acção:</value>
+  </data>
+  <data name="ERROR_RequiredFieldsTitle" xml:space="preserve">
+    <value>Campos de Preenchimento Obrigatório</value>
+  </data>
+  <data name="ERROR_TheFollowingFieldsAreRequired" xml:space="preserve">
+    <value>Os seguintes campos são de preenchimento obrigatório: {0}</value>
+  </data>
 </root>
