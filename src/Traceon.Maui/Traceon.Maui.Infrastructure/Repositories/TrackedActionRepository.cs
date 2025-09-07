@@ -3,27 +3,20 @@ using Arisoul.Core.Root.Models.Results;
 using Arisoul.Traceon.Maui.Core;
 using Arisoul.Traceon.Maui.Core.Entities;
 using Arisoul.Traceon.Maui.Core.Interfaces;
+using Arisoul.Traceon.Maui.Core.Mappings;
 using Arisoul.Traceon.Maui.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Arisoul.Traceon.Maui.Infrastructure.Repositories;
 
-public class TrackedActionRepository(TraceonDbContext context, MapperlyConfiguration mapper)
-        : BaseRepository<TrackedAction, Core.Models.TrackedAction>(context, mapper), ITrackedActionRepository
+public class TrackedActionRepository(TraceonDbContext context)
+        : BaseRepository<TrackedAction, Core.Models.TrackedAction>(context), ITrackedActionRepository
 {
 
     #region Public Methods
 
     #region Actions Overrides
-
-    protected override IEnumerable<Core.Models.TrackedAction> MapEntityToModelCollection(IEnumerable<TrackedAction> entities)
-        => Mapper.MapToModelCollection(entities);
-
-    protected override Core.Models.TrackedAction MapEntityToModel(TrackedAction entity)
-        => Mapper.MapToModel(entity);
-
-    protected override TrackedAction MapModelToEntity(Core.Models.TrackedAction model)
-        => Mapper.MapToEntity(model);
 
     protected override IQueryable<TrackedAction> IncludeNavigationProperties(DbSet<TrackedAction> dbSet, bool asNoTracking)
     {
@@ -31,14 +24,14 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
 
         query = query
             .Include(a => a.Tags)
-            .Include(a => a.Entries)
-                .ThenInclude(e => e.Fields)
-                    .ThenInclude(ef => ef.FieldDefinition)
             .Include(a => a.Fields)
                 .ThenInclude(af => af.FieldDefinition);
 
         return query;
     }
+
+    protected override Expression<Func<TrackedAction, Core.Models.TrackedAction>> GetProjectExpression() 
+        => TrackedActionMapper.Project;
 
     protected override void OnAfterUpdateValuesInEntity(Core.Models.TrackedAction model, TrackedAction updatedEntity)
     {
@@ -59,7 +52,7 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
             else
             {
                 // Add new field
-                updatedEntity.Fields.Add(Mapper.MapToEntity(field));
+                updatedEntity.Fields.Add(ActionFieldMapper.ToEntity(field));
             }
         }
 
@@ -69,31 +62,46 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
             updatedEntity.Fields.Remove(fieldToRemove);
     }
 
+    protected override TrackedAction MapModelToEntity(Core.Models.TrackedAction model) 
+        => TrackedActionMapper.ToEntity(model);
+
     #endregion Actions Overrides
 
     #region Entries
 
     public async Task<Result<IEnumerable<Core.Models.ActionEntry>>> GetActionEntriesAsync(Guid actionId, bool asNoTracking)
     {
-        var actionResult = await GetByIdAsync(actionId, asNoTracking).ConfigureAwait(false);
+        var query = Context.ActionEntries
+            .AsSplitQuery()
+            .Where(e => e.ActionId == actionId);
 
-        if (actionResult.Failed)
-            return actionResult.Error!;
+        if (asNoTracking)
+            query = query.AsNoTracking();
 
-        return actionResult.Value.Entries;
+        var entries = await query
+            .Select(ActionEntryMapper.Project)
+            .ToListAsync()
+            .ConfigureAwait(false);
+
+        return entries;
     }
 
     public async Task<Result<Core.Models.ActionEntry>> GetActionEntryAsync(Guid actionId, Guid id, bool asNoTracking)
     {
-        var actionResult = await GetByIdAsync(actionId, asNoTracking).ConfigureAwait(false);
+        var query = Context.ActionEntries
+            .AsSplitQuery()
+            .Where(e => e.ActionId == actionId && e.Id == id);
 
-        if (actionResult.Failed)
-            return actionResult.Error!;
+        if (asNoTracking)
+            query = query.AsNoTracking();
 
-        var entry = actionResult.Value.Entries.FirstOrDefault(x => x.Id == id);
+        var entry = await query
+            .Select(ActionEntryMapper.Project)
+            .FirstOrDefaultAsync()
+            .ConfigureAwait(false);
 
         if (entry is null)
-            return new ResultNotFoundError($"ActionEntry with Id '{id}' not found.");
+            return new ResultNotFoundError($"ActionEntry with Id '{id}' not found in Action with Id '{actionId}'.");
 
         return entry;
     }
@@ -105,7 +113,12 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
         if (actionResult.Failed)
             return actionResult.Error!;
 
-        this.Context.ActionEntries.Add(Mapper.MapToEntity(entry));
+        var actionEntryResult = await GetActionEntryAsync(actionId, entry.Id, true).ConfigureAwait(false);
+
+        if (actionEntryResult.Succeeded)
+            return new ResultConflictError($"ActionEntry with Id '{entry.Id}' already exists in Action with Id '{actionId}'.");
+
+        this.Context.ActionEntries.Add(ActionEntryMapper.ToEntity(entry));
 
         return Result.Success();
     }
@@ -117,16 +130,41 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
         if (actionResult.Failed)
             return actionResult.Error!;
 
-        var existingEntry = actionResult.Value.Entries.FirstOrDefault(x => x.Id == entry.Id);
+        var existingEntry = this.Context.ActionEntries
+            .AsSplitQuery()
+            .Include(e => e.Fields)
+            .FirstOrDefault(x => x.Id == entry.Id);
 
         if (existingEntry is null)
             return new ResultNotFoundError($"ActionEntry with Id '{entry.Id}' not found.");
 
-        existingEntry = entry;
-        var updateResult = await UpdateAsync(actionResult.Value).ConfigureAwait(false);
+        var modifiedEntity = ActionEntryMapper.ToEntity(entry);
 
-        if (updateResult.Failed)
-            return updateResult.Error!;
+        this.Context.Entry(existingEntry).CurrentValues.SetValues(modifiedEntity);
+
+        // Handle Fields changes
+        foreach (var field in entry.Fields)
+        {
+            var existingField = modifiedEntity.Fields.FirstOrDefault(f => f.Id == field.Id);
+            if (existingField != null)
+            {
+                // Update existing field
+                existingField.Value = field.Value;
+                existingField.ActionEntryId = field.ActionEntryId;
+                existingField.ActionFieldId = field.ActionFieldId;
+                existingField.FieldDefinitionId = field.FieldDefinitionId;
+            }
+            else
+            {
+                // Add new field
+                modifiedEntity.Fields.Add(ActionEntryFieldMapper.ToEntity(field));
+            }
+        }
+
+        // Remove fields that are no longer present
+        var fieldsToRemove = modifiedEntity.Fields.Where(f => !entry.Fields.Any(mf => mf.Id == f.Id)).ToList();
+        foreach (var fieldToRemove in fieldsToRemove)
+            modifiedEntity.Fields.Remove(fieldToRemove);
 
         return Result.Success();
     }
@@ -138,11 +176,15 @@ public class TrackedActionRepository(TraceonDbContext context, MapperlyConfigura
         if (actionResult.Failed)
             return actionResult.Error!;
 
-        actionResult.Value.Entries.RemoveAll(x => x.Id == id);
-        var updateResult = await UpdateAsync(actionResult.Value).ConfigureAwait(false);
+        var existingEntry = this.Context.ActionEntries
+            .AsSplitQuery()
+            .Include(e => e.Fields)
+            .FirstOrDefault(x => x.Id == id);
 
-        if (updateResult.Failed)
-            return updateResult.Error!;
+        if (existingEntry is null)
+            return new ResultNotFoundError($"ActionEntry with Id '{id}' not found.");
+
+        this.Context.ActionEntries.Remove(existingEntry);
 
         return Result.Success();
     }

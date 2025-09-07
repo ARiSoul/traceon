@@ -1,5 +1,7 @@
 ﻿using Arisoul.Traceon.Maui.Core.Entities;
 
+namespace Arisoul.Traceon.Maui.Core.Entities;
+
 public class ActionTag
     : BaseActionChildEntity
 {

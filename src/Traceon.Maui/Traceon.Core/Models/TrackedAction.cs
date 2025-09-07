@@ -7,8 +7,8 @@ public class TrackedAction
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public int EntryCount { get; set; }
 
     public ObservableCollection<ActionField> Fields { get; set; } = [];
-    public List<ActionTag> Tags { get; set; } = [];
-    public List<ActionEntry> Entries { get; set; } = [];
+    public ObservableCollection<ActionTag> Tags { get; set; } = [];
 }

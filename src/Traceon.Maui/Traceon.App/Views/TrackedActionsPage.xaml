@@ -75,7 +75,7 @@
                                             FontAttributes="Bold"
                                             FontSize="16"
                                             HorizontalOptions="Center"
-                                            Text="{Binding Entries.Count}"
+                                            Text="{Binding EntryCount}"
                                             TextColor="White"
                                             VerticalOptions="Center" />
                                     </btns:SfButton>

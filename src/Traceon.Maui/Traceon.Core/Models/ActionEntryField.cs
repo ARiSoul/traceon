@@ -13,5 +13,5 @@ public class ActionEntryField
     public Guid FieldDefinitionId { get; set; }
     public FieldDefinition FieldDefinition { get; set; } = null!;
 
-    public string Value { get; set; } = string.Empty;
+    public string? Value { get; set; } = string.Empty;
 }

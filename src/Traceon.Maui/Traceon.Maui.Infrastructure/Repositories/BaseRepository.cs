@@ -4,10 +4,11 @@ using Arisoul.Traceon.Maui.Core;
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using Arisoul.Traceon.Maui.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Arisoul.Traceon.Maui.Infrastructure.Repositories;
 
-public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, MapperlyConfiguration mapper)
+public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context)
     : IBaseRepository<TEntity, TModel>
     where TEntity : class, IEntityWithId
     where TModel : class, IEntityWithId
@@ -17,7 +18,6 @@ public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, 
 
     protected TraceonDbContext Context = context;
     protected DbSet<TEntity> DbSet = context.Set<TEntity>();
-    protected MapperlyConfiguration Mapper = mapper;
 
     #endregion Protected Members
 
@@ -25,21 +25,34 @@ public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, 
 
     public virtual async Task<Result<IEnumerable<TModel>>> GetAllAsync(bool asNoTracking)
     {
-        var query = this.IncludeNavigationProperties(DbSet, asNoTracking);
-        IList<TEntity> entities = await query.ToListAsync();
+        IQueryable<TEntity>? query = DbSet.AsSplitQuery();
 
-        return Result.Success(this.MapEntityToModelCollection(entities));
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        var result = query
+            .Select(GetProjectExpression());
+
+        return await result.ToListAsync();
     }
 
     public virtual async Task<Result<TModel>> GetByIdAsync(Guid id, bool asNoTracking)
     {
-        var query = this.IncludeNavigationProperties(DbSet, asNoTracking);
-        TEntity? entity = await query.FirstOrDefaultAsync(e => e.Id == id);
+        IQueryable<TEntity>? query = DbSet.AsSplitQuery()
+            .Where(a => a.Id == id);
 
-        if (entity == null)
-            return new ResultNotFoundError($"{typeof(TEntity).Name} with Id '{id}' not found.");
+        if (asNoTracking)
+            query = query.AsNoTracking();
 
-        return this.MapEntityToModel(entity);
+        var model = await query
+            .Select(GetProjectExpression())
+            .FirstOrDefaultAsync()
+            .ConfigureAwait(false);
+
+        if (model is null)
+            return NotFoundError(id);
+
+        return model;
     }
 
     public virtual async Task<Result> CreateAsync(TModel model)
@@ -59,7 +72,7 @@ public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, 
         var existingEntity = await query.FirstOrDefaultAsync(e => e.Id == model.Id);
 
         if (existingEntity == null)
-            return new ResultNotFoundError($"{typeof(TEntity).Name} with Id '{model.Id}' not found.");
+            return NotFoundError(model.Id);
 
         var modifiedEntity = this.MapModelToEntity(model);
 
@@ -76,7 +89,7 @@ public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, 
         var entity = await query.FirstOrDefaultAsync(e => e.Id == id);
 
         if (entity == null)
-            return new ResultNotFoundError($"{typeof(TEntity).Name} with Id '{id}' not found.");
+            return NotFoundError(id);
 
         if (entity != null)
             DbSet.Remove(entity);
@@ -88,8 +101,7 @@ public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, 
 
     #region Protected Methods
 
-    protected abstract IEnumerable<TModel> MapEntityToModelCollection(IEnumerable<TEntity> entities);
-    protected abstract TModel MapEntityToModel(TEntity entity);
+    protected abstract Expression<Func<TEntity, TModel>> GetProjectExpression();
     protected abstract TEntity MapModelToEntity(TModel model);
 
     protected virtual IQueryable<TEntity> IncludeNavigationProperties(DbSet<TEntity> dbSet, bool asNoTracking)
@@ -110,6 +122,9 @@ public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context, 
     {
         return;
     }
+
+    protected virtual ResultNotFoundError NotFoundError(Guid id)
+        => new($"{typeof(TEntity).Name} with Id '{id}' not found.");
 
     #endregion Protected Methods
 }

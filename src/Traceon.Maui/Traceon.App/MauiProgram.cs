@@ -55,9 +55,6 @@ public static class MauiProgram
         builder.Services.AddDbContext<TraceonDbContext>(options =>
             options.UseSqlite("Filename=traceon.db"));
 
-        // Singleton services
-        builder.Services.AddSingleton<MapperlyConfiguration>();
-
         CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
         CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
 

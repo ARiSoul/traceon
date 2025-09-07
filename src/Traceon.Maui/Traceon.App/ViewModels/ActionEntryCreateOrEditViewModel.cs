@@ -47,7 +47,7 @@ public partial class ActionEntryCreateOrEditViewModel
         Title = $"{actionName} - {Localization.Strings.ActionEntry} in action {TrackedAction.Name}";
     }
 
-    protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+    protected override async void OnPropertyChanged(PropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);
 
@@ -77,7 +77,15 @@ public partial class ActionEntryCreateOrEditViewModel
             }
             else
             {
-                ActionEntry = TrackedAction.Entries.FirstOrDefault(e => e.Id == entryId);
+                var actionEntryResult = await _unitOfWork.TrackedActions.GetActionEntryAsync(TrackedAction.Id, entryId, true);
+
+                if (actionEntryResult.Failed)
+                {
+                    await this.Dialogs.ShowError(Localization.Strings.ErrorLoadingData);
+                    return;
+                }
+
+                ActionEntry = actionEntryResult.Value;
             }
         }
     }
