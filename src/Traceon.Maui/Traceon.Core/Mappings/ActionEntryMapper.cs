@@ -21,7 +21,8 @@ public static class ActionEntryMapper
         {
             Id = model.Id,
             ActionId = model.ActionId,
-            Timestamp = model.Timestamp
+            Timestamp = model.Timestamp,
+            Fields = [.. model.Fields.Select(t => t.ToEntity())]
         };
     }
 

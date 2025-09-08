@@ -35,31 +35,22 @@ public class TrackedActionRepository(TraceonDbContext context)
 
     protected override void OnAfterUpdateValuesInEntity(Core.Models.TrackedAction model, TrackedAction updatedEntity)
     {
-        // Compare fields and update the collection accordingly
-        foreach (var field in model.Fields)
-        {
-            var existingField = updatedEntity.Fields.FirstOrDefault(f => f.Id == field.Id);
-            if (existingField != null)
+        // Handle one-to-many relationship for fields
+        this.UpdateOneToManyRelation(
+            modelCollection: model.Fields,
+            entityCollection: updatedEntity.Fields,
+            modelKeySelector: m => m.Id,
+            entityKeySelector: e => e.Id,
+            updateEntityAction: (m, e) =>
             {
-                // Update existing field
-                existingField.Name = field.Name;
-                existingField.Description = field.Description;
-                existingField.IsRequired = field.IsRequired;
-                existingField.MinValue = field.MinValue;
-                existingField.MaxValue = field.MaxValue;
-                existingField.FieldDefinitionId = field.FieldDefinitionId;
-            }
-            else
-            {
-                // Add new field
-                updatedEntity.Fields.Add(ActionFieldMapper.ToEntity(field));
-            }
-        }
-
-        // Remove fields that are no longer present
-        var fieldsToRemove = updatedEntity.Fields.Where(f => !model.Fields.Any(mf => mf.Id == f.Id)).ToList();
-        foreach (var fieldToRemove in fieldsToRemove)
-            updatedEntity.Fields.Remove(fieldToRemove);
+                e.Name = m.Name;
+                e.Description = m.Description;
+                e.IsRequired = m.IsRequired;
+                e.MinValue = m.MinValue;
+                e.MaxValue = m.MaxValue;
+                e.FieldDefinitionId = m.FieldDefinitionId;
+            },
+            createEntityAction: ActionFieldMapper.ToEntity);
     }
 
     protected override TrackedAction MapModelToEntity(Core.Models.TrackedAction model) 
@@ -142,29 +133,20 @@ public class TrackedActionRepository(TraceonDbContext context)
 
         this.Context.Entry(existingEntry).CurrentValues.SetValues(modifiedEntity);
 
-        // Handle Fields changes
-        foreach (var field in entry.Fields)
-        {
-            var existingField = modifiedEntity.Fields.FirstOrDefault(f => f.Id == field.Id);
-            if (existingField != null)
+        // Handle one-to-many relation for Fields
+        this.UpdateOneToManyRelation(
+            modelCollection: entry.Fields,
+            entityCollection: existingEntry.Fields,
+            modelKeySelector: m => m.Id,
+            entityKeySelector: e => e.Id,
+            updateEntityAction: (m, e) =>
             {
-                // Update existing field
-                existingField.Value = field.Value;
-                existingField.ActionEntryId = field.ActionEntryId;
-                existingField.ActionFieldId = field.ActionFieldId;
-                existingField.FieldDefinitionId = field.FieldDefinitionId;
-            }
-            else
-            {
-                // Add new field
-                modifiedEntity.Fields.Add(ActionEntryFieldMapper.ToEntity(field));
-            }
-        }
-
-        // Remove fields that are no longer present
-        var fieldsToRemove = modifiedEntity.Fields.Where(f => !entry.Fields.Any(mf => mf.Id == f.Id)).ToList();
-        foreach (var fieldToRemove in fieldsToRemove)
-            modifiedEntity.Fields.Remove(fieldToRemove);
+                e.Value = m.Value;
+                e.ActionEntryId = m.ActionEntryId;
+                e.ActionFieldId = m.ActionFieldId;
+                e.FieldDefinitionId = m.FieldDefinitionId;
+            },
+            createEntityAction: ActionEntryFieldMapper.ToEntity);
 
         return Result.Success();
     }

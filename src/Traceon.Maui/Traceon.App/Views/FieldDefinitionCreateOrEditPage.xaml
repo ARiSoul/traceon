@@ -7,11 +7,11 @@
     xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
     xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
     xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
-    xmlns:sfCore="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Models;assembly=Traceon.Maui.Core"
     xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
+    xmlns:sfCore="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
     Title="{Binding Title}"
     x:DataType="vm:FieldDefinitionCreateOrEditViewModel">
@@ -20,11 +20,17 @@
         <VerticalStackLayout Margin="20" Spacing="5">
 
             <sfCore:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultName}">
-                <Entry IsTextPredictionEnabled="True" TextColor="Black" Text="{Binding FieldDefinition.DefaultName}" />
+                <Entry
+                    IsTextPredictionEnabled="True"
+                    Text="{Binding FieldDefinition.DefaultName}"
+                    TextColor="Black" />
             </sfCore:SfTextInputLayout>
 
             <sfCore:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultDescription}">
-                <Editor IsTextPredictionEnabled="True" TextColor="Black" Text="{Binding FieldDefinition.DefaultDescription}" />
+                <Editor
+                    IsTextPredictionEnabled="True"
+                    Text="{Binding FieldDefinition.DefaultDescription}"
+                    TextColor="Black" />
             </sfCore:SfTextInputLayout>
 
             <btns:SfCheckBox
@@ -39,25 +45,73 @@
                 ItemsSource="{Binding FieldTypes}"
                 SelectedItem="{Binding SelectedFieldType}" />
 
-            <VerticalStackLayout IsVisible="{Binding IsIntegerTypeSelected}">
+            <VerticalStackLayout IsVisible="{Binding IsIntegerTypeSelected, Mode=TwoWay}">
                 <Label Text="{x:Static locTraceon:Strings.DefaultMaxValue}" />
-                <editors:SfNumericEntry CustomFormat="#,0" Value="{Binding DefaultIntegerMaxValue}" UpDownPlacementMode="Inline" />
+                <editors:SfNumericEntry
+                    CustomFormat="#,0"
+                    UpDownPlacementMode="Inline"
+                    Value="{Binding DefaultIntegerMaxValue}" />
 
                 <Label Text="{x:Static locTraceon:Strings.DefaultMinValue}" />
-                <editors:SfNumericEntry CustomFormat="#,0" Value="{Binding DefaultIntegerMinValue}" UpDownPlacementMode="Inline" />
+                <editors:SfNumericEntry
+                    CustomFormat="#,0"
+                    UpDownPlacementMode="Inline"
+                    Value="{Binding DefaultIntegerMinValue}" />
+
+                <Label Text="{x:Static locTraceon:Strings.DefaultValue}" />
+                <editors:SfNumericEntry
+                    CustomFormat="#,0"
+                    UpDownPlacementMode="Inline"
+                    Value="{Binding FieldDefinition.DefaultValue}" />
             </VerticalStackLayout>
 
-            <VerticalStackLayout IsVisible="{Binding IsDecimalTypeSelected}">
+            <VerticalStackLayout IsVisible="{Binding IsDecimalTypeSelected, Mode=TwoWay}">
                 <Label Text="{x:Static locTraceon:Strings.DefaultMaxValue}" />
-                <editors:SfNumericEntry CustomFormat="#,0.00######" Value="{Binding DefaultDecimalMaxValue}" UpDownPlacementMode="Inline" />
+                <editors:SfNumericEntry
+                    CustomFormat="#,0.00######"
+                    UpDownPlacementMode="Inline"
+                    Value="{Binding DefaultDecimalMaxValue}" />
 
                 <Label Text="{x:Static locTraceon:Strings.DefaultMinValue}" />
-                <editors:SfNumericEntry CustomFormat="#,0.00######" Value="{Binding DefaultDecimalMinValue}" UpDownPlacementMode="Inline" />
+                <editors:SfNumericEntry
+                    CustomFormat="#,0.00######"
+                    UpDownPlacementMode="Inline"
+                    Value="{Binding DefaultDecimalMinValue}" />
+
+                <Label Text="{x:Static locTraceon:Strings.DefaultValue}" />
+                <editors:SfNumericEntry
+                    CustomFormat="#,0.00######"
+                    UpDownPlacementMode="Inline"
+                    Value="{Binding FieldDefinition.DefaultValue}" />
             </VerticalStackLayout>
 
-            <VerticalStackLayout IsVisible="{Binding IsDropdownTypeSelected}">
+            <VerticalStackLayout IsVisible="{Binding IsDropdownTypeSelected, Mode=TwoWay}">
                 <Label Text="{x:Static locTraceon:Strings.DropdownValuesSplitBy}" />
                 <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DropdownValues}" />
+
+                <Label Text="{x:Static locTraceon:Strings.DefaultValue}" />
+                <editors:SfComboBox
+                    IsClearButtonVisible="True"
+                    ItemsSource="{Binding FieldDefinition.DropdownValuesList}"
+                    SelectedItem="{Binding FieldDefinition.DefaultValue}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout IsVisible="{Binding IsTextTypeSelected, Mode=TwoWay}">
+                <Label Text="{x:Static locTraceon:Strings.DefaultValue}" />
+                <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DefaultValue}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout IsVisible="{Binding IsDateTypeSelected, Mode=TwoWay}">
+                <Label Text="{x:Static locTraceon:Strings.DefaultValue}" />
+                <picker:SfDateTimePicker
+                    DateFormat="dd_MMM_yyyy"
+                    SelectedDate="{Binding FieldDefinition.DefaultValue}"
+                    TextDisplayMode="FadeAndShrink"
+                    TimeFormat="HH_mm" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout IsVisible="{Binding IsBooleanTypeSelected, Mode=TwoWay}">
+                <btns:SfCheckBox IsChecked="{Binding FieldDefinition.DefaultValue}" Text="{x:Static locTraceon:Strings.DefaultValue}" />
             </VerticalStackLayout>
 
             <btns:SfButton

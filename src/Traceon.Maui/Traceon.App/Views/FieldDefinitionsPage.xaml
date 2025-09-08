@@ -43,7 +43,7 @@
                     SelectionMode="Single">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="m:FieldDefinition">
-                            <Grid ColumnDefinitions="*,auto" HorizontalOptions="Fill">
+                            <Grid ColumnDefinitions="3*,*" HorizontalOptions="Fill">
 
                                 <Grid
                                     Grid.Column="0"
@@ -80,7 +80,7 @@
                                             <FontImageSource
                                                 FontFamily="FAR"
                                                 Glyph="{x:Static fonts:IconFont.PenToSquare}"
-                                                Size="24"
+                                                Size="36"
                                                 Color="Green" />
                                         </ImageButton.Source>
                                     </ImageButton>
@@ -93,7 +93,7 @@
                                             <FontImageSource
                                                 FontFamily="FAR"
                                                 Glyph="{x:Static fonts:IconFont.TrashCan}"
-                                                Size="24"
+                                                Size="36"
                                                 Color="Red" />
                                         </ImageButton.Source>
                                     </ImageButton>

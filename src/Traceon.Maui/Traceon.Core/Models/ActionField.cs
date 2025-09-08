@@ -15,6 +15,7 @@ public class ActionField
     public decimal? MaxValue { get; set; }
     public decimal? MinValue { get; set; }
     public bool IsRequired { get; set; }
+    public string? DefaultValue { get; set; }
 
     public bool IsIntegerType => FieldDefinition != null && FieldDefinition.Type == Core.Entities.FieldType.Integer;
     public bool IsDecimalType => FieldDefinition != null && FieldDefinition.Type == Core.Entities.FieldType.Decimal;

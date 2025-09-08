@@ -39,7 +39,8 @@ public partial class TrackedActionCreateOrEditViewModel
                 IsRequired = selected.DefaultIsRequired,
                 MaxValue = selected.DefaultMaxValue,
                 MinValue = selected.DefaultMinValue,
-                Name = selected.DefaultName
+                Name = selected.DefaultName,
+                DefaultValue = selected.DefaultValue
             });
         });
     }

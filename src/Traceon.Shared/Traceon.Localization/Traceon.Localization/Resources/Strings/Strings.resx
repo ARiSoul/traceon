@@ -222,4 +222,7 @@
   <data name="ERROR_TheFollowingFieldsAreRequired" xml:space="preserve">
     <value>The following fields are required: {0}</value>
   </data>
+  <data name="DefaultValue" xml:space="preserve">
+    <value>Default Value</value>
+  </data>
 </root>

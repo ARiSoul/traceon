@@ -59,7 +59,7 @@ public partial class ActionEntryCreateOrEditViewModel
                 ActionEntry = new ActionEntry
                 {
                     ActionId = TrackedAction.Id,
-                    Timestamp = DateTime.Now,
+                    Timestamp = DateTime.Now
                 };
 
                 foreach (var actionField in TrackedAction.Fields)
@@ -71,7 +71,8 @@ public partial class ActionEntryCreateOrEditViewModel
                         ActionEntryId = ActionEntry.Id,
                         ActionField = actionField,
                         ActionFieldId = actionField.Id,
-                        Value = string.Empty
+                        Value = actionField.DefaultValue,
+                        Id = Guid.NewGuid()
                     });
                 }
             }
@@ -102,6 +103,9 @@ public partial class ActionEntryCreateOrEditViewModel
         if (ActionEntry.Id == Guid.Empty) // new
         {
             ActionEntry.Id = Guid.NewGuid();
+
+            foreach (var field in ActionEntry.Fields)
+                field.ActionEntryId = ActionEntry.Id;
 
             await _unitOfWork.TrackedActions.AddActionEntryAsync(TrackedAction.Id, ActionEntry).ConfigureAwait(false);
         }

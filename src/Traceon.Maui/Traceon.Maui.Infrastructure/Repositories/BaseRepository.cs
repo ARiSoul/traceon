@@ -123,6 +123,34 @@ public abstract class BaseRepository<TEntity, TModel>(TraceonDbContext context)
         return;
     }
 
+    protected virtual void UpdateOneToManyRelation<TModelItem, TEntityItem, TKey>(
+       IEnumerable<TModelItem> modelCollection,
+       ICollection<TEntityItem> entityCollection,
+       Func<TModelItem, TKey> modelKeySelector,
+       Func<TEntityItem, TKey> entityKeySelector,
+       Action<TModelItem, TEntityItem> updateEntityAction,
+       Func<TModelItem, TEntityItem> createEntityAction)
+    {
+        // Update and add
+        foreach (var modelItem in modelCollection)
+        {
+            var key = modelKeySelector(modelItem);
+            var entityItem = entityCollection.FirstOrDefault(e => entityKeySelector(e)!.Equals(key));
+            if (entityItem != null)
+                updateEntityAction(modelItem, entityItem);
+            else
+                entityCollection.Add(createEntityAction(modelItem));
+        }
+
+        // Remove
+        var toRemove = entityCollection
+            .Where(e => !modelCollection.Any(m => modelKeySelector(m)!.Equals(entityKeySelector(e))))
+            .ToList();
+
+        foreach (var entityItem in toRemove)
+            entityCollection.Remove(entityItem);
+    }
+
     protected virtual ResultNotFoundError NotFoundError(Guid id)
         => new($"{typeof(TEntity).Name} with Id '{id}' not found.");
 

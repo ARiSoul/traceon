@@ -32,9 +32,7 @@
 
 
             <Border>
-                <CollectionView
-                    ItemsSource="{Binding TrackedAction.Fields}"
-                    SelectionMode="Single">
+                <CollectionView ItemsSource="{Binding TrackedAction.Fields}" SelectionMode="Single">
                     <CollectionView.Header>
                         <Grid BackgroundColor="{x:StaticResource Key=TertiaryColor}">
                             <Label
@@ -44,7 +42,7 @@
                                 Text="Fields"
                                 VerticalOptions="Center" />
                             <btns:SfButton
-                                Margin="0,5"
+                                Margin="5"
                                 Command="{Binding AddActionFieldCommand}"
                                 FontFamily="FAR"
                                 HorizontalOptions="End"
@@ -54,7 +52,7 @@
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="m:ActionField">
                             <Border>
-                                <Grid ColumnDefinitions="*,*" HorizontalOptions="Fill">
+                                <Grid ColumnDefinitions="5*,*" HorizontalOptions="Fill">
 
                                     <Grid
                                         Grid.Column="0"
@@ -76,7 +74,8 @@
                                         </sfCore:SfTextInputLayout>
                                         <Grid
                                             Grid.Row="2"
-                                            ColumnDefinitions="*,*,*"
+                                            ColumnDefinitions="*,*"
+                                            RowDefinitions="*,*"
                                             ColumnSpacing="3"
                                             IsVisible="{Binding CanHaveMaxAndMinValues}">
                                             <VerticalStackLayout Grid.Column="0" IsVisible="{Binding IsIntegerType}">
@@ -112,7 +111,8 @@
                                             </VerticalStackLayout>
 
                                             <btns:SfCheckBox
-                                                Grid.Column="2"
+                                                Grid.Row="1"
+                                                Grid.ColumnSpan="2"
                                                 IsChecked="{Binding IsRequired}"
                                                 Text="{x:Static locTraceon:Strings.IsRequired}"
                                                 VerticalOptions="End" />
@@ -127,6 +127,7 @@
 
                                     <ImageButton
                                         Grid.Column="1"
+                                        Padding="10"
                                         BackgroundColor="Transparent"
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionCreateOrEditViewModel}}, Path=DeleteActionFieldCommand}"
                                         CommandParameter="{Binding .}">
@@ -134,7 +135,6 @@
                                             <FontImageSource
                                                 FontFamily="FAR"
                                                 Glyph="{x:Static fonts:IconFont.TrashCan}"
-                                                Size="32"
                                                 Color="Red" />
                                         </ImageButton.Source>
                                     </ImageButton>

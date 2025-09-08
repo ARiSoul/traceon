@@ -15,7 +15,8 @@ public static class ActionFieldMapper
            MinValue = f.MinValue,
            MaxValue = f.MaxValue,
            FieldDefinitionId = f.FieldDefinitionId,
-           FieldDefinition = f.FieldDefinition != null ? f.FieldDefinition.ToModel() : null!
+           FieldDefinition = f.FieldDefinition != null ? f.FieldDefinition.ToModel() : null!,
+           DefaultValue = f.DefaultValue
        };
 
     public static Entities.ActionField ToEntity(this Models.ActionField model)
@@ -29,7 +30,8 @@ public static class ActionFieldMapper
             IsRequired = model.IsRequired,
             MinValue = model.MinValue,
             MaxValue = model.MaxValue,
-            FieldDefinitionId = model.FieldDefinitionId
+            FieldDefinitionId = model.FieldDefinitionId,
+            DefaultValue = model.DefaultValue
         };
     }
 
@@ -45,7 +47,8 @@ public static class ActionFieldMapper
             MinValue = entity.MinValue,
             MaxValue = entity.MaxValue,
             FieldDefinitionId = entity.FieldDefinitionId,
-            FieldDefinition = entity.FieldDefinition != null ? entity.FieldDefinition.ToModel() : null!
+            FieldDefinition = entity.FieldDefinition != null ? entity.FieldDefinition.ToModel() : null!,
+            DefaultValue = entity.DefaultValue
         };
     }
 }

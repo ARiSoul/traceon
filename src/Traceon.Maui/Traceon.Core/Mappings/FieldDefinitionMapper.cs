@@ -14,7 +14,8 @@ public static class FieldDefinitionMapper
          DefaultMinValue = f.DefaultMinValue,
          DefaultMaxValue = f.DefaultMaxValue,
          Type = f.Type,
-         DropdownValues = f.DropdownValues
+         DropdownValues = f.DropdownValues,
+         DefaultValue = f.DefaultValue
      };
 
     public static Entities.FieldDefinition ToEntity(this Models.FieldDefinition model)
@@ -28,7 +29,8 @@ public static class FieldDefinitionMapper
             DefaultMinValue = model.DefaultMinValue,
             DefaultMaxValue = model.DefaultMaxValue,
             Type = model.Type,
-            DropdownValues = model.DropdownValues
+            DropdownValues = model.DropdownValues,
+            DefaultValue = model.DefaultValue
         };
     }
 
@@ -43,7 +45,8 @@ public static class FieldDefinitionMapper
             DefaultMinValue = entity.DefaultMinValue,
             DefaultMaxValue = entity.DefaultMaxValue,
             Type = entity.Type,
-            DropdownValues = entity.DropdownValues
+            DropdownValues = entity.DropdownValues,
+            DefaultValue = entity.DefaultValue
         };
     }
 }

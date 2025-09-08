@@ -14,6 +14,7 @@ public partial class FieldDefinition
     public decimal? DefaultMaxValue { get; set; }
     public decimal? DefaultMinValue { get; set; }
     public bool DefaultIsRequired { get; set; }
+    public string? DefaultValue { get; set; }
 }
 
 public enum FieldType

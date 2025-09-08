@@ -222,4 +222,7 @@
   <data name="ERROR_TheFollowingFieldsAreRequired" xml:space="preserve">
     <value>Os seguintes campos são de preenchimento obrigatório: {0}</value>
   </data>
+  <data name="DefaultValue" xml:space="preserve">
+    <value>Valor por Defeito</value>
+  </data>
 </root>

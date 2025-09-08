@@ -52,8 +52,10 @@ public static class MauiProgram
         builder.Services.AddTransient<Views.FieldDefinitionCreateOrEditPage>();
 
         // Database context
+        var dbPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "traceon.db");
         builder.Services.AddDbContext<TraceonDbContext>(options =>
-            options.UseSqlite("Filename=traceon.db"));
+            options.UseSqlite($"Filename={dbPath}"));
 
         CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
         CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
