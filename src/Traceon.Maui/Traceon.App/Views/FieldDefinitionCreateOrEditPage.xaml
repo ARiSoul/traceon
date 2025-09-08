@@ -87,12 +87,12 @@
 
             <VerticalStackLayout IsVisible="{Binding IsDropdownTypeSelected, Mode=TwoWay}">
                 <Label Text="{x:Static locTraceon:Strings.DropdownValuesSplitBy}" />
-                <Entry IsTextPredictionEnabled="True" Text="{Binding FieldDefinition.DropdownValues}" />
+                <Entry IsTextPredictionEnabled="True" Text="{Binding DropDownValuesAsString}" />
 
                 <Label Text="{x:Static locTraceon:Strings.DefaultValue}" />
                 <editors:SfComboBox
                     IsClearButtonVisible="True"
-                    ItemsSource="{Binding FieldDefinition.DropdownValuesList}"
+                    ItemsSource="{Binding DropdownValuesList}"
                     SelectedItem="{Binding FieldDefinition.DefaultValue}" />
             </VerticalStackLayout>
 

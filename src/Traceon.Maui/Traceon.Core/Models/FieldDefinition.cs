@@ -12,8 +12,4 @@ public class FieldDefinition
     public decimal? DefaultMinValue { get; set; }
     public bool DefaultIsRequired { get; set; }
     public string? DefaultValue { get; set; }
-
-    public List<string> DropdownValuesList => !string.IsNullOrWhiteSpace(DropdownValues)
-       ? [.. DropdownValues.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]
-       : [];
 }

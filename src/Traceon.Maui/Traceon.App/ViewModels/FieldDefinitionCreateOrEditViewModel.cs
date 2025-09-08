@@ -28,6 +28,14 @@ public partial class FieldDefinitionCreateOrEditViewModel
     [ObservableProperty] decimal? _defaultDecimalMaxValue;
     [ObservableProperty] decimal? _defaultDecimalMinValue;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DropdownValuesList))]
+    string _dropDownValuesAsString;
+
+    public List<string> DropdownValuesList => !string.IsNullOrWhiteSpace(DropDownValuesAsString)
+      ? [.. DropDownValuesAsString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]
+      : [];
+
     public bool IsDropdownTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Dropdown;
     public bool IsIntegerTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Integer;
     public bool IsDecimalTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Decimal;
@@ -53,6 +61,9 @@ public partial class FieldDefinitionCreateOrEditViewModel
                     DefaultDecimalMaxValue = FieldDefinition.DefaultMaxValue;
                     DefaultDecimalMinValue = FieldDefinition.DefaultMinValue;
                     SelectedFieldType = FieldDefinition.Type;
+                    DropDownValuesAsString = string.IsNullOrWhiteSpace(FieldDefinition.DropdownValues) 
+                    ? string.Empty 
+                    : FieldDefinition.DropdownValues.Replace(",", ";");
                     SetTitle();
                 }
             }
@@ -77,7 +88,7 @@ public partial class FieldDefinitionCreateOrEditViewModel
         if (FieldDefinition == null)
             return;
 
-        HandleFieldTypeAndMaxAndMinValuesOnSave();
+        MapViewModelFieldsToEntity();
 
         if (FieldDefinition.Id == Guid.Empty) // new
         {
@@ -95,7 +106,7 @@ public partial class FieldDefinitionCreateOrEditViewModel
         await Shell.Current.GoToAsync("..");
     }
 
-    private void HandleFieldTypeAndMaxAndMinValuesOnSave()
+    private void MapViewModelFieldsToEntity()
     {
         FieldDefinition.Type = SelectedFieldType;
 
@@ -109,6 +120,11 @@ public partial class FieldDefinitionCreateOrEditViewModel
             FieldDefinition.DefaultMaxValue = DefaultDecimalMaxValue;
             FieldDefinition.DefaultMinValue = DefaultDecimalMinValue;
         }
+
+        if (IsDropdownTypeSelected)
+            FieldDefinition.DropdownValues = DropDownValuesAsString?.Replace(";", ",");
+        else
+            FieldDefinition.DropdownValues = null;
     }
 
     private void LoadFieldTypes()
