@@ -1,9 +1,9 @@
 ﻿using Arisoul.Core.Maui.Models;
-using Arisoul.Traceon.Maui.Core.Models;
+using Arisoul.Traceon.App.ViewModels.InnerModels;
 using Arisoul.Traceon.Maui.Core.Interfaces;
+using Arisoul.Traceon.Maui.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Collections.ObjectModel;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
@@ -13,42 +13,14 @@ public partial class FieldDefinitionCreateOrEditViewModel
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsDropdownTypeSelected))]
-    [NotifyPropertyChangedFor(nameof(IsIntegerTypeSelected))]
-    [NotifyPropertyChangedFor(nameof(IsDecimalTypeSelected))]
-    [NotifyPropertyChangedFor(nameof(IsTextTypeSelected))]
-    [NotifyPropertyChangedFor(nameof(IsBooleanTypeSelected))]
-    [NotifyPropertyChangedFor(nameof(IsDateTypeSelected))]
-    Maui.Core.Entities.FieldType _selectedFieldType;
-
     [ObservableProperty] FieldDefinition _fieldDefinition;
-    [ObservableProperty] int? _defaultIntegerMaxValue;
-    [ObservableProperty] int? _defaultIntegerMinValue;
-    [ObservableProperty] decimal? _defaultDecimalMaxValue;
-    [ObservableProperty] decimal? _defaultDecimalMinValue;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DropdownValuesList))]
-    string _dropDownValuesAsString;
-
-    public List<string> DropdownValuesList => !string.IsNullOrWhiteSpace(DropDownValuesAsString)
-      ? [.. DropDownValuesAsString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]
-      : [];
-
-    public bool IsDropdownTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Dropdown;
-    public bool IsIntegerTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Integer;
-    public bool IsDecimalTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Decimal;
-    public bool IsTextTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Text;
-    public bool IsBooleanTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Boolean;
-    public bool IsDateTypeSelected => SelectedFieldType == Maui.Core.Entities.FieldType.Date;
-
-    public ObservableCollection<Maui.Core.Entities.FieldType> FieldTypes { get; private set; } = [];
+    public FieldDefinitionCreateOrEdit InnerModel { get; private set; } = new();
 
     public FieldDefinitionCreateOrEditViewModel(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        LoadFieldTypes();
+        InnerModel.LoadFieldTypes();
 
         this.PropertyChanged += (s, e) =>
         {
@@ -56,12 +28,12 @@ public partial class FieldDefinitionCreateOrEditViewModel
             {
                 if (FieldDefinition != null)
                 {
-                    DefaultIntegerMaxValue = (int?)FieldDefinition.DefaultMaxValue;
-                    DefaultIntegerMinValue = (int?)FieldDefinition.DefaultMinValue;
-                    DefaultDecimalMaxValue = FieldDefinition.DefaultMaxValue;
-                    DefaultDecimalMinValue = FieldDefinition.DefaultMinValue;
-                    SelectedFieldType = FieldDefinition.Type;
-                    DropDownValuesAsString = string.IsNullOrWhiteSpace(FieldDefinition.DropdownValues) 
+                    InnerModel.DefaultIntegerMaxValue = (int?)FieldDefinition.DefaultMaxValue;
+                    InnerModel.DefaultIntegerMinValue = (int?)FieldDefinition.DefaultMinValue;
+                    InnerModel.DefaultDecimalMaxValue = FieldDefinition.DefaultMaxValue;
+                    InnerModel.DefaultDecimalMinValue = FieldDefinition.DefaultMinValue;
+                    InnerModel.SelectedFieldType = FieldDefinition.Type;
+                    InnerModel.DropDownValuesAsString = string.IsNullOrWhiteSpace(FieldDefinition.DropdownValues) 
                     ? string.Empty 
                     : FieldDefinition.DropdownValues.Replace(",", ";");
                     SetTitle();
@@ -90,6 +62,9 @@ public partial class FieldDefinitionCreateOrEditViewModel
 
         MapViewModelFieldsToEntity();
 
+        if (!ValidateSave())
+            return;
+
         if (FieldDefinition.Id == Guid.Empty) // new
         {
             FieldDefinition.Id = Guid.NewGuid();
@@ -108,27 +83,30 @@ public partial class FieldDefinitionCreateOrEditViewModel
 
     private void MapViewModelFieldsToEntity()
     {
-        FieldDefinition.Type = SelectedFieldType;
+        FieldDefinition.Type = InnerModel.SelectedFieldType;
 
-        if (IsIntegerTypeSelected)
+        if (InnerModel.IsIntegerTypeSelected)
         {
-            FieldDefinition.DefaultMaxValue = DefaultIntegerMaxValue;
-            FieldDefinition.DefaultMinValue = DefaultIntegerMinValue;
+            FieldDefinition.DefaultMaxValue = InnerModel.DefaultIntegerMaxValue;
+            FieldDefinition.DefaultMinValue = InnerModel.DefaultIntegerMinValue;
         }
-        else if (IsDecimalTypeSelected)
+        else if (InnerModel.IsDecimalTypeSelected)
         {
-            FieldDefinition.DefaultMaxValue = DefaultDecimalMaxValue;
-            FieldDefinition.DefaultMinValue = DefaultDecimalMinValue;
+            FieldDefinition.DefaultMaxValue = InnerModel.DefaultDecimalMaxValue;
+            FieldDefinition.DefaultMinValue = InnerModel.DefaultDecimalMinValue;
         }
 
-        if (IsDropdownTypeSelected)
-            FieldDefinition.DropdownValues = DropDownValuesAsString?.Replace(";", ",");
+        if (InnerModel.IsDropdownTypeSelected)
+            FieldDefinition.DropdownValues = InnerModel.DropDownValuesAsString?.Replace(";", ",");
         else
             FieldDefinition.DropdownValues = null;
     }
 
-    private void LoadFieldTypes()
+    private bool ValidateSave()
     {
-        FieldTypes = [.. Enum.GetValues<Maui.Core.Entities.FieldType>().Cast<Maui.Core.Entities.FieldType>()];
+        bool isValid = !string.IsNullOrWhiteSpace(FieldDefinition?.DefaultName);
+        InnerModel.NameHasError = !isValid;
+
+        return isValid;
     }
 }
