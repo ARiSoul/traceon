@@ -24,27 +24,6 @@
                     IsTextPredictionEnabled="True"
                     Text="{Binding FieldDefinition.DefaultName}"
                     TextColor="Black" />
-                <VisualStateManager.VisualStateGroups>
-                    <VisualStateGroupList>
-                        <VisualStateGroup x:Name="CommonStates">
-                            <VisualState Name="Normal">
-                                <VisualState.Setters>
-                                    <Setter Property="Stroke" Value="green" />
-                                </VisualState.Setters>
-                            </VisualState>
-                            <VisualState Name="Focused">
-                                <VisualState.Setters>
-                                    <Setter Property="Stroke" Value="blue" />
-                                </VisualState.Setters>
-                            </VisualState>
-                            <VisualState Name="Error">
-                                <VisualState.Setters>
-                                    <Setter Property="Stroke" Value="Red" />
-                                </VisualState.Setters>
-                            </VisualState>
-                        </VisualStateGroup>
-                    </VisualStateGroupList>
-                </VisualStateManager.VisualStateGroups>
             </sfCore:SfTextInputLayout>
 
             <sfCore:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultDescription}">
