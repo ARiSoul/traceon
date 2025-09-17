@@ -1,11 +1,11 @@
 ﻿using Arisoul.Core.Maui.Models;
 using Arisoul.Traceon.App.Messages;
-using Arisoul.Traceon.Maui.Core.Models;
+using Arisoul.Traceon.App.ViewModels.InnerModels;
 using Arisoul.Traceon.Maui.Core.Interfaces;
+using Arisoul.Traceon.Maui.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using System.Threading.Tasks;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
@@ -15,8 +15,9 @@ public partial class TrackedActionCreateOrEditViewModel
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    [ObservableProperty]
-    TrackedAction _trackedAction;
+    [ObservableProperty] TrackedAction _trackedAction;
+    
+    public TrackedActionCreateOrEdit InnerModel { get; private set; } = new();
 
     public TrackedActionCreateOrEditViewModel(IUnitOfWork unitOfWork)
     {
@@ -60,6 +61,9 @@ public partial class TrackedActionCreateOrEditViewModel
         if (TrackedAction == null)
             return;
 
+        if (!ValidateSave())
+            return;
+
         foreach (var field in TrackedAction.Fields)
             field.ActionId = TrackedAction.Id;
 
@@ -98,5 +102,13 @@ public partial class TrackedActionCreateOrEditViewModel
         TrackedAction.Fields.Remove(actionField);
 
         await _unitOfWork.ActionFields.DeleteAsync(actionField.ActionId, actionField.FieldDefinitionId).ConfigureAwait(false);
+    }
+
+    private bool ValidateSave()
+    {
+        bool isValid = !string.IsNullOrWhiteSpace(TrackedAction?.Name);
+        InnerModel.NameHasError = !isValid;
+
+        return isValid;
     }
 }

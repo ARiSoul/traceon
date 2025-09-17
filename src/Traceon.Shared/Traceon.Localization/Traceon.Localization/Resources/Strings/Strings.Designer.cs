@@ -124,6 +124,15 @@ namespace Arisoul.Traceon.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Dashboards.
+        /// </summary>
+        public static string Dashboards {
+            get {
+                return ResourceManager.GetString("Dashboards", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Default Description.
         /// </summary>
         public static string DefaultDescription {
@@ -372,6 +381,24 @@ namespace Arisoul.Traceon.Localization {
         public static string New_M {
             get {
                 return ResourceManager.GetString("New_M", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New Action.
+        /// </summary>
+        public static string NewAction {
+            get {
+                return ResourceManager.GetString("NewAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New Action Entry.
+        /// </summary>
+        public static string NewActionEntry {
+            get {
+                return ResourceManager.GetString("NewActionEntry", resourceCulture);
             }
         }
         

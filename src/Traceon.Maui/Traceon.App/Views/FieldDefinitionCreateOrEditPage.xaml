@@ -22,15 +22,13 @@
             <sfCore:SfTextInputLayout HasError="{Binding InnerModel.NameHasError, Mode=TwoWay}" Hint="{x:Static locTraceon:Strings.DefaultName}">
                 <Entry
                     IsTextPredictionEnabled="True"
-                    Text="{Binding FieldDefinition.DefaultName}"
-                    TextColor="Black" />
+                    Text="{Binding FieldDefinition.DefaultName}" />
             </sfCore:SfTextInputLayout>
 
             <sfCore:SfTextInputLayout ContainerType="Filled" Hint="{x:Static locTraceon:Strings.DefaultDescription}">
                 <Editor
                     IsTextPredictionEnabled="True"
-                    Text="{Binding FieldDefinition.DefaultDescription}"
-                    TextColor="Black" />
+                    Text="{Binding FieldDefinition.DefaultDescription}" />
             </sfCore:SfTextInputLayout>
 
             <btns:SfCheckBox

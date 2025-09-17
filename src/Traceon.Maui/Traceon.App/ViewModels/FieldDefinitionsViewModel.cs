@@ -9,7 +9,8 @@ using System.Collections.ObjectModel;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
-public partial class FieldDefinitionsViewModel : ArisoulMauiBaseViewModel
+public partial class FieldDefinitionsViewModel 
+    : ArisoulMauiBaseViewModel
 {
     private readonly IUnitOfWork _unitOfWork;
     private List<FieldDefinition> _allFieldDefinitions = [];

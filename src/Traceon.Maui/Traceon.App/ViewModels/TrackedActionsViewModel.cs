@@ -1,19 +1,24 @@
 ﻿using Arisoul.Core.Maui.Models;
-using Arisoul.Traceon.Maui.Core.Models;
+using Arisoul.Traceon.App.Messages;
 using Arisoul.Traceon.Maui.Core.Interfaces;
+using Arisoul.Traceon.Maui.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Collections.ObjectModel;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
-public partial class TrackedActionsViewModel : ArisoulMauiBaseViewModel
+public partial class TrackedActionsViewModel
+    : ArisoulMauiBaseViewModel
 {
     private readonly IUnitOfWork _unitOfWork;
     private List<TrackedAction> _allActions = [];
 
     [ObservableProperty] private string _searchQuery = string.Empty;
     [ObservableProperty] private TrackedAction? _selectedAction;
+    [ObservableProperty] private bool _isSelectionMode;
+    [ObservableProperty] private List<Guid> _actionsToHide = [];
 
     public TrackedActionsViewModel(IUnitOfWork unitOfWork)
     {
@@ -32,8 +37,14 @@ public partial class TrackedActionsViewModel : ArisoulMauiBaseViewModel
             return;
         }
 
-        _allActions = [.. getAllResult.Value.OrderBy(a => a.Name)];
+        var actions = getAllResult.Value!;
 
+        if (ActionsToHide.Count > 0)
+        {
+            actions = [.. actions.Where(a => !ActionsToHide.Any(ath => ath.Equals(a.Id)))];
+        }
+
+        _allActions = [.. actions.OrderBy(a => a.Name)];
         Search(SearchQuery);
     }
 

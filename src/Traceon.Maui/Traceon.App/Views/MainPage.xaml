@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Arisoul.Traceon.App.Views.MainPage"
+             xmlns:btns="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
+             xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
+             xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
+             xmlns:fonts="clr-namespace:Arisoul.Traceon.App.Resources.Fonts"
+             xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
+             xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
+             xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Models;assembly=Traceon.Maui.Core"
+             xmlns:sfCore="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
+             xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
+             Title="{x:Static locArisoul:Messages.Home}"
+             x:DataType="vm:MainPageViewModel">
+
+    <ScrollView>
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="5" Padding="5" RowDefinitions="*,*,*" RowSpacing="5">
+            <btns:SfButton Grid.Column="0" Grid.Row="0" Text="{x:Static locTraceon:Strings.NewActionEntry}" Command="{Binding NewActionEntryCommand}" />
+            <btns:SfButton Grid.Column="1" Grid.Row="0" Text="{x:Static locTraceon:Strings.Dashboards}" />
+            <btns:SfButton Grid.Column="0" Grid.Row="1" Text="{x:Static locTraceon:Strings.NewAction}" />
+            <btns:SfButton Grid.Column="1" Grid.Row="1" Text="{x:Static locArisoul:Messages.Back}" />
+            <btns:SfButton Grid.Column="0" Grid.Row="2" Text="{x:Static locArisoul:Messages.Add}" />
+            <btns:SfButton Grid.Column="1" Grid.Row="2" Text="{x:Static locArisoul:Messages.Back}" />
+        </Grid>
+    </ScrollView>
+
+</ContentPage>

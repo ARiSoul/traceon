@@ -12,7 +12,7 @@
 
     <ShellContent
         Title="{x:Static locArisoul:Messages.Home}"
-        ContentTemplate="{DataTemplate local:MainPage}"
+        ContentTemplate="{DataTemplate views:MainPage}"
         Route="MainPage" />
 
     <ShellContent

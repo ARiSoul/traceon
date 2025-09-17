@@ -38,6 +38,7 @@ public static class MauiProgram
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // View models
+        builder.Services.AddTransient<MainPageViewModel>();
         builder.Services.AddTransient<TrackedActionsViewModel>();
         builder.Services.AddTransient<TrackedActionCreateOrEditViewModel>();
         builder.Services.AddTransient<ActionEntryCreateOrEditViewModel>();
@@ -45,6 +46,7 @@ public static class MauiProgram
         builder.Services.AddTransient<FieldDefinitionCreateOrEditViewModel>();
 
         // Pages
+        builder.Services.AddTransient<Views.MainPage>();
         builder.Services.AddTransient<Views.TrackedActionsPage>();
         builder.Services.AddTransient<Views.TrackedActionCreateOrEditPage>();
         builder.Services.AddTransient<Views.ActionEntryCreateOrEditPage>();

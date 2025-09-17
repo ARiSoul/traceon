@@ -225,4 +225,13 @@
   <data name="DefaultValue" xml:space="preserve">
     <value>Valor por Defeito</value>
   </data>
+  <data name="NewActionEntry" xml:space="preserve">
+    <value>Nova Entrada de Acção</value>
+  </data>
+  <data name="Dashboards" xml:space="preserve">
+    <value>Gráficos</value>
+  </data>
+  <data name="NewAction" xml:space="preserve">
+    <value>Nova Acção</value>
+  </data>
 </root>

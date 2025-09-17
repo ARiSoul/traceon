@@ -225,4 +225,13 @@
   <data name="DefaultValue" xml:space="preserve">
     <value>Default Value</value>
   </data>
+  <data name="NewActionEntry" xml:space="preserve">
+    <value>New Action Entry</value>
+  </data>
+  <data name="Dashboards" xml:space="preserve">
+    <value>Dashboards</value>
+  </data>
+  <data name="NewAction" xml:space="preserve">
+    <value>New Action</value>
+  </data>
 </root>

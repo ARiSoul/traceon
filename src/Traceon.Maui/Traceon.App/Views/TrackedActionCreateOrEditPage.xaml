@@ -10,6 +10,7 @@
     xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Models;assembly=Traceon.Maui.Core"
+    xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
     xmlns:sfCore="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
     Title="{Binding Title}"
@@ -24,12 +25,13 @@
     <ScrollView>
         <VerticalStackLayout Margin="20" Spacing="5">
 
-            <Label Text="{x:Static locArisoul:Messages.Name}" />
-            <Entry IsTextPredictionEnabled="True" Text="{Binding TrackedAction.Name}" />
+            <sfCore:SfTextInputLayout HasError="{Binding InnerModel.NameHasError, Mode=TwoWay}" Hint="{x:Static locArisoul:Messages.Name}">
+                <Entry IsTextPredictionEnabled="True" Text="{Binding TrackedAction.Name}" />
+            </sfCore:SfTextInputLayout>
 
-            <Label Text="{x:Static locArisoul:Messages.Description}" />
-            <Entry IsTextPredictionEnabled="True" Text="{Binding TrackedAction.Description}" />
-
+            <sfCore:SfTextInputLayout Hint="{x:Static locArisoul:Messages.Description}">
+                <Entry IsTextPredictionEnabled="True" Text="{Binding TrackedAction.Description}" />
+            </sfCore:SfTextInputLayout>
 
             <Border>
                 <CollectionView ItemsSource="{Binding TrackedAction.Fields}" SelectionMode="Single">
@@ -58,7 +60,7 @@
                                         Grid.Column="0"
                                         Margin="0,10"
                                         Padding="10"
-                                        RowDefinitions="*,*,*"
+                                        RowDefinitions="*,*,*,*"
                                         RowSpacing="3">
                                         <sfCore:SfTextInputLayout
                                             Grid.Row="0"
@@ -75,9 +77,9 @@
                                         <Grid
                                             Grid.Row="2"
                                             ColumnDefinitions="*,*"
-                                            RowDefinitions="*,*"
                                             ColumnSpacing="3"
-                                            IsVisible="{Binding CanHaveMaxAndMinValues}">
+                                            IsVisible="{Binding CanHaveMaxAndMinValues}"
+                                            RowDefinitions="*,*,*">
                                             <VerticalStackLayout Grid.Column="0" IsVisible="{Binding IsIntegerType}">
                                                 <Label Text="{x:Static locTraceon:Strings.MaxValue}" />
                                                 <editors:SfNumericEntry
@@ -92,6 +94,18 @@
                                                     CustomFormat="#,0"
                                                     UpDownPlacementMode="Inline"
                                                     Value="{Binding MinValue}" />
+                                            </VerticalStackLayout>
+
+                                            <VerticalStackLayout
+                                                Grid.Row="1"
+                                                Grid.Column="0"
+                                                Grid.ColumnSpan="2"
+                                                IsVisible="{Binding IsIntegerType}">
+                                                <Label Text="{x:Static locTraceon:Strings.DefaultValue}" />
+                                                <editors:SfNumericEntry
+                                                    CustomFormat="#,0"
+                                                    UpDownPlacementMode="Inline"
+                                                    Value="{Binding DefaultValue}" />
                                             </VerticalStackLayout>
 
                                             <VerticalStackLayout Grid.Column="0" IsVisible="{Binding IsDecimalType}">
@@ -110,16 +124,53 @@
                                                     Value="{Binding MinValue}" />
                                             </VerticalStackLayout>
 
-                                            <btns:SfCheckBox
+                                            <VerticalStackLayout
                                                 Grid.Row="1"
+                                                Grid.Column="0"
+                                                Grid.ColumnSpan="2"
+                                                IsVisible="{Binding IsDecimalType}">
+                                                <Label Text="{x:Static locTraceon:Strings.DefaultValue}" />
+                                                <editors:SfNumericEntry
+                                                    CustomFormat="#,0.00######"
+                                                    UpDownPlacementMode="Inline"
+                                                    Value="{Binding DefaultValue}" />
+                                            </VerticalStackLayout>
+
+                                            <btns:SfCheckBox
+                                                Grid.Row="2"
                                                 Grid.ColumnSpan="2"
                                                 IsChecked="{Binding IsRequired}"
                                                 Text="{x:Static locTraceon:Strings.IsRequired}"
                                                 VerticalOptions="End" />
 
                                         </Grid>
+
+                                        <VerticalStackLayout
+                                            Grid.Row="1"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            IsVisible="{Binding CanHaveMaxAndMinValues, Converter={StaticResource InverseBoolConverter}}">
+                                            <Label Text="{x:Static locTraceon:Strings.DefaultValue}" />
+                                            <editors:SfComboBox
+                                                IsClearButtonVisible="True"
+                                                IsVisible="{Binding IsDropdownType}"
+                                                ItemsSource="{Binding DropdownValuesList}"
+                                                SelectedItem="{Binding DefaultValue}" />
+                                            <Entry
+                                                IsTextPredictionEnabled="True"
+                                                IsVisible="{Binding IsTextType}"
+                                                Text="{Binding DefaultValue}" />
+                                            <picker:SfDateTimePicker
+                                                DateFormat="dd_MMM_yyyy"
+                                                IsVisible="{Binding IsDateType}"
+                                                SelectedDate="{Binding DefaultValue}"
+                                                TextDisplayMode="FadeAndShrink"
+                                                TimeFormat="HH_mm" />
+                                            <btns:SfCheckBox IsChecked="{Binding DefaultValue}" IsVisible="{Binding IsBooleanType}" />
+                                        </VerticalStackLayout>
+
                                         <btns:SfCheckBox
-                                            Grid.Row="2"
+                                            Grid.Row="3"
                                             IsChecked="{Binding IsRequired}"
                                             IsVisible="{Binding CanHaveMaxAndMinValues, Converter={StaticResource InverseBoolConverter}}"
                                             Text="{x:Static locTraceon:Strings.IsRequired}" />

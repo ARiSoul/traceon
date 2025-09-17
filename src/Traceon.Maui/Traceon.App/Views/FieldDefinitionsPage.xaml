@@ -31,6 +31,7 @@
             SearchCommand="{Binding SearchCommand}"
             SearchCommandParameter="{Binding Text, Source={x:Reference searchBarTop}}"
             Text="{Binding SearchQuery, Mode=TwoWay}"
+            TextColor="{x:StaticResource PrimaryTextColor}"
             TextChanged="SearchBarTop_TextChanged" />
 
         <!--  Scrollable list area  -->

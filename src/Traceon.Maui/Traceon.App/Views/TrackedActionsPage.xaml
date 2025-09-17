@@ -8,10 +8,17 @@
     xmlns:locArisoul="clr-namespace:Arisoul.Localization.Strings;assembly=Arisoul.Localization"
     xmlns:locTraceon="clr-namespace:Arisoul.Traceon.Localization;assembly=Traceon.Localization"
     xmlns:m="clr-namespace:Arisoul.Traceon.Maui.Core.Models;assembly=Traceon.Maui.Core"
+    xmlns:conv="clr-namespace:Arisoul.Traceon.App.Converters"
     xmlns:vm="clr-namespace:Arisoul.Traceon.App.ViewModels"
     Title="{x:Static locTraceon:Strings.Actions}"
     x:DataType="vm:TrackedActionsViewModel">
 
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    
     <Grid
         Padding="20,0,20,0"
         RowDefinitions="0.1*, 0.90*,0.1*"
@@ -24,6 +31,7 @@
             SearchCommand="{Binding SearchCommand}"
             SearchCommandParameter="{Binding Text, Source={x:Reference searchBarTop}}"
             Text="{Binding SearchQuery, Mode=TwoWay}"
+            TextColor="{x:StaticResource PrimaryTextColor}"
             TextChanged="SearchBarTop_TextChanged" />
 
         <!--  Scrollable list area  -->
@@ -62,11 +70,13 @@
                                         Grid.Column="1"
                                         FontSize="16"
                                         HorizontalTextAlignment="Center"
+                                        IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=IsSelectionMode, Converter={StaticResource InverseBoolConverter}}"
                                         Text="Entries" />
                                     <btns:SfButton
                                         Grid.Row="1"
                                         Grid.Column="1"
                                         Background="LimeGreen"
+                                        IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=IsSelectionMode, Converter={StaticResource InverseBoolConverter}}"
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=HandleSelectedActionCommand}"
                                         CommandParameter="{Binding .}"
                                         CornerRadius="40"
@@ -80,6 +90,7 @@
                                             VerticalOptions="Center" />
                                     </btns:SfButton>
                                     <BoxView
+                                        IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=IsSelectionMode, Converter={StaticResource InverseBoolConverter}}"
                                         Grid.Row="2"
                                         Grid.ColumnSpan="3"
                                         HeightRequest="1"
@@ -89,6 +100,7 @@
                                 <HorizontalStackLayout
                                     Grid.Column="1"
                                     Padding="15"
+                                    IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:TrackedActionsViewModel}}, Path=IsSelectionMode, Converter={StaticResource InverseBoolConverter}}"
                                     Spacing="10">
 
                                     <ImageButton
