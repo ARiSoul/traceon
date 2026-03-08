@@ -1,0 +1,13 @@
+using Traceon.Domain.Enums;
+
+namespace Traceon.Application.Contracts.FieldDefinitions;
+
+public sealed record CreateFieldDefinitionRequest(
+    string DefaultName,
+    FieldType Type,
+    string? DefaultDescription = null,
+    string? DropdownValues = null,
+    decimal? DefaultMaxValue = null,
+    decimal? DefaultMinValue = null,
+    bool DefaultIsRequired = false,
+    string? DefaultValue = null);

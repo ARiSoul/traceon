@@ -1,0 +1,18 @@
+using FluentValidation;
+using Traceon.Application.Contracts.TrackedActions;
+
+namespace Traceon.Application.Validators.TrackedActions;
+
+public sealed class UpdateTrackedActionRequestValidator : AbstractValidator<UpdateTrackedActionRequest>
+{
+    public UpdateTrackedActionRequestValidator()
+    {
+        RuleFor(x => x.Name)
+            .NotEmpty()
+            .MaximumLength(200);
+
+        RuleFor(x => x.Description)
+            .MaximumLength(1000)
+            .When(x => x.Description is not null);
+    }
+}
