@@ -1,5 +1,5 @@
 using Traceon.Application.Common;
-using Traceon.Application.Contracts.ActionFields;
+using Traceon.Contracts.ActionFields;
 
 namespace Traceon.Application.Services;
 

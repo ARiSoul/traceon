@@ -1,5 +1,5 @@
 using Traceon.Api.Filters;
-using Traceon.Application.Contracts.ActionEntries;
+using Traceon.Contracts.ActionEntries;
 using Traceon.Application.Services;
 
 namespace Traceon.Api.Endpoints;

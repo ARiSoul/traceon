@@ -1,4 +1,4 @@
-using Traceon.Application.Contracts.ActionFields;
+using Traceon.Contracts.ActionFields;
 using Traceon.Domain.Entities;
 
 namespace Traceon.Application.Mapping;

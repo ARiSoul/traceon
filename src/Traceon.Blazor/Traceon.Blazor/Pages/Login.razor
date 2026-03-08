@@ -1,0 +1,60 @@
+@page "/login"
+
+<h3>Login</h3>
+
+@if (_errors.Count > 0)
+{
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach (var error in _errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+
+<EditForm Model="_model" OnValidSubmit="HandleLogin" FormName="LoginForm">
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <InputText @bind-Value="_model.Email" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <InputText @bind-Value="_model.Password" type="password" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary" disabled="@_loading">
+        @(_loading ? "Logging in..." : "Login")
+    </button>
+    <a href="/register" class="btn btn-link">Create an account</a>
+</EditForm>
+
+@code {
+    [Inject] private AuthService Auth { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private LoginModel _model = new();
+    private IReadOnlyList<string> _errors = [];
+    private bool _loading;
+
+    private async Task HandleLogin()
+    {
+        _loading = true;
+        _errors = [];
+
+        var (success, errors) = await Auth.LoginAsync(new LoginRequest(_model.Email, _model.Password));
+
+        if (success)
+            Nav.NavigateTo("/", forceLoad: true);
+        else
+            _errors = errors.Count > 0 ? errors : ["Login failed."];
+
+        _loading = false;
+    }
+
+    private sealed class LoginModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

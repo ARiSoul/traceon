@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Traceon.Api/Traceon.Api.csproj" />
     <Project Path="src/Traceon.Application/Traceon.Application.csproj" />
+    <Project Path="src/Traceon.Contracts/Traceon.Contracts.csproj" />
     <Project Path="src/Traceon.Domain/Traceon.Domain.csproj" />
     <Project Path="src/Traceon.Infrastructure/Traceon.Infrastructure.csproj" />
   </Folder>

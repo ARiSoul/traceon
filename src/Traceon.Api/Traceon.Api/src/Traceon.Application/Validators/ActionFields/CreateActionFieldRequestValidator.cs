@@ -1,5 +1,5 @@
 using FluentValidation;
-using Traceon.Application.Contracts.ActionFields;
+using Traceon.Contracts.ActionFields;
 
 namespace Traceon.Application.Validators.ActionFields;
 

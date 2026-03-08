@@ -1,4 +1,4 @@
-using Traceon.Domain.Enums;
+using Traceon.Contracts.Enums;
 
 namespace Traceon.Domain.Entities;
 

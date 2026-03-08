@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Traceon.Application.Common;
-using Traceon.Application.Contracts.ActionFields;
+using Traceon.Contracts.ActionFields;
 using Traceon.Application.Interfaces;
 using Traceon.Application.Logging;
 using Traceon.Application.Mapping;

@@ -1,0 +1,33 @@
+using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Traceon.Blazor;
+using Traceon.Blazor.Auth;
+using Traceon.Blazor.Services;
+
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
+
+var apiBaseAddress = builder.Configuration["ApiBaseAddress"] ?? "http://localhost:5285";
+
+builder.Services.AddBlazoredLocalStorage();
+
+builder.Services.AddScoped<TokenAuthStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<TokenAuthStateProvider>());
+builder.Services.AddAuthorizationCore();
+
+builder.Services.AddTransient<AuthTokenHandler>();
+builder.Services.AddHttpClient("TraceonApi", client =>
+    client.BaseAddress = new Uri(apiBaseAddress))
+    .AddHttpMessageHandler<AuthTokenHandler>();
+
+builder.Services.AddScoped(sp =>
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("TraceonApi"));
+
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<TrackedActionService>();
+builder.Services.AddScoped<TagService>();
+
+await builder.Build().RunAsync();

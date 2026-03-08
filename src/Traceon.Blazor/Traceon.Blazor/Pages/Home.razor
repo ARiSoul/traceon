@@ -1,0 +1,14 @@
+﻿@page "/"
+
+<PageTitle>Traceon</PageTitle>
+
+<h1>Traceon</h1>
+
+<AuthorizeView>
+    <Authorized>
+        <p>Welcome! Use the navigation to manage your tracked actions.</p>
+    </Authorized>
+    <NotAuthorized>
+        <p>Please <a href="/login">login</a> to get started.</p>
+    </NotAuthorized>
+</AuthorizeView>

@@ -1,0 +1,79 @@
+@page "/register"
+
+<h3>Register</h3>
+
+@if (_errors.Count > 0)
+{
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach (var error in _errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+
+@if (_registered)
+{
+    <div class="alert alert-success">Registration successful! <a href="/login">Login here</a>.</div>
+}
+else
+{
+    <EditForm Model="_model" OnValidSubmit="HandleRegister" FormName="RegisterForm">
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <InputText @bind-Value="_model.Email" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <InputText @bind-Value="_model.Password" type="password" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Confirm Password</label>
+            <InputText @bind-Value="_model.ConfirmPassword" type="password" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary" disabled="@_loading">
+            @(_loading ? "Registering..." : "Register")
+        </button>
+        <a href="/login" class="btn btn-link">Already have an account?</a>
+    </EditForm>
+}
+
+@code {
+    [Inject] private AuthService Auth { get; set; } = default!;
+
+    private RegisterModel _model = new();
+    private IReadOnlyList<string> _errors = [];
+    private bool _loading;
+    private bool _registered;
+
+    private async Task HandleRegister()
+    {
+        _loading = true;
+        _errors = [];
+
+        if (_model.Password != _model.ConfirmPassword)
+        {
+            _errors = ["Passwords do not match."];
+            _loading = false;
+            return;
+        }
+
+        var (success, errors) = await Auth.RegisterAsync(new RegisterRequest(_model.Email, _model.Password));
+
+        if (success)
+            _registered = true;
+        else
+            _errors = errors.Count > 0 ? errors : ["Registration failed."];
+
+        _loading = false;
+    }
+
+    private sealed class RegisterModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

@@ -1,6 +1,6 @@
 using FluentValidation;
-using Traceon.Application.Contracts.FieldDefinitions;
-using Traceon.Domain.Enums;
+using Traceon.Contracts.FieldDefinitions;
+using Traceon.Contracts.Enums;
 
 namespace Traceon.Application.Validators.FieldDefinitions;
 

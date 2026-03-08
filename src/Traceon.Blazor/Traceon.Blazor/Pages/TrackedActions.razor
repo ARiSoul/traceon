@@ -1,0 +1,132 @@
+@page "/tracked-actions"
+@attribute [Authorize]
+
+<h3>Tracked Actions</h3>
+
+@if (_errors.Count > 0)
+{
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach (var error in _errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="() => _showForm = !_showForm">
+        @(_showForm ? "Cancel" : "New Action")
+    </button>
+</div>
+
+@if (_showForm)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <EditForm Model="_newAction" OnValidSubmit="CreateAsync" FormName="CreateActionForm">
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <InputText @bind-Value="_newAction.Name" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <InputText @bind-Value="_newAction.Description" class="form-control" />
+                </div>
+                <button type="submit" class="btn btn-success">Create</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@if (_loading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (_actions.Count == 0)
+{
+    <p class="text-muted">No tracked actions yet. Create one to get started!</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Created</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var action in _actions)
+            {
+                <tr>
+                    <td>@action.Name</td>
+                    <td>@action.Description</td>
+                    <td>@action.CreatedAtUtc.ToLocalTime().ToString("g")</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(action.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Inject] private TrackedActionService Service { get; set; } = default!;
+
+    private List<TrackedActionResponse> _actions = [];
+    private ActionModel _newAction = new();
+    private IReadOnlyList<string> _errors = [];
+    private bool _loading = true;
+    private bool _showForm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _actions = await Service.GetAllAsync();
+        _loading = false;
+    }
+
+    private async Task CreateAsync()
+    {
+        _errors = [];
+        var (success, errors) = await Service.CreateAsync(new CreateTrackedActionRequest(_newAction.Name, _newAction.Description));
+
+        if (success)
+        {
+            _newAction = new();
+            _showForm = false;
+            await LoadAsync();
+        }
+        else
+        {
+            _errors = errors;
+        }
+    }
+
+    private async Task DeleteAsync(Guid id)
+    {
+        _errors = [];
+        var (success, errors) = await Service.DeleteAsync(id);
+
+        if (success)
+            await LoadAsync();
+        else
+            _errors = errors;
+    }
+
+    private sealed class ActionModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+    }
+}

@@ -1,5 +1,5 @@
 using FluentValidation;
-using Traceon.Application.Contracts.Tags;
+using Traceon.Contracts.Tags;
 
 namespace Traceon.Application.Validators.Tags;
 

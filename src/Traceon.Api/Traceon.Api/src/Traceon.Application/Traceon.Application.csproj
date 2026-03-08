@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Traceon.Domain\Traceon.Domain.csproj" />
+    <ProjectReference Include="..\Traceon.Contracts\Traceon.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
