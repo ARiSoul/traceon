@@ -4,23 +4,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Arisoul.Traceon.Maui.Infrastructure.UnitOfWork;
 
-public class UnitOfWork : IUnitOfWork
+public class UnitOfWork(
+    TraceonDbContext context,
+    IServiceProvider serviceProvider) : IUnitOfWork
 {
-    private readonly TraceonDbContext _context;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly TraceonDbContext _context = context;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
 
     public IFieldDefinitionRepository FieldDefinitions => _serviceProvider.GetRequiredService<IFieldDefinitionRepository>();
     public ITagRepository Tags => _serviceProvider.GetRequiredService<ITagRepository>();
     public ITrackedActionRepository TrackedActions => _serviceProvider.GetRequiredService<ITrackedActionRepository>();
     public IActionFieldRepository ActionFields => _serviceProvider.GetRequiredService<IActionFieldRepository>();
-
-    public UnitOfWork(
-        TraceonDbContext context,
-        IServiceProvider serviceProvider)
-    {
-        _context = context;
-        _serviceProvider = serviceProvider;
-    }
 
     public async Task<int> SaveChangesAsync()
     {

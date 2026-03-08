@@ -24,7 +24,7 @@ public partial class FieldDefinitionCreateOrEdit
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DropdownValuesList))]
-    string _dropDownValuesAsString;
+    public partial string DropDownValuesAsString { get; set; }
 
     public List<string> DropdownValuesList => !string.IsNullOrWhiteSpace(DropDownValuesAsString)
       ? [.. DropDownValuesAsString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]

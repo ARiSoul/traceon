@@ -9,21 +9,16 @@ using System.Collections.ObjectModel;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
-public partial class TrackedActionsViewModel
-    : ArisoulMauiBaseViewModel
+public partial class TrackedActionsViewModel(IUnitOfWork unitOfWork)
+        : ArisoulMauiBaseViewModel
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private List<TrackedAction> _allActions = [];
 
     [ObservableProperty] private string _searchQuery = string.Empty;
     [ObservableProperty] private TrackedAction? _selectedAction;
     [ObservableProperty] private bool _isSelectionMode;
     [ObservableProperty] private List<Guid> _actionsToHide = [];
-
-    public TrackedActionsViewModel(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
 
     public ObservableCollection<TrackedAction> Actions { get; private set; } = [];
 

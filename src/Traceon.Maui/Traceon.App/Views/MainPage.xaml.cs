@@ -6,7 +6,7 @@ namespace Arisoul.Traceon.App.Views;
 
 public partial class MainPage : ContentPage
 {
-    MainPageViewModel _viewModel;
+    readonly MainPageViewModel _viewModel;
 
     public MainPage(MainPageViewModel viewModel)
     {

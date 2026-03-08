@@ -4,7 +4,7 @@ namespace Arisoul.Traceon.App.Views;
 
 public partial class ActionEntryCreateOrEditPage : ContentPage
 {
-	ActionEntryCreateOrEditViewModel _viewModel;
+    readonly ActionEntryCreateOrEditViewModel _viewModel;
 
 	public ActionEntryCreateOrEditPage(ActionEntryCreateOrEditViewModel vm)
 	{

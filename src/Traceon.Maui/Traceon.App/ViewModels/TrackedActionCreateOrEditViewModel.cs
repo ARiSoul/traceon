@@ -22,6 +22,7 @@ public partial class TrackedActionCreateOrEditViewModel
     public TrackedActionCreateOrEditViewModel(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
+        TrackedAction = new();
 
         PropertyChanged += (s, e) =>
         {
