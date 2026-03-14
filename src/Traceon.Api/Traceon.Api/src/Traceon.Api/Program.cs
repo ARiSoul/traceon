@@ -5,7 +5,6 @@ using Traceon.Api.Services;
 using Traceon.Application;
 using Traceon.Application.Interfaces;
 using Traceon.Infrastructure;
-using Traceon.Infrastructure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,8 +23,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("TraceonDb")
-    ?? throw new InvalidOperationException("Connection string 'TraceonDb' is not configured."));
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
@@ -50,7 +48,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGroup("/api/identity")
-    .MapIdentityApi<ApplicationUser>()
+    .MapIdentityEndpoints()
     .WithTags("Identity");
 
 app.MapTrackedActionEndpoints().RequireAuthorization();

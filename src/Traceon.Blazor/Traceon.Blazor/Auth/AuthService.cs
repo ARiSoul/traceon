@@ -55,6 +55,28 @@ public sealed class AuthService(HttpClient http, ILocalStorageService localStora
         return await localStorage.GetItemAsStringAsync(TokenKey);
     }
 
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> ForgotPasswordAsync(ForgotPasswordRequest request)
+    {
+        var response = await http.PostAsJsonAsync("/api/identity/forgot-password", request);
+
+        if (response.IsSuccessStatusCode)
+            return (true, []);
+
+        var errors = await ExtractErrorsAsync(response);
+        return (false, errors);
+    }
+
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> ResetPasswordAsync(ResetPasswordRequest request)
+    {
+        var response = await http.PostAsJsonAsync("/api/identity/reset-password", request);
+
+        if (response.IsSuccessStatusCode)
+            return (true, []);
+
+        var errors = await ExtractErrorsAsync(response);
+        return (false, errors);
+    }
+
     private static Task<IReadOnlyList<string>> ExtractErrorsAsync(HttpResponseMessage response)
         => ApiErrorParser.ExtractErrorsAsync(response);
 }
