@@ -6,6 +6,8 @@ namespace Traceon.Infrastructure.Persistence.Repositories;
 
 internal sealed class TagRepository(TraceonDbContext context) : ITagRepository
 {
+    public IQueryable<Tag> Query() => context.Tags.AsNoTracking();
+
     public async Task<Tag?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await context.Tags.FindAsync([id], cancellationToken);

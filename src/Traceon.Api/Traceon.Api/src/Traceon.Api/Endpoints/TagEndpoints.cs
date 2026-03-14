@@ -1,3 +1,5 @@
+using Microsoft.OData.Edm;
+using Traceon.Api.Extensions;
 using Traceon.Api.Filters;
 using Traceon.Contracts.Tags;
 using Traceon.Application.Services;
@@ -20,12 +22,15 @@ internal static class TagEndpoints
         return group;
     }
 
-    private static async Task<IResult> GetAllAsync(
+    private static IResult GetAllAsync(
+        HttpRequest request,
         ITagService service,
-        CancellationToken cancellationToken)
+        IEdmModel edmModel)
     {
-        var result = await service.GetAllAsync(cancellationToken);
-        return TypedResults.Ok(result.Value);
+        var queryable = service.QueryAll()
+            .ApplyODataQuery(request, edmModel);
+
+        return TypedResults.Ok(queryable);
     }
 
     private static async Task<IResult> GetByIdAsync(

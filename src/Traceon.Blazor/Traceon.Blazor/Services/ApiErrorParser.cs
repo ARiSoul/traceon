@@ -8,7 +8,9 @@ public static class ApiErrorParser
     {
         var body = await response.Content.ReadAsStringAsync();
 
-        if (string.IsNullOrWhiteSpace(body))
+        if (string.IsNullOrWhiteSpace(body) && !string.IsNullOrWhiteSpace(response.ReasonPhrase))
+            return [response.ReasonPhrase];
+        else if (string.IsNullOrWhiteSpace(body))
             return ["An unexpected error occurred."];
 
         try

@@ -1,4 +1,4 @@
-@page "/register"
+@page "/auth/register"
 
 <h3>Register</h3>
 
@@ -16,27 +16,31 @@
 
 @if (_registered)
 {
-    <div class="alert alert-success">Registration successful! <a href="/login">Login here</a>.</div>
+    <div class="alert alert-success">Registration successful! <a href="/auth/login">Login here</a>.</div>
 }
 else
 {
     <EditForm Model="_model" OnValidSubmit="HandleRegister" FormName="RegisterForm">
+        <DataAnnotationsValidator />
         <div class="mb-3">
             <label class="form-label">Email</label>
             <InputText @bind-Value="_model.Email" class="form-control" />
+            <ValidationMessage For="() => _model.Email" />
         </div>
         <div class="mb-3">
             <label class="form-label">Password</label>
             <InputText @bind-Value="_model.Password" type="password" class="form-control" />
+            <ValidationMessage For="() => _model.Password" />
         </div>
         <div class="mb-3">
             <label class="form-label">Confirm Password</label>
             <InputText @bind-Value="_model.ConfirmPassword" type="password" class="form-control" />
+            <ValidationMessage For="() => _model.ConfirmPassword" />
         </div>
         <button type="submit" class="btn btn-primary" disabled="@_loading">
             @(_loading ? "Registering..." : "Register")
         </button>
-        <a href="/login" class="btn btn-link">Already have an account?</a>
+        <a href="/auth/login" class="btn btn-link">Already have an account?</a>
     </EditForm>
 }
 
@@ -53,13 +57,6 @@ else
         _loading = true;
         _errors = [];
 
-        if (_model.Password != _model.ConfirmPassword)
-        {
-            _errors = ["Passwords do not match."];
-            _loading = false;
-            return;
-        }
-
         var (success, errors) = await Auth.RegisterAsync(new RegisterRequest(_model.Email, _model.Password));
 
         if (success)
@@ -72,8 +69,13 @@ else
 
     private sealed class RegisterModel
     {
+        [Required, EmailAddress]
         public string Email { get; set; } = string.Empty;
+
+        [Required]
         public string Password { get; set; } = string.Empty;
+
+        [Required, Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

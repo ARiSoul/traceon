@@ -5,6 +5,7 @@ namespace Traceon.Application.Services;
 
 public interface ITrackedActionService
 {
+    IQueryable<TrackedActionResponse> QueryAll();
     Task<Result<TrackedActionResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Result<IReadOnlyList<TrackedActionResponse>>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<Result<TrackedActionResponse>> CreateAsync(CreateTrackedActionRequest request, CancellationToken cancellationToken = default);

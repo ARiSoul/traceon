@@ -6,6 +6,8 @@ namespace Traceon.Infrastructure.Persistence.Repositories;
 
 internal sealed class TrackedActionRepository(TraceonDbContext context) : ITrackedActionRepository
 {
+    public IQueryable<TrackedAction> Query() => context.TrackedActions.AsNoTracking();
+
     public async Task<TrackedAction?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await context.TrackedActions.FindAsync([id], cancellationToken);

@@ -4,6 +4,7 @@ namespace Traceon.Domain.Repositories;
 
 public interface IActionEntryRepository
 {
+    IQueryable<ActionEntry> Query();
     Task<ActionEntry?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<ActionEntry?> GetByIdWithFieldsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ActionEntry>> GetByTrackedActionIdAsync(Guid trackedActionId, CancellationToken cancellationToken = default);

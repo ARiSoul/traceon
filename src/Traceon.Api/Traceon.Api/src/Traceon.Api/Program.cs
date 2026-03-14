@@ -1,6 +1,8 @@
+using Microsoft.OData.Edm;
 using Scalar.AspNetCore;
 using Serilog;
 using Traceon.Api.Endpoints;
+using Traceon.Api.Extensions;
 using Traceon.Api.Services;
 using Traceon.Application;
 using Traceon.Application.Interfaces;
@@ -20,6 +22,8 @@ builder.Services.AddCors(options =>
                 builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [])
             .AllowAnyHeader()
             .AllowAnyMethod()));
+
+builder.Services.AddSingleton<IEdmModel>(ODataExtensions.BuildTraceonEdmModel());
 
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();

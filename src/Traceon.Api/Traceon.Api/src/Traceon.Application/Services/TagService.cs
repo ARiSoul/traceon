@@ -14,6 +14,14 @@ public sealed class TagService(
     ICurrentUserService currentUser,
     ILogger<TagService> logger) : ITagService
 {
+    public IQueryable<TagResponse> QueryAll()
+    {
+        return repository.Query()
+            .Where(t => t.UserId == currentUser.UserId)
+            .Select(t => new TagResponse(
+                t.Id, t.Name, t.Description, t.Color, t.CreatedAtUtc, t.UpdatedAtUtc));
+    }
+
     public async Task<Result<TagResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await repository.GetByIdAsync(id, cancellationToken);

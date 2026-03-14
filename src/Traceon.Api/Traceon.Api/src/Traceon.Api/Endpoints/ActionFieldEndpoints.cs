@@ -1,3 +1,5 @@
+using Microsoft.OData.Edm;
+using Traceon.Api.Extensions;
 using Traceon.Api.Filters;
 using Traceon.Contracts.ActionFields;
 using Traceon.Application.Services;
@@ -22,14 +24,17 @@ internal static class ActionFieldEndpoints
 
     private static async Task<IResult> GetByTrackedActionIdAsync(
         Guid trackedActionId,
+        HttpRequest request,
         IActionFieldService service,
+        IEdmModel edmModel,
         CancellationToken cancellationToken)
     {
-        var result = await service.GetByTrackedActionIdAsync(trackedActionId, cancellationToken);
+        var result = await service.QueryByTrackedActionIdAsync(trackedActionId, cancellationToken);
 
-        return result.IsSuccess
-            ? TypedResults.Ok(result.Value)
-            : TypedResults.NotFound(result.Error);
+        if (!result.IsSuccess)
+            return TypedResults.NotFound(result.Error);
+
+        return TypedResults.Ok(result.Value.ApplyODataQuery(request, edmModel));
     }
 
     private static async Task<IResult> GetByIdAsync(

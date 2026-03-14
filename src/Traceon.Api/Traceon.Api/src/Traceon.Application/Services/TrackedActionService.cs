@@ -15,6 +15,14 @@ public sealed class TrackedActionService(
     ICurrentUserService currentUser,
     ILogger<TrackedActionService> logger) : ITrackedActionService
 {
+    public IQueryable<TrackedActionResponse> QueryAll()
+    {
+        return repository.Query()
+            .Where(a => a.UserId == currentUser.UserId)
+            .Select(a => new TrackedActionResponse(
+                a.Id, a.Name, a.Description, a.CreatedAtUtc, a.UpdatedAtUtc));
+    }
+
     public async Task<Result<TrackedActionResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await repository.GetByIdAsync(id, cancellationToken);

@@ -16,6 +16,31 @@ public sealed class ActionFieldService(
     ICurrentUserService currentUser,
     ILogger<ActionFieldService> logger) : IActionFieldService
 {
+    public async Task<Result<IQueryable<ActionFieldResponse>>> QueryByTrackedActionIdAsync(
+        Guid trackedActionId, CancellationToken cancellationToken = default)
+    {
+        var action = await actionRepository.GetByIdAsync(trackedActionId, cancellationToken);
+
+        if (action is null || action.UserId != currentUser.UserId)
+        {
+            logger.TrackedActionNotFound(trackedActionId);
+            return Result<IQueryable<ActionFieldResponse>>.Failure(
+                $"Tracked action with ID '{trackedActionId}' was not found.");
+        }
+
+        var queryable = from af in repository.Query()
+                        where af.TrackedActionId == trackedActionId
+                        join fd in fieldDefinitionRepository.Query()
+                            on af.FieldDefinitionId equals fd.Id
+                        select new ActionFieldResponse(
+                            af.Id, af.TrackedActionId, af.FieldDefinitionId,
+                            fd.Type, af.Name, af.Description,
+                            af.MaxValue, af.MinValue, af.IsRequired, af.DefaultValue,
+                            af.CreatedAtUtc, af.UpdatedAtUtc);
+
+        return Result<IQueryable<ActionFieldResponse>>.Success(queryable);
+    }
+
     public async Task<Result<ActionFieldResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await repository.GetByIdAsync(id, cancellationToken);

@@ -14,6 +14,16 @@ public sealed class FieldDefinitionService(
     ICurrentUserService currentUser,
     ILogger<FieldDefinitionService> logger) : IFieldDefinitionService
 {
+    public IQueryable<FieldDefinitionResponse> QueryAll()
+    {
+        return repository.Query()
+            .Where(fd => fd.UserId == currentUser.UserId)
+            .Select(fd => new FieldDefinitionResponse(
+                fd.Id, fd.DefaultName, fd.DefaultDescription, fd.Type,
+                fd.DropdownValues, fd.DefaultMaxValue, fd.DefaultMinValue,
+                fd.DefaultIsRequired, fd.DefaultValue, fd.CreatedAtUtc, fd.UpdatedAtUtc));
+    }
+
     public async Task<Result<FieldDefinitionResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await repository.GetByIdAsync(id, cancellationToken);

@@ -16,6 +16,33 @@ public sealed class ActionEntryService(
     ICurrentUserService currentUser,
     ILogger<ActionEntryService> logger) : IActionEntryService
 {
+    public async Task<Result<IQueryable<ActionEntryResponse>>> QueryByTrackedActionIdAsync(
+        Guid trackedActionId, CancellationToken cancellationToken = default)
+    {
+        var action = await actionRepository.GetByIdAsync(trackedActionId, cancellationToken);
+
+        if (action is null || action.UserId != currentUser.UserId)
+        {
+            logger.TrackedActionNotFound(trackedActionId);
+            return Result<IQueryable<ActionEntryResponse>>.Failure(
+                $"Tracked action with ID '{trackedActionId}' was not found.");
+        }
+
+        var queryable = from e in entryRepository.Query()
+                        where e.TrackedActionId == trackedActionId
+                        select new ActionEntryResponse(
+                            e.Id, e.TrackedActionId, e.OccurredAtUtc,
+                            (from f in e.Fields
+                             join af in fieldRepository.Query()
+                                 on f.ActionFieldId equals af.Id
+                             select new ActionEntryFieldResponse(
+                                 f.Id, f.ActionFieldId, af.Name, f.Value)
+                            ).ToList(),
+                            e.CreatedAtUtc, e.UpdatedAtUtc);
+
+        return Result<IQueryable<ActionEntryResponse>>.Success(queryable);
+    }
+
     public async Task<Result<ActionEntryResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await entryRepository.GetByIdWithFieldsAsync(id, cancellationToken);
