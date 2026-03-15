@@ -1,0 +1,60 @@
+@page "/tracked-actions/{TrackedActionId:guid}/tags"
+@attribute [Authorize]
+
+<PageTitle>Manage Tags - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-tags me-2"></i>
+            Manage Tags
+        </h3>
+        <p class="text-muted mb-0">
+            Assign or remove tags for
+            <strong>@(_actionName ?? "...")</strong>
+        </p>
+    </div>
+    <a href="/tracked-actions" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Actions
+    </a>
+</div>
+
+<ItemSelector TItem="TagResponse"
+              LoadAllItems="LoadAllTagsAsync"
+              LoadSelectedItems="LoadSelectedTagsAsync"
+              OnAdd="AddTagAsync"
+              OnRemove="RemoveTagAsync"
+              KeySelector="t => t.Id"
+              EmptyAvailableText="All tags are assigned"
+              EmptySelectedText="No tags assigned yet">
+    <ItemTemplate>
+        <span class="badge rounded-pill me-1" style="background-color: @context.Color">&nbsp;&nbsp;</span>
+        <span class="text-truncate">@context.Name</span>
+    </ItemTemplate>
+</ItemSelector>
+
+@code {
+    [Parameter] public Guid TrackedActionId { get; set; }
+    [Inject] private TrackedActionService ActionService { get; set; } = default!;
+    [Inject] private TagService TagService { get; set; } = default!;
+
+    private string? _actionName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var action = await ActionService.GetByIdAsync(TrackedActionId);
+        _actionName = action?.Name;
+    }
+
+    private async Task<List<TagResponse>> LoadAllTagsAsync()
+        => await TagService.GetAllAsync();
+
+    private async Task<List<TagResponse>> LoadSelectedTagsAsync()
+        => await ActionService.GetTagsAsync(TrackedActionId);
+
+    private async Task<(bool Success, IReadOnlyList<string> Errors)> AddTagAsync(TagResponse tag)
+        => await ActionService.AddTagAsync(TrackedActionId, tag.Id);
+
+    private async Task<(bool Success, IReadOnlyList<string> Errors)> RemoveTagAsync(TagResponse tag)
+        => await ActionService.RemoveTagAsync(TrackedActionId, tag.Id);
+}

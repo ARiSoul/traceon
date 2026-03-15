@@ -13,6 +13,15 @@ internal sealed class TagRepository(TraceonDbContext context) : ITagRepository
         return await context.Tags.FindAsync([id], cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Tag>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.ToList();
+        return await context.Tags
+            .AsNoTracking()
+            .Where(t => idList.Contains(t.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Tag>> GetAllByUserIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         return await context.Tags

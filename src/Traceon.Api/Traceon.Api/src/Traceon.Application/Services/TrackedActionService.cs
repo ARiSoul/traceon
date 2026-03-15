@@ -4,6 +4,7 @@ using Traceon.Contracts.TrackedActions;
 using Traceon.Application.Interfaces;
 using Traceon.Application.Logging;
 using Traceon.Application.Mapping;
+using Traceon.Contracts.Tags;
 using Traceon.Domain.Entities;
 using Traceon.Domain.Repositories;
 
@@ -94,6 +95,23 @@ public sealed class TrackedActionService(
 
         logger.TrackedActionDeleted(id);
         return Result.Success();
+    }
+
+    public async Task<Result<IReadOnlyList<TagResponse>>> GetTagsAsync(Guid trackedActionId, CancellationToken cancellationToken = default)
+    {
+        var action = await repository.GetByIdWithTagsAsync(trackedActionId, cancellationToken);
+
+        if (action is null || action.UserId != currentUser.UserId)
+        {
+            logger.TrackedActionNotFound(trackedActionId);
+            return Result<IReadOnlyList<TagResponse>>.Failure($"Tracked action with ID '{trackedActionId}' was not found.");
+        }
+
+        var tagIds = action.Tags.Select(t => t.TagId).ToList();
+        var tags = await tagRepository.GetByIdsAsync(tagIds, cancellationToken);
+        var response = tags.Select(t => t.ToResponse()).ToList();
+
+        return Result<IReadOnlyList<TagResponse>>.Success(response);
     }
 
     public async Task<Result> AddTagAsync(Guid trackedActionId, Guid tagId, CancellationToken cancellationToken = default)

@@ -23,6 +23,11 @@ public sealed class FieldDefinitionService(HttpClient http)
         return await http.GetFromJsonAsync<FieldDefinitionResponse>($"/api/field-definitions/{id}");
     }
 
+    public async Task<List<FieldDefinitionResponse>> GetAllAsync()
+    {
+        return await http.GetFromJsonAsync<List<FieldDefinitionResponse>>("/api/field-definitions") ?? [];
+    }
+
     public async Task<(bool Success, IReadOnlyList<string> Errors)> CreateAsync(CreateFieldDefinitionRequest request)
     {
         var response = await http.PostAsJsonAsync("/api/field-definitions", request);

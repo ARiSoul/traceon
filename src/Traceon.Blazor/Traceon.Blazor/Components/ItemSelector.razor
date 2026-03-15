@@ -1,0 +1,180 @@
+@typeparam TItem
+
+<div class="item-selector">
+    @if (_loading)
+    {
+        <div class="d-flex justify-content-center py-3">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        @if (_errors.Count > 0)
+        {
+            <div class="alert alert-danger alert-dismissible fade show py-2">
+                <small>
+                    @foreach (var error in _errors)
+                    {
+                        <span>@error</span>
+                    }
+                </small>
+                <button type="button" class="btn-close btn-close-sm" @onclick="() => _errors = []"></button>
+            </div>
+        }
+
+        <div class="row g-3">
+            <div class="col-md-5">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                        <small class="fw-semibold text-muted">Available</small>
+                        <span class="badge bg-secondary">@AvailableItems.Count</span>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (AvailableItems.Count == 0)
+                        {
+                            <div class="text-center text-muted py-3">
+                                <small>@(EmptyAvailableText ?? "No items available")</small>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="list-group list-group-flush item-selector-list">
+                                @foreach (var item in AvailableItems)
+                                {
+                                    <button type="button"
+                                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2"
+                                            @onclick="() => AddItemAsync(item)"
+                                            disabled="@_working">
+                                        <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                            @ItemTemplate(item)
+                                        </div>
+                                        <i class="bi bi-plus-circle text-success flex-shrink-0"></i>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-center justify-content-center">
+                <div class="text-center text-muted">
+                    <i class="bi bi-arrow-left-right d-none d-md-block" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                        <small class="fw-semibold text-muted">Assigned</small>
+                        <span class="badge bg-primary">@SelectedItems.Count</span>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (SelectedItems.Count == 0)
+                        {
+                            <div class="text-center text-muted py-3">
+                                <small>@(EmptySelectedText ?? "No items assigned")</small>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="list-group list-group-flush item-selector-list">
+                                @foreach (var item in SelectedItems)
+                                {
+                                    <button type="button"
+                                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2"
+                                            @onclick="() => RemoveItemAsync(item)"
+                                            disabled="@_working">
+                                        <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                            @ItemTemplate(item)
+                                        </div>
+                                        <i class="bi bi-dash-circle text-danger flex-shrink-0"></i>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required Func<Task<List<TItem>>> LoadAllItems { get; set; }
+    [Parameter, EditorRequired] public required Func<Task<List<TItem>>> LoadSelectedItems { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, Task<(bool Success, IReadOnlyList<string> Errors)>> OnAdd { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, Task<(bool Success, IReadOnlyList<string> Errors)>> OnRemove { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, Guid> KeySelector { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment<TItem> ItemTemplate { get; set; }
+
+    [Parameter] public string? EmptyAvailableText { get; set; }
+    [Parameter] public string? EmptySelectedText { get; set; }
+
+    private List<TItem> AvailableItems { get; set; } = [];
+    private List<TItem> SelectedItems { get; set; } = [];
+
+    private bool _loading = true;
+    private bool _working;
+    private IReadOnlyList<string> _errors = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+        _loading = false;
+    }
+
+    private async Task LoadDataAsync()
+    {
+        var allTask = LoadAllItems();
+        var selectedTask = LoadSelectedItems();
+        await Task.WhenAll(allTask, selectedTask);
+
+        var all = allTask.Result;
+        SelectedItems = selectedTask.Result;
+        var selectedIds = SelectedItems.Select(KeySelector).ToHashSet();
+        AvailableItems = all.Where(i => !selectedIds.Contains(KeySelector(i))).ToList();
+    }
+
+    private async Task AddItemAsync(TItem item)
+    {
+        _working = true;
+        _errors = [];
+
+        var (success, errors) = await OnAdd(item);
+
+        if (success)
+        {
+            AvailableItems.Remove(item);
+            SelectedItems.Add(item);
+        }
+        else
+        {
+            _errors = errors;
+        }
+
+        _working = false;
+    }
+
+    private async Task RemoveItemAsync(TItem item)
+    {
+        _working = true;
+        _errors = [];
+
+        var (success, errors) = await OnRemove(item);
+
+        if (success)
+        {
+            SelectedItems.Remove(item);
+            AvailableItems.Add(item);
+        }
+        else
+        {
+            _errors = errors;
+        }
+
+        _working = false;
+    }
+}

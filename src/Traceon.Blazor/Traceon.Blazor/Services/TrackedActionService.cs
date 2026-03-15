@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Traceon.Blazor.Components;
+using Traceon.Contracts.Tags;
 using Traceon.Contracts.TrackedActions;
 
 namespace Traceon.Blazor.Services;
@@ -44,6 +45,24 @@ public sealed class TrackedActionService(HttpClient http)
     {
         var response = await http.DeleteAsync($"/api/tracked-actions/{id}");
         return await ToResultAsync(response);
+    }
+
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> AddTagAsync(Guid trackedActionId, Guid tagId)
+    {
+        var response = await http.PostAsync($"/api/tracked-actions/{trackedActionId}/tags/{tagId}", null);
+        return await ToResultAsync(response);
+    }
+
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> RemoveTagAsync(Guid trackedActionId, Guid tagId)
+    {
+        var response = await http.DeleteAsync($"/api/tracked-actions/{trackedActionId}/tags/{tagId}");
+        return await ToResultAsync(response);
+    }
+
+    public async Task<List<TagResponse>> GetTagsAsync(Guid trackedActionId)
+    {
+        return await http.GetFromJsonAsync<List<TagResponse>>(
+            $"/api/tracked-actions/{trackedActionId}/tags") ?? [];
     }
 
     private static async Task<(bool Success, IReadOnlyList<string> Errors)> ToResultAsync(HttpResponseMessage response)

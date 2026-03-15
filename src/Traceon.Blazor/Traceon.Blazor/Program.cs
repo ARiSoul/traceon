@@ -35,5 +35,6 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<TrackedActionService>();
 builder.Services.AddScoped<TagService>();
 builder.Services.AddScoped<FieldDefinitionService>();
+builder.Services.AddScoped<ActionFieldService>();
 
 await builder.Build().RunAsync();
