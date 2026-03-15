@@ -1,0 +1,133 @@
+@page "/tracked-actions/{Id:guid}/edit"
+@attribute [Authorize]
+
+<PageTitle>Edit Tracked Action - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-pencil-square me-2"></i>
+            Edit Tracked Action
+        </h3>
+        <p class="text-muted mb-0">Update the details of your tracked action</p>
+    </div>
+    <a href="/tracked-actions" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to List
+    </a>
+</div>
+
+@if (_errors.Count > 0)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <ul class="mb-0 d-inline">
+            @foreach (var error in _errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+        <button type="button" class="btn-close" @onclick="() => _errors = []"></button>
+    </div>
+}
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (_model is null)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-question-circle me-2"></i>
+        Tracked action not found.
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <EditForm Model="_model" OnValidSubmit="SaveAsync" FormName="EditActionForm">
+                <DataAnnotationsValidator />
+                <div class="mb-3">
+                    <label class="form-label">Name <span class="text-danger">*</span></label>
+                    <InputText @bind-Value="_model.Name" class="form-control" />
+                    <ValidationMessage For="() => _model.Name" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <InputText @bind-Value="_model.Description" class="form-control" />
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success" disabled="@_saving">
+                        @if (_saving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle me-1"></i>
+                        }
+                        Save Changes
+                    </button>
+                    <a href="/tracked-actions" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [Inject] private TrackedActionService Service { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private EditModel? _model;
+    private IReadOnlyList<string> _errors = [];
+    private bool _loading = true;
+    private bool _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var action = await Service.GetByIdAsync(Id);
+
+        if (action is not null)
+        {
+            _model = new EditModel
+            {
+                Name = action.Name,
+                Description = action.Description
+            };
+        }
+
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_model is null) return;
+
+        _saving = true;
+        _errors = [];
+
+        var (success, errors) = await Service.UpdateAsync(Id, new UpdateTrackedActionRequest(_model.Name, _model.Description));
+
+        if (success)
+            Nav.NavigateTo("/tracked-actions");
+        else
+            _errors = errors.Count > 0 ? errors : ["Failed to update tracked action."];
+
+        _saving = false;
+    }
+
+    private sealed class EditModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+    }
+}

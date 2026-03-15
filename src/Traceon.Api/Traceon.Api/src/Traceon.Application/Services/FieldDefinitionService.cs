@@ -18,10 +18,20 @@ public sealed class FieldDefinitionService(
     {
         return repository.Query()
             .Where(fd => fd.UserId == currentUser.UserId)
-            .Select(fd => new FieldDefinitionResponse(
-                fd.Id, fd.DefaultName, fd.DefaultDescription, fd.Type,
-                fd.DropdownValues, fd.DefaultMaxValue, fd.DefaultMinValue,
-                fd.DefaultIsRequired, fd.DefaultValue, fd.CreatedAtUtc, fd.UpdatedAtUtc));
+            .Select(fd => new FieldDefinitionResponse
+            {
+                CreatedAtUtc = fd.CreatedAtUtc,
+                DefaultDescription = fd.DefaultDescription,
+                DefaultIsRequired = fd.DefaultIsRequired,
+                DefaultMaxValue = fd.DefaultMaxValue,
+                DefaultMinValue = fd.DefaultMinValue,
+                DefaultName = fd.DefaultName,
+                DefaultValue = fd.DefaultValue,
+                DropdownValues = fd.DropdownValues,
+                Id = fd.Id,
+                Type = fd.Type,
+                UpdatedAtUtc = fd.UpdatedAtUtc
+            });
     }
 
     public async Task<Result<FieldDefinitionResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

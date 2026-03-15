@@ -1,15 +1,19 @@
 namespace Traceon.Contracts.ActionEntries;
 
-public sealed record ActionEntryResponse(
-    Guid Id,
-    Guid TrackedActionId,
-    DateTime OccurredAtUtc,
-    List<ActionEntryFieldResponse> FieldValues,
-    DateTime CreatedAtUtc,
-    DateTime? UpdatedAtUtc);
+public sealed record ActionEntryResponse
+{
+    public required Guid Id { get; init; }
+    public required Guid TrackedActionId { get; init; }
+    public required DateTime OccurredAtUtc { get; init; }
+    public required List<ActionEntryFieldResponse> FieldValues { get; init; }
+    public required DateTime CreatedAtUtc { get; init; }
+    public required DateTime? UpdatedAtUtc { get; init; }
+}
 
-public sealed record ActionEntryFieldResponse(
-    Guid Id,
-    Guid ActionFieldId,
-    string ActionFieldName,
-    string? Value);
+public sealed record ActionEntryFieldResponse
+{
+    public required Guid Id { get; init; }
+    public required Guid ActionFieldId { get; init; }
+    public required string ActionFieldName { get; init; }
+    public required string? Value { get; init; }
+}

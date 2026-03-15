@@ -1,0 +1,78 @@
+.data-grid-toolbar {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.data-grid-filter {
+    display: flex;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 200px;
+    max-width: 500px;
+}
+
+.data-grid-toolbar-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 0.5rem;
+}
+
+::deep th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s;
+}
+
+::deep th.sortable:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.sort-indicator {
+    font-size: 0.75rem;
+    opacity: 0.65;
+}
+
+::deep .table-responsive {
+    overflow: visible;
+}
+
+.data-grid-loading {
+    display: flex;
+    justify-content: center;
+    padding: 3rem;
+}
+
+.data-grid-empty {
+    text-align: center;
+    padding: 3rem;
+}
+
+.data-grid-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-top: 1px solid #dee2e6;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.data-grid-info {
+    flex-shrink: 0;
+}
+
+.data-grid-pagination {
+    display: flex;
+}
+
+.data-grid-page-size {
+    flex-shrink: 0;
+}
+
+.data-grid-page-size ::deep .form-select {
+    width: auto;
+    min-width: 7rem;
+}

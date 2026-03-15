@@ -32,11 +32,21 @@ public sealed class ActionFieldService(
                         where af.TrackedActionId == trackedActionId
                         join fd in fieldDefinitionRepository.Query()
                             on af.FieldDefinitionId equals fd.Id
-                        select new ActionFieldResponse(
-                            af.Id, af.TrackedActionId, af.FieldDefinitionId,
-                            fd.Type, af.Name, af.Description,
-                            af.MaxValue, af.MinValue, af.IsRequired, af.DefaultValue,
-                            af.CreatedAtUtc, af.UpdatedAtUtc);
+                        select new ActionFieldResponse
+                        {
+                            CreatedAtUtc = DateTime.UtcNow,
+                            DefaultValue = af.DefaultValue,
+                            Description = af.Description,
+                            FieldDefinitionId = fd.Id,
+                            FieldType = fd.Type,
+                            Id = fd.Id,
+                            IsRequired = true,
+                            MaxValue = af.MaxValue,
+                            MinValue = af.MinValue,
+                            Name = af.Name,
+                            TrackedActionId = trackedActionId,
+                            UpdatedAtUtc = af.UpdatedAtUtc
+                        };
 
         return Result<IQueryable<ActionFieldResponse>>.Success(queryable);
     }

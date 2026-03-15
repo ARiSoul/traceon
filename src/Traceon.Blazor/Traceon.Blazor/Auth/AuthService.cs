@@ -1,14 +1,10 @@
 using System.Net.Http.Json;
-using Blazored.LocalStorage;
 using Traceon.Blazor.Services;
 
 namespace Traceon.Blazor.Auth;
 
-public sealed class AuthService(HttpClient http, ILocalStorageService localStorage, TokenAuthStateProvider authState)
+public sealed class AuthService(HttpClient http, TokenStore tokenStore, TokenAuthStateProvider authState)
 {
-    private const string TokenKey = "traceon_access_token";
-    private const string RefreshTokenKey = "traceon_refresh_token";
-
     public async Task<(bool Success, IReadOnlyList<string> Errors)> RegisterAsync(RegisterRequest request)
     {
         var response = await http.PostAsJsonAsync("/api/identity/register", request);
@@ -35,24 +31,19 @@ public sealed class AuthService(HttpClient http, ILocalStorageService localStora
         if (token is null)
             return (false, ["Failed to parse login response."]);
 
-        await localStorage.SetItemAsStringAsync(TokenKey, token.AccessToken);
-        await localStorage.SetItemAsStringAsync(RefreshTokenKey, token.RefreshToken);
+        tokenStore.SetSession(token.AccessToken, token.ExpiresIn, request.Email);
+        await tokenStore.PersistRefreshTokenAsync(token.RefreshToken, request.Email);
 
-        authState.NotifyUserAuthentication(token.AccessToken);
+        authState.NotifyUserAuthentication(request.Email);
 
         return (true, []);
     }
 
     public async Task LogoutAsync()
     {
-        await localStorage.RemoveItemAsync(TokenKey);
-        await localStorage.RemoveItemAsync(RefreshTokenKey);
+        tokenStore.Clear();
+        await tokenStore.ClearPersistedTokensAsync();
         authState.NotifyUserLogout();
-    }
-
-    public async Task<string?> GetTokenAsync()
-    {
-        return await localStorage.GetItemAsStringAsync(TokenKey);
     }
 
     public async Task<(bool Success, IReadOnlyList<string> Errors)> ForgotPasswordAsync(ForgotPasswordRequest request)

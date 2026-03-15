@@ -1,8 +1,10 @@
 namespace Traceon.Contracts.TrackedActions;
 
-public sealed record TrackedActionResponse(
-    Guid Id,
-    string Name,
-    string? Description,
-    DateTime CreatedAtUtc,
-    DateTime? UpdatedAtUtc);
+public sealed record TrackedActionResponse
+{
+    public required Guid Id { get; init; }
+    public required string Name { get; init; }
+    public required string? Description { get; init; }
+    public required DateTime CreatedAtUtc { get; init; }
+    public required DateTime? UpdatedAtUtc { get; init; }
+}

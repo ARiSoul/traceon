@@ -1,38 +1,33 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Traceon.Blazor.Auth;
 
-public sealed class TokenAuthStateProvider(ILocalStorageService localStorage) : AuthenticationStateProvider
+public sealed class TokenAuthStateProvider(TokenStore tokenStore) : AuthenticationStateProvider
 {
-    private const string TokenKey = "traceon_access_token";
-
     private ClaimsPrincipal _currentUser = new(new ClaimsIdentity());
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         if (_currentUser.Identity?.IsAuthenticated != true)
         {
-            var token = await localStorage.GetItemAsStringAsync(TokenKey);
+            var accessToken = await tokenStore.GetAccessTokenAsync();
 
-            if (!string.IsNullOrWhiteSpace(token))
+            if (accessToken is not null)
             {
-                var identity = ParseToken(token);
+                var email = tokenStore.Email ?? await tokenStore.GetPersistedEmailAsync();
 
-                if (identity.IsAuthenticated)
-                    _currentUser = new ClaimsPrincipal(identity);
+                if (!string.IsNullOrWhiteSpace(email))
+                    _currentUser = CreatePrincipal(email);
             }
         }
 
         return new AuthenticationState(_currentUser);
     }
 
-    public void NotifyUserAuthentication(string token)
+    public void NotifyUserAuthentication(string email)
     {
-        var identity = ParseToken(token);
-        _currentUser = new ClaimsPrincipal(identity);
+        _currentUser = CreatePrincipal(email);
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
@@ -42,14 +37,10 @@ public sealed class TokenAuthStateProvider(ILocalStorageService localStorage) : 
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
-    private static ClaimsIdentity ParseToken(string token)
+    private static ClaimsPrincipal CreatePrincipal(string email)
     {
-        var handler = new JwtSecurityTokenHandler();
-
-        if (!handler.CanReadToken(token))
-            return new ClaimsIdentity();
-
-        var jwt = handler.ReadJwtToken(token);
-        return new ClaimsIdentity(jwt.Claims, "Bearer");
+        Claim[] claims = [new(ClaimTypes.Email, email), new(ClaimTypes.Name, email)];
+        var identity = new ClaimsIdentity(claims, "Bearer");
+        return new ClaimsPrincipal(identity);
     }
 }

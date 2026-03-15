@@ -28,19 +28,28 @@ public sealed class ActionEntryService(
                 $"Tracked action with ID '{trackedActionId}' was not found.");
         }
 
-        var queryable = from e in entryRepository.Query()
-                        where e.TrackedActionId == trackedActionId
-                        select new ActionEntryResponse(
-                            e.Id, e.TrackedActionId, e.OccurredAtUtc,
-                            (from f in e.Fields
-                             join af in fieldRepository.Query()
-                                 on f.ActionFieldId equals af.Id
-                             select new ActionEntryFieldResponse(
-                                 f.Id, f.ActionFieldId, af.Name, f.Value)
-                            ).ToList(),
-                            e.CreatedAtUtc, e.UpdatedAtUtc);
+        var query = from e in entryRepository.Query()
+                    where e.TrackedActionId == trackedActionId
+                    select new ActionEntryResponse
+                    {
+                        Id = e.Id,
+                        TrackedActionId = trackedActionId,
+                        CreatedAtUtc = e.CreatedAtUtc,
+                        FieldValues = (from f in e.Fields
+                                       join af in fieldRepository.Query()
+                                           on f.ActionFieldId equals af.Id
+                                       select new ActionEntryFieldResponse
+                                       {
+                                           Id = f.Id,
+                                           ActionFieldId = f.ActionFieldId,
+                                           ActionFieldName = af.Name,
+                                           Value = f.Value
+                                       }).ToList(),
+                        OccurredAtUtc = e.OccurredAtUtc,
+                        UpdatedAtUtc = e.UpdatedAtUtc
+                    };
 
-        return Result<IQueryable<ActionEntryResponse>>.Success(queryable);
+        return Result<IQueryable<ActionEntryResponse>>.Success(query);
     }
 
     public async Task<Result<ActionEntryResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

@@ -18,9 +18,15 @@ public sealed class TrackedActionService(
     public IQueryable<TrackedActionResponse> QueryAll()
     {
         return repository.Query()
-            .Where(a => a.UserId == currentUser.UserId)
-            .Select(a => new TrackedActionResponse(
-                a.Id, a.Name, a.Description, a.CreatedAtUtc, a.UpdatedAtUtc));
+        .Where(a => a.UserId == currentUser.UserId)
+        .Select(a => new TrackedActionResponse
+        {
+            Id = a.Id,
+            Name = a.Name,
+            Description = a.Description,
+            CreatedAtUtc = a.CreatedAtUtc,
+            UpdatedAtUtc = a.UpdatedAtUtc
+        });
     }
 
     public async Task<Result<TrackedActionResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

@@ -6,18 +6,21 @@ namespace Traceon.Application.Mapping;
 public static class FieldDefinitionMappingExtensions
 {
     public static FieldDefinitionResponse ToResponse(this FieldDefinition entity) =>
-        new(entity.Id,
-            entity.DefaultName,
-            entity.DefaultDescription,
-            entity.Type,
-            entity.DropdownValues,
-            entity.DefaultMaxValue,
-            entity.DefaultMinValue,
-            entity.DefaultIsRequired,
-            entity.DefaultValue,
-            entity.CreatedAtUtc,
-            entity.UpdatedAtUtc);
+        new()
+        {
+            CreatedAtUtc = entity.CreatedAtUtc,
+            DefaultDescription = entity.DefaultDescription,
+            DefaultIsRequired = entity.DefaultIsRequired,
+            DefaultMaxValue = entity.DefaultMaxValue,
+            DefaultMinValue = entity.DefaultMinValue,
+            DefaultName = entity.DefaultName,
+            DefaultValue = entity.DefaultValue,
+            DropdownValues = entity.DropdownValues,
+            Id = entity.Id,
+            Type = entity.Type,
+            UpdatedAtUtc = entity.UpdatedAtUtc
+        };
 
     public static IReadOnlyList<FieldDefinitionResponse> ToResponseList(this IReadOnlyList<FieldDefinition> entities) =>
-        entities.Select(e => e.ToResponse()).ToList();
+        [.. entities.Select(e => e.ToResponse())];
 }

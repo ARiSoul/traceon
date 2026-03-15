@@ -14,11 +14,16 @@ var apiBaseAddress = builder.Configuration["ApiBaseAddress"] ?? "http://localhos
 
 builder.Services.AddBlazoredLocalStorage();
 
+builder.Services.AddScoped<TokenStore>();
 builder.Services.AddScoped<TokenAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<TokenAuthStateProvider>());
 builder.Services.AddAuthorizationCore();
 
 builder.Services.AddTransient<AuthTokenHandler>();
+
+builder.Services.AddHttpClient("TraceonApiAnonymous", client =>
+    client.BaseAddress = new Uri(apiBaseAddress));
+
 builder.Services.AddHttpClient("TraceonApi", client =>
     client.BaseAddress = new Uri(apiBaseAddress))
     .AddHttpMessageHandler<AuthTokenHandler>();
@@ -29,5 +34,6 @@ builder.Services.AddScoped(sp =>
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<TrackedActionService>();
 builder.Services.AddScoped<TagService>();
+builder.Services.AddScoped<FieldDefinitionService>();
 
 await builder.Build().RunAsync();

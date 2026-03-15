@@ -1,48 +1,43 @@
 using System.Net.Http.Json;
 using Traceon.Blazor.Components;
-using Traceon.Contracts.Tags;
+using Traceon.Contracts.FieldDefinitions;
 
 namespace Traceon.Blazor.Services;
 
-public sealed class TagService(HttpClient http)
+public sealed class FieldDefinitionService(HttpClient http)
 {
-    public async Task<DataGridResult<TagResponse>> QueryAsync(DataGridRequest request, string[]? searchFields = null)
+    public async Task<DataGridResult<FieldDefinitionResponse>> QueryAsync(DataGridRequest request, string[]? searchFields = null)
     {
         var queryString = ODataQueryBuilder.BuildQueryString(request, searchFields);
-        using var response = await http.GetAsync($"/api/tags?{queryString}");
+        using var response = await http.GetAsync($"/api/field-definitions?{queryString}");
         response.EnsureSuccessStatusCode();
 
-        var items = await response.Content.ReadFromJsonAsync<List<TagResponse>>() ?? [];
+        var items = await response.Content.ReadFromJsonAsync<List<FieldDefinitionResponse>>() ?? [];
         var totalCount = GetTotalCount(response, items.Count);
 
-        return new DataGridResult<TagResponse>(items, totalCount);
+        return new DataGridResult<FieldDefinitionResponse>(items, totalCount);
     }
 
-    public async Task<List<TagResponse>> GetAllAsync()
+    public async Task<FieldDefinitionResponse?> GetByIdAsync(Guid id)
     {
-        return await http.GetFromJsonAsync<List<TagResponse>>("/api/tags") ?? [];
+        return await http.GetFromJsonAsync<FieldDefinitionResponse>($"/api/field-definitions/{id}");
     }
 
-    public async Task<TagResponse?> GetByIdAsync(Guid id)
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> CreateAsync(CreateFieldDefinitionRequest request)
     {
-        return await http.GetFromJsonAsync<TagResponse>($"/api/tags/{id}");
-    }
-
-    public async Task<(bool Success, IReadOnlyList<string> Errors)> CreateAsync(CreateTagRequest request)
-    {
-        var response = await http.PostAsJsonAsync("/api/tags", request);
+        var response = await http.PostAsJsonAsync("/api/field-definitions", request);
         return await ToResultAsync(response);
     }
 
-    public async Task<(bool Success, IReadOnlyList<string> Errors)> UpdateAsync(Guid id, UpdateTagRequest request)
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> UpdateAsync(Guid id, UpdateFieldDefinitionRequest request)
     {
-        var response = await http.PutAsJsonAsync($"/api/tags/{id}", request);
+        var response = await http.PutAsJsonAsync($"/api/field-definitions/{id}", request);
         return await ToResultAsync(response);
     }
 
     public async Task<(bool Success, IReadOnlyList<string> Errors)> DeleteAsync(Guid id)
     {
-        var response = await http.DeleteAsync($"/api/tags/{id}");
+        var response = await http.DeleteAsync($"/api/field-definitions/{id}");
         return await ToResultAsync(response);
     }
 

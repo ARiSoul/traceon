@@ -1,6 +1,8 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Traceon</a>
+        <a class="navbar-brand d-flex align-items-center" href="">
+            <i class="bi bi-bullseye me-2"></i> Traceon
+        </a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -10,39 +12,44 @@
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="nav flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            <NavLink class="nav-link d-flex align-items-center" href="" Match="NavLinkMatch.All">
+                <i class="bi bi-house-door-fill me-2"></i> <span>Home</span>
             </NavLink>
         </div>
 
         <AuthorizeView>
             <Authorized>
+                <div class="nav-item px-3 mt-3">
+                    <span class="text-muted small px-2">TRACKING</span>
+                </div>
+
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="tracked-actions">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Tracked Actions
+                    <NavLink class="nav-link d-flex align-items-center" href="tracked-actions">
+                        <i class="bi bi-list-check me-2"></i> <span>Tracked Actions</span>
                     </NavLink>
                 </div>
+
+                <div class="nav-item px-3 mt-3">
+                    <span class="text-muted small px-2">DEFINITIONS</span>
+                </div>
+
                 <div class="nav-item px-3">
-                    <button class="nav-link btn btn-link text-start" @onclick="LogoutAsync">
-                        Logout
-                    </button>
+                    <NavLink class="nav-link d-flex align-items-center" href="tags">
+                        <i class="bi bi-tags me-2"></i> <span>Tags</span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="field-definitions">
+                        <i class="bi bi-sliders me-2"></i> <span>Field Definitions</span>
+                    </NavLink>
                 </div>
             </Authorized>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="auth/login">
-                        Login
-                    </NavLink>
-                </div>
-            </NotAuthorized>
         </AuthorizeView>
     </nav>
 </div>
 
 @code {
-    [Inject] private AuthService Auth { get; set; } = default!;
-    [Inject] private NavigationManager Nav { get; set; } = default!;
-
     private bool collapseNavMenu = true;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
@@ -50,11 +57,5 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
-    }
-
-    private async Task LogoutAsync()
-    {
-        await Auth.LogoutAsync();
-        Nav.NavigateTo("/auth/login", forceLoad: true);
     }
 }

@@ -21,7 +21,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [])
             .AllowAnyHeader()
-            .AllowAnyMethod()));
+            .AllowAnyMethod()
+            .WithExposedHeaders("X-Total-Count")));
 
 builder.Services.AddSingleton<IEdmModel>(ODataExtensions.BuildTraceonEdmModel());
 

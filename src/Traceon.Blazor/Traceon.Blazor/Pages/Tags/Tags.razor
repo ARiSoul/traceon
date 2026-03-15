@@ -1,15 +1,15 @@
-@page "/tracked-actions"
+@page "/tags"
 @attribute [Authorize]
 
-<PageTitle>Tracked Actions - Traceon</PageTitle>
+<PageTitle>Tags - Traceon</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="mb-1">
-            <i class="bi bi-list-check me-2"></i>
-            Tracked Actions
+            <i class="bi bi-tags me-2"></i>
+            Tags
         </h3>
-        <p class="text-muted mb-0">Manage your tracked actions and monitor progress</p>
+        <p class="text-muted mb-0">Create and manage tags to organize your tracked actions</p>
     </div>
 </div>
 
@@ -31,19 +31,25 @@
 {
     <div class="card mb-3">
         <div class="card-body">
-            <h5 class="card-title">New Tracked Action</h5>
-            <EditForm Model="_newAction" OnValidSubmit="CreateAsync" FormName="CreateActionForm">
+            <h5 class="card-title">New Tag</h5>
+            <EditForm Model="_newTag" OnValidSubmit="CreateAsync" FormName="CreateTagForm">
                 <DataAnnotationsValidator />
-                <div class="mb-3">
-                    <label class="form-label">Name</label>
-                    <InputText @bind-Value="_newAction.Name" class="form-control" />
-                    <ValidationMessage For="() => _newAction.Name" />
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label">Name <span class="text-danger">*</span></label>
+                        <InputText @bind-Value="_newTag.Name" class="form-control" />
+                        <ValidationMessage For="() => _newTag.Name" />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Description</label>
+                        <InputText @bind-Value="_newTag.Description" class="form-control" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Color</label>
+                        <input type="color" class="form-control form-control-color w-100" @bind="_newTag.Color" />
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Description</label>
-                    <InputText @bind-Value="_newAction.Description" class="form-control" />
-                </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 mt-3">
                     <button type="submit" class="btn btn-success">
                         <i class="bi bi-check-circle me-1"></i>Create
                     </button>
@@ -57,75 +63,80 @@
 }
 
 <DataGrid @ref="_grid"
-          TItem="TrackedActionResponse"
+          TItem="TagResponse"
           LoadData="LoadDataAsync"
           Columns="_columns"
           FilterPlaceholder="Filter by name or description..."
-          EmptyText="No tracked actions yet. Create one to get started!">
+          EmptyText="No tags yet. Create one to get started!">
     <Toolbar>
         <button class="btn btn-primary" @onclick="() => _showForm = !_showForm">
-            <i class="bi bi-plus-circle me-1"></i> New Action
+            <i class="bi bi-plus-circle me-1"></i> New Tag
         </button>
     </Toolbar>
     <RowActions>
         <ListActionsDropdown PrimaryText="Edit"
                              PrimaryIcon="pencil-square"
                              PrimaryButtonStyle="primary"
-                             PrimaryAction="() => EditAction(context.Id)"
+                             PrimaryAction="() => EditTag(context.Id)"
                              Actions="GetActions(context)" />
     </RowActions>
 </DataGrid>
 
 @code {
-    [Inject] private TrackedActionService Service { get; set; } = default!;
+    [Inject] private TagService Service { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
-    private DataGrid<TrackedActionResponse> _grid = default!;
-    private ActionModel _newAction = new();
+    private DataGrid<TagResponse> _grid = default!;
+    private TagModel _newTag = new();
     private IReadOnlyList<string> _errors = [];
     private bool _showForm;
 
-    private static readonly List<DataGridColumn<TrackedActionResponse>> _columns =
+    private static readonly List<DataGridColumn<TagResponse>> _columns =
     [
         new() { Title = "Name", Selector = x => x.Name, SortField = "Name" },
         new() { Title = "Description", Selector = x => x.Description },
+        new()
+        {
+            Title = "Color",
+            Selector = x => x.Color,
+            Template = ColorBadge
+        },
         new() { Title = "Created", Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
     ];
 
-    private Task<DataGridResult<TrackedActionResponse>> LoadDataAsync(DataGridRequest request)
+    private static RenderFragment ColorBadge(TagResponse tag) => builder =>
+    {
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", "badge rounded-pill");
+        builder.AddAttribute(2, "style", $"background-color: {tag.Color}");
+        builder.AddContent(3, tag.Color);
+        builder.CloseElement();
+    };
+
+    private Task<DataGridResult<TagResponse>> LoadDataAsync(DataGridRequest request)
         => Service.QueryAsync(request, ["Name", "Description"]);
 
-    private List<ListAction> GetActions(TrackedActionResponse action)
+    private List<ListAction> GetActions(TagResponse tag)
     {
         return
         [
-            ListAction.Link("Manage Fields", $"/tracked-actions/{action.Id}/fields", "sliders", ListActionStyle.Info),
-            ListAction.Link("Manage Tags", $"/tracked-actions/{action.Id}/tags", "tags", ListActionStyle.Info),
-
-            ListAction.Separator(),
-
-            ListAction.Link("View Entries", $"/tracked-actions/{action.Id}/entries", "journal-text", ListActionStyle.Primary),
-            ListAction.Link("New Entry", $"/tracked-actions/{action.Id}/entries/new", "plus-square", ListActionStyle.Success),
-
-            ListAction.Separator(),
-
-            ListAction.Button("Delete", () => DeleteAsync(action.Id), "trash", ListActionStyle.Danger),
+            ListAction.Button("Delete", () => DeleteAsync(tag.Id), "trash", ListActionStyle.Danger),
         ];
     }
 
-    private void EditAction(Guid id)
+    private void EditTag(Guid id)
     {
-        Nav.NavigateTo($"/tracked-actions/{id}/edit");
+        Nav.NavigateTo($"/tags/{id}/edit");
     }
 
     private async Task CreateAsync()
     {
         _errors = [];
-        var (success, errors) = await Service.CreateAsync(new CreateTrackedActionRequest(_newAction.Name, _newAction.Description));
+        var (success, errors) = await Service.CreateAsync(new CreateTagRequest(_newTag.Name, _newTag.Description, _newTag.Color));
 
         if (success)
         {
-            _newAction = new();
+            _newTag = new();
             _showForm = false;
             await _grid.RefreshAsync();
         }
@@ -146,10 +157,11 @@
             _errors = errors;
     }
 
-    private sealed class ActionModel
+    private sealed class TagModel
     {
         [Required]
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public string Color { get; set; } = "#0d6efd";
     }
 }

@@ -6,16 +6,19 @@ namespace Traceon.Application.Mapping;
 public static class ActionFieldMappingExtensions
 {
     public static ActionFieldResponse ToResponse(this ActionField entity, FieldDefinition fieldDefinition) =>
-        new(entity.Id,
-            entity.TrackedActionId,
-            entity.FieldDefinitionId,
-            fieldDefinition.Type,
-            entity.Name,
-            entity.Description,
-            entity.MaxValue,
-            entity.MinValue,
-            entity.IsRequired,
-            entity.DefaultValue,
-            entity.CreatedAtUtc,
-            entity.UpdatedAtUtc);
+        new()
+        {
+            CreatedAtUtc = entity.CreatedAtUtc,
+            DefaultValue = entity.DefaultValue,
+            Description = entity.Description,
+            FieldDefinitionId = fieldDefinition.Id,
+            FieldType = fieldDefinition.Type,
+            Id = entity.Id,
+            IsRequired = entity.IsRequired,
+            MaxValue = entity.MaxValue,
+            MinValue = entity.MinValue,
+            Name = entity.Name,
+            TrackedActionId = entity.TrackedActionId,
+            UpdatedAtUtc = entity.UpdatedAtUtc
+        };
 }

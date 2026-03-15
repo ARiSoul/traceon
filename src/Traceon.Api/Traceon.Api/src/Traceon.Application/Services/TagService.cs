@@ -18,8 +18,15 @@ public sealed class TagService(
     {
         return repository.Query()
             .Where(t => t.UserId == currentUser.UserId)
-            .Select(t => new TagResponse(
-                t.Id, t.Name, t.Description, t.Color, t.CreatedAtUtc, t.UpdatedAtUtc));
+            .Select(t => new TagResponse
+            {
+                Color = t.Color,
+                CreatedAtUtc = t.CreatedAtUtc,
+                Description = t.Description,
+                Id = t.Id,
+                Name = t.Name,
+                UpdatedAtUtc = t.UpdatedAtUtc
+            });
     }
 
     public async Task<Result<TagResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

@@ -6,13 +6,16 @@ namespace Traceon.Application.Mapping;
 public static class TagMappingExtensions
 {
     public static TagResponse ToResponse(this Tag entity) =>
-        new(entity.Id,
-            entity.Name,
-            entity.Description,
-            entity.Color,
-            entity.CreatedAtUtc,
-            entity.UpdatedAtUtc);
+        new()
+        {
+            Color = entity.Color,
+            CreatedAtUtc = entity.CreatedAtUtc,
+            Description = entity.Description,
+            Id = entity.Id,
+            Name = entity.Name,
+            UpdatedAtUtc = entity.UpdatedAtUtc
+        };
 
     public static IReadOnlyList<TagResponse> ToResponseList(this IReadOnlyList<Tag> entities) =>
-        entities.Select(e => e.ToResponse()).ToList();
+        [.. entities.Select(e => e.ToResponse())];
 }

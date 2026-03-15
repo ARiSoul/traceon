@@ -1,10 +1,23 @@
 using System.Net.Http.Json;
+using Traceon.Blazor.Components;
 using Traceon.Contracts.TrackedActions;
 
 namespace Traceon.Blazor.Services;
 
 public sealed class TrackedActionService(HttpClient http)
 {
+    public async Task<DataGridResult<TrackedActionResponse>> QueryAsync(DataGridRequest request, string[]? searchFields = null)
+    {
+        var queryString = ODataQueryBuilder.BuildQueryString(request, searchFields);
+        using var response = await http.GetAsync($"/api/tracked-actions?{queryString}");
+        response.EnsureSuccessStatusCode();
+
+        var items = await response.Content.ReadFromJsonAsync<List<TrackedActionResponse>>() ?? [];
+        var totalCount = GetTotalCount(response, items.Count);
+
+        return new DataGridResult<TrackedActionResponse>(items, totalCount);
+    }
+
     public async Task<List<TrackedActionResponse>> GetAllAsync()
     {
         return await http.GetFromJsonAsync<List<TrackedActionResponse>>("/api/tracked-actions") ?? [];
@@ -40,5 +53,14 @@ public sealed class TrackedActionService(HttpClient http)
 
         var errors = await ApiErrorParser.ExtractErrorsAsync(response);
         return (false, errors);
+    }
+
+    private static int GetTotalCount(HttpResponseMessage response, int fallbackCount)
+    {
+        if (response.Headers.TryGetValues("X-Total-Count", out var values)
+            && int.TryParse(values.FirstOrDefault(), out var count))
+            return count;
+
+        return fallbackCount;
     }
 }

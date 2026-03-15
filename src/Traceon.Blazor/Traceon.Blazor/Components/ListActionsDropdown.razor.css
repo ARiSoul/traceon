@@ -1,0 +1,22 @@
+.list-actions-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1049;
+    background: transparent;
+}
+
+.list-actions-dropdown {
+    position: relative;
+}
+
+.list-actions-dropdown ::deep .dropdown-menu {
+    z-index: 1050;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 12rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
+}

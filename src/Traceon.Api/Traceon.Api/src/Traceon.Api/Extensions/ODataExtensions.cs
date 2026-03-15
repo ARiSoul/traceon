@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.OData.Extensions;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Query.Validator;
 using Microsoft.OData.Edm;
@@ -38,8 +39,20 @@ internal static class ODataExtensions
         IEdmModel edmModel) where T : class
     {
         var context = new ODataQueryContext(edmModel, typeof(T), null);
+        context.DefaultQueryConfigurations.MaxTop = ValidationSettings.MaxTop;
+        context.DefaultQueryConfigurations.EnableFilter = true;
+        context.DefaultQueryConfigurations.EnableOrderBy = true;
+        context.DefaultQueryConfigurations.EnableCount = true;
         var options = new ODataQueryOptions<T>(context, request);
         options.Validate(ValidationSettings);
-        return (IQueryable<T>)options.ApplyTo(queryable);
+
+        var result = (IQueryable<T>)options.ApplyTo(queryable);
+
+        var totalCount = request.HttpContext.ODataFeature().TotalCount;
+        if (totalCount.HasValue)
+            request.HttpContext.Response.Headers["X-Total-Count"] = totalCount.Value.ToString();
+
+        return result;
     }
 }
+

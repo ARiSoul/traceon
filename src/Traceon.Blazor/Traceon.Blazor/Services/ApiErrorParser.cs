@@ -17,6 +17,15 @@ public static class ApiErrorParser
         {
             using var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
+
+            // Plain string response: BadRequest("message")
+            if (root.ValueKind == JsonValueKind.String)
+            {
+                var text = root.GetString();
+                if (!string.IsNullOrWhiteSpace(text))
+                    return [text];
+            }
+
             var messages = new List<string>();
 
             if (root.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Object)

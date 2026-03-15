@@ -6,12 +6,15 @@ namespace Traceon.Application.Mapping;
 public static class TrackedActionMappingExtensions
 {
     public static TrackedActionResponse ToResponse(this TrackedAction entity) =>
-        new(entity.Id,
-            entity.Name,
-            entity.Description,
-            entity.CreatedAtUtc,
-            entity.UpdatedAtUtc);
+        new()
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Description = entity.Description,
+            CreatedAtUtc = entity.CreatedAtUtc,
+            UpdatedAtUtc = entity.UpdatedAtUtc
+        };
 
     public static IReadOnlyList<TrackedActionResponse> ToResponseList(this IReadOnlyList<TrackedAction> entities) =>
-        entities.Select(e => e.ToResponse()).ToList();
+        [.. entities.Select(e => e.ToResponse())];
 }

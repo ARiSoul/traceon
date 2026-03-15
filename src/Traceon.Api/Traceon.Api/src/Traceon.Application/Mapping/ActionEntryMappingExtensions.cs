@@ -6,14 +6,19 @@ namespace Traceon.Application.Mapping;
 public static class ActionEntryMappingExtensions
 {
     public static ActionEntryResponse ToResponse(this ActionEntry entity, IReadOnlyDictionary<Guid, string> fieldNames) =>
-        new(entity.Id,
-            entity.TrackedActionId,
-            entity.OccurredAtUtc,
-            entity.Fields.Select(f => new ActionEntryFieldResponse(
-                f.Id,
-                f.ActionFieldId,
-                fieldNames.GetValueOrDefault(f.ActionFieldId, string.Empty),
-                f.Value)).ToList(),
-            entity.CreatedAtUtc,
-            entity.UpdatedAtUtc);
+        new()
+        {
+            CreatedAtUtc = entity.CreatedAtUtc,
+            FieldValues = [.. entity.Fields.Select(f => new ActionEntryFieldResponse
+            {
+                Id = f.Id,
+                ActionFieldId = f.ActionFieldId,
+                ActionFieldName = fieldNames.TryGetValue(f.ActionFieldId, out var fieldName) ? fieldName : string.Empty,
+                Value = f.Value
+            })],
+            Id = entity.Id,
+            OccurredAtUtc = entity.OccurredAtUtc,
+            TrackedActionId = entity.TrackedActionId,
+            UpdatedAtUtc = entity.UpdatedAtUtc
+        };
 }
