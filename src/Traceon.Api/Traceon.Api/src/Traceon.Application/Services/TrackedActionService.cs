@@ -25,6 +25,12 @@ public sealed class TrackedActionService(
             Id = a.Id,
             Name = a.Name,
             Description = a.Description,
+            Tags = a.Tags.Select(t => new TrackedActionTagSummary
+            {
+                Name = t.Tag.Name,
+                Color = t.Tag.Color
+            }).ToList(),
+            FieldCount = a.Fields.Count,
             CreatedAtUtc = a.CreatedAtUtc,
             UpdatedAtUtc = a.UpdatedAtUtc
         });

@@ -1,0 +1,595 @@
+@page "/tracked-actions/create"
+@attribute [Authorize]
+
+<PageTitle>Create Tracked Action - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-plus-circle me-2"></i>
+            Create Tracked Action
+        </h3>
+        <p class="text-muted mb-0">Set up a new action with fields and tags</p>
+    </div>
+    <a href="/tracked-actions" class="btn btn-outline-secondary">
+        <i class="bi bi-x-circle me-1"></i>Cancel
+    </a>
+</div>
+
+@if (_errors.Count > 0)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <ul class="mb-0 d-inline">
+            @foreach (var error in _errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+        <button type="button" class="btn-close" @onclick="() => _errors = []"></button>
+    </div>
+}
+
+<!-- Progress Steps -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            @for (var i = 0; i < _steps.Length; i++)
+            {
+                var stepNum = i + 1;
+                var step = _steps[i];
+
+                <div class="text-center flex-fill">
+                    <button class="wizard-step-number @(stepNum == _currentStep ? "active" : stepNum < _currentStep ? "completed" : "")"
+                            @onclick="() => GoToStep(stepNum)">
+                        @if (stepNum < _currentStep)
+                        {
+                            <i class="bi bi-check-lg"></i>
+                        }
+                        else
+                        {
+                            @stepNum
+                        }
+                    </button>
+                    <small class="d-block mt-1">
+                        @step.Title
+                        @if (step.IsOptional)
+                        {
+                            <span class="badge bg-secondary ms-1">Optional</span>
+                        }
+                    </small>
+                </div>
+
+                @if (i < _steps.Length - 1)
+                {
+                    <div class="wizard-step-line @(stepNum < _currentStep ? "completed" : "")"></div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Step Content -->
+<div class="card">
+    <div class="card-body">
+        @switch (_currentStep)
+        {
+            case 1:
+                @RenderBasicInfoStep()
+                break;
+            case 2:
+                @RenderTagsStep()
+                break;
+            case 3:
+                @RenderFieldsStep()
+                break;
+            case 4:
+                @RenderReviewStep()
+                break;
+        }
+    </div>
+    <div class="card-footer bg-light">
+        <div class="d-flex justify-content-between">
+            <div>
+                @if (_currentStep > 1)
+                {
+                    <button class="btn btn-outline-secondary" @onclick="PreviousStep">
+                        <i class="bi bi-chevron-left me-1"></i>Back
+                    </button>
+                }
+            </div>
+            <div class="d-flex gap-2">
+                @if (_currentStep < _steps.Length)
+                {
+                    <button class="btn btn-primary" @onclick="NextStep">
+                        Next<i class="bi bi-chevron-right ms-1"></i>
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-success btn-lg" @onclick="CreateAsync" disabled="@_creating">
+                        @if (_creating)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        <i class="bi bi-check-circle me-1"></i>
+                        Create Tracked Action
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tag Selector Modal -->
+<ModalSelector TItem="TagResponse"
+               @bind-IsVisible="_showTagSelector"
+               Title="Select Tags"
+               Icon="tags"
+               LoadItems="LoadAvailableTagsAsync"
+               KeySelector="t => t.Id"
+               SearchSelector="@(t => $"{t.Name} {t.Description}")"
+               SearchPlaceholder="Search tags..."
+               EmptyText="No tags available. Create some first."
+               ExcludedKeys="_selectedTagIds"
+               OnConfirm="OnTagsSelected">
+    <ItemTemplate>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge rounded-pill" style="background-color: @context.Color">&nbsp;&nbsp;</span>
+            <span>@context.Name</span>
+            @if (!string.IsNullOrEmpty(context.Description))
+            {
+                <small class="text-muted ms-auto">@context.Description</small>
+            }
+        </div>
+    </ItemTemplate>
+</ModalSelector>
+
+<!-- Field Selector Modal -->
+<ModalSelector TItem="FieldDefinitionResponse"
+               @bind-IsVisible="_showFieldSelector"
+               Title="Select Field Definitions"
+               Icon="sliders"
+               LoadItems="LoadAvailableFieldsAsync"
+               KeySelector="f => f.Id"
+               SearchSelector="@(f => $"{f.DefaultName} {f.Type}")"
+               SearchPlaceholder="Search field definitions..."
+               EmptyText="No field definitions available. Create some first."
+               ExcludedKeys="_selectedFieldIds"
+               OnConfirm="OnFieldsSelected">
+    <ItemTemplate>
+        <div class="d-flex align-items-center gap-2 w-100">
+            <span>@context.DefaultName</span>
+            <span class="badge bg-secondary ms-auto">@context.Type</span>
+        </div>
+    </ItemTemplate>
+</ModalSelector>
+
+@code {
+    [Inject] private TrackedActionService ActionService { get; set; } = default!;
+    [Inject] private TagService TagService { get; set; } = default!;
+    [Inject] private FieldDefinitionService FieldDefinitionService { get; set; } = default!;
+    [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private int _currentStep = 1;
+    private bool _creating;
+    private IReadOnlyList<string> _errors = [];
+
+    // Step 1 — Basic Info
+    private string _name = string.Empty;
+    private string? _description;
+
+    // Step 2 — Tags
+    private List<TagResponse> _selectedTags = [];
+    private List<Guid> _selectedTagIds => _selectedTags.Select(t => t.Id).ToList();
+    private bool _showTagSelector;
+
+    // Step 3 — Fields
+    private List<PendingField> _selectedFields = [];
+    private List<Guid> _selectedFieldIds => _selectedFields.Select(f => f.DefinitionId).ToList();
+    private bool _showFieldSelector;
+
+    private readonly (string Title, bool IsOptional)[] _steps =
+    [
+        ("Basic Info", false),
+        ("Tags", true),
+        ("Fields", true),
+        ("Review", false)
+    ];
+
+    private void GoToStep(int step)
+    {
+        if (step == 1 || !string.IsNullOrWhiteSpace(_name))
+            _currentStep = step;
+    }
+
+    private void NextStep()
+    {
+        if (_currentStep == 1 && string.IsNullOrWhiteSpace(_name))
+        {
+            _errors = ["Name is required."];
+            return;
+        }
+        _errors = [];
+        _currentStep = Math.Min(_currentStep + 1, _steps.Length);
+    }
+
+    private void PreviousStep()
+    {
+        _errors = [];
+        _currentStep = Math.Max(_currentStep - 1, 1);
+    }
+
+    // Tag selector
+    private async Task<List<TagResponse>> LoadAvailableTagsAsync()
+        => await TagService.GetAllAsync();
+
+    private void OnTagsSelected(List<TagResponse> tags)
+    {
+        _selectedTags.AddRange(tags);
+    }
+
+    private void RemoveTag(TagResponse tag) => _selectedTags.Remove(tag);
+
+    // Field selector
+    private async Task<List<FieldDefinitionResponse>> LoadAvailableFieldsAsync()
+        => await FieldDefinitionService.GetAllAsync();
+
+    private void OnFieldsSelected(List<FieldDefinitionResponse> fields)
+    {
+        foreach (var def in fields)
+        {
+            _selectedFields.Add(new PendingField
+            {
+                DefinitionId = def.Id,
+                Type = def.Type,
+                Name = def.DefaultName,
+                Description = def.DefaultDescription,
+                MinValue = def.DefaultMinValue,
+                MaxValue = def.DefaultMaxValue,
+                IsRequired = def.DefaultIsRequired,
+                DefaultValue = def.DefaultValue,
+                DropdownValues = def.DropdownValues
+            });
+        }
+    }
+
+    private void RemoveField(PendingField field) => _selectedFields.Remove(field);
+
+    private async Task CreateAsync()
+    {
+        _creating = true;
+        _errors = [];
+
+        // 1. Create the tracked action
+        var (success, errors) = await ActionService.CreateAsync(
+            new CreateTrackedActionRequest(_name, _description));
+
+        if (!success)
+        {
+            _errors = errors;
+            _creating = false;
+            return;
+        }
+
+        // Get the new action ID by looking it up
+        var all = await ActionService.GetAllAsync();
+        var created = all.FirstOrDefault(a => a.Name == _name.Trim());
+        if (created is null)
+        {
+            _errors = ["Action created but could not be found."];
+            _creating = false;
+            return;
+        }
+
+        var actionId = created.Id;
+
+        // 2. Add tags
+        foreach (var tag in _selectedTags)
+        {
+            var (tagOk, tagErrors) = await ActionService.AddTagAsync(actionId, tag.Id);
+            if (!tagOk)
+            {
+                _errors = tagErrors;
+                _creating = false;
+                return;
+            }
+        }
+
+        // 3. Add fields
+        foreach (var field in _selectedFields)
+        {
+            var request = new CreateActionFieldRequest(field.DefinitionId, field.Name,
+                field.Description, field.MaxValue, field.MinValue,
+                field.IsRequired, field.DefaultValue);
+
+            var (fieldOk, fieldErrors) = await ActionFieldService.CreateAsync(actionId, request);
+            if (!fieldOk)
+            {
+                _errors = fieldErrors;
+                _creating = false;
+                return;
+            }
+        }
+
+        Nav.NavigateTo("/tracked-actions");
+    }
+
+    private RenderFragment RenderBasicInfoStep() => __builder =>
+    {
+        <h5 class="mb-3"><i class="bi bi-info-circle me-2"></i>Basic Information</h5>
+
+        <div class="mb-3">
+            <label class="form-label">Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" @bind="_name" @bind:event="oninput" placeholder="e.g., Daily Exercise" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-control" @bind="_description" placeholder="What are you tracking?" />
+        </div>
+    };
+
+    private RenderFragment RenderTagsStep() => __builder =>
+    {
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Tags</h5>
+            <button class="btn btn-outline-primary btn-sm" @onclick="() => _showTagSelector = true">
+                <i class="bi bi-plus-circle me-1"></i>Add Tags
+            </button>
+        </div>
+
+        @if (_selectedTags.Count == 0)
+        {
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-tags fs-3 d-block mb-2"></i>
+                <p>No tags selected. Tags help you organize and filter your tracked actions.</p>
+                <button class="btn btn-primary" @onclick="() => _showTagSelector = true">
+                    <i class="bi bi-plus-circle me-1"></i>Select Tags
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var tag in _selectedTags)
+                {
+                    <span class="badge rounded-pill fs-6 d-inline-flex align-items-center gap-1 py-2 px-3"
+                          style="background-color: @tag.Color">
+                        @tag.Name
+                        <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;"
+                                @onclick="() => RemoveTag(tag)"></button>
+                    </span>
+                }
+            </div>
+        }
+    };
+
+    private RenderFragment RenderFieldsStep() => __builder =>
+    {
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="bi bi-sliders me-2"></i>Fields</h5>
+            <button class="btn btn-outline-primary btn-sm" @onclick="() => _showFieldSelector = true">
+                <i class="bi bi-plus-circle me-1"></i>Add Fields
+            </button>
+        </div>
+
+        @if (_selectedFields.Count == 0)
+        {
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-sliders fs-3 d-block mb-2"></i>
+                <p>No fields selected. Fields define what data you capture per entry.</p>
+                <button class="btn btn-primary" @onclick="() => _showFieldSelector = true">
+                    <i class="bi bi-plus-circle me-1"></i>Select Fields
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="list-group">
+                @foreach (var field in _selectedFields)
+                {
+                    <div class="list-group-item p-0">
+                        <div class="d-flex justify-content-between align-items-center p-3"
+                             style="cursor: pointer;"
+                             @onclick="() => field.IsExpanded = !field.IsExpanded">
+                            <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden">
+                                <i class="bi bi-@(field.IsExpanded ? "chevron-down" : "chevron-right") text-muted"></i>
+                                <strong class="text-truncate">@field.Name</strong>
+                                <span class="badge bg-secondary">@field.Type</span>
+                                @if (field.IsRequired)
+                                {
+                                    <span class="badge bg-danger">Required</span>
+                                }
+                            </div>
+                            <div @onclick:stopPropagation="true">
+                                <button class="btn btn-outline-danger btn-sm" @onclick="() => RemoveField(field)">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        @if (field.IsExpanded)
+                        {
+                            <div class="border-top px-3 pb-3 pt-2 bg-light">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label form-label-sm mb-1">Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control form-control-sm" @bind="field.Name" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label form-label-sm mb-1">Description</label>
+                                        <input type="text" class="form-control form-control-sm" @bind="field.Description" />
+                                    </div>
+                                </div>
+
+                                @if (field.Type is FieldType.Integer or FieldType.Decimal)
+                                {
+                                    <div class="row g-2 mt-1">
+                                        <div class="col-md-6">
+                                            <label class="form-label form-label-sm mb-1">Min Value</label>
+                                            <input type="number"
+                                                   step="@(field.Type == FieldType.Integer ? "1" : "any")"
+                                                   class="form-control form-control-sm" @bind="field.MinValue" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label form-label-sm mb-1">Max Value</label>
+                                            <input type="number"
+                                                   step="@(field.Type == FieldType.Integer ? "1" : "any")"
+                                                   class="form-control form-control-sm" @bind="field.MaxValue" />
+                                        </div>
+                                    </div>
+                                }
+
+                                <div class="row g-2 mt-1">
+                                    <div class="col-md-6">
+                                        <label class="form-label form-label-sm mb-1">Default Value</label>
+                                        @switch (field.Type)
+                                        {
+                                            case FieldType.Boolean:
+                                                <div class="form-check mt-1">
+                                                    <input type="checkbox" class="form-check-input"
+                                                           id="@($"dfBool-{field.DefinitionId}")"
+                                                           checked="@(field.DefaultValue?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)"
+                                                           @onchange="e => field.DefaultValue = (bool?)e.Value == true ? bool.TrueString : bool.FalseString" />
+                                                    <label class="form-check-label" for="@($"dfBool-{field.DefinitionId}")">Checked by default</label>
+                                                </div>
+                                                break;
+                                            case FieldType.Integer:
+                                                <input type="number" step="1" class="form-control form-control-sm" @bind="field.DefaultValue" />
+                                                break;
+                                            case FieldType.Decimal:
+                                                <input type="number" step="any" class="form-control form-control-sm" @bind="field.DefaultValue" />
+                                                break;
+                                            case FieldType.Date:
+                                                <input type="date" class="form-control form-control-sm"
+                                                       value="@field.DefaultValue"
+                                                       @onchange="e => field.DefaultValue = e.Value?.ToString()" />
+                                                break;
+                                            case FieldType.Dropdown:
+                                                @if (field.ParsedDropdownValues.Length > 0)
+                                                {
+                                                    <select class="form-select form-select-sm" @bind="field.DefaultValue">
+                                                        <option value="">— Select a default —</option>
+                                                        @foreach (var val in field.ParsedDropdownValues)
+                                                        {
+                                                            <option value="@val">@val</option>
+                                                        }
+                                                    </select>
+                                                }
+                                                else
+                                                {
+                                                    <input type="text" class="form-control form-control-sm" disabled />
+                                                    <small class="text-warning">
+                                                        <i class="bi bi-info-circle me-1"></i>No dropdown values defined.
+                                                    </small>
+                                                }
+                                                break;
+                                            default:
+                                                <input type="text" class="form-control form-control-sm" @bind="field.DefaultValue" />
+                                                break;
+                                        }
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-end">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input"
+                                                   id="@($"req-create-{field.DefinitionId}")" @bind="field.IsRequired" />
+                                            <label class="form-check-label" for="@($"req-create-{field.DefinitionId}")">Required</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    };
+
+    private RenderFragment RenderReviewStep() => __builder =>
+    {
+        <h5 class="mb-3"><i class="bi bi-clipboard-check me-2"></i>Review</h5>
+
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-info-circle me-1"></i>Basic Info</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Name</dt>
+                    <dd class="col-sm-9">@_name</dd>
+                    <dt class="col-sm-3">Description</dt>
+                    <dd class="col-sm-9">@(_description ?? "—")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <i class="bi bi-tags me-1"></i>Tags
+                <span class="badge bg-primary ms-1">@_selectedTags.Count</span>
+            </div>
+            <div class="card-body">
+                @if (_selectedTags.Count == 0)
+                {
+                    <span class="text-muted">No tags selected</span>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var tag in _selectedTags)
+                        {
+                            <span class="badge rounded-pill" style="background-color: @tag.Color">@tag.Name</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-sliders me-1"></i>Fields
+                <span class="badge bg-primary ms-1">@_selectedFields.Count</span>
+            </div>
+            <div class="card-body">
+                @if (_selectedFields.Count == 0)
+                {
+                    <span class="text-muted">No fields selected</span>
+                }
+                else
+                {
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var f in _selectedFields)
+                        {
+                            <li>
+                                <strong>@f.Name</strong>
+                                <span class="badge bg-secondary">@f.Type</span>
+                                @if (f.IsRequired)
+                                {
+                                    <span class="badge bg-danger ms-1">Required</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    };
+
+    private sealed class PendingField
+    {
+        public Guid DefinitionId { get; init; }
+        public FieldType Type { get; init; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public decimal? MinValue { get; set; }
+        public decimal? MaxValue { get; set; }
+        public bool IsRequired { get; set; }
+        public string? DefaultValue { get; set; }
+        public string? DropdownValues { get; init; }
+        public bool IsExpanded { get; set; }
+
+        public string[] ParsedDropdownValues =>
+            string.IsNullOrWhiteSpace(DropdownValues)
+                ? []
+                : DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+}

@@ -34,18 +34,19 @@ public sealed class ActionFieldService(
                             on af.FieldDefinitionId equals fd.Id
                         select new ActionFieldResponse
                         {
-                            CreatedAtUtc = DateTime.UtcNow,
+                            CreatedAtUtc = af.CreatedAtUtc,
                             DefaultValue = af.DefaultValue,
                             Description = af.Description,
                             FieldDefinitionId = fd.Id,
                             FieldType = fd.Type,
-                            Id = fd.Id,
-                            IsRequired = true,
+                            Id = af.Id,
+                            IsRequired = af.IsRequired,
                             MaxValue = af.MaxValue,
                             MinValue = af.MinValue,
                             Name = af.Name,
                             TrackedActionId = trackedActionId,
-                            UpdatedAtUtc = af.UpdatedAtUtc
+                            UpdatedAtUtc = af.UpdatedAtUtc,
+                            DropdownValues = fd.DropdownValues
                         };
 
         return Result<IQueryable<ActionFieldResponse>>.Success(queryable);

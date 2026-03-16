@@ -4,6 +4,7 @@ public sealed class TrackedActionTag
 {
     public Guid TrackedActionId { get; private set; }
     public Guid TagId { get; private set; }
+    public Tag Tag { get; private set; } = null!;
 
     private TrackedActionTag(Guid trackedActionId, Guid tagId)
     {

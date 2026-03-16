@@ -19,6 +19,7 @@ public static class ActionFieldMappingExtensions
             MinValue = entity.MinValue,
             Name = entity.Name,
             TrackedActionId = entity.TrackedActionId,
-            UpdatedAtUtc = entity.UpdatedAtUtc
+            UpdatedAtUtc = entity.UpdatedAtUtc,
+            DropdownValues = fieldDefinition.DropdownValues
         };
 }

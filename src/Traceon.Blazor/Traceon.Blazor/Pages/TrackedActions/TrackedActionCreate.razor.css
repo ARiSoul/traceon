@@ -1,0 +1,44 @@
+.wizard-step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    color: #6c757d;
+    font-weight: bold;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.wizard-step-number:hover {
+    border-color: var(--bs-primary);
+}
+
+.wizard-step-number.active {
+    background-color: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+}
+
+.wizard-step-number.completed {
+    background-color: var(--bs-success);
+    color: white;
+    border-color: var(--bs-success);
+}
+
+.wizard-step-line {
+    flex: 1;
+    height: 3px;
+    background-color: #e9ecef;
+    align-self: center;
+    margin-top: -1.2rem;
+    transition: background-color 0.2s ease;
+}
+
+.wizard-step-line.completed {
+    background-color: var(--bs-success);
+}

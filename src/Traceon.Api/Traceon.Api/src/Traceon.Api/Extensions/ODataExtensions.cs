@@ -30,6 +30,7 @@ internal static class ODataExtensions
         builder.EntityType<ActionFieldResponse>();
         builder.EntityType<ActionEntryResponse>();
         builder.ComplexType<ActionEntryFieldResponse>();
+        builder.ComplexType<TrackedActionTagSummary>();
         return builder.GetEdmModel();
     }
 

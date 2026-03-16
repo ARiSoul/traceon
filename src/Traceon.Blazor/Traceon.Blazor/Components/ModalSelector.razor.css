@@ -1,0 +1,4 @@
+.modal-selector-list {
+    max-height: 24rem;
+    overflow-y: auto;
+}

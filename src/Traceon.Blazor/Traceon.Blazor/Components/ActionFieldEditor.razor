@@ -1,0 +1,342 @@
+@using Traceon.Contracts.Enums
+
+<div class="list-group-item p-0">
+    <!-- Summary row -->
+    <div class="d-flex justify-content-between align-items-center p-3"
+         style="cursor: pointer;"
+         @onclick="ToggleExpand">
+        <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden">
+            <i class="bi bi-@(_isExpanded ? "chevron-down" : "chevron-right") text-muted"></i>
+            <strong class="text-truncate">@Field.Name</strong>
+            <span class="badge bg-secondary">@Field.FieldType</span>
+            @if (Field.IsRequired)
+            {
+                <span class="badge bg-danger">Required</span>
+            }
+        </div>
+        <div class="d-flex gap-1" @onclick:stopPropagation="true">
+            <button class="btn btn-outline-danger btn-sm" @onclick="() => OnRemove.InvokeAsync(Field)" title="Remove">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Inline edit form -->
+    @if (_isExpanded)
+    {
+        <div class="border-top px-3 pb-3 pt-2 bg-light">
+            @if (_fieldErrors.Count > 0)
+            {
+                <div class="alert alert-danger py-2 mb-2">
+                    @foreach (var error in _fieldErrors)
+                    {
+                        <small class="d-block">@error</small>
+                    }
+                </div>
+            }
+
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <label class="form-label form-label-sm mb-1">Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" @bind="_name" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label form-label-sm mb-1">Description</label>
+                    <input type="text" class="form-control form-control-sm" @bind="_description" />
+                </div>
+            </div>
+
+            @if (Field.FieldType is FieldType.Integer or FieldType.Decimal or FieldType.Date)
+            {
+                <div class="row g-2 mt-1">
+                    <div class="col-md-6">
+                        <label class="form-label form-label-sm mb-1">Min @(Field.FieldType == FieldType.Date ? "Date" : "Value")</label>
+                        @switch (Field.FieldType)
+                        {
+                            case FieldType.Integer:
+                                <input type="number" step="1" class="form-control form-control-sm" @bind="_intMinValue" />
+                                break;
+                            case FieldType.Decimal:
+                                <input type="number" class="form-control form-control-sm" @bind="_decimalMinValue" />
+                                break;
+                            case FieldType.Date:
+                                <input type="date" class="form-control form-control-sm" @bind="_minDate" />
+                                break;
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label form-label-sm mb-1">Max @(Field.FieldType == FieldType.Date ? "Date" : "Value")</label>
+                        @switch (Field.FieldType)
+                        {
+                            case FieldType.Integer:
+                                <input type="number" step="1" class="form-control form-control-sm" @bind="_intMaxValue" />
+                                break;
+                            case FieldType.Decimal:
+                                <input type="number" class="form-control form-control-sm" @bind="_decimalMaxValue" />
+                                break;
+                            case FieldType.Date:
+                                <input type="date" class="form-control form-control-sm" @bind="_maxDate" />
+                                break;
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="row g-2 mt-1">
+                <div class="col-md-6">
+                    <label class="form-label form-label-sm mb-1">Default Value</label>
+                    @switch (Field.FieldType)
+                    {
+                        case FieldType.Boolean:
+                            <div class="form-check mt-1">
+                                <input type="checkbox" class="form-check-input" id="@($"dfBool-{Field.Id}")" @bind="_defaultBool" />
+                                <label class="form-check-label" for="@($"dfBool-{Field.Id}")">Checked by default</label>
+                            </div>
+                            break;
+                        case FieldType.Integer:
+                            <input type="number" step="1" class="form-control form-control-sm" @bind="_defaultInt" />
+                            break;
+                        case FieldType.Decimal:
+                            <input type="number" class="form-control form-control-sm" @bind="_defaultDecimal" />
+                            break;
+                        case FieldType.Date:
+                            <input type="date" class="form-control form-control-sm" @bind="_defaultDate" />
+                            break;
+                        case FieldType.Dropdown:
+                            @if (ParsedDropdownValues.Length > 0)
+                            {
+                                <select class="form-select form-select-sm" @bind="_defaultValue">
+                                    <option value="">— Select a default —</option>
+                                    @foreach (var val in ParsedDropdownValues)
+                                    {
+                                        <option value="@val">@val</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <input type="text" class="form-control form-control-sm" disabled />
+                                <small class="text-warning">
+                                    <i class="bi bi-info-circle me-1"></i>No dropdown values defined in the field definition.
+                                </small>
+                            }
+                            break;
+                        default:
+                            <input type="text" class="form-control form-control-sm" @bind="_defaultValue" />
+                            break;
+                    }
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="@($"req-{Field.Id}")" @bind="_isRequired" />
+                        <label class="form-check-label" for="@($"req-{Field.Id}")">Required</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-success btn-sm" @onclick="SaveAsync" disabled="@_saving">
+                    @if (_saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    <i class="bi bi-check-circle me-1"></i>Save
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">
+                    <i class="bi bi-x me-1"></i>Cancel
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required ActionFieldResponse Field { get; set; }
+    [Parameter, EditorRequired] public required Guid TrackedActionId { get; set; }
+    [Parameter, EditorRequired] public required EventCallback<ActionFieldResponse> OnRemove { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
+
+    private bool _isExpanded;
+    private bool _saving;
+    private IReadOnlyList<string> _fieldErrors = [];
+
+    // Editable fields
+    private string _name = string.Empty;
+    private string? _description;
+    private bool _isRequired;
+    private string? _defaultValue;
+
+    // Typed values
+    private int? _intMinValue;
+    private int? _intMaxValue;
+    private decimal? _decimalMinValue;
+    private decimal? _decimalMaxValue;
+    private DateTime? _minDate;
+    private DateTime? _maxDate;
+    private bool _defaultBool;
+    private int? _defaultInt;
+    private decimal? _defaultDecimal;
+    private DateTime? _defaultDate;
+
+    private string[] ParsedDropdownValues =>
+        string.IsNullOrWhiteSpace(Field.DropdownValues)
+            ? []
+            : Field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private void ToggleExpand()
+    {
+        _isExpanded = !_isExpanded;
+        if (_isExpanded)
+            LoadFromField();
+    }
+
+    private void CancelEdit()
+    {
+        _isExpanded = false;
+        _fieldErrors = [];
+    }
+
+    private void LoadFromField()
+    {
+        _name = Field.Name;
+        _description = Field.Description;
+        _isRequired = Field.IsRequired;
+        _defaultValue = Field.DefaultValue;
+
+        // Load min/max
+        switch (Field.FieldType)
+        {
+            case FieldType.Integer:
+                _intMinValue = Field.MinValue.HasValue ? (int)Field.MinValue.Value : null;
+                _intMaxValue = Field.MaxValue.HasValue ? (int)Field.MaxValue.Value : null;
+                break;
+            case FieldType.Decimal:
+                _decimalMinValue = Field.MinValue;
+                _decimalMaxValue = Field.MaxValue;
+                break;
+        }
+
+        // Load default value
+        if (!string.IsNullOrWhiteSpace(Field.DefaultValue))
+        {
+            switch (Field.FieldType)
+            {
+                case FieldType.Boolean:
+                    _defaultBool = Field.DefaultValue.Equals("true", StringComparison.OrdinalIgnoreCase);
+                    break;
+                case FieldType.Integer when int.TryParse(Field.DefaultValue, out var i):
+                    _defaultInt = i;
+                    break;
+                case FieldType.Decimal when decimal.TryParse(Field.DefaultValue, out var d):
+                    _defaultDecimal = d;
+                    break;
+                case FieldType.Date when DateTime.TryParse(Field.DefaultValue, out var dt):
+                    _defaultDate = dt;
+                    break;
+            }
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _fieldErrors = ["Name is required."];
+            return;
+        }
+
+        // Validate min ≤ max
+        var validationErrors = ValidateMinMax();
+        if (validationErrors.Count > 0)
+        {
+            _fieldErrors = validationErrors;
+            return;
+        }
+
+        _saving = true;
+        _fieldErrors = [];
+
+        var (minValue, maxValue) = ResolveMinMax();
+        var defaultVal = ResolveDefaultValue();
+
+        var request = new UpdateActionFieldRequest(
+            _name, _description, maxValue, minValue, _isRequired, defaultVal);
+
+        var (ok, errs) = await ActionFieldService.UpdateAsync(TrackedActionId, Field.Id, request);
+
+        if (ok)
+        {
+            _isExpanded = false;
+            await OnSaved.InvokeAsync();
+        }
+        else
+        {
+            _fieldErrors = errs;
+        }
+
+        _saving = false;
+    }
+
+    private string? ResolveDefaultValue() => Field.FieldType switch
+    {
+        FieldType.Boolean => _defaultBool ? "true" : "false",
+        FieldType.Integer => _defaultInt?.ToString(),
+        FieldType.Decimal => _defaultDecimal?.ToString(),
+        FieldType.Date => _defaultDate?.ToString("yyyy-MM-dd"),
+        _ => _defaultValue
+    };
+
+    private (decimal? Min, decimal? Max) ResolveMinMax() => Field.FieldType switch
+    {
+        FieldType.Integer => (_intMinValue, _intMaxValue),
+        FieldType.Decimal => (_decimalMinValue, _decimalMaxValue),
+        _ => (null, null)
+    };
+
+    private IReadOnlyList<string> ValidateMinMax()
+    {
+        var errors = new List<string>();
+        var defaultVal = ResolveDefaultValue();
+
+        switch (Field.FieldType)
+        {
+            case FieldType.Integer:
+                if (_intMinValue.HasValue && _intMaxValue.HasValue && _intMinValue > _intMaxValue)
+                    errors.Add("Min value cannot be greater than max value.");
+                if (_defaultInt.HasValue)
+                {
+                    if (_intMinValue.HasValue && _defaultInt < _intMinValue)
+                        errors.Add($"Default value cannot be less than min value ({_intMinValue}).");
+                    if (_intMaxValue.HasValue && _defaultInt > _intMaxValue)
+                        errors.Add($"Default value cannot be greater than max value ({_intMaxValue}).");
+                }
+                break;
+            case FieldType.Decimal:
+                if (_decimalMinValue.HasValue && _decimalMaxValue.HasValue && _decimalMinValue > _decimalMaxValue)
+                    errors.Add("Min value cannot be greater than max value.");
+                if (_defaultDecimal.HasValue)
+                {
+                    if (_decimalMinValue.HasValue && _defaultDecimal < _decimalMinValue)
+                        errors.Add($"Default value cannot be less than min value ({_decimalMinValue}).");
+                    if (_decimalMaxValue.HasValue && _defaultDecimal > _decimalMaxValue)
+                        errors.Add($"Default value cannot be greater than max value ({_decimalMaxValue}).");
+                }
+                break;
+            case FieldType.Date:
+                if (_minDate.HasValue && _maxDate.HasValue && _minDate > _maxDate)
+                    errors.Add("Min date cannot be later than max date.");
+                if (_defaultDate.HasValue)
+                {
+                    if (_minDate.HasValue && _defaultDate < _minDate)
+                        errors.Add($"Default date cannot be earlier than min date ({_minDate:yyyy-MM-dd}).");
+                    if (_maxDate.HasValue && _defaultDate > _maxDate)
+                        errors.Add($"Default date cannot be later than max date ({_maxDate:yyyy-MM-dd}).");
+                }
+                break;
+        }
+
+        return errors;
+    }
+}

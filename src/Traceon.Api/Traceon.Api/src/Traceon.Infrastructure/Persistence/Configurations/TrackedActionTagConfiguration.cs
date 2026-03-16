@@ -12,7 +12,7 @@ internal sealed class TrackedActionTagConfiguration : IEntityTypeConfiguration<T
 
         builder.HasKey(e => new { e.TrackedActionId, e.TagId });
 
-        builder.HasOne<Tag>()
+        builder.HasOne(e => e.Tag)
             .WithMany()
             .HasForeignKey(e => e.TagId)
             .OnDelete(DeleteBehavior.Cascade);

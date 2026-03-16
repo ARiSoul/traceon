@@ -17,6 +17,12 @@ public sealed class ActionFieldService(HttpClient http)
         return await ToResultAsync(response);
     }
 
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> UpdateAsync(Guid trackedActionId, Guid fieldId, UpdateActionFieldRequest request)
+    {
+        var response = await http.PutAsJsonAsync($"/api/tracked-actions/{trackedActionId}/fields/{fieldId}", request);
+        return await ToResultAsync(response);
+    }
+
     public async Task<(bool Success, IReadOnlyList<string> Errors)> DeleteAsync(Guid trackedActionId, Guid fieldId)
     {
         var response = await http.DeleteAsync($"/api/tracked-actions/{trackedActionId}/fields/{fieldId}");

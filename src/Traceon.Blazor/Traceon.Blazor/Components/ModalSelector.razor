@@ -1,0 +1,179 @@
+@typeparam TItem
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-@Icon me-2"></i>
+                        @Title
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CancelAsync"></button>
+                </div>
+                <div class="modal-body">
+                    @if (_loading)
+                    {
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrWhiteSpace(_searchText) || _items.Count > 5)
+                        {
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text"
+                                           class="form-control"
+                                           placeholder="@SearchPlaceholder"
+                                           @bind="_searchText"
+                                           @bind:event="oninput" />
+                                    @if (!string.IsNullOrWhiteSpace(_searchText))
+                                    {
+                                        <button class="btn btn-outline-secondary" @onclick="() => _searchText = string.Empty">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (AllowMultiple && _selected.Count > 0)
+                        {
+                            <div class="alert alert-info py-2 mb-3">
+                                <i class="bi bi-check-circle me-1"></i>
+                                <strong>@_selected.Count</strong> selected
+                                <button class="btn btn-sm btn-link p-0 ms-2" @onclick="() => _selected.Clear()">Clear</button>
+                            </div>
+                        }
+
+                        <div class="list-group modal-selector-list">
+                            @if (FilteredItems.Count == 0)
+                            {
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                    <span>@EmptyText</span>
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var item in FilteredItems)
+                                {
+                                    var key = KeySelector(item);
+                                    var isSelected = _selected.Contains(key);
+                                    var isExcluded = _excludedKeys.Contains(key);
+
+                                    <button type="button"
+                                            class="list-group-item list-group-item-action d-flex align-items-center gap-2 @(isSelected ? "active" : "") @(isExcluded ? "disabled" : "")"
+                                            @onclick="() => Toggle(key)"
+                                            disabled="@isExcluded">
+                                        @if (isSelected)
+                                        {
+                                            <i class="bi bi-check-circle-fill flex-shrink-0"></i>
+                                        }
+                                        else if (isExcluded)
+                                        {
+                                            <i class="bi bi-dash-circle text-muted flex-shrink-0"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-circle flex-shrink-0"></i>
+                                        }
+                                        <div class="flex-grow-1 overflow-hidden">
+                                            @ItemTemplate(item)
+                                        </div>
+                                    </button>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelAsync">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmAsync" disabled="@(_selected.Count == 0)">
+                        <i class="bi bi-check-circle me-1"></i>
+                        @(AllowMultiple ? $"Add Selected ({_selected.Count})" : "Select")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter, EditorRequired] public required Func<Task<List<TItem>>> LoadItems { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, Guid> KeySelector { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, string> SearchSelector { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment<TItem> ItemTemplate { get; set; }
+    [Parameter, EditorRequired] public required EventCallback<List<TItem>> OnConfirm { get; set; }
+
+    [Parameter] public string Icon { get; set; } = "search";
+    [Parameter] public string SearchPlaceholder { get; set; } = "Search...";
+    [Parameter] public string EmptyText { get; set; } = "No items found";
+    [Parameter] public bool AllowMultiple { get; set; } = true;
+    [Parameter] public List<Guid>? ExcludedKeys { get; set; }
+
+    private List<TItem> _items = [];
+    private HashSet<Guid> _selected = [];
+    private HashSet<Guid> _excludedKeys = [];
+    private string _searchText = string.Empty;
+    private bool _loading;
+
+    private List<TItem> FilteredItems =>
+        string.IsNullOrWhiteSpace(_searchText)
+            ? _items
+            : _items.Where(i => SearchSelector(i).Contains(_searchText, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && _items.Count == 0 && !_loading)
+        {
+            _loading = true;
+            _excludedKeys = ExcludedKeys?.ToHashSet() ?? [];
+            _items = await LoadItems();
+            _loading = false;
+        }
+    }
+
+    private void Toggle(Guid key)
+    {
+        if (_excludedKeys.Contains(key)) return;
+
+        if (AllowMultiple)
+        {
+            if (!_selected.Remove(key))
+                _selected.Add(key);
+        }
+        else
+        {
+            _selected.Clear();
+            _selected.Add(key);
+        }
+    }
+
+    private async Task ConfirmAsync()
+    {
+        var selectedItems = _items.Where(i => _selected.Contains(KeySelector(i))).ToList();
+        await OnConfirm.InvokeAsync(selectedItems);
+        await CloseAsync();
+    }
+
+    private async Task CancelAsync() => await CloseAsync();
+
+    private async Task CloseAsync()
+    {
+        _selected.Clear();
+        _searchText = string.Empty;
+        _items.Clear();
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+}
