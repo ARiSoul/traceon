@@ -16,19 +16,7 @@
     </a>
 </div>
 
-@if (_errors.Count > 0)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        <ul class="mb-0 d-inline">
-            @foreach (var error in _errors)
-            {
-                <li>@error</li>
-            }
-        </ul>
-        <button type="button" class="btn-close" @onclick="() => _errors = []"></button>
-    </div>
-}
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
 
 <!-- Progress Steps -->
 <div class="card mb-3">
@@ -78,10 +66,10 @@
                 @RenderBasicInfoStep()
                 break;
             case 2:
-                @RenderTagsStep()
+                @RenderFieldsStep()
                 break;
             case 3:
-                @RenderFieldsStep()
+                @RenderTagsStep()
                 break;
             case 4:
                 @RenderReviewStep()
@@ -193,15 +181,27 @@
     private readonly (string Title, bool IsOptional)[] _steps =
     [
         ("Basic Info", false),
+        ("Fields", false),
         ("Tags", true),
-        ("Fields", true),
         ("Review", false)
     ];
 
     private void GoToStep(int step)
     {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _errors = ["Name is required."];
+            return;
+        }
+
         if (step == 1 || !string.IsNullOrWhiteSpace(_name))
-            _currentStep = step;
+            if (_currentStep == 2 && _selectedFieldIds.Count == 0 && step != 1)
+                _errors = ["Fields are required."];
+            else
+            {
+                _errors = [];
+                _currentStep = step;
+            }
     }
 
     private void NextStep()
@@ -211,6 +211,13 @@
             _errors = ["Name is required."];
             return;
         }
+
+        if (_currentStep == 2 && _selectedFieldIds.Count == 0)
+        {
+            _errors = ["Fields are required."];
+            return;
+        }
+
         _errors = [];
         _currentStep = Math.Min(_currentStep + 1, _steps.Length);
     }

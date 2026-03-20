@@ -11,18 +11,7 @@
     }
     else
     {
-        @if (_errors.Count > 0)
-        {
-            <div class="alert alert-danger alert-dismissible fade show py-2">
-                <small>
-                    @foreach (var error in _errors)
-                    {
-                        <span>@error</span>
-                    }
-                </small>
-                <button type="button" class="btn-close btn-close-sm" @onclick="() => _errors = []"></button>
-            </div>
-        }
+        <ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
 
         <div class="row g-3">
             <div class="col-md-5">

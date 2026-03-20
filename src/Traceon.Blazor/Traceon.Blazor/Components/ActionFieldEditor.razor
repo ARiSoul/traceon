@@ -25,15 +25,7 @@
     @if (_isExpanded)
     {
         <div class="border-top px-3 pb-3 pt-2 bg-light">
-            @if (_fieldErrors.Count > 0)
-            {
-                <div class="alert alert-danger py-2 mb-2">
-                    @foreach (var error in _fieldErrors)
-                    {
-                        <small class="d-block">@error</small>
-                    }
-                </div>
-            }
+            <ErrorAlert Errors="_fieldErrors" />
 
             <div class="row g-2">
                 <div class="col-md-6">

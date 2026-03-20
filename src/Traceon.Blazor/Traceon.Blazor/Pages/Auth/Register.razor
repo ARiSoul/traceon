@@ -2,17 +2,7 @@
 
 <h3>Register</h3>
 
-@if (_errors.Count > 0)
-{
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach (var error in _errors)
-            {
-                <li>@error</li>
-            }
-        </ul>
-    </div>
-}
+<ErrorAlert Errors="_errors" />
 
 @if (_registered)
 {

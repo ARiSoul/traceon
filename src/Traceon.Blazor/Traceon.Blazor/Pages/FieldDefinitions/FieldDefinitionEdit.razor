@@ -17,19 +17,7 @@
     </a>
 </div>
 
-@if (_errors.Count > 0)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        <ul class="mb-0 d-inline">
-            @foreach (var error in _errors)
-            {
-                <li>@error</li>
-            }
-        </ul>
-        <button type="button" class="btn-close" @onclick="() => _errors = []"></button>
-    </div>
-}
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
 
 @if (_loading)
 {

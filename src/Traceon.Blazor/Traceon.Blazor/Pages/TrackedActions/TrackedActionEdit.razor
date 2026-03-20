@@ -31,19 +31,7 @@
     </div>
 </div>
 
-@if (_errors.Count > 0)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        <ul class="mb-0 d-inline">
-            @foreach (var error in _errors)
-            {
-                <li>@error</li>
-            }
-        </ul>
-        <button type="button" class="btn-close" @onclick="() => _errors = []"></button>
-    </div>
-}
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
 
 @if (_loading)
 {
@@ -71,20 +59,20 @@ else
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link @(_activeTab == "tags" ? "active" : "")" @onclick='() => _activeTab = "tags"'>
-                        <i class="bi bi-tags me-1"></i>Tags
-                        @if (_tags.Count > 0)
-                        {
-                            <span class="badge bg-primary ms-1">@_tags.Count</span>
-                        }
-                    </button>
-                </li>
-                <li class="nav-item">
                     <button class="nav-link @(_activeTab == "fields" ? "active" : "")" @onclick='() => _activeTab = "fields"'>
                         <i class="bi bi-sliders me-1"></i>Fields
                         @if (_fields.Count > 0)
                         {
                             <span class="badge bg-primary ms-1">@_fields.Count</span>
+                        }
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "tags" ? "active" : "")" @onclick='() => _activeTab = "tags"'>
+                        <i class="bi bi-tags me-1"></i>Tags
+                        @if (_tags.Count > 0)
+                        {
+                            <span class="badge bg-primary ms-1">@_tags.Count</span>
                         }
                     </button>
                 </li>
@@ -106,6 +94,38 @@ else
                         <InputText @bind-Value="_model.Description" class="form-control" />
                     </div>
                 </EditForm>
+            }
+            else if (_activeTab == "fields")
+            {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="text-muted mb-0">Manage the data fields captured for each entry. Click a field to edit its settings.</p>
+                    <button class="btn btn-outline-primary btn-sm" @onclick="() => _showFieldSelector = true">
+                        <i class="bi bi-plus-circle me-1"></i>Add Fields
+                    </button>
+                </div>
+
+                @if (_fields.Count == 0)
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-sliders fs-3 d-block mb-2"></i>
+                        <p>No fields assigned yet.</p>
+                        <button class="btn btn-primary" @onclick="() => _showFieldSelector = true">
+                            <i class="bi bi-plus-circle me-1"></i>Select Fields
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="list-group">
+                        @foreach (var field in _fields)
+                        {
+                            <ActionFieldEditor Field="field"
+                                               TrackedActionId="Id"
+                                               OnRemove="RemoveFieldAsync"
+                                               OnSaved="ReloadFieldsAsync" />
+                        }
+                    </div>
+                }
             }
             else if (_activeTab == "tags")
             {
@@ -137,38 +157,6 @@ else
                                 <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;"
                                         @onclick="() => RemoveTagAsync(tag)"></button>
                             </span>
-                        }
-                    </div>
-                }
-            }
-            else if (_activeTab == "fields")
-            {
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <p class="text-muted mb-0">Manage the data fields captured for each entry. Click a field to edit its settings.</p>
-                    <button class="btn btn-outline-primary btn-sm" @onclick="() => _showFieldSelector = true">
-                        <i class="bi bi-plus-circle me-1"></i>Add Fields
-                    </button>
-                </div>
-
-                @if (_fields.Count == 0)
-                {
-                    <div class="text-center text-muted py-4">
-                        <i class="bi bi-sliders fs-3 d-block mb-2"></i>
-                        <p>No fields assigned yet.</p>
-                        <button class="btn btn-primary" @onclick="() => _showFieldSelector = true">
-                            <i class="bi bi-plus-circle me-1"></i>Select Fields
-                        </button>
-                    </div>
-                }
-                else
-                {
-                    <div class="list-group">
-                        @foreach (var field in _fields)
-                        {
-                            <ActionFieldEditor Field="field"
-                                               TrackedActionId="Id"
-                                               OnRemove="RemoveFieldAsync"
-                                               OnSaved="ReloadFieldsAsync" />
                         }
                     </div>
                 }

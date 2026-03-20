@@ -13,19 +13,7 @@
     </div>
 </div>
 
-@if (_errors.Count > 0)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        <ul class="mb-0 d-inline">
-            @foreach (var error in _errors)
-            {
-                <li>@error</li>
-            }
-        </ul>
-        <button type="button" class="btn-close" @onclick="() => _errors = []"></button>
-    </div>
-}
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
 
 <DataGrid @ref="_grid"
           TItem="TrackedActionResponse"
@@ -60,6 +48,21 @@
         new() { Title = "Description", Selector = x => x.Description },
         new()
         {
+            Title = "Fields",
+            Selector = x => x.FieldCount,
+            Template = item => builder =>
+            {
+                builder.OpenElement(0, "span");
+                builder.AddAttribute(1, "class", "badge bg-secondary bg-opacity-10 text-secondary");
+                builder.OpenElement(2, "i");
+                builder.AddAttribute(3, "class", "bi bi-sliders me-1");
+                builder.CloseElement();
+                builder.AddContent(4, item.FieldCount);
+                builder.CloseElement();
+            }
+        },
+        new()
+        {
             Title = "Tags",
             Selector = x => x.Tags.Count,
             Template = item => builder =>
@@ -84,21 +87,6 @@
                     builder.AddContent(seq++, tag.Name);
                     builder.CloseElement();
                 }
-                builder.CloseElement();
-            }
-        },
-        new()
-        {
-            Title = "Fields",
-            Selector = x => x.FieldCount,
-            Template = item => builder =>
-            {
-                builder.OpenElement(0, "span");
-                builder.AddAttribute(1, "class", "badge bg-secondary bg-opacity-10 text-secondary");
-                builder.OpenElement(2, "i");
-                builder.AddAttribute(3, "class", "bi bi-sliders me-1");
-                builder.CloseElement();
-                builder.AddContent(4, item.FieldCount);
                 builder.CloseElement();
             }
         },
