@@ -1,0 +1,112 @@
+@if (_visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);"
+         @onclick="Cancel" @onclick:stopPropagation="false">
+        <div class="modal-dialog modal-dialog-centered" role="document" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-bullseye me-2"></i>
+                        Track: @ActionName
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="Cancel"></button>
+                </div>
+                <div class="modal-body">
+                    <ErrorAlert Errors="_errors" />
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-calendar-event me-1"></i>When?
+                        </label>
+                        <input type="datetime-local"
+                               class="form-control"
+                               step="60"
+                               value="@_occurredLocal.ToString("yyyy-MM-ddTHH:mm")"
+                               @onchange="OnDateTimeChanged" />
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label">
+                            <i class="bi bi-chat-text me-1"></i>Notes <span class="text-muted fw-normal">(optional)</span>
+                        </label>
+                        <textarea class="form-control"
+                                  rows="2"
+                                  placeholder="Any notes about this entry..."
+                                  @bind="_notes"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@_saving">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" @onclick="TrackAsync" disabled="@_saving">
+                        @if (_saving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle me-1"></i>
+                        }
+                        Track
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string ActionName { get; set; } = string.Empty;
+    [Parameter] public EventCallback<(DateTime OccurredAtUtc, string? Notes)> OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private bool _visible;
+    private bool _saving;
+    private DateTime _occurredLocal;
+    private string? _notes;
+    private IReadOnlyList<string> _errors = [];
+
+    public void Show()
+    {
+        _occurredLocal = DateTime.Now;
+        _notes = null;
+        _errors = [];
+        _saving = false;
+        _visible = true;
+        StateHasChanged();
+    }
+
+    private void OnDateTimeChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var parsed))
+            _occurredLocal = parsed;
+    }
+
+    private async Task TrackAsync()
+    {
+        _saving = true;
+        _errors = [];
+
+        try
+        {
+            var utc = _occurredLocal.ToUniversalTime();
+            await OnConfirm.InvokeAsync((utc, string.IsNullOrWhiteSpace(_notes) ? null : _notes));
+            _visible = false;
+        }
+        catch (Exception ex)
+        {
+            _errors = [ex.Message];
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task Cancel()
+    {
+        _visible = false;
+        await OnCancel.InvokeAsync();
+    }
+}

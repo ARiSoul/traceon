@@ -2,70 +2,130 @@
 
 <PageTitle>Traceon</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="mb-1">
-            <i class="bi bi-bullseye me-2"></i>
-            Traceon
-        </h3>
-        <p class="text-muted mb-0">Track, measure, and improve your daily actions</p>
-    </div>
-</div>
-
 <AuthorizeView>
     <Authorized>
-        <div class="row g-3">
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="bi bi-list-check text-primary me-2"></i>Tracked Actions
-                        </h5>
-                        <p class="card-text text-muted">Create and manage the actions you want to track over time.</p>
-                        <a href="/tracked-actions" class="btn btn-outline-primary">
-                            <i class="bi bi-arrow-right me-1"></i>Go to Actions
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="bi bi-tags text-info me-2"></i>Tags
-                        </h5>
-                        <p class="card-text text-muted">Organize your actions with tags for easy filtering and grouping.</p>
-                        <a href="/tags" class="btn btn-outline-info">
-                            <i class="bi bi-arrow-right me-1"></i>Go to Tags
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="bi bi-sliders text-warning me-2"></i>Field Definitions
-                        </h5>
-                        <p class="card-text text-muted">Define reusable field templates for your tracked actions.</p>
-                        <a href="/field-definitions" class="btn btn-outline-warning">
-                            <i class="bi bi-arrow-right me-1"></i>Go to Fields
-                        </a>
-                    </div>
-                </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="mb-1">
+                    <i class="bi bi-bullseye me-2"></i>
+                    Traceon
+                </h3>
+                <p class="text-muted mb-0">Track, measure, and improve your daily actions</p>
             </div>
         </div>
+
+        <ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+        @if (_loggedActionName is not null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span><strong>@_loggedActionName</strong> tracked successfully!</span>
+                    <button type="button" class="btn-close" @onclick="() => _loggedActionName = null"></button>
+                </div>
+            </div>
+        }
+
+        @if (_loading)
+        {
+            <div class="d-flex justify-content-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (_actions.Count == 0)
+        {
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-list-check display-4 text-muted mb-3 d-block"></i>
+                    <h5>No tracked actions yet</h5>
+                    <p class="text-muted">Create your first tracked action to start logging entries.</p>
+                    <a href="/tracked-actions/create" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Create Tracked Action
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <h5 class="mb-3">
+                <i class="bi bi-lightning-charge me-1"></i>Quick Tracking
+            </h5>
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 mb-4">
+                @foreach (var action in _actions)
+                {
+                    <div class="col">
+                        <QuickTrackCard Action="action"
+                                        Highlighted="action.Name == _loggedActionName"
+                                        OnTrack="OpenTrackModal" />
+                    </div>
+                }
+            </div>
+        }
+
+        <QuickTrackModal @ref="_trackModal"
+                         ActionName="@(_selectedAction?.Name ?? "")"
+                         OnConfirm="OnTrackConfirmedAsync" />
     </Authorized>
     <NotAuthorized>
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="bi bi-box-arrow-in-right display-4 text-muted mb-3 d-block"></i>
-                <h5>Welcome to Traceon</h5>
-                <p class="text-muted">Please log in to start tracking your actions.</p>
-                <a href="/auth/login" class="btn btn-primary">
-                    <i class="bi bi-box-arrow-in-right me-1"></i>Login
-                </a>
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 60vh;">
+            <div class="card" style="max-width: 400px; width: 100%;">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-bullseye display-4 text-primary mb-3 d-block"></i>
+                    <h4>Welcome to Traceon</h4>
+                    <p class="text-muted">Track, measure, and improve your daily actions.</p>
+                    <a href="/auth/login" class="btn btn-primary w-100 mb-2">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                    </a>
+                    <a href="/auth/register" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-person-plus me-1"></i>Register
+                    </a>
+                </div>
             </div>
         </div>
     </NotAuthorized>
 </AuthorizeView>
+
+@code {
+    [Inject] private TrackedActionService ActionService { get; set; } = default!;
+    [Inject] private ActionEntryService EntryService { get; set; } = default!;
+
+    private List<TrackedActionResponse> _actions = [];
+    private IReadOnlyList<string> _errors = [];
+    private bool _loading = true;
+    private string? _loggedActionName;
+
+    private QuickTrackModal _trackModal = default!;
+    private TrackedActionResponse? _selectedAction;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _actions = await ActionService.GetAllAsync();
+        _loading = false;
+    }
+
+    private void OpenTrackModal(TrackedActionResponse action)
+    {
+        _selectedAction = action;
+        _loggedActionName = null;
+        _errors = [];
+        _trackModal.Show();
+    }
+
+    private async Task OnTrackConfirmedAsync((DateTime OccurredAtUtc, string? Notes) entry)
+    {
+        if (_selectedAction is null) return;
+
+        var request = new CreateActionEntryRequest(entry.OccurredAtUtc, entry.Notes);
+        var (success, errors) = await EntryService.CreateAsync(_selectedAction.Id, request);
+
+        if (success)
+            _loggedActionName = _selectedAction.Name;
+        else
+            _errors = errors;
+
+        _selectedAction = null;
+    }
+}

@@ -4,27 +4,30 @@ public sealed class ActionEntry : Entity
 {
     public Guid TrackedActionId { get; private set; }
     public DateTime OccurredAtUtc { get; private set; }
+    public string? Notes { get; private set; }
 
     private readonly List<ActionEntryField> _fields = [];
     public IReadOnlyCollection<ActionEntryField> Fields => _fields.AsReadOnly();
 
-    private ActionEntry(Guid trackedActionId, DateTime occurredAtUtc)
+    private ActionEntry(Guid trackedActionId, DateTime occurredAtUtc, string? notes)
     {
         TrackedActionId = trackedActionId;
         OccurredAtUtc = occurredAtUtc;
+        Notes = notes;
     }
 
-    public static ActionEntry Create(Guid trackedActionId, DateTime occurredAtUtc)
+    public static ActionEntry Create(Guid trackedActionId, DateTime occurredAtUtc, string? notes = null)
     {
         if (trackedActionId == Guid.Empty)
             throw new ArgumentException("Tracked action ID is required.", nameof(trackedActionId));
 
-        return new ActionEntry(trackedActionId, occurredAtUtc);
+        return new ActionEntry(trackedActionId, occurredAtUtc, notes?.Trim());
     }
 
-    public void Update(DateTime occurredAtUtc)
+    public void Update(DateTime occurredAtUtc, string? notes = null)
     {
         OccurredAtUtc = occurredAtUtc;
+        Notes = notes?.Trim();
         MarkUpdated();
     }
 

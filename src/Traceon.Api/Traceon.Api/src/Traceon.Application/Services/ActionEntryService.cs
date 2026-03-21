@@ -34,6 +34,8 @@ public sealed class ActionEntryService(
                     {
                         Id = e.Id,
                         TrackedActionId = trackedActionId,
+                        OccurredAtUtc = e.OccurredAtUtc,
+                        Notes = e.Notes,
                         CreatedAtUtc = e.CreatedAtUtc,
                         FieldValues = (from f in e.Fields
                                        join af in fieldRepository.Query()
@@ -45,7 +47,6 @@ public sealed class ActionEntryService(
                                            ActionFieldName = af.Name,
                                            Value = f.Value
                                        }).ToList(),
-                        OccurredAtUtc = e.OccurredAtUtc,
                         UpdatedAtUtc = e.UpdatedAtUtc
                     };
 
@@ -96,7 +97,7 @@ public sealed class ActionEntryService(
             return Result<ActionEntryResponse>.Failure($"Tracked action with ID '{trackedActionId}' was not found.");
         }
 
-        var entity = ActionEntry.Create(trackedActionId, request.OccurredAtUtc);
+        var entity = ActionEntry.Create(trackedActionId, request.OccurredAtUtc, request.Notes);
 
         if (request.FieldValues is not null)
         {
@@ -121,7 +122,7 @@ public sealed class ActionEntryService(
             return Result<ActionEntryResponse>.Failure($"Action entry with ID '{id}' was not found.");
         }
 
-        entity.Update(request.OccurredAtUtc);
+        entity.Update(request.OccurredAtUtc, request.Notes);
 
         if (request.FieldValues is not null)
         {

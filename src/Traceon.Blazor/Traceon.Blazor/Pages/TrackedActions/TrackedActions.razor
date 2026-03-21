@@ -106,7 +106,7 @@
             ListAction.Separator(),
 
             ListAction.Link("View Entries", $"/tracked-actions/{action.Id}/entries", "journal-text", ListActionStyle.Primary),
-            ListAction.Link("New Entry", $"/tracked-actions/{action.Id}/entries/new", "plus-square", ListActionStyle.Success),
+            ListAction.Link("New Entry", $"/tracked-actions/{action.Id}/entries/new?returnUrl=%2Ftracked-actions", "plus-square", ListActionStyle.Success),
 
             ListAction.Separator(),
 

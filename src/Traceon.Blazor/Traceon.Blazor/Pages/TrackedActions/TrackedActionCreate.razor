@@ -136,13 +136,13 @@
 <!-- Field Selector Modal -->
 <ModalSelector TItem="FieldDefinitionResponse"
                @bind-IsVisible="_showFieldSelector"
-               Title="Select Field Definitions"
+               Title="Select Custom Fields"
                Icon="sliders"
                LoadItems="LoadAvailableFieldsAsync"
                KeySelector="f => f.Id"
                SearchSelector="@(f => $"{f.DefaultName} {f.Type}")"
-               SearchPlaceholder="Search field definitions..."
-               EmptyText="No field definitions available. Create some first."
+               SearchPlaceholder="Search custom fields..."
+               EmptyText="No custom fields available. Create some first."
                ExcludedKeys="_selectedFieldIds"
                OnConfirm="OnFieldsSelected">
     <ItemTemplate>
@@ -181,7 +181,7 @@
     private readonly (string Title, bool IsOptional)[] _steps =
     [
         ("Basic Info", false),
-        ("Fields", false),
+        ("Fields", true),
         ("Tags", true),
         ("Review", false)
     ];
@@ -194,14 +194,8 @@
             return;
         }
 
-        if (step == 1 || !string.IsNullOrWhiteSpace(_name))
-            if (_currentStep == 2 && _selectedFieldIds.Count == 0 && step != 1)
-                _errors = ["Fields are required."];
-            else
-            {
-                _errors = [];
-                _currentStep = step;
-            }
+        _errors = [];
+        _currentStep = step;
     }
 
     private void NextStep()
@@ -209,12 +203,6 @@
         if (_currentStep == 1 && string.IsNullOrWhiteSpace(_name))
         {
             _errors = ["Name is required."];
-            return;
-        }
-
-        if (_currentStep == 2 && _selectedFieldIds.Count == 0)
-        {
-            _errors = ["Fields are required."];
             return;
         }
 
