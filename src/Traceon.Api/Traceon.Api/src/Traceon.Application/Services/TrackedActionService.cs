@@ -21,6 +21,8 @@ public sealed class TrackedActionService(
     {
         return repository.Query()
         .Where(a => a.UserId == currentUser.UserId)
+        .OrderBy(a => a.SortOrder)
+        .ThenByDescending(a => a.CreatedAtUtc)
         .Select(a => new TrackedActionResponse
         {
             Id = a.Id,
@@ -33,6 +35,7 @@ public sealed class TrackedActionService(
             }).ToList(),
             FieldCount = a.Fields.Count,
             EntryCount = entryRepository.Query().Count(e => e.TrackedActionId == a.Id),
+            SortOrder = a.SortOrder,
             CreatedAtUtc = a.CreatedAtUtc,
             UpdatedAtUtc = a.UpdatedAtUtc
         });
@@ -65,7 +68,7 @@ public sealed class TrackedActionService(
             return Result<TrackedActionResponse>.Failure($"A tracked action with name '{request.Name.Trim()}' already exists.");
         }
 
-        var entity = TrackedAction.Create(currentUser.UserId, request.Name, request.Description);
+        var entity = TrackedAction.Create(currentUser.UserId, request.Name, request.Description, request.SortOrder);
         await repository.AddAsync(entity, cancellationToken);
 
         logger.TrackedActionCreated(entity.Name, entity.Id, currentUser.UserId);
@@ -82,7 +85,7 @@ public sealed class TrackedActionService(
             return Result<TrackedActionResponse>.Failure($"Tracked action with ID '{id}' was not found.");
         }
 
-        entity.Update(request.Name, request.Description);
+        entity.Update(request.Name, request.Description, request.SortOrder);
         await repository.UpdateAsync(entity, cancellationToken);
 
         logger.TrackedActionUpdated(id);
@@ -158,6 +161,23 @@ public sealed class TrackedActionService(
 
         action.RemoveTag(tagId);
         await repository.UpdateAsync(action, cancellationToken);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> ReorderAsync(List<Guid> orderedIds, CancellationToken cancellationToken = default)
+    {
+        var actions = await repository.GetAllByUserIdAsync(currentUser.UserId, cancellationToken);
+
+        for (var i = 0; i < orderedIds.Count; i++)
+        {
+            var action = actions.FirstOrDefault(a => a.Id == orderedIds[i]);
+            if (action is not null && action.SortOrder != i)
+            {
+                action.SetSortOrder(i);
+                await repository.UpdateAsync(action, cancellationToken);
+            }
+        }
 
         return Result.Success();
     }

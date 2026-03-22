@@ -1,0 +1,637 @@
+@page "/dashboard"
+@page "/dashboard/action/{ActionIdParam:guid}"
+@attribute [Authorize]
+
+<PageTitle>Dashboard - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-bar-chart-line me-2"></i>
+            Dashboard
+        </h3>
+        <p class="text-muted mb-0">Statistics and insights across your tracked actions</p>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="ReloadAsync" disabled="@_loading">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </button>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (_data is not null)
+{
+    @if (_data.TotalActions == 0)
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-bar-chart-line display-4 text-muted mb-3 d-block"></i>
+                <h5>No data yet</h5>
+                <p class="text-muted">Create some tracked actions and log entries to see your dashboard.</p>
+                <a href="/tracked-actions/create" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Create Tracked Action
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Summary Cards -->
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 summary-card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-list-check fs-3 text-primary d-block mb-1"></i>
+                        <div class="fs-2 fw-bold">@_data.TotalActions</div>
+                        <small class="text-muted">Actions</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 summary-card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-journal-text fs-3 text-success d-block mb-1"></i>
+                        <div class="fs-2 fw-bold">@_data.TotalEntries</div>
+                        <small class="text-muted">Total Entries</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 summary-card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-day fs-3 text-info d-block mb-1"></i>
+                        <div class="fs-2 fw-bold">@_data.EntriesToday</div>
+                        <small class="text-muted">Today</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 summary-card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-week fs-3 text-warning d-block mb-1"></i>
+                        <div class="fs-2 fw-bold">@_data.EntriesThisWeek</div>
+                        <small class="text-muted">This Week</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 summary-card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-fire fs-3 @(_data.OverallStreak > 0 ? "text-danger" : "text-muted") d-block mb-1"></i>
+                        <div class="fs-2 fw-bold">@_data.OverallStreak</div>
+                        <small class="text-muted">Day Streak</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Period Filter -->
+        <div class="row g-2 mb-4">
+            <div class="col-12 col-md-3">
+                <label class="form-label form-label-sm mb-1">
+                    <i class="bi bi-calendar-range me-1"></i>Period
+                </label>
+                <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeChanged">
+                    <option value="all">All Time</option>
+                    <option value="days">Last N Days</option>
+                    <option value="months">Last N Months</option>
+                    <option value="years">Last N Years</option>
+                    <option value="custom">Custom Range</option>
+                </select>
+            </div>
+
+            @if (_periodMode is "days" or "months" or "years")
+            {
+                <div class="col-6 col-md-2">
+                    <label class="form-label form-label-sm mb-1">
+                        @(_periodMode switch { "days" => "Days", "months" => "Months", _ => "Years" })
+                    </label>
+                    <input type="number"
+                           class="form-control form-control-sm"
+                           min="1"
+                           value="@_periodValue"
+                           @onchange="OnPeriodValueChanged" />
+                </div>
+            }
+            else if (_periodMode == "custom")
+            {
+                <div class="col-6 col-md-2">
+                    <label class="form-label form-label-sm mb-1">From</label>
+                    <input type="date"
+                           class="form-control form-control-sm"
+                           value="@_customFrom?.ToString("yyyy-MM-dd")"
+                           @onchange="OnCustomFromChanged" />
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label form-label-sm mb-1">To</label>
+                    <input type="date"
+                           class="form-control form-control-sm"
+                           value="@_customTo?.ToString("yyyy-MM-dd")"
+                           @onchange="OnCustomToChanged" />
+                </div>
+            }
+        </div>
+
+        <!-- Tag Filter -->
+        @if (_allTags.Count > 0)
+        {
+            <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                <small class="text-muted me-1"><i class="bi bi-funnel me-1"></i>Tag:</small>
+                <button class="btn btn-sm @(_selectedTag is null ? "btn-primary" : "btn-outline-secondary")"
+                        @onclick="() => _selectedTag = null">
+                    All
+                </button>
+                @foreach (var tag in _allTags)
+                {
+                    <button class="btn btn-sm @(_selectedTag == tag.Name ? "" : "btn-outline-secondary")"
+                            style="@(_selectedTag == tag.Name ? $"background-color: {tag.Color}; border-color: {tag.Color}; color: white;" : "")"
+                            @onclick="() => _selectedTag = _selectedTag == tag.Name ? null : tag.Name">
+                        @tag.Name
+                    </button>
+                }
+            </div>
+        }
+
+        <!-- Action Filter -->
+        @if (_data.Actions.Count > 1)
+        {
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-funnel"></i></span>
+                        <select class="form-select form-select-sm" value="@_selectedActionId" @onchange="OnActionFilterChanged">
+                            <option value="">All Actions</option>
+                            @foreach (var action in _data.Actions.OrderBy(a => a.Name))
+                            {
+                                <option value="@action.ActionId">@action.Name</option>
+                            }
+                        </select>
+                        @if (!string.IsNullOrEmpty(_selectedActionId))
+                        {
+                            <button class="btn btn-outline-secondary" @onclick="() => { _selectedActionId = string.Empty; }">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Per-Action Stats -->
+        <h5 class="mb-3"><i class="bi bi-graph-up me-2"></i>Per-Action Statistics</h5>
+
+        @if (FilteredActions.Count == 0)
+        {
+            <div class="card mb-4">
+                <div class="card-body text-center py-4 text-muted">
+                    <i class="bi bi-funnel fs-3 d-block mb-2"></i>
+                    No actions match the selected filter.
+                </div>
+            </div>
+        }
+
+        @foreach (var action in FilteredActions)
+        {
+            <div class="card mb-3 action-stats-card">
+                <div class="card-header d-flex justify-content-between align-items-center"
+                     style="cursor: pointer;"
+                     @onclick="() => ToggleAction(action.ActionId)">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden">
+                        <i class="bi bi-@(_expandedActions.Contains(action.ActionId) ? "chevron-down" : "chevron-right") text-muted"></i>
+                        <strong class="text-truncate">@action.Name</strong>
+                        @if (action.Tags.Count > 0)
+                        {
+                            @foreach (var tag in action.Tags)
+                            {
+                                <span class="badge rounded-pill" style="background-color: @tag.Color; font-size: 0.7rem;">@tag.Name</span>
+                            }
+                        }
+                    </div>
+                    <div class="d-flex align-items-center gap-3 flex-shrink-0">
+                        <span class="badge bg-primary rounded-pill">@action.EntryCount entries</span>
+                        @if (action.Streak > 0)
+                        {
+                            <span class="badge bg-danger rounded-pill">
+                                <i class="bi bi-fire me-1"></i>@action.Streak day@(action.Streak != 1 ? "s" : "")
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                @if (_expandedActions.Contains(action.ActionId))
+                {
+                    <div class="card-body">
+                        <!-- Navigation links -->
+                        <div class="d-flex gap-2 mb-3">
+                            <a href="/tracked-actions/@action.ActionId/edit" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-pencil-square me-1"></i>Edit Action
+                            </a>
+                            <a href="/entries/action/@action.ActionId" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-journal-text me-1"></i>View Entries
+                            </a>
+                            <a href="/tracked-actions/@action.ActionId/entries/new?returnUrl=%2Fdashboard"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i>New Entry
+                            </a>
+                        </div>
+
+                        @if (action.EntryCount == 0)
+                        {
+                            <div class="text-center text-muted py-3">
+                                <p class="mb-2">No entries yet for this action.</p>
+                                <a href="/tracked-actions/@action.ActionId/entries/new?returnUrl=%2Fdashboard"
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i>Add Entry
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Key Metrics Row -->
+                            <div class="row row-cols-2 row-cols-md-4 g-2 mb-3">
+                                <div class="col">
+                                    <div class="border rounded p-2 text-center bg-light">
+                                        <div class="fw-bold">@action.EntryCount</div>
+                                        <small class="text-muted">Total Entries</small>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="border rounded p-2 text-center bg-light">
+                                        <div class="fw-bold">@FormatRelativeDate(action.LastEntryUtc)</div>
+                                        <small class="text-muted">Last Entry</small>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="border rounded p-2 text-center bg-light">
+                                        <div class="fw-bold">
+                                            @if (action.AverageGapDays.HasValue)
+                                            {
+                                                @FormatGap(action.AverageGapDays.Value)
+                                            }
+                                            else
+                                            {
+                                                <span>—</span>
+                                            }
+                                        </div>
+                                        <small class="text-muted">Avg. Gap</small>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="border rounded p-2 text-center bg-light">
+                                        <div class="fw-bold">
+                                            <i class="bi bi-fire @(action.Streak > 0 ? "text-danger" : "text-muted") me-1"></i>@action.Streak
+                                        </div>
+                                        <small class="text-muted">Day Streak</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Weekly Activity (mini bar chart with CSS) -->
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2"><i class="bi bi-bar-chart me-1"></i>Weekly Activity (last 3 months)</h6>
+                                @RenderWeeklyChart(action)
+                            </div>
+
+                            <!-- Field Statistics -->
+                            @if (action.FieldStats.Count > 0)
+                            {
+                                <h6 class="text-muted mb-2"><i class="bi bi-sliders me-1"></i>Field Analytics</h6>
+                                <div class="row g-2">
+                                    @foreach (var field in action.FieldStats)
+                                    {
+                                        <div class="col-12 col-md-6">
+                                            @RenderFieldCard(field)
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter] public Guid? ActionIdParam { get; set; }
+    [Inject] private DashboardService DashService { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private bool _loading = true;
+    private IReadOnlyList<string> _errors = [];
+    private DashboardData? _data;
+    private HashSet<Guid> _expandedActions = [];
+    private string? _selectedTag;
+    private string _selectedActionId = string.Empty;
+
+    // Period filter
+    private string _periodMode = "all";
+    private int _periodValue = 30;
+    private DateTime? _customFrom;
+    private DateTime? _customTo;
+
+    private List<(string Name, string Color)> _allTags = [];
+
+    private List<ActionStats> FilteredActions => _data?.Actions
+        .Where(a => _selectedTag is null || a.Tags.Any(t => t.Name == _selectedTag))
+        .Where(a => string.IsNullOrEmpty(_selectedActionId) || a.ActionId.ToString() == _selectedActionId)
+        .ToList() ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ActionIdParam.HasValue)
+        {
+            _selectedActionId = ActionIdParam.Value.ToString();
+            _expandedActions.Add(ActionIdParam.Value);
+        }
+
+        await ReloadAsync();
+    }
+
+    private void OnActionFilterChanged(ChangeEventArgs e)
+    {
+        _selectedActionId = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private (DateTime? From, DateTime? To) ResolveDateRange()
+    {
+        return _periodMode switch
+        {
+            "days" => (DateTime.UtcNow.AddDays(-_periodValue), null),
+            "months" => (DateTime.UtcNow.AddMonths(-_periodValue), null),
+            "years" => (DateTime.UtcNow.AddYears(-_periodValue), null),
+            "custom" => (_customFrom, _customTo?.AddDays(1)),
+            _ => (null, null)
+        };
+    }
+
+    private async Task OnPeriodModeChanged(ChangeEventArgs e)
+    {
+        _periodMode = e.Value?.ToString() ?? "all";
+        _periodValue = _periodMode switch
+        {
+            "days" => 30,
+            "months" => 1,
+            "years" => 1,
+            _ => _periodValue
+        };
+        if (_periodMode == "custom")
+        {
+            _customFrom = DateTime.Today.AddMonths(-1);
+            _customTo = DateTime.Today;
+        }
+        await ReloadAsync();
+    }
+
+    private async Task OnPeriodValueChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var val) && val > 0)
+        {
+            _periodValue = val;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OnCustomFromChanged(ChangeEventArgs e)
+    {
+        _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await ReloadAsync();
+    }
+
+    private async Task OnCustomToChanged(ChangeEventArgs e)
+    {
+        _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _loading = true;
+        _errors = [];
+
+        try
+        {
+            var (from, to) = ResolveDateRange();
+            _data = await DashService.LoadAsync(from, to);
+
+            _allTags = _data.Actions
+                .SelectMany(a => a.Tags)
+                .DistinctBy(t => t.Name)
+                .Select(t => (t.Name, t.Color))
+                .OrderBy(t => t.Name)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _errors = [$"Failed to load dashboard: {ex.Message}"];
+        }
+
+        _loading = false;
+    }
+
+    private void ToggleAction(Guid actionId)
+    {
+        if (!_expandedActions.Remove(actionId))
+            _expandedActions.Add(actionId);
+    }
+
+    private static string FormatRelativeDate(DateTime? utc)
+    {
+        if (utc is null) return "—";
+        var local = utc.Value.ToLocalTime();
+        var diff = DateTime.Now - local;
+
+        return diff.TotalMinutes switch
+        {
+            < 1 => "just now",
+            < 60 => $"{(int)diff.TotalMinutes}m ago",
+            < 1440 => $"{(int)diff.TotalHours}h ago",
+            < 2880 => "yesterday",
+            _ => $"{(int)diff.TotalDays}d ago"
+        };
+    }
+
+    private static string FormatGap(double days)
+    {
+        return days switch
+        {
+            < 1 => $"{(int)(days * 24)}h",
+            < 2 => "~1 day",
+            < 7 => $"{days:F1} days",
+            < 14 => "~1 week",
+            _ => $"{days / 7:F1} weeks"
+        };
+    }
+
+    private RenderFragment RenderWeeklyChart(ActionStats action) => __builder =>
+    {
+        var maxCount = action.WeeklyActivity.Max(w => w.Count);
+        if (maxCount == 0) maxCount = 1;
+
+        <div class="weekly-chart">
+            @foreach (var week in action.WeeklyActivity)
+            {
+                var heightPct = (int)(week.Count * 100.0 / maxCount);
+
+                <div class="weekly-bar-container" title="@week.WeekStart.ToString("MMM d"): @week.Count entries">
+                    <div class="weekly-bar @(week.Count > 0 ? "has-data" : "")"
+                         style="height: @(Math.Max(heightPct, 4))%;">
+                    </div>
+                    <small class="weekly-label">@week.WeekStart.ToString("M/d")</small>
+                </div>
+            }
+        </div>
+    };
+
+    private RenderFragment RenderFieldCard(FieldStats field) => __builder =>
+    {
+        <div class="card border h-100">
+            <div class="card-body p-2">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong class="text-truncate">@field.Name</strong>
+                    <div class="d-flex gap-1">
+                        @if (field.Type is FieldType.Integer or FieldType.Decimal && field.Unit != "UN")
+                        {
+                            <span class="badge bg-info">@field.Unit</span>
+                        }
+                        <span class="badge bg-secondary">@field.Type</span>
+                    </div>
+                </div>
+
+                @if (field.TotalValues == 0)
+                {
+                    <small class="text-muted">No data yet</small>
+                }
+                else
+                {
+                    @switch (field.Type)
+                    {
+                        case FieldType.Integer:
+                        case FieldType.Decimal:
+                            @RenderNumericStats(field)
+                            break;
+                        case FieldType.Boolean:
+                            @RenderBooleanStats(field)
+                            break;
+                        case FieldType.Dropdown:
+                            @RenderDropdownStats(field)
+                            break;
+                        default:
+                            <small class="text-muted">@field.TextFilledCount value@(field.TextFilledCount != 1 ? "s" : "") recorded</small>
+                            break;
+                    }
+                }
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderNumericStats(FieldStats field) => __builder =>
+    {
+        var unitSuffix = field.Unit != "UN" ? $" {field.Unit}" : "";
+
+        <div class="row g-1 text-center mb-2">
+            <div class="col-3">
+                <div class="small fw-bold text-primary">@FormatDecimal(field.NumericMin)@unitSuffix</div>
+                <div class="small text-muted" style="font-size: 0.65rem;">Min</div>
+            </div>
+            <div class="col-3">
+                <div class="small fw-bold text-success">@FormatDecimal(field.NumericAvg)@unitSuffix</div>
+                <div class="small text-muted" style="font-size: 0.65rem;">Avg</div>
+            </div>
+            <div class="col-3">
+                <div class="small fw-bold text-danger">@FormatDecimal(field.NumericMax)@unitSuffix</div>
+                <div class="small text-muted" style="font-size: 0.65rem;">Max</div>
+            </div>
+            <div class="col-3">
+                <div class="small fw-bold text-warning">@FormatDecimal(field.NumericSum)@unitSuffix</div>
+                <div class="small text-muted" style="font-size: 0.65rem;">Sum</div>
+            </div>
+        </div>
+
+        @if (field.ConfiguredMax.HasValue && field.NumericAvg.HasValue)
+        {
+            var pct = Math.Min((double)(field.NumericAvg.Value / field.ConfiguredMax.Value * 100), 100);
+            <div class="progress" style="height: 6px;" title="Avg vs configured max (@field.ConfiguredMax)">
+                <div class="progress-bar bg-success" style="width: @pct%"></div>
+            </div>
+        }
+
+        <small class="text-muted d-block mt-1">@field.NumericCount values</small>
+    };
+
+    private RenderFragment RenderBooleanStats(FieldStats field) => __builder =>
+    {
+        var total = field.BoolTrueCount + field.BoolFalseCount;
+        var truePct = field.BoolTruePercent;
+        var falsePct = 100 - truePct;
+
+        <div class="d-flex justify-content-between mb-1">
+            <small><i class="bi bi-check-circle text-success me-1"></i>True: @field.BoolTrueCount</small>
+            <small><i class="bi bi-x-circle text-danger me-1"></i>False: @field.BoolFalseCount</small>
+        </div>
+
+        <div class="progress" style="height: 20px;">
+            <div class="progress-bar bg-success" style="width: @truePct%"
+                 title="True: @field.BoolTrueCount (@truePct%)">
+                @if (truePct >= 15)
+                {
+                    <small>@truePct%</small>
+                }
+            </div>
+            <div class="progress-bar bg-danger" style="width: @falsePct%"
+                 title="False: @field.BoolFalseCount (@falsePct%)">
+                @if (falsePct >= 15)
+                {
+                    <small>@(100 - truePct)%</small>
+                }
+            </div>
+        </div>
+
+        <small class="text-muted d-block mt-1">@total responses</small>
+    };
+
+    private RenderFragment RenderDropdownStats(FieldStats field) => __builder =>
+    {
+        var maxVal = field.DropdownDistribution.Values.DefaultIfEmpty(1).Max();
+
+        @foreach (var (value, count) in field.DropdownDistribution)
+        {
+            var widthPct = (int)(count * 100.0 / maxVal);
+
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="text-truncate" style="min-width: 60px; font-size: 0.8rem;">@value</span>
+                <div class="flex-grow-1">
+                    <div class="progress" style="height: 16px;">
+                        <div class="progress-bar bg-info" style="width: @widthPct%">
+                            @if (widthPct > 20)
+                            {
+                                <small>@count</small>
+                            }
+                        </div>
+                    </div>
+                </div>
+                @if (widthPct <= 20)
+                {
+                    <small class="text-muted flex-shrink-0">@count</small>
+                }
+            </div>
+        }
+    };
+
+    private static string FormatDecimal(decimal? value)
+    {
+        if (value is null) return "—";
+        return value == Math.Truncate(value.Value)
+            ? value.Value.ToString("F0")
+            : value.Value.ToString("F2");
+    }
+}

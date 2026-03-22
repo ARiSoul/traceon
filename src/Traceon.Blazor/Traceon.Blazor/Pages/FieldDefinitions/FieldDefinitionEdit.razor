@@ -65,6 +65,17 @@ else
                     </div>
                 </div>
 
+                @if (_model!.Type is FieldType.Integer or FieldType.Decimal)
+                {
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label">Unit</label>
+                            <input type="text" class="form-control" @bind="_model.Unit" placeholder="e.g., €, kg, km, min" />
+                            <div class="form-text">The measurement unit for this field (defaults to UN).</div>
+                        </div>
+                    </div>
+                }
+
                 <div class="row g-3 mt-1">
                     <div class="col-12">
                         <label class="form-label">Description</label>
@@ -219,7 +230,8 @@ else
                     Type = field.Type,
                     DropdownValues = field.DropdownValues,
                     DefaultIsRequired = field.DefaultIsRequired,
-                    DefaultValue = field.DefaultValue
+                    DefaultValue = field.DefaultValue,
+                    Unit = field.Unit
                 };
 
                 _model.LoadTypedDefaults(field.DefaultMinValue, field.DefaultMaxValue);
@@ -265,7 +277,8 @@ else
                 maxValue,
                 minValue,
                 _model.DefaultIsRequired,
-                defaultValue));
+                defaultValue,
+                _model.Unit));
         }
         else
         {
@@ -277,7 +290,8 @@ else
                 maxValue,
                 minValue,
                 _model.DefaultIsRequired,
-                defaultValue));
+                defaultValue,
+                _model.Unit));
         }
 
         if (success)
@@ -297,6 +311,7 @@ else
         public string? DropdownValues { get; set; }
         public bool DefaultIsRequired { get; set; }
         public string? DefaultValue { get; set; }
+        public string? Unit { get; set; }
 
         // Integer min/max
         public int? IntMinValue { get; set; }

@@ -21,6 +21,7 @@ internal static class TrackedActionEndpoints
         group.MapGet("/{id:guid}/tags", GetTagsAsync);
         group.MapPost("/{id:guid}/tags/{tagId:guid}", AddTagAsync);
         group.MapDelete("/{id:guid}/tags/{tagId:guid}", RemoveTagAsync);
+        group.MapPut("/reorder", ReorderAsync);
 
         return group;
     }
@@ -121,5 +122,17 @@ internal static class TrackedActionEndpoints
         return result.IsSuccess
             ? TypedResults.NoContent()
             : TypedResults.NotFound(result.Error);
+    }
+
+    private static async Task<IResult> ReorderAsync(
+        List<Guid> orderedIds,
+        ITrackedActionService service,
+        CancellationToken cancellationToken)
+    {
+        var result = await service.ReorderAsync(orderedIds, cancellationToken);
+
+        return result.IsSuccess
+            ? TypedResults.NoContent()
+            : TypedResults.BadRequest(result.Error);
     }
 }

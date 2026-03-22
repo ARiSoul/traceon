@@ -20,6 +20,7 @@ public static class ActionFieldMappingExtensions
             Name = entity.Name,
             TrackedActionId = entity.TrackedActionId,
             UpdatedAtUtc = entity.UpdatedAtUtc,
+            Unit = entity.Unit,
             DropdownValues = fieldDefinition.DropdownValues
         };
 }

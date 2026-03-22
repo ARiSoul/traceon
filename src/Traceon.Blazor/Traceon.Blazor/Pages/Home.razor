@@ -52,14 +52,39 @@
         {
             <h5 class="mb-3">
                 <i class="bi bi-lightning-charge me-1"></i>Quick Tracking
+                @if (_actions.Count > 1)
+                {
+                    <button class="btn btn-sm @(_reordering ? "btn-primary" : "btn-outline-secondary") ms-2"
+                            @onclick="ToggleReorder">
+                        <i class="bi bi-arrows-move me-1"></i>@(_reordering ? "Done" : "Reorder")
+                    </button>
+                }
             </h5>
             <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 mb-4">
                 @foreach (var action in _actions)
                 {
-                    <div class="col">
-                        <QuickTrackCard Action="action"
-                                        Highlighted="action.Name == _loggedActionName"
-                                        OnTrack="OpenTrackModal" />
+                    <div class="col"
+                         draggable="@(_reordering ? "true" : "false")"
+                         @ondragstart="() => _dragIndex = _actions.IndexOf(action)"
+                         @ondragover:preventDefault="_reordering"
+                         @ondrop="() => OnDrop(_actions.IndexOf(action))"
+                         style="@(_reordering ? "cursor: grab;" : "")">
+                        @if (_reordering)
+                        {
+                            <div class="card h-100 border-dashed">
+                                <div class="card-body d-flex align-items-center gap-2 py-3">
+                                    <i class="bi bi-grip-vertical text-muted fs-5"></i>
+                                    <span class="badge bg-secondary rounded-pill">@(_actions.IndexOf(action) + 1)</span>
+                                    <strong class="flex-grow-1 text-truncate">@action.Name</strong>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <QuickTrackCard Action="action"
+                                            Highlighted="action.Name == _loggedActionName"
+                                            OnTrack="OpenTrackModal" />
+                        }
                     </div>
                 }
             </div>
@@ -96,14 +121,40 @@
     private IReadOnlyList<string> _errors = [];
     private bool _loading = true;
     private string? _loggedActionName;
+    private bool _reordering;
+    private int _dragIndex = -1;
 
     private QuickTrackModal _trackModal = default!;
     private TrackedActionResponse? _selectedAction;
 
     protected override async Task OnInitializedAsync()
     {
-        _actions = await ActionService.GetAllAsync();
+        _actions = (await ActionService.GetAllAsync())
+            .OrderBy(a => a.SortOrder)
+            .ThenByDescending(a => a.CreatedAtUtc)
+            .ToList();
         _loading = false;
+    }
+
+    private void OnDrop(int targetIndex)
+    {
+        if (_dragIndex < 0 || _dragIndex == targetIndex) return;
+        var item = _actions[_dragIndex];
+        _actions.RemoveAt(_dragIndex);
+        _actions.Insert(targetIndex, item);
+        _dragIndex = -1;
+    }
+
+    private async Task ToggleReorder()
+    {
+        if (_reordering)
+        {
+            var orderedIds = _actions.Select(a => a.Id).ToList();
+            var (success, errors) = await ActionService.ReorderAsync(orderedIds);
+            if (!success)
+                _errors = errors;
+        }
+        _reordering = !_reordering;
     }
 
     private void OpenTrackModal(TrackedActionResponse action)

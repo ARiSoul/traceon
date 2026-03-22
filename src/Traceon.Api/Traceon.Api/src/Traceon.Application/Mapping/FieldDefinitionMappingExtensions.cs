@@ -18,6 +18,7 @@ public static class FieldDefinitionMappingExtensions
             DropdownValues = entity.DropdownValues,
             Id = entity.Id,
             Type = entity.Type,
+            Unit = entity.Unit,
             UpdatedAtUtc = entity.UpdatedAtUtc
         };
 

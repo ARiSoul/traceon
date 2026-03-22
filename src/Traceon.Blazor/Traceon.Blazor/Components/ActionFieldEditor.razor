@@ -9,6 +9,10 @@
             <i class="bi bi-@(_isExpanded ? "chevron-down" : "chevron-right") text-muted"></i>
             <strong class="text-truncate">@Field.Name</strong>
             <span class="badge bg-secondary">@Field.FieldType</span>
+            @if (Field.FieldType is FieldType.Integer or FieldType.Decimal && Field.Unit != "UN")
+            {
+                <span class="badge bg-info">@Field.Unit</span>
+            }
             @if (Field.IsRequired)
             {
                 <span class="badge bg-danger">Required</span>
@@ -70,6 +74,16 @@
                                 <input type="date" class="form-control form-control-sm" @bind="_maxDate" />
                                 break;
                         }
+                    </div>
+                </div>
+            }
+
+            @if (Field.FieldType is FieldType.Integer or FieldType.Decimal)
+            {
+                <div class="row g-2 mt-1">
+                    <div class="col-md-6">
+                        <label class="form-label form-label-sm mb-1">Unit</label>
+                        <input type="text" class="form-control form-control-sm" @bind="_unit" placeholder="e.g., €, kg, km" />
                     </div>
                 </div>
             }
@@ -159,6 +173,7 @@
     private string? _description;
     private bool _isRequired;
     private string? _defaultValue;
+    private string? _unit;
 
     // Typed values
     private int? _intMinValue;
@@ -196,6 +211,7 @@
         _description = Field.Description;
         _isRequired = Field.IsRequired;
         _defaultValue = Field.DefaultValue;
+        _unit = Field.Unit;
 
         // Load min/max
         switch (Field.FieldType)
@@ -254,7 +270,7 @@
         var defaultVal = ResolveDefaultValue();
 
         var request = new UpdateActionFieldRequest(
-            _name, _description, maxValue, minValue, _isRequired, defaultVal);
+            _name, _description, maxValue, minValue, _isRequired, defaultVal, _unit);
 
         var (ok, errs) = await ActionFieldService.UpdateAsync(TrackedActionId, Field.Id, request);
 

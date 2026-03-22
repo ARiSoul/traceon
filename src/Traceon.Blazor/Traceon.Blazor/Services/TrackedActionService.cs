@@ -65,6 +65,12 @@ public sealed class TrackedActionService(HttpClient http)
             $"/api/tracked-actions/{trackedActionId}/tags") ?? [];
     }
 
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> ReorderAsync(List<Guid> orderedIds)
+    {
+        var response = await http.PutAsJsonAsync("/api/tracked-actions/reorder", orderedIds);
+        return await ToResultAsync(response);
+    }
+
     private static async Task<(bool Success, IReadOnlyList<string> Errors)> ToResultAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)

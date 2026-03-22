@@ -10,6 +10,7 @@ public sealed class ActionField : Entity
     public decimal? MinValue { get; private set; }
     public bool IsRequired { get; private set; }
     public string? DefaultValue { get; private set; }
+    public string Unit { get; private set; }
 
     private ActionField(
         Guid trackedActionId,
@@ -19,7 +20,8 @@ public sealed class ActionField : Entity
         decimal? maxValue,
         decimal? minValue,
         bool isRequired,
-        string? defaultValue)
+        string? defaultValue,
+        string unit)
     {
         TrackedActionId = trackedActionId;
         FieldDefinitionId = fieldDefinitionId;
@@ -29,6 +31,7 @@ public sealed class ActionField : Entity
         MinValue = minValue;
         IsRequired = isRequired;
         DefaultValue = defaultValue;
+        Unit = unit;
     }
 
     public static ActionField Create(
@@ -39,7 +42,8 @@ public sealed class ActionField : Entity
         decimal? maxValue = null,
         decimal? minValue = null,
         bool isRequired = false,
-        string? defaultValue = null)
+        string? defaultValue = null,
+        string? unit = null)
     {
         if (trackedActionId == Guid.Empty)
             throw new ArgumentException("Tracked action ID is required.", nameof(trackedActionId));
@@ -57,7 +61,8 @@ public sealed class ActionField : Entity
             maxValue,
             minValue,
             isRequired,
-            defaultValue?.Trim());
+            defaultValue?.Trim(),
+            string.IsNullOrWhiteSpace(unit) ? "UN" : unit.Trim());
     }
 
     public void Update(
@@ -66,7 +71,8 @@ public sealed class ActionField : Entity
         decimal? maxValue = null,
         decimal? minValue = null,
         bool isRequired = false,
-        string? defaultValue = null)
+        string? defaultValue = null,
+        string? unit = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -76,6 +82,7 @@ public sealed class ActionField : Entity
         MinValue = minValue;
         IsRequired = isRequired;
         DefaultValue = defaultValue?.Trim();
+        Unit = string.IsNullOrWhiteSpace(unit) ? "UN" : unit.Trim();
         MarkUpdated();
     }
 }

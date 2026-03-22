@@ -15,6 +15,7 @@ public sealed record ActionFieldResponse
     public required bool IsRequired { get; init; }
     public required string? DefaultValue { get; init; }
     public required string? DropdownValues { get; init; }
+    public required string Unit { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime? UpdatedAtUtc { get; init; }
 }

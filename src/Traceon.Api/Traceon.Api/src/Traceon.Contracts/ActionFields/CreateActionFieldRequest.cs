@@ -7,4 +7,5 @@ public sealed record CreateActionFieldRequest(
     decimal? MaxValue = null,
     decimal? MinValue = null,
     bool IsRequired = false,
-    string? DefaultValue = null);
+    string? DefaultValue = null,
+    string? Unit = null);

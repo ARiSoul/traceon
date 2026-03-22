@@ -14,4 +14,5 @@ public interface ITrackedActionService
     Task<Result<IReadOnlyList<Traceon.Contracts.Tags.TagResponse>>> GetTagsAsync(Guid trackedActionId, CancellationToken cancellationToken = default);
     Task<Result> AddTagAsync(Guid trackedActionId, Guid tagId, CancellationToken cancellationToken = default);
     Task<Result> RemoveTagAsync(Guid trackedActionId, Guid tagId, CancellationToken cancellationToken = default);
+    Task<Result> ReorderAsync(List<Guid> orderedIds, CancellationToken cancellationToken = default);
 }

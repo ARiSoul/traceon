@@ -32,7 +32,8 @@ internal sealed class TrackedActionRepository(TraceonDbContext context) : ITrack
         return await context.TrackedActions
             .AsNoTracking()
             .Where(a => a.UserId == userId)
-            .OrderByDescending(a => a.CreatedAtUtc)
+            .OrderBy(a => a.SortOrder)
+            .ThenByDescending(a => a.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
 

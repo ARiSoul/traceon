@@ -13,6 +13,7 @@ public sealed record FieldDefinitionResponse
     public required decimal? DefaultMinValue { get; init; }
     public required bool DefaultIsRequired { get; init; }
     public required string? DefaultValue { get; init; }
+    public required string Unit { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime? UpdatedAtUtc { get; init; }
 }

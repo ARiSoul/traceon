@@ -23,6 +23,24 @@
                     }
                     else
                     {
+                        @if (CreateTemplate is not null)
+                        {
+                            @if (_showCreateForm)
+                            {
+                                <div class="card border-primary mb-3">
+                                    <div class="card-body py-2">
+                                        @CreateTemplate(EventCallback.Factory.Create(this, OnItemCreatedAsync))
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-primary btn-sm mb-3" @onclick="() => _showCreateForm = true">
+                                    <i class="bi bi-plus-circle me-1"></i>Create New
+                                </button>
+                            }
+                        }
+
                         @if (!string.IsNullOrWhiteSpace(_searchText) || _items.Count > 5)
                         {
                             <div class="mb-3">
@@ -121,12 +139,14 @@
     [Parameter] public string EmptyText { get; set; } = "No items found";
     [Parameter] public bool AllowMultiple { get; set; } = true;
     [Parameter] public List<Guid>? ExcludedKeys { get; set; }
+    [Parameter] public RenderFragment<EventCallback>? CreateTemplate { get; set; }
 
     private List<TItem> _items = [];
     private HashSet<Guid> _selected = [];
     private HashSet<Guid> _excludedKeys = [];
     private string _searchText = string.Empty;
     private bool _loading;
+    private bool _showCreateForm;
 
     private List<TItem> FilteredItems =>
         string.IsNullOrWhiteSpace(_searchText)
@@ -167,12 +187,20 @@
         await CloseAsync();
     }
 
+    private async Task OnItemCreatedAsync()
+    {
+        _showCreateForm = false;
+        _items = await LoadItems();
+        _excludedKeys = ExcludedKeys?.ToHashSet() ?? [];
+    }
+
     private async Task CancelAsync() => await CloseAsync();
 
     private async Task CloseAsync()
     {
         _selected.Clear();
         _searchText = string.Empty;
+        _showCreateForm = false;
         _items.Clear();
         await IsVisibleChanged.InvokeAsync(false);
     }

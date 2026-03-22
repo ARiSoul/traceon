@@ -93,23 +93,35 @@ else
                                     break;
 
                                 case FieldType.Integer:
-                                    <input type="number"
-                                           step="1"
-                                           class="form-control"
-                                           min="@model.Field.MinValue"
-                                           max="@model.Field.MaxValue"
-                                           placeholder="@model.Field.Name"
-                                           @bind="model.IntValue" />
+                                    <div class="input-group">
+                                        <input type="number"
+                                               step="1"
+                                               class="form-control"
+                                               min="@model.Field.MinValue"
+                                               max="@model.Field.MaxValue"
+                                               placeholder="@model.Field.Name"
+                                               @bind="model.IntValue" />
+                                        @if (model.Field.Unit != "UN")
+                                        {
+                                            <span class="input-group-text">@model.Field.Unit</span>
+                                        }
+                                    </div>
                                     break;
 
                                 case FieldType.Decimal:
-                                    <input type="number"
-                                           step="any"
-                                           class="form-control"
-                                           min="@model.Field.MinValue"
-                                           max="@model.Field.MaxValue"
-                                           placeholder="@model.Field.Name"
-                                           @bind="model.DecimalValue" />
+                                    <div class="input-group">
+                                        <input type="number"
+                                               step="any"
+                                               class="form-control"
+                                               min="@model.Field.MinValue"
+                                               max="@model.Field.MaxValue"
+                                               placeholder="@model.Field.Name"
+                                               @bind="model.DecimalValue" />
+                                        @if (model.Field.Unit != "UN")
+                                        {
+                                            <span class="input-group-text">@model.Field.Unit</span>
+                                        }
+                                    </div>
                                     break;
 
                                 case FieldType.Date:

@@ -23,6 +23,9 @@ internal sealed class TrackedActionConfiguration : IEntityTypeConfiguration<Trac
         builder.Property(e => e.Description)
             .HasMaxLength(1000);
 
+        builder.Property(e => e.SortOrder)
+            .HasDefaultValue(0);
+
         builder.HasIndex(e => new { e.UserId, e.Name })
             .IsUnique();
 

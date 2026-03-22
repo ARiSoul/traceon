@@ -10,4 +10,5 @@ public sealed record UpdateFieldDefinitionRequest(
     decimal? DefaultMaxValue = null,
     decimal? DefaultMinValue = null,
     bool DefaultIsRequired = false,
-    string? DefaultValue = null);
+    string? DefaultValue = null,
+    string? Unit = null);

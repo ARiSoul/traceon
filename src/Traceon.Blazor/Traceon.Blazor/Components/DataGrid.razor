@@ -168,6 +168,8 @@
     [Parameter] public string? EmptyText { get; set; }
     [Parameter] public int PageSize { get; set; } = 10;
     [Parameter] public int[] PageSizeOptions { get; set; } = [10, 25, 50, 100];
+    [Parameter] public string? DefaultSortField { get; set; }
+    [Parameter] public bool DefaultSortDescending { get; set; }
 
     private IReadOnlyList<TItem> _items = [];
     private bool _loading = true;
@@ -186,6 +188,8 @@
     protected override async Task OnInitializedAsync()
     {
         _pageSize = PageSize;
+        _sortField = DefaultSortField;
+        _sortDescending = DefaultSortDescending;
         await LoadDataInternalAsync();
     }
 

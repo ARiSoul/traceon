@@ -14,6 +14,7 @@ public static class TrackedActionMappingExtensions
             Tags = [],
             FieldCount = entity.Fields.Count,
             EntryCount = 0,
+            SortOrder = entity.SortOrder,
             CreatedAtUtc = entity.CreatedAtUtc,
             UpdatedAtUtc = entity.UpdatedAtUtc
         };

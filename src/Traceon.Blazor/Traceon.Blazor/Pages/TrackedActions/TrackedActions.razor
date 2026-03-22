@@ -19,6 +19,7 @@
           TItem="TrackedActionResponse"
           LoadData="LoadDataAsync"
           Columns="_columns"
+          DefaultSortField="SortOrder"
           FilterPlaceholder="Filter by name or description..."
           EmptyText="No tracked actions yet. Create one to get started!">
     <Toolbar>
@@ -44,6 +45,7 @@
 
     private static readonly List<DataGridColumn<TrackedActionResponse>> _columns =
     [
+        new() { Title = "#", Selector = x => x.SortOrder, SortField = "SortOrder" },
         new() { Title = "Name", Selector = x => x.Name, SortField = "Name" },
         new() { Title = "Description", Selector = x => x.Description },
         new()

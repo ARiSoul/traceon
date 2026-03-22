@@ -30,6 +30,7 @@ public sealed class FieldDefinitionService(
                 DropdownValues = fd.DropdownValues,
                 Id = fd.Id,
                 Type = fd.Type,
+                Unit = fd.Unit,
                 UpdatedAtUtc = fd.UpdatedAtUtc
             });
     }
@@ -64,7 +65,8 @@ public sealed class FieldDefinitionService(
             request.DefaultMaxValue,
             request.DefaultMinValue,
             request.DefaultIsRequired,
-            request.DefaultValue);
+            request.DefaultValue,
+            request.Unit);
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -90,7 +92,8 @@ public sealed class FieldDefinitionService(
             request.DefaultMaxValue,
             request.DefaultMinValue,
             request.DefaultIsRequired,
-            request.DefaultValue);
+            request.DefaultValue,
+            request.Unit);
 
         await repository.UpdateAsync(entity, cancellationToken);
 

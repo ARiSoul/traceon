@@ -37,5 +37,6 @@ builder.Services.AddScoped<TagService>();
 builder.Services.AddScoped<FieldDefinitionService>();
 builder.Services.AddScoped<ActionFieldService>();
 builder.Services.AddScoped<ActionEntryService>();
+builder.Services.AddScoped<DashboardService>();
 
 await builder.Build().RunAsync();

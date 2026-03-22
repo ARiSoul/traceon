@@ -12,6 +12,7 @@ public sealed class FieldDefinition : OwnedEntity
     public decimal? DefaultMinValue { get; private set; }
     public bool DefaultIsRequired { get; private set; }
     public string? DefaultValue { get; private set; }
+    public string Unit { get; private set; }
 
     private FieldDefinition(
         string defaultName,
@@ -21,7 +22,8 @@ public sealed class FieldDefinition : OwnedEntity
         decimal? defaultMaxValue,
         decimal? defaultMinValue,
         bool defaultIsRequired,
-        string? defaultValue)
+        string? defaultValue,
+        string unit)
     {
         DefaultName = defaultName;
         DefaultDescription = defaultDescription;
@@ -31,6 +33,7 @@ public sealed class FieldDefinition : OwnedEntity
         DefaultMinValue = defaultMinValue;
         DefaultIsRequired = defaultIsRequired;
         DefaultValue = defaultValue;
+        Unit = unit;
     }
 
     public static FieldDefinition Create(
@@ -42,7 +45,8 @@ public sealed class FieldDefinition : OwnedEntity
         decimal? defaultMaxValue = null,
         decimal? defaultMinValue = null,
         bool defaultIsRequired = false,
-        string? defaultValue = null)
+        string? defaultValue = null,
+        string? unit = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(defaultName);
 
@@ -54,7 +58,8 @@ public sealed class FieldDefinition : OwnedEntity
             defaultMaxValue,
             defaultMinValue,
             defaultIsRequired,
-            defaultValue?.Trim());
+            defaultValue?.Trim(),
+            string.IsNullOrWhiteSpace(unit) ? "UN" : unit.Trim());
 
         definition.SetOwner(userId);
         return definition;
@@ -68,7 +73,8 @@ public sealed class FieldDefinition : OwnedEntity
         decimal? defaultMaxValue = null,
         decimal? defaultMinValue = null,
         bool defaultIsRequired = false,
-        string? defaultValue = null)
+        string? defaultValue = null,
+        string? unit = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(defaultName);
 
@@ -80,6 +86,7 @@ public sealed class FieldDefinition : OwnedEntity
         DefaultMinValue = defaultMinValue;
         DefaultIsRequired = defaultIsRequired;
         DefaultValue = defaultValue?.Trim();
+        Unit = string.IsNullOrWhiteSpace(unit) ? "UN" : unit.Trim();
         MarkUpdated();
     }
 }

@@ -37,15 +37,26 @@ internal static class ODataExtensions
     public static IQueryable<T> ApplyODataQuery<T>(
         this IQueryable<T> queryable,
         HttpRequest request,
-        IEdmModel edmModel) where T : class
+        IEdmModel edmModel,
+        int? maxTop = null) where T : class
     {
+        var effectiveMaxTop = maxTop ?? ValidationSettings.MaxTop;
+
+        var settings = maxTop.HasValue
+            ? new ODataValidationSettings
+            {
+                AllowedQueryOptions = ValidationSettings.AllowedQueryOptions,
+                MaxTop = effectiveMaxTop
+            }
+            : ValidationSettings;
+
         var context = new ODataQueryContext(edmModel, typeof(T), null);
-        context.DefaultQueryConfigurations.MaxTop = ValidationSettings.MaxTop;
+        context.DefaultQueryConfigurations.MaxTop = effectiveMaxTop;
         context.DefaultQueryConfigurations.EnableFilter = true;
         context.DefaultQueryConfigurations.EnableOrderBy = true;
         context.DefaultQueryConfigurations.EnableCount = true;
         var options = new ODataQueryOptions<T>(context, request);
-        options.Validate(ValidationSettings);
+        options.Validate(settings);
 
         var result = (IQueryable<T>)options.ApplyTo(queryable);
 

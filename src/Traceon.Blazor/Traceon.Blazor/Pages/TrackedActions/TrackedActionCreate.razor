@@ -121,9 +121,34 @@
                KeySelector="t => t.Id"
                SearchSelector="@(t => $"{t.Name} {t.Description}")"
                SearchPlaceholder="Search tags..."
-               EmptyText="No tags available. Create some first."
+               EmptyText="No tags available. Create one below."
                ExcludedKeys="_selectedTagIds"
                OnConfirm="OnTagsSelected">
+    <CreateTemplate>
+        <div class="row g-2 align-items-end">
+            <div class="col">
+                <label class="form-label form-label-sm mb-1">Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" @bind="_newTagName" placeholder="Tag name" />
+            </div>
+            <div class="col-auto">
+                <label class="form-label form-label-sm mb-1">Color</label>
+                <input type="color" class="form-control form-control-sm form-control-color" @bind="_newTagColor" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-success btn-sm" @onclick="() => CreateTagInlineAsync(context)" disabled="@_creatingTag">
+                    @if (_creatingTag)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    <i class="bi bi-plus-circle me-1"></i>Create
+                </button>
+            </div>
+        </div>
+        @if (_tagCreateErrors.Count > 0)
+        {
+            <div class="text-danger small mt-1">@string.Join(", ", _tagCreateErrors)</div>
+        }
+    </CreateTemplate>
     <ItemTemplate>
         <div class="d-flex align-items-center gap-2">
             <span class="badge rounded-pill" style="background-color: @context.Color">&nbsp;&nbsp;</span>
@@ -176,6 +201,10 @@
     private List<TagResponse> _selectedTags = [];
     private List<Guid> _selectedTagIds => _selectedTags.Select(t => t.Id).ToList();
     private bool _showTagSelector;
+    private string _newTagName = string.Empty;
+    private string _newTagColor = "#0d6efd";
+    private bool _creatingTag;
+    private IReadOnlyList<string> _tagCreateErrors = [];
 
     // Step 3 — Fields
     private List<PendingField> _selectedFields = [];
@@ -238,6 +267,28 @@
 
     private void RemoveTag(TagResponse tag) => _selectedTags.Remove(tag);
 
+    private async Task CreateTagInlineAsync(EventCallback onCreated)
+    {
+        if (string.IsNullOrWhiteSpace(_newTagName)) return;
+        _creatingTag = true;
+        _tagCreateErrors = [];
+
+        var (success, errors) = await TagService.CreateAsync(
+            new CreateTagRequest(_newTagName.Trim(), null, _newTagColor));
+
+        if (success)
+        {
+            _newTagName = string.Empty;
+            _newTagColor = "#0d6efd";
+            await onCreated.InvokeAsync();
+        }
+        else
+        {
+            _tagCreateErrors = errors;
+        }
+        _creatingTag = false;
+    }
+
     // Field selector
     private async Task<List<FieldDefinitionResponse>> LoadAvailableFieldsAsync()
         => await FieldDefinitionService.GetAllAsync();
@@ -256,7 +307,8 @@
                 MaxValue = def.DefaultMaxValue,
                 IsRequired = def.DefaultIsRequired,
                 DefaultValue = def.DefaultValue,
-                DropdownValues = def.DropdownValues
+                DropdownValues = def.DropdownValues,
+                Unit = def.Unit
             });
         }
 
@@ -312,7 +364,7 @@
         {
             var request = new CreateActionFieldRequest(field.DefinitionId, field.Name,
                 field.Description, field.MaxValue, field.MinValue,
-                field.IsRequired, field.DefaultValue);
+                field.IsRequired, field.DefaultValue, field.Unit);
 
             var (fieldOk, fieldErrors) = await ActionFieldService.CreateAsync(actionId, request);
             if (!fieldOk)
@@ -763,6 +815,7 @@
         public bool IsRequired { get; set; }
         public string? DefaultValue { get; set; }
         public string? DropdownValues { get; init; }
+        public string? Unit { get; set; }
         public bool IsExpanded { get; set; }
 
         public string[] ParsedDropdownValues =>

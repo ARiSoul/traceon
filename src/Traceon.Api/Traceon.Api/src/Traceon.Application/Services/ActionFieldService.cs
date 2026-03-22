@@ -46,6 +46,7 @@ public sealed class ActionFieldService(
                             Name = af.Name,
                             TrackedActionId = trackedActionId,
                             UpdatedAtUtc = af.UpdatedAtUtc,
+                            Unit = af.Unit,
                             DropdownValues = fd.DropdownValues
                         };
 
@@ -121,7 +122,8 @@ public sealed class ActionFieldService(
             request.MaxValue,
             request.MinValue,
             request.IsRequired,
-            request.DefaultValue);
+            request.DefaultValue,
+            request.Unit);
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -153,7 +155,8 @@ public sealed class ActionFieldService(
             request.MaxValue,
             request.MinValue,
             request.IsRequired,
-            request.DefaultValue);
+            request.DefaultValue,
+            request.Unit);
 
         await repository.UpdateAsync(entity, cancellationToken);
 

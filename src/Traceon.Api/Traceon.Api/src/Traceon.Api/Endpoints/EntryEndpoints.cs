@@ -22,6 +22,6 @@ internal static class EntryEndpoints
         IEdmModel edmModel)
     {
         var query = service.QueryAll();
-        return TypedResults.Ok(query.ApplyODataQuery(request, edmModel));
+        return TypedResults.Ok(query.ApplyODataQuery(request, edmModel, maxTop: 10_000));
     }
 }

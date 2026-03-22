@@ -1,0 +1,48 @@
+.summary-card {
+    transition: transform 0.15s ease;
+}
+
+    .summary-card:hover {
+        transform: translateY(-2px);
+    }
+
+.action-stats-card .card-header:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Weekly bar chart (CSS-only) */
+.weekly-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 80px;
+    padding: 4px 0;
+}
+
+.weekly-bar-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.weekly-bar {
+    width: 100%;
+    min-height: 3px;
+    background-color: #e9ecef;
+    border-radius: 3px 3px 0 0;
+    transition: height 0.3s ease;
+}
+
+    .weekly-bar.has-data {
+        background-color: #0d6efd;
+    }
+
+.weekly-label {
+    font-size: 0.55rem;
+    color: #6c757d;
+    margin-top: 2px;
+    white-space: nowrap;
+}
