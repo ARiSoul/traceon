@@ -5,6 +5,7 @@ namespace Traceon.Application.Services;
 
 public interface IActionEntryService
 {
+    IQueryable<ActionEntryResponse> QueryAll();
     Task<Result<IQueryable<ActionEntryResponse>>> QueryByTrackedActionIdAsync(Guid trackedActionId, CancellationToken cancellationToken = default);
     Task<Result<ActionEntryResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Result<IReadOnlyList<ActionEntryResponse>>> GetByTrackedActionIdAsync(Guid trackedActionId, CancellationToken cancellationToken = default);

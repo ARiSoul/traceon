@@ -72,6 +72,9 @@
                 @RenderTagsStep()
                 break;
             case 4:
+                @RenderEntriesStep()
+                break;
+            case 5:
                 @RenderReviewStep()
                 break;
         }
@@ -158,6 +161,7 @@
     [Inject] private TagService TagService { get; set; } = default!;
     [Inject] private FieldDefinitionService FieldDefinitionService { get; set; } = default!;
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
+    [Inject] private ActionEntryService EntryService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private int _currentStep = 1;
@@ -178,11 +182,18 @@
     private List<Guid> _selectedFieldIds => _selectedFields.Select(f => f.DefinitionId).ToList();
     private bool _showFieldSelector;
 
+    // Step 4 — Entries
+    private List<PendingEntry> _pendingEntries = [];
+    private DateTime _entryOccurredLocal = DateTime.Now;
+    private string? _entryNotes;
+    private bool _redirectToEntryForm;
+
     private readonly (string Title, bool IsOptional)[] _steps =
     [
         ("Basic Info", false),
         ("Fields", true),
         ("Tags", true),
+        ("Entries", true),
         ("Review", false)
     ];
 
@@ -248,6 +259,10 @@
                 DropdownValues = def.DropdownValues
             });
         }
+
+        // Entries added without field values would be incomplete
+        if (_pendingEntries.Count > 0)
+            _pendingEntries.Clear();
     }
 
     private void RemoveField(PendingField field) => _selectedFields.Remove(field);
@@ -308,7 +323,23 @@
             }
         }
 
-        Nav.NavigateTo("/tracked-actions");
+        // 4. Add entries (only possible when no fields were defined)
+        foreach (var entry in _pendingEntries)
+        {
+            var entryRequest = new CreateActionEntryRequest(entry.OccurredAtUtc, entry.Notes);
+            var (entryOk, entryErrors) = await EntryService.CreateAsync(actionId, entryRequest);
+            if (!entryOk)
+            {
+                _errors = entryErrors;
+                _creating = false;
+                return;
+            }
+        }
+
+        if (_redirectToEntryForm)
+            Nav.NavigateTo($"/tracked-actions/{actionId}/entries/new?returnUrl=%2Ftracked-actions");
+        else
+            Nav.NavigateTo("/tracked-actions");
     }
 
     private RenderFragment RenderBasicInfoStep() => __builder =>
@@ -539,7 +570,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card mb-3">
             <div class="card-header">
                 <i class="bi bi-sliders me-1"></i>Fields
                 <span class="badge bg-primary ms-1">@_selectedFields.Count</span>
@@ -567,7 +598,159 @@
                 }
             </div>
         </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-journal-text me-1"></i>Entries
+                @if (_selectedFields.Count == 0)
+                {
+                    <span class="badge bg-primary ms-1">@_pendingEntries.Count</span>
+                }
+            </div>
+            <div class="card-body">
+                @if (_selectedFields.Count > 0)
+                {
+                    @if (_redirectToEntryForm)
+                    {
+                        <span class="text-muted">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>You'll be redirected to add the first entry after creation
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Entries can be added after creation (custom fields need to be filled in)</span>
+                    }
+                }
+                else if (_pendingEntries.Count == 0)
+                {
+                    <span class="text-muted">No entries added</span>
+                }
+                else
+                {
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var entry in _pendingEntries)
+                        {
+                            <li>
+                                <i class="bi bi-clock me-1"></i>
+                                @entry.OccurredAtUtc.ToLocalTime().ToString("g")
+                                @if (!string.IsNullOrEmpty(entry.Notes))
+                                {
+                                    <span class="text-muted"> — @entry.Notes</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
     };
+
+    private RenderFragment RenderEntriesStep() => __builder =>
+    {
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Entries</h5>
+        </div>
+
+        @if (_selectedFields.Count > 0)
+        {
+            <div class="text-center py-4">
+                <i class="bi bi-sliders display-6 text-info d-block mb-3"></i>
+                <h6>This action has custom fields</h6>
+                <p class="text-muted">
+                    Since you've defined <strong>@_selectedFields.Count field@(_selectedFields.Count != 1 ? "s" : "")</strong>,
+                    entries need to be created after the action is set up — so all field values can be properly filled in.
+                </p>
+                <div class="form-check form-check-inline mt-2">
+                    <input type="checkbox" class="form-check-input" id="redirectToEntry" @bind="_redirectToEntryForm" />
+                    <label class="form-check-label" for="redirectToEntry">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Take me to add the first entry after creation
+                    </label>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Inline add form -->
+            <div class="card bg-light mb-3">
+                <div class="card-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label form-label-sm mb-1">
+                                <i class="bi bi-calendar-event me-1"></i>When?
+                            </label>
+                            <input type="datetime-local"
+                                   class="form-control form-control-sm"
+                                   step="60"
+                                   value="@_entryOccurredLocal.ToString("yyyy-MM-ddTHH:mm")"
+                                   @onchange="OnEntryDateChanged" />
+                        </div>
+                        <div class="col-12 col-md-5">
+                            <label class="form-label form-label-sm mb-1">
+                                <i class="bi bi-chat-text me-1"></i>Notes <span class="text-muted fw-normal">(optional)</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control form-control-sm"
+                                   placeholder="Any notes..."
+                                   @bind="_entryNotes" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <button class="btn btn-success btn-sm w-100" @onclick="AddPendingEntry">
+                                <i class="bi bi-plus-circle me-1"></i>Add Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (_pendingEntries.Count == 0)
+            {
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-journal-text fs-3 d-block mb-2"></i>
+                    <p>No entries added yet. You can add entries now or do it later from the home page.</p>
+                </div>
+            }
+            else
+            {
+                <div class="list-group">
+                    @foreach (var entry in _pendingEntries)
+                    {
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-clock me-1 text-muted"></i>
+                                <strong>@entry.OccurredAtUtc.ToLocalTime().ToString("g")</strong>
+                                @if (!string.IsNullOrEmpty(entry.Notes))
+                                {
+                                    <span class="text-muted ms-2">— @entry.Notes</span>
+                                }
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => _pendingEntries.Remove(entry)">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    };
+
+    private void OnEntryDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var parsed))
+            _entryOccurredLocal = parsed;
+    }
+
+    private void AddPendingEntry()
+    {
+        _pendingEntries.Add(new PendingEntry
+        {
+            OccurredAtUtc = _entryOccurredLocal.ToUniversalTime(),
+            Notes = string.IsNullOrWhiteSpace(_entryNotes) ? null : _entryNotes.Trim()
+        });
+
+        // Reset for next entry
+        _entryOccurredLocal = DateTime.Now;
+        _entryNotes = null;
+    }
 
     private sealed class PendingField
     {
@@ -586,5 +769,10 @@
             string.IsNullOrWhiteSpace(DropdownValues)
                 ? []
                 : DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+    private sealed class PendingEntry
+    {
+        public DateTime OccurredAtUtc { get; init; }
+        public string? Notes { get; init; }
     }
 }

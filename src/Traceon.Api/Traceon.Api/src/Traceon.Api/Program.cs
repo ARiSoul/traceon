@@ -60,6 +60,7 @@ app.MapTrackedActionEndpoints().RequireAuthorization();
 app.MapFieldDefinitionEndpoints().RequireAuthorization();
 app.MapActionFieldEndpoints().RequireAuthorization();
 app.MapActionEntryEndpoints().RequireAuthorization();
+app.MapEntryEndpoints().RequireAuthorization();
 app.MapTagEndpoints().RequireAuthorization();
 
 app.Run();

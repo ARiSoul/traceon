@@ -4,6 +4,7 @@ public sealed record ActionEntryResponse
 {
     public required Guid Id { get; init; }
     public required Guid TrackedActionId { get; init; }
+    public required string ActionName { get; init; }
     public required DateTime OccurredAtUtc { get; init; }
     public required string? Notes { get; init; }
     public required List<ActionEntryFieldResponse> FieldValues { get; init; }

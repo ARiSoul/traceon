@@ -30,10 +30,12 @@ public sealed class ActionEntryService(
 
         var query = from e in entryRepository.Query()
                     where e.TrackedActionId == trackedActionId
+                    let actionName = action.Name
                     select new ActionEntryResponse
                     {
                         Id = e.Id,
                         TrackedActionId = trackedActionId,
+                        ActionName = actionName,
                         OccurredAtUtc = e.OccurredAtUtc,
                         Notes = e.Notes,
                         CreatedAtUtc = e.CreatedAtUtc,
@@ -64,7 +66,8 @@ public sealed class ActionEntryService(
         }
 
         var fieldNames = await GetFieldNameMapAsync(entity.TrackedActionId, cancellationToken);
-        return Result<ActionEntryResponse>.Success(entity.ToResponse(fieldNames));
+        var actionName = await GetActionNameAsync(entity.TrackedActionId, cancellationToken);
+        return Result<ActionEntryResponse>.Success(entity.ToResponse(fieldNames, actionName));
     }
 
     public async Task<Result<IReadOnlyList<ActionEntryResponse>>> GetByTrackedActionIdAsync(Guid trackedActionId, CancellationToken cancellationToken = default)
@@ -81,7 +84,7 @@ public sealed class ActionEntryService(
         var fieldNames = await GetFieldNameMapAsync(trackedActionId, cancellationToken);
 
         IReadOnlyList<ActionEntryResponse> responses = entries
-            .Select(e => e.ToResponse(fieldNames))
+            .Select(e => e.ToResponse(fieldNames, action.Name))
             .ToList();
 
         return Result<IReadOnlyList<ActionEntryResponse>>.Success(responses);
@@ -109,7 +112,7 @@ public sealed class ActionEntryService(
 
         var fieldNames = await GetFieldNameMapAsync(trackedActionId, cancellationToken);
         logger.ActionEntryCreated(entity.Id, trackedActionId);
-        return Result<ActionEntryResponse>.Success(entity.ToResponse(fieldNames));
+        return Result<ActionEntryResponse>.Success(entity.ToResponse(fieldNames, action.Name));
     }
 
     public async Task<Result<ActionEntryResponse>> UpdateAsync(Guid id, UpdateActionEntryRequest request, CancellationToken cancellationToken = default)
@@ -135,8 +138,9 @@ public sealed class ActionEntryService(
         await entryRepository.UpdateAsync(entity, cancellationToken);
 
         var fieldNames = await GetFieldNameMapAsync(entity.TrackedActionId, cancellationToken);
+        var actionName = await GetActionNameAsync(entity.TrackedActionId, cancellationToken);
         logger.ActionEntryUpdated(id);
-        return Result<ActionEntryResponse>.Success(entity.ToResponse(fieldNames));
+        return Result<ActionEntryResponse>.Success(entity.ToResponse(fieldNames, actionName));
     }
 
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -159,5 +163,40 @@ public sealed class ActionEntryService(
     {
         var fields = await fieldRepository.GetByTrackedActionIdAsync(trackedActionId, cancellationToken);
         return fields.ToDictionary(f => f.Id, f => f.Name);
+    }
+
+    private async Task<string> GetActionNameAsync(Guid trackedActionId, CancellationToken cancellationToken)
+    {
+        var action = await actionRepository.GetByIdAsync(trackedActionId, cancellationToken);
+        return action?.Name ?? "";
+    }
+
+    public IQueryable<ActionEntryResponse> QueryAll()
+    {
+        var userActions = actionRepository.Query()
+            .Where(a => a.UserId == currentUser.UserId);
+
+        return from e in entryRepository.Query()
+               join a in userActions on e.TrackedActionId equals a.Id
+               select new ActionEntryResponse
+               {
+                   Id = e.Id,
+                   TrackedActionId = e.TrackedActionId,
+                   ActionName = a.Name,
+                   OccurredAtUtc = e.OccurredAtUtc,
+                   Notes = e.Notes,
+                   FieldValues = (from f in e.Fields
+                                  join af in fieldRepository.Query()
+                                      on f.ActionFieldId equals af.Id
+                                  select new ActionEntryFieldResponse
+                                  {
+                                      Id = f.Id,
+                                      ActionFieldId = f.ActionFieldId,
+                                      ActionFieldName = af.Name,
+                                      Value = f.Value
+                                  }).ToList(),
+                   CreatedAtUtc = e.CreatedAtUtc,
+                   UpdatedAtUtc = e.UpdatedAtUtc
+               };
     }
 }

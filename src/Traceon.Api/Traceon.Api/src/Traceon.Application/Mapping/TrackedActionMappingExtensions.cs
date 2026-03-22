@@ -13,6 +13,7 @@ public static class TrackedActionMappingExtensions
             Description = entity.Description,
             Tags = [],
             FieldCount = entity.Fields.Count,
+            EntryCount = 0,
             CreatedAtUtc = entity.CreatedAtUtc,
             UpdatedAtUtc = entity.UpdatedAtUtc
         };

@@ -13,6 +13,7 @@ namespace Traceon.Application.Services;
 public sealed class TrackedActionService(
     ITrackedActionRepository repository,
     ITagRepository tagRepository,
+    IActionEntryRepository entryRepository,
     ICurrentUserService currentUser,
     ILogger<TrackedActionService> logger) : ITrackedActionService
 {
@@ -31,6 +32,7 @@ public sealed class TrackedActionService(
                 Color = t.Tag.Color
             }).ToList(),
             FieldCount = a.Fields.Count,
+            EntryCount = entryRepository.Query().Count(e => e.TrackedActionId == a.Id),
             CreatedAtUtc = a.CreatedAtUtc,
             UpdatedAtUtc = a.UpdatedAtUtc
         });

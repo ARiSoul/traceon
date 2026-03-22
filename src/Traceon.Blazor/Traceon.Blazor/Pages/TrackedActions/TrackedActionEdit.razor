@@ -76,6 +76,11 @@ else
                         }
                     </button>
                 </li>
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "entries" ? "active" : "")" @onclick='() => _activeTab = "entries"'>
+                        <i class="bi bi-journal-text me-1"></i>Entries
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -160,6 +165,10 @@ else
                         }
                     </div>
                 }
+            }
+            else if (_activeTab == "entries")
+            {
+                <EntryDataGrid TrackedActionId="Id" LockActionFilter="true" />
             }
         </div>
     </div>

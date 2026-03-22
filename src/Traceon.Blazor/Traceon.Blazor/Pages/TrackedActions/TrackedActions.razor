@@ -90,6 +90,7 @@
                 builder.CloseElement();
             }
         },
+        new() { Title = "Entries", Selector = x => x.EntryCount, SortField = "EntryCount" },
         new() { Title = "Created", Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
     ];
 
@@ -105,7 +106,7 @@
 
             ListAction.Separator(),
 
-            ListAction.Link("View Entries", $"/tracked-actions/{action.Id}/entries", "journal-text", ListActionStyle.Primary),
+            ListAction.Link("View Entries", $"/entries/action/{action.Id}", "journal-text", ListActionStyle.Primary),
             ListAction.Link("New Entry", $"/tracked-actions/{action.Id}/entries/new?returnUrl=%2Ftracked-actions", "plus-square", ListActionStyle.Success),
 
             ListAction.Separator(),
