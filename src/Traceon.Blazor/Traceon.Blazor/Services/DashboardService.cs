@@ -58,8 +58,118 @@ public sealed class DashboardService(
             EntriesThisWeek = allEntries.Count(e => e.OccurredAtUtc >= today.AddDays(-(int)today.DayOfWeek)),
             EntriesThisMonth = allEntries.Count(e => e.OccurredAtUtc.Year == today.Year && e.OccurredAtUtc.Month == today.Month),
             OverallStreak = ComputeOverallStreak(allEntries, today),
-            Actions = actionStats
+            Actions = actionStats,
+            GlobalDailyEntries = BuildDailyEntries(allEntries)
         };
+    }
+
+    public async Task<ActionDetailData?> LoadActionDetailAsync(Guid actionId, DateTime? fromUtc = null, DateTime? toUtc = null)
+    {
+        var action = await actionService.GetByIdAsync(actionId);
+        if (action is null) return null;
+
+        string? dateFilter = null;
+        var filterParts = new List<string> { $"TrackedActionId eq {actionId}" };
+        if (fromUtc.HasValue)
+            filterParts.Add($"OccurredAtUtc ge {fromUtc.Value:yyyy-MM-ddTHH:mm:ssZ}");
+        if (toUtc.HasValue)
+            filterParts.Add($"OccurredAtUtc le {toUtc.Value:yyyy-MM-ddTHH:mm:ssZ}");
+        dateFilter = string.Join(" and ", filterParts);
+
+        var request = new DataGridRequest(1, 10_000, "OccurredAtUtc", false, null);
+        var entryResult = await entryService.QueryAsync(request, null, dateFilter);
+        var entries = entryResult.Items.ToList();
+
+        var fields = await fieldService.GetByTrackedActionAsync(actionId);
+
+        var stats = BuildActionStats(action, entries, fields);
+
+        var detail = new ActionDetailData
+        {
+            Stats = stats,
+            DailyEntries = BuildDailyEntries(entries)
+        };
+
+        // Build time-series for each field
+        foreach (var field in fields)
+        {
+            var entriesWithValues = entries
+                .Select(e => (Entry: e, Value: e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value))
+                .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                .ToList();
+
+            switch (field.FieldType)
+            {
+                case FieldType.Integer:
+                case FieldType.Decimal:
+                    var numPoints = entriesWithValues
+                        .Select(x => decimal.TryParse(x.Value, out var n) ? new NumericDataPoint(x.Entry.OccurredAtUtc, n) : null)
+                        .Where(p => p is not null)
+                        .Select(p => p!)
+                        .ToList();
+                    if (numPoints.Count > 0)
+                    {
+                        detail.NumericSeries.Add(new NumericFieldSeries
+                        {
+                            Name = field.Name,
+                            Unit = field.Unit,
+                            Points = numPoints
+                        });
+                    }
+                    break;
+
+                case FieldType.Boolean:
+                    var boolByDay = entriesWithValues
+                        .GroupBy(x => x.Entry.OccurredAtUtc.Date)
+                        .OrderBy(g => g.Key)
+                        .Select(g => new BooleanDataPoint(
+                            g.Key,
+                            g.Count(x => x.Value!.Equals("true", StringComparison.OrdinalIgnoreCase)),
+                            g.Count(x => !x.Value!.Equals("true", StringComparison.OrdinalIgnoreCase))))
+                        .ToList();
+                    if (boolByDay.Count > 0)
+                    {
+                        detail.BooleanSeries.Add(new BooleanFieldSeries
+                        {
+                            Name = field.Name,
+                            Points = boolByDay
+                        });
+                    }
+                    break;
+
+                case FieldType.Dropdown:
+                    var dist = entriesWithValues
+                        .GroupBy(x => x.Value!)
+                        .OrderByDescending(g => g.Count())
+                        .Select(g => new DropdownDataPoint(g.Key, g.Count()))
+                        .ToList();
+                    if (dist.Count > 0)
+                    {
+                        detail.DropdownSeries.Add(new DropdownFieldSeries
+                        {
+                            Name = field.Name,
+                            Distribution = dist
+                        });
+                    }
+                    break;
+            }
+        }
+
+        return detail;
+    }
+
+    private static List<DailyCount> BuildDailyEntries(IReadOnlyList<ActionEntryResponse> entries)
+    {
+        if (entries.Count == 0) return [];
+        var byDay = entries
+            .GroupBy(e => e.OccurredAtUtc.Date)
+            .ToDictionary(g => g.Key, g => g.Count());
+        var min = byDay.Keys.Min();
+        var max = byDay.Keys.Max();
+        var result = new List<DailyCount>();
+        for (var d = min; d <= max; d = d.AddDays(1))
+            result.Add(new DailyCount(d, byDay.GetValueOrDefault(d, 0)));
+        return result;
     }
 
     private static ActionStats BuildActionStats(
@@ -108,6 +218,27 @@ public sealed class DashboardService(
             fieldStats.Add(BuildFieldStats(field, values));
         }
 
+        // Build numeric time-series for inline charts
+        var numericSeries = new List<NumericFieldSeries>();
+        foreach (var field in fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal))
+        {
+            var points = entries
+                .Select(e => (e.OccurredAtUtc, Val: e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value))
+                .Where(x => !string.IsNullOrWhiteSpace(x.Val) && decimal.TryParse(x.Val, out _))
+                .Select(x => new NumericDataPoint(x.OccurredAtUtc, decimal.Parse(x.Val!)))
+                .ToList();
+
+            if (points.Count > 0)
+            {
+                numericSeries.Add(new NumericFieldSeries
+                {
+                    Name = field.Name,
+                    Unit = field.Unit,
+                    Points = points
+                });
+            }
+        }
+
         return new ActionStats
         {
             ActionId = action.Id,
@@ -120,7 +251,8 @@ public sealed class DashboardService(
             Streak = streak,
             AverageGapDays = avgGapDays,
             WeeklyActivity = weekBuckets,
-            FieldStats = fieldStats
+            FieldStats = fieldStats,
+            NumericSeries = numericSeries
         };
     }
 
@@ -242,6 +374,7 @@ public sealed class DashboardData
     public int EntriesThisMonth { get; init; }
     public int OverallStreak { get; init; }
     public List<ActionStats> Actions { get; init; } = [];
+    public List<DailyCount> GlobalDailyEntries { get; init; } = [];
 }
 
 public sealed class ActionStats
@@ -257,6 +390,7 @@ public sealed class ActionStats
     public double? AverageGapDays { get; init; }
     public List<WeekBucket> WeeklyActivity { get; init; } = [];
     public List<FieldStats> FieldStats { get; init; } = [];
+    public List<NumericFieldSeries> NumericSeries { get; init; } = [];
 }
 
 public sealed record WeekBucket(DateTime WeekStart, int Count);
@@ -290,4 +424,46 @@ public sealed class FieldStats
 
     // Text / Date
     public int TextFilledCount { get; set; }
+}
+
+// ── Time-series chart data models ──
+
+public sealed class ActionDetailData
+{
+    public required ActionStats Stats { get; init; }
+    public List<DailyCount> DailyEntries { get; init; } = [];
+    public List<NumericFieldSeries> NumericSeries { get; init; } = [];
+    public List<BooleanFieldSeries> BooleanSeries { get; init; } = [];
+    public List<DropdownFieldSeries> DropdownSeries { get; init; } = [];
+}
+
+public sealed record DailyCount(DateTime Date, int Count);
+
+public sealed class NumericFieldSeries
+{
+    public required string Name { get; init; }
+    public required string Unit { get; init; }
+    public List<NumericDataPoint> Points { get; init; } = [];
+}
+
+public sealed record NumericDataPoint(DateTime Date, decimal Value);
+
+public sealed class BooleanFieldSeries
+{
+    public required string Name { get; init; }
+    public List<BooleanDataPoint> Points { get; init; } = [];
+}
+
+public sealed record BooleanDataPoint(DateTime Date, int TrueCount, int FalseCount);
+
+public sealed class DropdownFieldSeries
+{
+    public required string Name { get; init; }
+    public List<DropdownDataPoint> Distribution { get; init; } = [];
+}
+
+public sealed class DropdownDataPoint(string Label, int Count)
+{
+    public string Label { get; } = Label;
+    public int Count { get; } = Count;
 }

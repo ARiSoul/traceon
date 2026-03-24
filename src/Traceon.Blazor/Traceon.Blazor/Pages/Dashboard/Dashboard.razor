@@ -93,6 +93,29 @@ else if (_data is not null)
             </div>
         </div>
 
+        <!-- Global Entry Frequency -->
+        @if (_data.GlobalDailyEntries.Count > 0)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-activity me-2"></i>Global Entry Frequency</h6>
+                </div>
+                <div class="card-body">
+                    <ApexChart TItem="DailyCount"
+                               Options="_globalFreqOptions"
+                               Height="250">
+                        <ApexPointSeries TItem="DailyCount"
+                                        Items="_data.GlobalDailyEntries"
+                                        SeriesType="SeriesType.Area"
+                                        Name="Entries"
+                                        XValue="d => d.Date"
+                                        YValue="d => d.Count"
+                                        OrderBy="d => d.X" />
+                    </ApexChart>
+                </div>
+            </div>
+        }
+
         <!-- Period Filter -->
         <div class="row g-2 mb-4">
             <div class="col-12 col-md-3">
@@ -294,10 +317,25 @@ else if (_data is not null)
                                 </div>
                             </div>
 
-                            <!-- Weekly Activity (mini bar chart with CSS) -->
+                            <!-- Weekly Activity -->
                             <div class="mb-3">
-                                <h6 class="text-muted mb-2"><i class="bi bi-bar-chart me-1"></i>Weekly Activity (last 3 months)</h6>
-                                @RenderWeeklyChart(action)
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="text-muted mb-0"><i class="bi bi-bar-chart me-1"></i>Weekly Activity (last 3 months)</h6>
+                                    <a href="/dashboard/action/@action.ActionId/detail" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-graph-up-arrow me-1"></i>Full Analytics
+                                    </a>
+                                </div>
+                                <ApexChart TItem="WeekBucket"
+                                           Options="BuildWeeklyOptions()"
+                                           Height="180">
+                                    <ApexPointSeries TItem="WeekBucket"
+                                                    Items="action.WeeklyActivity"
+                                                    SeriesType="SeriesType.Bar"
+                                                    Name="Entries"
+                                                    XValue="@(w => w.WeekStart.ToString("MMM d"))"
+                                                    YValue="w => w.Count"
+                                                    OrderBy="w => w.X" />
+                                </ApexChart>
                             </div>
 
                             <!-- Field Statistics -->
@@ -309,6 +347,41 @@ else if (_data is not null)
                                     {
                                         <div class="col-12 col-md-6">
                                             @RenderFieldCard(field)
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                            <!-- Numeric Field Trend Charts -->
+                            @if (action.NumericSeries.Count > 0)
+                            {
+                                <h6 class="text-muted mb-2 mt-3"><i class="bi bi-graph-up me-1"></i>Field Trends</h6>
+                                <div class="row g-2">
+                                    @foreach (var series in action.NumericSeries)
+                                    {
+                                        <div class="col-12 col-md-6">
+                                            <div class="card border h-100">
+                                                <div class="card-header py-1 px-2 d-flex justify-content-between align-items-center">
+                                                    <small class="fw-bold text-truncate">@series.Name</small>
+                                                    @if (series.Unit != "UN")
+                                                    {
+                                                        <span class="badge bg-info" style="font-size: 0.6rem;">@series.Unit</span>
+                                                    }
+                                                </div>
+                                                <div class="card-body p-2">
+                                                    <ApexChart TItem="NumericDataPoint"
+                                                               Options="BuildMiniChartOptions()"
+                                                               Height="130">
+                                                        <ApexPointSeries TItem="NumericDataPoint"
+                                                                        Items="series.Points"
+                                                                        SeriesType="SeriesType.Line"
+                                                                        Name="@series.Name"
+                                                                        XValue="p => p.Date"
+                                                                        YValue="p => p.Value"
+                                                                        OrderBy="p => p.X" />
+                                                    </ApexChart>
+                                                </div>
+                                            </div>
                                         </div>
                                     }
                                 </div>
@@ -340,6 +413,44 @@ else if (_data is not null)
     private DateTime? _customTo;
 
     private List<(string Name, string Color)> _allTags = [];
+
+    private ApexChartOptions<DailyCount> _globalFreqOptions = new()
+    {
+        Chart = new Chart
+        {
+            Toolbar = new Toolbar { Show = true },
+            Zoom = new Zoom { Enabled = true }
+        },
+        Xaxis = new XAxis { Type = XAxisType.Datetime },
+        Yaxis = [new YAxis { Title = new AxisTitle { Text = "Entries" }, Min = 0 }],
+        Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+        Fill = new Fill { Opacity = new Opacity(0.3) },
+        Colors = ["#198754"],
+        Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+    };
+
+    private static ApexChartOptions<WeekBucket> BuildWeeklyOptions() => new()
+    {
+        Chart = new Chart { Toolbar = new Toolbar { Show = false } },
+        Yaxis = [new YAxis { Min = 0 }],
+        Colors = ["#0d6efd"],
+        PlotOptions = new PlotOptions
+        {
+            Bar = new PlotOptionsBar { ColumnWidth = "60%", BorderRadius = 3 }
+        },
+        DataLabels = new DataLabels { Enabled = false }
+    };
+
+    private static ApexChartOptions<NumericDataPoint> BuildMiniChartOptions() => new()
+    {
+        Chart = new Chart { Toolbar = new Toolbar { Show = false } },
+        Xaxis = new XAxis { Type = XAxisType.Datetime, Labels = new XAxisLabels { Show = false } },
+        Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+        Colors = ["#198754"],
+        Markers = new Markers { Size = 3 },
+        DataLabels = new DataLabels { Enabled = false },
+        Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+    };
 
     private List<ActionStats> FilteredActions => _data?.Actions
         .Where(a => _selectedTag is null || a.Tags.Any(t => t.Name == _selectedTag))
@@ -471,26 +582,6 @@ else if (_data is not null)
             _ => $"{days / 7:F1} weeks"
         };
     }
-
-    private RenderFragment RenderWeeklyChart(ActionStats action) => __builder =>
-    {
-        var maxCount = action.WeeklyActivity.Max(w => w.Count);
-        if (maxCount == 0) maxCount = 1;
-
-        <div class="weekly-chart">
-            @foreach (var week in action.WeeklyActivity)
-            {
-                var heightPct = (int)(week.Count * 100.0 / maxCount);
-
-                <div class="weekly-bar-container" title="@week.WeekStart.ToString("MMM d"): @week.Count entries">
-                    <div class="weekly-bar @(week.Count > 0 ? "has-data" : "")"
-                         style="height: @(Math.Max(heightPct, 4))%;">
-                    </div>
-                    <small class="weekly-label">@week.WeekStart.ToString("M/d")</small>
-                </div>
-            }
-        </div>
-    };
 
     private RenderFragment RenderFieldCard(FieldStats field) => __builder =>
     {
