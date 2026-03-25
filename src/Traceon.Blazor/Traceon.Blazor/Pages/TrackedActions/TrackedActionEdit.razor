@@ -433,7 +433,8 @@ else
 
             var request = new UpdateActionFieldRequest(
                 field.Name, field.Description, field.MaxValue, field.MinValue,
-                field.IsRequired, field.DefaultValue, field.Unit, i);
+                field.IsRequired, field.DefaultValue, field.Unit, i,
+                field.SummaryMetrics, field.TrendAggregation, field.TrendChartType, field.TargetValue);
 
             var (ok, errs) = await ActionFieldService.UpdateAsync(Id, field.Id, request);
             if (!ok)

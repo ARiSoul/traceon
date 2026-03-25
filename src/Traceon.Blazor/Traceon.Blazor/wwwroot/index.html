@@ -31,6 +31,13 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <script>
+        document.addEventListener("focusin", function (e) {
+            if (e.target.hasAttribute("data-select-on-focus")) {
+                e.target.select();
+            }
+        });
+    </script>
 </body>
 
 </html>

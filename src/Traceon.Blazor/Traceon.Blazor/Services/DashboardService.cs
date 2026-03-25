@@ -102,18 +102,24 @@ public sealed class DashboardService(
             {
                 case FieldType.Integer:
                 case FieldType.Decimal:
-                    var numPoints = entriesWithValues
+                    var rawPoints = entriesWithValues
                         .Select(x => decimal.TryParse(x.Value, out var n) ? new NumericDataPoint(x.Entry.OccurredAtUtc, n) : null)
                         .Where(p => p is not null)
                         .Select(p => p!)
                         .ToList();
+
+                    var numPoints = AggregateTrendPoints(rawPoints, field.TrendAggregation);
+
                     if (numPoints.Count > 0)
                     {
                         detail.NumericSeries.Add(new NumericFieldSeries
                         {
                             Name = field.Name,
                             Unit = field.Unit,
-                            Points = numPoints
+                            IsInteger = field.FieldType == FieldType.Integer,
+                            Points = numPoints,
+                            ChartType = field.TrendChartType,
+                            TargetValue = field.TargetValue
                         });
                     }
                     break;
@@ -156,6 +162,30 @@ public sealed class DashboardService(
         }
 
         return detail;
+    }
+
+    private static List<NumericDataPoint> AggregateTrendPoints(
+        List<NumericDataPoint> points, TrendAggregation mode)
+    {
+        if (mode == TrendAggregation.AllPoints || points.Count == 0)
+            return points;
+
+        return points
+            .GroupBy(p => p.Date.Date)
+            .OrderBy(g => g.Key)
+            .Select(g =>
+            {
+                var value = mode switch
+                {
+                    TrendAggregation.Average => g.Average(p => p.Value),
+                    TrendAggregation.Min => g.Min(p => p.Value),
+                    TrendAggregation.Max => g.Max(p => p.Value),
+                    TrendAggregation.Sum => g.Sum(p => p.Value),
+                    _ => g.Average(p => p.Value)
+                };
+                return new NumericDataPoint(g.Key, value);
+            })
+            .ToList();
     }
 
     private static List<DailyCount> BuildDailyEntries(IReadOnlyList<ActionEntryResponse> entries)
@@ -215,18 +245,20 @@ public sealed class DashboardService(
                 .Select(fv => fv.Value!)
                 .ToList();
 
-            fieldStats.Add(BuildFieldStats(field, values));
+            fieldStats.Add(BuildFieldStats(field, values, sorted));
         }
 
         // Build numeric time-series for inline charts
         var numericSeries = new List<NumericFieldSeries>();
         foreach (var field in fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal))
         {
-            var points = entries
+            var rawPoints = entries
                 .Select(e => (e.OccurredAtUtc, Val: e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value))
                 .Where(x => !string.IsNullOrWhiteSpace(x.Val) && decimal.TryParse(x.Val, out _))
                 .Select(x => new NumericDataPoint(x.OccurredAtUtc, decimal.Parse(x.Val!)))
                 .ToList();
+
+            var points = AggregateTrendPoints(rawPoints, field.TrendAggregation);
 
             if (points.Count > 0)
             {
@@ -234,6 +266,9 @@ public sealed class DashboardService(
                 {
                     Name = field.Name,
                     Unit = field.Unit,
+                    IsInteger = field.FieldType == FieldType.Integer,
+                    ChartType = field.TrendChartType,
+                    TargetValue = field.TargetValue,
                     Points = points
                 });
             }
@@ -256,7 +291,8 @@ public sealed class DashboardService(
         };
     }
 
-    private static FieldStats BuildFieldStats(ActionFieldResponse field, List<string> rawValues)
+    private static FieldStats BuildFieldStats(ActionFieldResponse field, List<string> rawValues,
+        List<ActionEntryResponse> sortedDescEntries)
     {
         var stats = new FieldStats
         {
@@ -264,7 +300,9 @@ public sealed class DashboardService(
             Name = field.Name,
             Type = field.FieldType,
             TotalValues = rawValues.Count,
-            Unit = field.Unit
+            Unit = field.Unit,
+            EnabledMetrics = field.SummaryMetrics,
+            IsInteger = field.FieldType == FieldType.Integer
         };
 
         switch (field.FieldType)
@@ -286,6 +324,13 @@ public sealed class DashboardService(
                     stats.NumericCount = numbers.Count;
                     stats.ConfiguredMin = field.MinValue;
                     stats.ConfiguredMax = field.MaxValue;
+
+                    // Latest value from the most recent entry
+                    var latestValue = sortedDescEntries
+                        .Select(e => e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value)
+                        .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+                    if (latestValue is not null && decimal.TryParse(latestValue, out var lat))
+                        stats.NumericLatest = lat;
                 }
                 break;
 
@@ -402,12 +447,15 @@ public sealed class FieldStats
     public FieldType Type { get; init; }
     public int TotalValues { get; init; }
     public string Unit { get; init; } = "UN";
+    public SummaryMetrics EnabledMetrics { get; init; } = SummaryMetrics.All;
+    public bool IsInteger { get; init; }
 
     // Numeric (Integer/Decimal)
     public decimal? NumericMin { get; set; }
     public decimal? NumericMax { get; set; }
     public decimal? NumericAvg { get; set; }
     public decimal? NumericSum { get; set; }
+    public decimal? NumericLatest { get; set; }
     public int NumericCount { get; set; }
     public decimal? ConfiguredMin { get; set; }
     public decimal? ConfiguredMax { get; set; }
@@ -443,6 +491,9 @@ public sealed class NumericFieldSeries
 {
     public required string Name { get; init; }
     public required string Unit { get; init; }
+    public bool IsInteger { get; init; }
+    public TrendChartType ChartType { get; init; } = TrendChartType.Line;
+    public decimal? TargetValue { get; init; }
     public List<NumericDataPoint> Points { get; init; } = [];
 }
 

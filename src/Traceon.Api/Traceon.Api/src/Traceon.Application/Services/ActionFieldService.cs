@@ -46,6 +46,10 @@ public sealed class ActionFieldService(
                             MinValue = af.MinValue,
                             Name = af.Name,
                             Order = af.Order,
+                            SummaryMetrics = (Contracts.Enums.SummaryMetrics)af.SummaryMetrics,
+                            TrendAggregation = (Contracts.Enums.TrendAggregation)af.TrendAggregation,
+                            TrendChartType = (Contracts.Enums.TrendChartType)af.TrendChartType,
+                            TargetValue = af.TargetValue,
                             TrackedActionId = trackedActionId,
                             UpdatedAtUtc = af.UpdatedAtUtc,
                             Unit = af.Unit,
@@ -126,7 +130,11 @@ public sealed class ActionFieldService(
             request.IsRequired,
             request.DefaultValue,
             request.Unit,
-            request.Order);
+            request.Order,
+            (int)request.SummaryMetrics,
+            (int)request.TrendAggregation,
+            (int)request.TrendChartType,
+            request.TargetValue);
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -160,7 +168,11 @@ public sealed class ActionFieldService(
             request.IsRequired,
             request.DefaultValue,
             request.Unit,
-            request.Order);
+            request.Order,
+            request.SummaryMetrics.HasValue ? (int)request.SummaryMetrics.Value : null,
+            request.TrendAggregation.HasValue ? (int)request.TrendAggregation.Value : null,
+            request.TrendChartType.HasValue ? (int)request.TrendChartType.Value : null,
+            request.TargetValue);
 
         await repository.UpdateAsync(entity, cancellationToken);
 

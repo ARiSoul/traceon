@@ -157,6 +157,10 @@ else
                     {
                         <span class="badge bg-info ms-1">@series.Unit</span>
                     }
+                    @if (series.TargetValue.HasValue)
+                    {
+                        <span class="badge bg-warning ms-1">Target: @FormatNumeric(series.TargetValue, series.IsInteger)</span>
+                    }
                 </h6>
             </div>
             <div class="card-body">
@@ -165,7 +169,7 @@ else
                            Height="250">
                     <ApexPointSeries TItem="NumericDataPoint"
                                     Items="series.Points"
-                                    SeriesType="SeriesType.Line"
+                                    SeriesType="MapChartType(series.ChartType)"
                                     Name="@series.Name"
                                     XValue="p => p.Date"
                                     YValue="p => p.Value"
@@ -251,24 +255,31 @@ else
                             @if (field.Type is FieldType.Integer or FieldType.Decimal && field.NumericCount > 0)
                             {
                                 var u = field.Unit != "UN" ? $" {field.Unit}" : "";
-                                <div class="row g-1 text-center">
-                                    <div class="col-3">
-                                        <div class="small fw-bold text-primary">@FormatDecimal(field.NumericMin)@u</div>
-                                        <div class="text-muted" style="font-size: 0.6rem;">Min</div>
+                                var m = field.EnabledMetrics;
+                                var cols = new List<(string Label, string Color, string Display)>();
+                                if (m.HasFlag(SummaryMetrics.Min)) cols.Add(("Min", "text-primary", $"{FormatNumeric(field.NumericMin, field.IsInteger)}{u}"));
+                                if (m.HasFlag(SummaryMetrics.Avg)) cols.Add(("Avg", "text-success", $"{FormatNumeric(field.NumericAvg, false)}{u}"));
+                                if (m.HasFlag(SummaryMetrics.Max)) cols.Add(("Max", "text-danger", $"{FormatNumeric(field.NumericMax, field.IsInteger)}{u}"));
+                                if (m.HasFlag(SummaryMetrics.Sum)) cols.Add(("Sum", "text-warning", $"{FormatNumeric(field.NumericSum, field.IsInteger)}{u}"));
+                                if (m.HasFlag(SummaryMetrics.Count)) cols.Add(("Count", "text-info", $"{field.NumericCount}"));
+                                if (m.HasFlag(SummaryMetrics.Latest) && field.NumericLatest.HasValue) cols.Add(("Latest", "text-dark", $"{FormatNumeric(field.NumericLatest, field.IsInteger)}{u}"));
+
+                                @if (cols.Count > 0)
+                                {
+                                    <div class="row g-1 text-center">
+                                        @foreach (var col in cols)
+                                        {
+                                            <div class="col">
+                                                <div class="small fw-bold @col.Color">@col.Display</div>
+                                                <div class="text-muted" style="font-size: 0.6rem;">@col.Label</div>
+                                            </div>
+                                        }
                                     </div>
-                                    <div class="col-3">
-                                        <div class="small fw-bold text-success">@FormatDecimal(field.NumericAvg)@u</div>
-                                        <div class="text-muted" style="font-size: 0.6rem;">Avg</div>
-                                    </div>
-                                    <div class="col-3">
-                                        <div class="small fw-bold text-danger">@FormatDecimal(field.NumericMax)@u</div>
-                                        <div class="text-muted" style="font-size: 0.6rem;">Max</div>
-                                    </div>
-                                    <div class="col-3">
-                                        <div class="small fw-bold text-warning">@FormatDecimal(field.NumericSum)@u</div>
-                                        <div class="text-muted" style="font-size: 0.6rem;">Sum</div>
-                                    </div>
-                                </div>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">@field.NumericCount values recorded</small>
+                                }
                             }
                             else
                             {
@@ -328,7 +339,7 @@ else
     private static ApexChartOptions<NumericDataPoint> BuildNumericOptions(NumericFieldSeries series)
     {
         var yTitle = series.Unit != "UN" ? series.Unit : series.Name;
-        return new ApexChartOptions<NumericDataPoint>
+        var options = new ApexChartOptions<NumericDataPoint>
         {
             Chart = new Chart
             {
@@ -336,13 +347,55 @@ else
                 Zoom = new Zoom { Enabled = true }
             },
             Xaxis = new XAxis { Type = XAxisType.Datetime },
-            Yaxis = [new YAxis { Title = new AxisTitle { Text = yTitle } }],
+            Yaxis = [new YAxis
+            {
+                Title = new AxisTitle { Text = yTitle },
+                DecimalsInFloat = series.IsInteger ? 0 : 2
+            }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
             Colors = ["#198754"],
             Markers = new Markers { Size = 3 },
             Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
         };
+
+        if (series.ChartType == TrendChartType.Area)
+        {
+            options.Fill = new Fill { Opacity = new Opacity(0.3) };
+        }
+
+        if (series.TargetValue.HasValue)
+        {
+            var targetLabel = series.IsInteger
+                ? ((int)Math.Round(series.TargetValue.Value)).ToString()
+                : series.TargetValue.Value.ToString("G");
+            options.Annotations = new Annotations
+            {
+                Yaxis =
+                [
+                    new AnnotationsYAxis
+                    {
+                        Y = series.TargetValue.Value,
+                        BorderColor = "#ff9800",
+                        StrokeDashArray = 4,
+                        Label = new Label
+                        {
+                            Text = $"Target: {targetLabel}",
+                            Style = new Style { Background = "#ff9800", Color = "#fff" }
+                        }
+                    }
+                ]
+            };
+        }
+
+        return options;
     }
+
+    private static SeriesType MapChartType(TrendChartType chartType) => chartType switch
+    {
+        TrendChartType.Bar => SeriesType.Bar,
+        TrendChartType.Area => SeriesType.Area,
+        _ => SeriesType.Line
+    };
 
     private static ApexChartOptions<BooleanDataPoint> BuildBooleanOptions(BooleanFieldSeries series)
     {
@@ -458,5 +511,14 @@ else
     {
         if (value is null) return "—";
         return value == Math.Truncate(value.Value) ? value.Value.ToString("F0") : value.Value.ToString("F2");
+    }
+
+    private static string FormatNumeric(decimal? value, bool isInteger)
+    {
+        if (value is null) return "—";
+        if (isInteger) return ((int)Math.Round(value.Value)).ToString();
+        return value == Math.Truncate(value.Value)
+            ? value.Value.ToString("F0")
+            : value.Value.ToString("F2");
     }
 }

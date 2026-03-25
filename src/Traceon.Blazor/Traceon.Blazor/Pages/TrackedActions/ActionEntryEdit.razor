@@ -53,6 +53,7 @@ else
                     <textarea class="form-control"
                               rows="2"
                               placeholder="Any notes about this entry..."
+                              data-select-on-focus
                               @bind="_notes"></textarea>
                 </div>
             </div>
@@ -89,6 +90,7 @@ else
                                     <input type="text"
                                            class="form-control"
                                            placeholder="@model.Field.Name"
+                                           data-select-on-focus
                                            @bind="model.TextValue" />
                                     break;
 
@@ -100,6 +102,7 @@ else
                                                min="@model.Field.MinValue"
                                                max="@model.Field.MaxValue"
                                                placeholder="@model.Field.Name"
+                                               data-select-on-focus
                                                @bind="model.IntValue" />
                                         @if (model.Field.Unit != "UN")
                                         {
@@ -116,6 +119,7 @@ else
                                                min="@model.Field.MinValue"
                                                max="@model.Field.MaxValue"
                                                placeholder="@model.Field.Name"
+                                               data-select-on-focus
                                                @bind="model.DecimalValue" />
                                         @if (model.Field.Unit != "UN")
                                         {

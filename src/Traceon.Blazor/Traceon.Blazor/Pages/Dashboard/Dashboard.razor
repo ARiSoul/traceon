@@ -363,18 +363,24 @@ else if (_data is not null)
                                             <div class="card border h-100">
                                                 <div class="card-header py-1 px-2 d-flex justify-content-between align-items-center">
                                                     <small class="fw-bold text-truncate">@series.Name</small>
-                                                    @if (series.Unit != "UN")
-                                                    {
-                                                        <span class="badge bg-info" style="font-size: 0.6rem;">@series.Unit</span>
-                                                    }
+                                                    <div class="d-flex gap-1">
+                                                        @if (series.TargetValue.HasValue)
+                                                        {
+                                                            <span class="badge bg-warning" style="font-size: 0.55rem;">T: @FormatNumericValue(series.TargetValue, series.IsInteger)</span>
+                                                        }
+                                                        @if (series.Unit != "UN")
+                                                        {
+                                                            <span class="badge bg-info" style="font-size: 0.6rem;">@series.Unit</span>
+                                                        }
+                                                    </div>
                                                 </div>
                                                 <div class="card-body p-2">
                                                     <ApexChart TItem="NumericDataPoint"
-                                                               Options="BuildMiniChartOptions()"
+                                                               Options="BuildMiniChartOptions(series)"
                                                                Height="130">
                                                         <ApexPointSeries TItem="NumericDataPoint"
                                                                         Items="series.Points"
-                                                                        SeriesType="SeriesType.Line"
+                                                                        SeriesType="MapChartType(series.ChartType)"
                                                                         Name="@series.Name"
                                                                         XValue="p => p.Date"
                                                                         YValue="p => p.Value"
@@ -441,16 +447,64 @@ else if (_data is not null)
         DataLabels = new DataLabels { Enabled = false }
     };
 
-    private static ApexChartOptions<NumericDataPoint> BuildMiniChartOptions() => new()
+    private static ApexChartOptions<NumericDataPoint> BuildMiniChartOptions(NumericFieldSeries series)
     {
-        Chart = new Chart { Toolbar = new Toolbar { Show = false } },
-        Xaxis = new XAxis { Type = XAxisType.Datetime, Labels = new XAxisLabels { Show = false } },
-        Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
-        Colors = ["#198754"],
-        Markers = new Markers { Size = 3 },
-        DataLabels = new DataLabels { Enabled = false },
-        Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+        var options = new ApexChartOptions<NumericDataPoint>
+        {
+            Chart = new Chart { Toolbar = new Toolbar { Show = false } },
+            Xaxis = new XAxis { Type = XAxisType.Datetime, Labels = new XAxisLabels { Show = false } },
+            Yaxis = [new YAxis { DecimalsInFloat = series.IsInteger ? 0 : 2 }],
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Colors = ["#198754"],
+            Markers = new Markers { Size = 3 },
+            DataLabels = new DataLabels { Enabled = false },
+            Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+        };
+
+        if (series.ChartType == TrendChartType.Area)
+        {
+            options.Fill = new Fill { Opacity = new Opacity(0.3) };
+        }
+
+        if (series.TargetValue.HasValue)
+        {
+            options.Annotations = new Annotations
+            {
+                Yaxis =
+                [
+                    new AnnotationsYAxis
+                    {
+                        Y = series.TargetValue.Value,
+                        BorderColor = "#ff9800",
+                        StrokeDashArray = 4,
+                        Label = new Label
+                        {
+                            Text = $"Target: {FormatNumericValue(series.TargetValue, series.IsInteger)}",
+                            Style = new Style { Background = "#ff9800", Color = "#fff" }
+                        }
+                    }
+                ]
+            };
+        }
+
+        return options;
+    }
+
+    private static SeriesType MapChartType(TrendChartType chartType) => chartType switch
+    {
+        TrendChartType.Bar => SeriesType.Bar,
+        TrendChartType.Area => SeriesType.Area,
+        _ => SeriesType.Line
     };
+
+    private static string FormatNumericValue(decimal? value, bool isInteger)
+    {
+        if (value is null) return "—";
+        if (isInteger) return ((int)Math.Round(value.Value)).ToString();
+        return value == Math.Truncate(value.Value)
+            ? value.Value.ToString("F0")
+            : value.Value.ToString("F2");
+    }
 
     private List<ActionStats> FilteredActions => _data?.Actions
         .Where(a => _selectedTag is null || a.Tags.Any(t => t.Name == _selectedTag))
@@ -627,26 +681,32 @@ else if (_data is not null)
 
     private RenderFragment RenderNumericStats(FieldStats field) => __builder =>
     {
-        var unitSuffix = field.Unit != "UN" ? $" {field.Unit}" : "";
+        var u = field.Unit != "UN" ? $" {field.Unit}" : "";
+        var m = field.EnabledMetrics;
+        var cols = new List<(string Label, string Color, string Display)>();
+        if (m.HasFlag(SummaryMetrics.Min)) cols.Add(("Min", "text-primary", $"{FormatNumeric(field.NumericMin, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Avg)) cols.Add(("Avg", "text-success", $"{FormatNumeric(field.NumericAvg, false)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Max)) cols.Add(("Max", "text-danger", $"{FormatNumeric(field.NumericMax, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Sum)) cols.Add(("Sum", "text-warning", $"{FormatNumeric(field.NumericSum, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Count)) cols.Add(("Count", "text-info", $"{field.NumericCount}"));
+        if (m.HasFlag(SummaryMetrics.Latest) && field.NumericLatest.HasValue) cols.Add(("Latest", "text-dark", $"{FormatNumeric(field.NumericLatest, field.IsInteger)}{u}"));
 
-        <div class="row g-1 text-center mb-2">
-            <div class="col-3">
-                <div class="small fw-bold text-primary">@FormatDecimal(field.NumericMin)@unitSuffix</div>
-                <div class="small text-muted" style="font-size: 0.65rem;">Min</div>
+        @if (cols.Count > 0)
+        {
+            <div class="row g-1 text-center mb-2">
+                @foreach (var col in cols)
+                {
+                    <div class="col">
+                        <div class="small fw-bold @col.Color">@col.Display</div>
+                        <div class="small text-muted" style="font-size: 0.65rem;">@col.Label</div>
+                    </div>
+                }
             </div>
-            <div class="col-3">
-                <div class="small fw-bold text-success">@FormatDecimal(field.NumericAvg)@unitSuffix</div>
-                <div class="small text-muted" style="font-size: 0.65rem;">Avg</div>
-            </div>
-            <div class="col-3">
-                <div class="small fw-bold text-danger">@FormatDecimal(field.NumericMax)@unitSuffix</div>
-                <div class="small text-muted" style="font-size: 0.65rem;">Max</div>
-            </div>
-            <div class="col-3">
-                <div class="small fw-bold text-warning">@FormatDecimal(field.NumericSum)@unitSuffix</div>
-                <div class="small text-muted" style="font-size: 0.65rem;">Sum</div>
-            </div>
-        </div>
+        }
+        else
+        {
+            <small class="text-muted">@field.NumericCount values recorded</small>
+        }
 
         @if (field.ConfiguredMax.HasValue && field.NumericAvg.HasValue)
         {
@@ -655,8 +715,6 @@ else if (_data is not null)
                 <div class="progress-bar bg-success" style="width: @pct%"></div>
             </div>
         }
-
-        <small class="text-muted d-block mt-1">@field.NumericCount values</small>
     };
 
     private RenderFragment RenderBooleanStats(FieldStats field) => __builder =>
@@ -721,6 +779,15 @@ else if (_data is not null)
     private static string FormatDecimal(decimal? value)
     {
         if (value is null) return "—";
+        return value == Math.Truncate(value.Value)
+            ? value.Value.ToString("F0")
+            : value.Value.ToString("F2");
+    }
+
+    private static string FormatNumeric(decimal? value, bool isInteger)
+    {
+        if (value is null) return "—";
+        if (isInteger) return ((int)Math.Round(value.Value)).ToString();
         return value == Math.Truncate(value.Value)
             ? value.Value.ToString("F0")
             : value.Value.ToString("F2");

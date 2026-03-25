@@ -12,6 +12,10 @@ public sealed class ActionField : Entity
     public string? DefaultValue { get; private set; }
     public string Unit { get; private set; }
     public int Order { get; private set; }
+    public int SummaryMetrics { get; private set; }
+    public int TrendAggregation { get; private set; }
+    public int TrendChartType { get; private set; }
+    public decimal? TargetValue { get; private set; }
 
     private ActionField(
         Guid trackedActionId,
@@ -23,7 +27,11 @@ public sealed class ActionField : Entity
         bool isRequired,
         string? defaultValue,
         string unit,
-        int order)
+        int order,
+        int summaryMetrics,
+        int trendAggregation,
+        int trendChartType,
+        decimal? targetValue)
     {
         TrackedActionId = trackedActionId;
         FieldDefinitionId = fieldDefinitionId;
@@ -35,6 +43,10 @@ public sealed class ActionField : Entity
         DefaultValue = defaultValue;
         Unit = unit;
         Order = order;
+        SummaryMetrics = summaryMetrics;
+        TrendAggregation = trendAggregation;
+        TrendChartType = trendChartType;
+        TargetValue = targetValue;
     }
 
     public static ActionField Create(
@@ -47,7 +59,11 @@ public sealed class ActionField : Entity
         bool isRequired = false,
         string? defaultValue = null,
         string? unit = null,
-        int order = 0)
+        int order = 0,
+        int summaryMetrics = 63,
+        int trendAggregation = 0,
+        int trendChartType = 0,
+        decimal? targetValue = null)
     {
         if (trackedActionId == Guid.Empty)
             throw new ArgumentException("Tracked action ID is required.", nameof(trackedActionId));
@@ -67,7 +83,11 @@ public sealed class ActionField : Entity
             isRequired,
             defaultValue?.Trim(),
             string.IsNullOrWhiteSpace(unit) ? "UN" : unit.Trim(),
-            order);
+            order,
+            summaryMetrics,
+            trendAggregation,
+            trendChartType,
+            targetValue);
     }
 
     public void Update(
@@ -78,7 +98,11 @@ public sealed class ActionField : Entity
         bool isRequired = false,
         string? defaultValue = null,
         string? unit = null,
-        int? order = null)
+        int? order = null,
+        int? summaryMetrics = null,
+        int? trendAggregation = null,
+        int? trendChartType = null,
+        decimal? targetValue = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -91,6 +115,13 @@ public sealed class ActionField : Entity
         Unit = string.IsNullOrWhiteSpace(unit) ? "UN" : unit.Trim();
         if (order.HasValue)
             Order = order.Value;
+        if (summaryMetrics.HasValue)
+            SummaryMetrics = summaryMetrics.Value;
+        if (trendAggregation.HasValue)
+            TrendAggregation = trendAggregation.Value;
+        if (trendChartType.HasValue)
+            TrendChartType = trendChartType.Value;
+        TargetValue = targetValue;
         MarkUpdated();
     }
 }

@@ -17,6 +17,10 @@ public sealed record ActionFieldResponse
     public required string? DropdownValues { get; init; }
     public required string Unit { get; init; }
     public required int Order { get; init; }
+    public required SummaryMetrics SummaryMetrics { get; init; }
+    public required TrendAggregation TrendAggregation { get; init; }
+    public required TrendChartType TrendChartType { get; init; }
+    public required decimal? TargetValue { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime? UpdatedAtUtc { get; init; }
 }

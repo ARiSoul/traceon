@@ -1,4 +1,5 @@
 using Traceon.Contracts.ActionFields;
+using Traceon.Contracts.Enums;
 using Traceon.Domain.Entities;
 
 namespace Traceon.Application.Mapping;
@@ -19,6 +20,10 @@ public static class ActionFieldMappingExtensions
             MinValue = entity.MinValue,
             Name = entity.Name,
             Order = entity.Order,
+            SummaryMetrics = (SummaryMetrics)entity.SummaryMetrics,
+            TrendAggregation = (TrendAggregation)entity.TrendAggregation,
+            TrendChartType = (TrendChartType)entity.TrendChartType,
+            TargetValue = entity.TargetValue,
             TrackedActionId = entity.TrackedActionId,
             UpdatedAtUtc = entity.UpdatedAtUtc,
             Unit = entity.Unit,

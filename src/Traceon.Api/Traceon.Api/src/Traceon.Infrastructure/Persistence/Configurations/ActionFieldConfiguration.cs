@@ -37,6 +37,21 @@ internal sealed class ActionFieldConfiguration : IEntityTypeConfiguration<Action
             .IsRequired()
             .HasDefaultValue(0);
 
+        builder.Property(e => e.SummaryMetrics)
+            .IsRequired()
+            .HasDefaultValue(63);
+
+        builder.Property(e => e.TrendAggregation)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(e => e.TrendChartType)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(e => e.TargetValue)
+            .HasPrecision(18, 4);
+
         builder.HasIndex(e => e.TrackedActionId);
 
         builder.HasOne<FieldDefinition>()
