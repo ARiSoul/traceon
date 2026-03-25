@@ -18,7 +18,7 @@ internal sealed class ActionFieldRepository(TraceonDbContext context) : IActionF
         return await context.ActionFields
             .AsNoTracking()
             .Where(af => af.TrackedActionId == trackedActionId)
-            .OrderBy(af => af.Name)
+            .OrderBy(af => af.Order)
             .ToListAsync(cancellationToken);
     }
 

@@ -8,4 +8,5 @@ public sealed record CreateActionFieldRequest(
     decimal? MinValue = null,
     bool IsRequired = false,
     string? DefaultValue = null,
-    string? Unit = null);
+    string? Unit = null,
+    int Order = 0);

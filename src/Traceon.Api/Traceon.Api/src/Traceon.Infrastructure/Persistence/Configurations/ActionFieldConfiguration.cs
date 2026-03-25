@@ -33,6 +33,10 @@ internal sealed class ActionFieldConfiguration : IEntityTypeConfiguration<Action
             .HasMaxLength(20)
             .HasDefaultValue("UN");
 
+        builder.Property(e => e.Order)
+            .IsRequired()
+            .HasDefaultValue(0);
+
         builder.HasIndex(e => e.TrackedActionId);
 
         builder.HasOne<FieldDefinition>()

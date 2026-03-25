@@ -18,6 +18,7 @@ public static class ActionFieldMappingExtensions
             MaxValue = entity.MaxValue,
             MinValue = entity.MinValue,
             Name = entity.Name,
+            Order = entity.Order,
             TrackedActionId = entity.TrackedActionId,
             UpdatedAtUtc = entity.UpdatedAtUtc,
             Unit = entity.Unit,

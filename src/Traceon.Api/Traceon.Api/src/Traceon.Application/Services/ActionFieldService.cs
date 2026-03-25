@@ -32,6 +32,7 @@ public sealed class ActionFieldService(
                         where af.TrackedActionId == trackedActionId
                         join fd in fieldDefinitionRepository.Query()
                             on af.FieldDefinitionId equals fd.Id
+                        orderby af.Order
                         select new ActionFieldResponse
                         {
                             CreatedAtUtc = af.CreatedAtUtc,
@@ -44,6 +45,7 @@ public sealed class ActionFieldService(
                             MaxValue = af.MaxValue,
                             MinValue = af.MinValue,
                             Name = af.Name,
+                            Order = af.Order,
                             TrackedActionId = trackedActionId,
                             UpdatedAtUtc = af.UpdatedAtUtc,
                             Unit = af.Unit,
@@ -123,7 +125,8 @@ public sealed class ActionFieldService(
             request.MinValue,
             request.IsRequired,
             request.DefaultValue,
-            request.Unit);
+            request.Unit,
+            request.Order);
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -156,7 +159,8 @@ public sealed class ActionFieldService(
             request.MinValue,
             request.IsRequired,
             request.DefaultValue,
-            request.Unit);
+            request.Unit,
+            request.Order);
 
         await repository.UpdateAsync(entity, cancellationToken);
 

@@ -11,6 +11,7 @@ public sealed class ActionField : Entity
     public bool IsRequired { get; private set; }
     public string? DefaultValue { get; private set; }
     public string Unit { get; private set; }
+    public int Order { get; private set; }
 
     private ActionField(
         Guid trackedActionId,
@@ -21,7 +22,8 @@ public sealed class ActionField : Entity
         decimal? minValue,
         bool isRequired,
         string? defaultValue,
-        string unit)
+        string unit,
+        int order)
     {
         TrackedActionId = trackedActionId;
         FieldDefinitionId = fieldDefinitionId;
@@ -32,6 +34,7 @@ public sealed class ActionField : Entity
         IsRequired = isRequired;
         DefaultValue = defaultValue;
         Unit = unit;
+        Order = order;
     }
 
     public static ActionField Create(
@@ -43,7 +46,8 @@ public sealed class ActionField : Entity
         decimal? minValue = null,
         bool isRequired = false,
         string? defaultValue = null,
-        string? unit = null)
+        string? unit = null,
+        int order = 0)
     {
         if (trackedActionId == Guid.Empty)
             throw new ArgumentException("Tracked action ID is required.", nameof(trackedActionId));
@@ -62,7 +66,8 @@ public sealed class ActionField : Entity
             minValue,
             isRequired,
             defaultValue?.Trim(),
-            string.IsNullOrWhiteSpace(unit) ? "UN" : unit.Trim());
+            string.IsNullOrWhiteSpace(unit) ? "UN" : unit.Trim(),
+            order);
     }
 
     public void Update(
@@ -72,7 +77,8 @@ public sealed class ActionField : Entity
         decimal? minValue = null,
         bool isRequired = false,
         string? defaultValue = null,
-        string? unit = null)
+        string? unit = null,
+        int? order = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -83,6 +89,8 @@ public sealed class ActionField : Entity
         IsRequired = isRequired;
         DefaultValue = defaultValue?.Trim();
         Unit = string.IsNullOrWhiteSpace(unit) ? "UN" : unit.Trim();
+        if (order.HasValue)
+            Order = order.Value;
         MarkUpdated();
     }
 }

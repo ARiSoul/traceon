@@ -7,8 +7,9 @@ public sealed class ActionFieldService(HttpClient http)
 {
     public async Task<List<ActionFieldResponse>> GetByTrackedActionAsync(Guid trackedActionId)
     {
-        return await http.GetFromJsonAsync<List<ActionFieldResponse>>(
+        var fields = await http.GetFromJsonAsync<List<ActionFieldResponse>>(
             $"/api/tracked-actions/{trackedActionId}/fields") ?? [];
+        return fields.OrderBy(f => f.Order).ToList();
     }
 
     public async Task<(bool Success, IReadOnlyList<string> Errors)> CreateAsync(Guid trackedActionId, CreateActionFieldRequest request)

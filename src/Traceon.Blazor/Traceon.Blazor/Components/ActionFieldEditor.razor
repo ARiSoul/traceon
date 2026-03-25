@@ -6,6 +6,14 @@
          style="cursor: pointer;"
          @onclick="ToggleExpand">
         <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden">
+            <div class="btn-group btn-group-sm me-1" role="group" @onclick:stopPropagation="true">
+                <button class="btn btn-outline-secondary py-0 px-1" @onclick="OnMoveUp" disabled="@IsFirst" title="Move up">
+                    <i class="bi bi-chevron-up"></i>
+                </button>
+                <button class="btn btn-outline-secondary py-0 px-1" @onclick="OnMoveDown" disabled="@IsLast" title="Move down">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
             <i class="bi bi-@(_isExpanded ? "chevron-down" : "chevron-right") text-muted"></i>
             <strong class="text-truncate">@Field.Name</strong>
             <span class="badge bg-secondary">@Field.FieldType</span>
@@ -161,6 +169,10 @@
     [Parameter, EditorRequired] public required Guid TrackedActionId { get; set; }
     [Parameter, EditorRequired] public required EventCallback<ActionFieldResponse> OnRemove { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnMoveUp { get; set; }
+    [Parameter] public EventCallback OnMoveDown { get; set; }
+    [Parameter] public bool IsFirst { get; set; }
+    [Parameter] public bool IsLast { get; set; }
 
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
 
@@ -174,6 +186,7 @@
     private bool _isRequired;
     private string? _defaultValue;
     private string? _unit;
+    private int _order;
 
     // Typed values
     private int? _intMinValue;
@@ -212,6 +225,7 @@
         _isRequired = Field.IsRequired;
         _defaultValue = Field.DefaultValue;
         _unit = Field.Unit;
+        _order = Field.Order;
 
         // Load min/max
         switch (Field.FieldType)
@@ -270,7 +284,7 @@
         var defaultVal = ResolveDefaultValue();
 
         var request = new UpdateActionFieldRequest(
-            _name, _description, maxValue, minValue, _isRequired, defaultVal, _unit);
+            _name, _description, maxValue, minValue, _isRequired, defaultVal, _unit, _order);
 
         var (ok, errs) = await ActionFieldService.UpdateAsync(TrackedActionId, Field.Id, request);
 

@@ -122,14 +122,27 @@ else
                 else
                 {
                     <div class="list-group">
-                        @foreach (var field in _fields)
+                        @for (var i = 0; i < _fields.Count; i++)
                         {
+                            var index = i;
+                            var field = _fields[i];
                             <ActionFieldEditor Field="field"
                                                TrackedActionId="Id"
                                                OnRemove="RemoveFieldAsync"
-                                               OnSaved="ReloadFieldsAsync" />
+                                               OnSaved="ReloadFieldsAsync"
+                                               IsFirst="index == 0"
+                                               IsLast="index == _fields.Count - 1"
+                                               OnMoveUp="() => MoveFieldAsync(index, -1)"
+                                               OnMoveDown="() => MoveFieldAsync(index, 1)" />
                         }
                     </div>
+                    @if (_savingOrder)
+                    {
+                        <div class="text-center mt-2">
+                            <span class="spinner-border spinner-border-sm text-primary me-1"></span>
+                            <small class="text-muted">Saving order...</small>
+                        </div>
+                    }
                 }
             }
             else if (_activeTab == "tags")
@@ -267,6 +280,9 @@ else
     private List<Guid> _fieldExcludedKeys => _fields.Select(f => f.FieldDefinitionId).ToList();
     private bool _showFieldSelector;
 
+    // Drag-and-drop reorder state
+    private bool _savingOrder;
+
     protected override async Task OnInitializedAsync()
     {
         var action = await Service.GetByIdAsync(Id);
@@ -360,11 +376,13 @@ else
     private async Task OnFieldsSelectedAsync(List<FieldDefinitionResponse> definitions)
     {
         _errors = [];
+        var nextOrder = _fields.Count > 0 ? _fields.Max(f => f.Order) + 1 : 0;
+
         foreach (var def in definitions)
         {
             var request = new CreateActionFieldRequest(def.Id, def.DefaultName,
                 def.DefaultDescription, def.DefaultMaxValue, def.DefaultMinValue,
-                def.DefaultIsRequired, def.DefaultValue, def.Unit);
+                def.DefaultIsRequired, def.DefaultValue, def.Unit, nextOrder++);
 
             var (ok, errs) = await ActionFieldService.CreateAsync(Id, request);
             if (!ok)
@@ -391,6 +409,42 @@ else
     private async Task ReloadFieldsAsync()
     {
         _fields = await ActionFieldService.GetByTrackedActionAsync(Id);
+    }
+
+    // Reorder handlers
+    private async Task MoveFieldAsync(int index, int direction)
+    {
+        var targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= _fields.Count) return;
+
+        (_fields[index], _fields[targetIndex]) = (_fields[targetIndex], _fields[index]);
+        await SaveFieldOrderAsync();
+    }
+
+    private async Task SaveFieldOrderAsync()
+    {
+        _savingOrder = true;
+        _errors = [];
+
+        for (var i = 0; i < _fields.Count; i++)
+        {
+            var field = _fields[i];
+            if (field.Order == i) continue;
+
+            var request = new UpdateActionFieldRequest(
+                field.Name, field.Description, field.MaxValue, field.MinValue,
+                field.IsRequired, field.DefaultValue, field.Unit, i);
+
+            var (ok, errs) = await ActionFieldService.UpdateAsync(Id, field.Id, request);
+            if (!ok)
+            {
+                _errors = errs;
+                break;
+            }
+        }
+
+        _fields = await ActionFieldService.GetByTrackedActionAsync(Id);
+        _savingOrder = false;
     }
 
     private sealed class EditModel
