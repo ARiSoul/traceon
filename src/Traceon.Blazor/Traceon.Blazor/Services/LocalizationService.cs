@@ -40,6 +40,19 @@ public sealed class LocalizationService(ILocalStorageService localStorage, IJSRu
         await js.InvokeVoidAsync("location.reload");
     }
 
+    internal async Task<bool> ApplyFromServer(string? serverLanguage)
+    {
+        if (string.IsNullOrEmpty(serverLanguage) ||
+            !SupportedLanguages.Any(l => l.Code == serverLanguage) ||
+            serverLanguage == CurrentLanguage)
+            return false;
+
+        CurrentLanguage = serverLanguage;
+        await localStorage.SetItemAsStringAsync(LanguageKey, serverLanguage);
+        ApplyCulture(serverLanguage);
+        return true;
+    }
+
     private static void ApplyCulture(string languageCode)
     {
         var culture = new CultureInfo(languageCode);

@@ -23,6 +23,16 @@ public sealed class ThemeService(ILocalStorageService localStorage, IJSRuntime j
         await ApplyThemeAsync();
     }
 
+    internal async Task ApplyFromServer(string? serverTheme)
+    {
+        if (!string.IsNullOrEmpty(serverTheme) && serverTheme != CurrentTheme)
+        {
+            CurrentTheme = serverTheme;
+            await localStorage.SetItemAsStringAsync(ThemeKey, serverTheme);
+            await ApplyThemeAsync();
+        }
+    }
+
     private async Task ApplyThemeAsync()
     {
         var resolved = CurrentTheme == "system" ? "" : CurrentTheme;

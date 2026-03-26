@@ -216,6 +216,7 @@
     [Inject] private AuthService Auth { get; set; } = default!;
     [Inject] private ThemeService ThemeService { get; set; } = default!;
     [Inject] private LocalizationService LocalizationService { get; set; } = default!;
+    [Inject] private UserPreferenceService PreferenceService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
     [Inject] private TokenStore TokenStore { get; set; } = default!;
 
@@ -247,13 +248,17 @@
     private async Task SetThemeAsync(string theme)
     {
         await ThemeService.SetThemeAsync(theme);
+        await PreferenceService.SaveAsync(theme, LocalizationService.CurrentLanguage);
     }
 
     private async Task OnLanguageChanged(ChangeEventArgs e)
     {
         var lang = e.Value?.ToString();
         if (!string.IsNullOrEmpty(lang))
+        {
+            await PreferenceService.SaveAsync(ThemeService.CurrentTheme, lang);
             await LocalizationService.SetLanguageAsync(lang);
+        }
     }
 
     private async Task ChangePasswordAsync()

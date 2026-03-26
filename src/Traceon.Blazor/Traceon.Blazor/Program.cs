@@ -42,6 +42,7 @@ builder.Services.AddScoped<ActionEntryService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<LocalizationService>();
+builder.Services.AddScoped<UserPreferenceService>();
 
 var host = builder.Build();
 

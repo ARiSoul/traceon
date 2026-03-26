@@ -19,6 +19,8 @@ internal static class IdentityEndpoints
         group.MapPost("/reset-password", ResetPasswordAsync).AllowAnonymous();
         group.MapPost("/change-password", ChangePasswordAsync);
         group.MapDelete("/account", DeleteAccountAsync);
+        group.MapGet("/preferences", GetPreferencesAsync);
+        group.MapPut("/preferences", UpdatePreferencesAsync);
 
         return group;
     }
@@ -64,14 +66,16 @@ internal static class IdentityEndpoints
 
         var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken();
+        var sessionId = Guid.NewGuid().ToString("N");
 
-        await userManager.SetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName, refreshToken);
+        await userManager.SetAuthenticationTokenAsync(user, LoginProvider, $"{RefreshTokenName}:{sessionId}", refreshToken);
 
         return TypedResults.Ok(new AccessTokenResponse(
             "Bearer",
             accessToken,
             tokenService.AccessTokenExpirationSeconds,
-            refreshToken));
+            refreshToken,
+            sessionId));
     }
 
     private static async Task<IResult> RefreshAsync(
@@ -84,7 +88,8 @@ internal static class IdentityEndpoints
         if (user is null)
             return TypedResults.Unauthorized();
 
-        var storedToken = await userManager.GetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName);
+        var tokenKey = $"{RefreshTokenName}:{request.SessionId}";
+        var storedToken = await userManager.GetAuthenticationTokenAsync(user, LoginProvider, tokenKey);
 
         if (storedToken is null || storedToken != request.RefreshToken)
             return TypedResults.Unauthorized();
@@ -92,13 +97,14 @@ internal static class IdentityEndpoints
         var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken();
 
-        await userManager.SetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName, refreshToken);
+        await userManager.SetAuthenticationTokenAsync(user, LoginProvider, tokenKey, refreshToken);
 
         return TypedResults.Ok(new AccessTokenResponse(
             "Bearer",
             accessToken,
             tokenService.AccessTokenExpirationSeconds,
-            refreshToken));
+            refreshToken,
+            request.SessionId));
     }
 
     private static async Task<IResult> ForgotPasswordAsync(
@@ -143,11 +149,46 @@ internal static class IdentityEndpoints
 
     private sealed record RegisterRequest(string Email, string Password);
     private sealed record LoginRequest(string Email, string Password);
-    private sealed record RefreshTokenRequest(string Email, string RefreshToken);
+    private sealed record RefreshTokenRequest(string Email, string RefreshToken, string SessionId);
     private sealed record ForgotPasswordRequest(string Email);
     private sealed record ResetPasswordRequest(string Email, string ResetCode, string NewPassword);
     private sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
-    private sealed record AccessTokenResponse(string TokenType, string AccessToken, int ExpiresIn, string RefreshToken);
+    private sealed record AccessTokenResponse(string TokenType, string AccessToken, int ExpiresIn, string RefreshToken, string SessionId);
+    private sealed record UserPreferencesResponse(string? Theme, string? Language);
+    private sealed record UpdatePreferencesRequest(string? Theme, string? Language);
+
+    private static async Task<IResult> GetPreferencesAsync(
+        UserManager<ApplicationUser> userManager,
+        IHttpContextAccessor httpContextAccessor)
+    {
+        var userId = httpContextAccessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return TypedResults.Unauthorized();
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null) return TypedResults.Unauthorized();
+
+        return TypedResults.Ok(new UserPreferencesResponse(user.PreferredTheme, user.PreferredLanguage));
+    }
+
+    private static async Task<IResult> UpdatePreferencesAsync(
+        UpdatePreferencesRequest request,
+        UserManager<ApplicationUser> userManager,
+        IHttpContextAccessor httpContextAccessor)
+    {
+        var userId = httpContextAccessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return TypedResults.Unauthorized();
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null) return TypedResults.Unauthorized();
+
+        if (request.Theme is not null)
+            user.PreferredTheme = request.Theme;
+        if (request.Language is not null)
+            user.PreferredLanguage = request.Language;
+        await userManager.UpdateAsync(user);
+
+        return TypedResults.Ok(new UserPreferencesResponse(user.PreferredTheme, user.PreferredLanguage));
+    }
 
     private static async Task<IResult> ChangePasswordAsync(
         ChangePasswordRequest request,

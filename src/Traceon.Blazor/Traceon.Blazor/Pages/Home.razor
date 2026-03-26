@@ -117,6 +117,7 @@
 @code {
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
 
     private List<TrackedActionResponse> _actions = [];
     private IReadOnlyList<string> _errors = [];
@@ -130,10 +131,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _actions = (await ActionService.GetAllAsync())
-            .OrderBy(a => a.SortOrder)
-            .ThenByDescending(a => a.CreatedAtUtc)
-            .ToList();
+        var authState = await AuthState;
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            _actions = (await ActionService.GetAllAsync())
+                .OrderBy(a => a.SortOrder)
+                .ThenByDescending(a => a.CreatedAtUtc)
+                .ToList();
+        }
         _loading = false;
     }
 

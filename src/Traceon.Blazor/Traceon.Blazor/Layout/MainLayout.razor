@@ -39,6 +39,10 @@
     [Inject] private AuthService Auth { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
     [Inject] private ThemeService ThemeService { get; set; } = default!;
+    [Inject] private LocalizationService LocalizationService { get; set; } = default!;
+    [Inject] private UserPreferenceService PreferenceService { get; set; } = default!;
+
+    private bool _preferencesSynced;
 
     private string ThemeIcon => ThemeService.CurrentTheme switch
     {
@@ -46,6 +50,44 @@
         "dark" => "moon-fill",
         _ => "circle-half"
     };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_preferencesSynced)
+        {
+            _preferencesSynced = true;
+            await SyncPreferencesFromServerAsync();
+        }
+    }
+
+    private async Task SyncPreferencesFromServerAsync()
+    {
+        try
+        {
+            var (theme, language) = await PreferenceService.GetAsync();
+
+            // If server returned nothing, user is anonymous or has no prefs yet
+            if (theme is null && language is null)
+                return;
+
+            await ThemeService.ApplyFromServer(theme);
+
+            var languageChanged = await LocalizationService.ApplyFromServer(language);
+            if (languageChanged)
+            {
+                // Reload to apply the new culture — localStorage is already updated
+                // so the next reload won't trigger another change
+                Nav.NavigateTo(Nav.Uri, forceLoad: true);
+                return;
+            }
+
+            StateHasChanged();
+        }
+        catch
+        {
+            // Not authenticated or offline — use localStorage values
+        }
+    }
 
     private async Task CycleThemeAsync()
     {
@@ -56,6 +98,7 @@
             _ => "system"
         };
         await ThemeService.SetThemeAsync(next);
+        await PreferenceService.SaveAsync(next, LocalizationService.CurrentLanguage);
     }
 
     private async Task LogoutAsync()
