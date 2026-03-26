@@ -37,48 +37,25 @@ internal static class FieldDefinitionEndpoints
         Guid id,
         IFieldDefinitionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.GetByIdAsync(id, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.Ok(result.Value)
-            : TypedResults.NotFound(result.Error);
-    }
+        => (await service.GetByIdAsync(id, cancellationToken)).ToHttpResult();
 
     private static async Task<IResult> CreateAsync(
         CreateFieldDefinitionRequest request,
         IFieldDefinitionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.CreateAsync(request, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.Created($"/api/field-definitions/{result.Value.Id}", result.Value)
-            : TypedResults.BadRequest(result.Error);
-    }
+        => (await service.CreateAsync(request, cancellationToken))
+            .ToCreatedHttpResult(v => $"/api/field-definitions/{v.Id}");
 
     private static async Task<IResult> UpdateAsync(
         Guid id,
         UpdateFieldDefinitionRequest request,
         IFieldDefinitionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.UpdateAsync(id, request, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.Ok(result.Value)
-            : TypedResults.NotFound(result.Error);
-    }
+        => (await service.UpdateAsync(id, request, cancellationToken)).ToHttpResult();
 
     private static async Task<IResult> DeleteAsync(
         Guid id,
         IFieldDefinitionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.DeleteAsync(id, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.NoContent()
-            : TypedResults.NotFound(result.Error);
-    }
+        => (await service.DeleteAsync(id, cancellationToken)).ToHttpResult();
 }

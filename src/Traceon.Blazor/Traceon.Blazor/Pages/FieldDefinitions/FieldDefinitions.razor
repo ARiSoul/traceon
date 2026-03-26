@@ -31,7 +31,8 @@
                              PrimaryIcon="pencil-square"
                              PrimaryButtonStyle="primary"
                              PrimaryAction="() => EditField(context.Id)"
-                             Actions="GetActions(context)" />
+                             Actions="GetActions(context)"
+                             OnAfterAction="StateHasChanged" />
     </RowActions>
 </DataGrid>
 

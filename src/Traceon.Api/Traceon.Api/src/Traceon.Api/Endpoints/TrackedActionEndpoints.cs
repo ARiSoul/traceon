@@ -41,98 +41,51 @@ internal static class TrackedActionEndpoints
         Guid id,
         ITrackedActionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.GetByIdAsync(id, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.Ok(result.Value)
-            : TypedResults.NotFound(result.Error);
-    }
+        => (await service.GetByIdAsync(id, cancellationToken)).ToHttpResult();
 
     private static async Task<IResult> CreateAsync(
         CreateTrackedActionRequest request,
         ITrackedActionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.CreateAsync(request, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.Created($"/api/tracked-actions/{result.Value.Id}", result.Value)
-            : TypedResults.BadRequest(result.Error);
-    }
+        => (await service.CreateAsync(request, cancellationToken))
+            .ToCreatedHttpResult(v => $"/api/tracked-actions/{v.Id}");
 
     private static async Task<IResult> UpdateAsync(
         Guid id,
         UpdateTrackedActionRequest request,
         ITrackedActionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.UpdateAsync(id, request, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.Ok(result.Value)
-            : TypedResults.NotFound(result.Error);
-    }
+        => (await service.UpdateAsync(id, request, cancellationToken)).ToHttpResult();
 
     private static async Task<IResult> DeleteAsync(
         Guid id,
         ITrackedActionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.DeleteAsync(id, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.NoContent()
-            : TypedResults.NotFound(result.Error);
-    }
+        => (await service.DeleteAsync(id, cancellationToken)).ToHttpResult();
 
     private static async Task<IResult> GetTagsAsync(
         Guid id,
         ITrackedActionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.GetTagsAsync(id, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.Ok(result.Value)
-            : TypedResults.NotFound(result.Error);
-    }
+        => (await service.GetTagsAsync(id, cancellationToken)).ToHttpResult();
 
     private static async Task<IResult> AddTagAsync(
         Guid id,
         Guid tagId,
         ITrackedActionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.AddTagAsync(id, tagId, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.NoContent()
-            : TypedResults.NotFound(result.Error);
-    }
+        => (await service.AddTagAsync(id, tagId, cancellationToken)).ToHttpResult();
 
     private static async Task<IResult> RemoveTagAsync(
         Guid id,
         Guid tagId,
         ITrackedActionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.RemoveTagAsync(id, tagId, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.NoContent()
-            : TypedResults.NotFound(result.Error);
-    }
+        => (await service.RemoveTagAsync(id, tagId, cancellationToken)).ToHttpResult();
 
     private static async Task<IResult> ReorderAsync(
         List<Guid> orderedIds,
         ITrackedActionService service,
         CancellationToken cancellationToken)
-    {
-        var result = await service.ReorderAsync(orderedIds, cancellationToken);
-
-        return result.IsSuccess
-            ? TypedResults.NoContent()
-            : TypedResults.BadRequest(result.Error);
-    }
+        => (await service.ReorderAsync(orderedIds, cancellationToken)).ToHttpResult();
 }

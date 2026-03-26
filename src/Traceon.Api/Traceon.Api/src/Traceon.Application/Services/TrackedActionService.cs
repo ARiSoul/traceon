@@ -65,7 +65,9 @@ public sealed class TrackedActionService(
         if (await repository.ExistsByNameAsync(currentUser.UserId, request.Name.Trim(), cancellationToken))
         {
             logger.TrackedActionDuplicateName(request.Name.Trim(), currentUser.UserId);
-            return Result<TrackedActionResponse>.Failure($"A tracked action with name '{request.Name.Trim()}' already exists.");
+            return Result<TrackedActionResponse>.Failure(
+                $"A tracked action with name '{request.Name.Trim()}' already exists.",
+                ResultErrorType.Conflict);
         }
 
         var entity = TrackedAction.Create(currentUser.UserId, request.Name, request.Description, request.SortOrder);

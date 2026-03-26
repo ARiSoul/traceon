@@ -11,6 +11,7 @@ namespace Traceon.Application.Services;
 
 public sealed class FieldDefinitionService(
     IFieldDefinitionRepository repository,
+    IActionFieldRepository actionFieldRepository,
     ICurrentUserService currentUser,
     ILogger<FieldDefinitionService> logger) : IFieldDefinitionService
 {
@@ -109,6 +110,14 @@ public sealed class FieldDefinitionService(
         {
             logger.FieldDefinitionNotFound(id);
             return Result.Failure($"Field definition with ID '{id}' was not found.");
+        }
+
+        if (await actionFieldRepository.ExistsByFieldDefinitionIdAsync(id, cancellationToken))
+        {
+            logger.FieldDefinitionInUse(id);
+            return Result.Failure(
+                $"Field definition '{entity.DefaultName}' cannot be deleted because it is used by one or more action fields.",
+                ResultErrorType.Conflict);
         }
 
         await repository.DeleteAsync(id, cancellationToken);

@@ -33,6 +33,9 @@ internal static partial class LogMessages
     [LoggerMessage(Level = LogLevel.Warning, Message = "Field definition with ID '{Id}' was not found.")]
     public static partial void FieldDefinitionNotFound(this ILogger logger, Guid id);
 
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Field definition '{Id}' cannot be deleted because it is in use.")]
+    public static partial void FieldDefinitionInUse(this ILogger logger, Guid id);
+
     // ActionField
     [LoggerMessage(Level = LogLevel.Information, Message = "Action field '{Name}' created with ID '{Id}' for tracked action '{TrackedActionId}'.")]
     public static partial void ActionFieldCreated(this ILogger logger, string name, Guid id, Guid trackedActionId);

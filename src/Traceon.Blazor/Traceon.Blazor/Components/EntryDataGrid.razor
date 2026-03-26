@@ -96,7 +96,8 @@
                              PrimaryIcon="pencil-square"
                              PrimaryButtonStyle="primary"
                              PrimaryAction="() => EditEntry(context)"
-                             Actions="GetActions(context)" />
+                             Actions="GetActions(context)"
+                             OnAfterAction="StateHasChanged" />
     </RowActions>
 </DataGrid>
 

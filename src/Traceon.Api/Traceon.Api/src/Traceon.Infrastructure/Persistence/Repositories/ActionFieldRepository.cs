@@ -13,6 +13,13 @@ internal sealed class ActionFieldRepository(TraceonDbContext context) : IActionF
         return await context.ActionFields.FindAsync([id], cancellationToken);
     }
 
+    public async Task<bool> ExistsByFieldDefinitionIdAsync(Guid fieldDefinitionId, CancellationToken cancellationToken = default)
+    {
+        return await context.ActionFields
+            .AsNoTracking()
+            .AnyAsync(af => af.FieldDefinitionId == fieldDefinitionId, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<ActionField>> GetByTrackedActionIdAsync(Guid trackedActionId, CancellationToken cancellationToken = default)
     {
         return await context.ActionFields

@@ -1,6 +1,8 @@
+@inject IJSRuntime JS
+
 @if (Errors.Count > 0)
 {
-    <div class="alert alert-danger @(_dismissible ? "alert-dismissible" : "") fade show" role="alert">
+    <div @ref="_alertRef" class="alert alert-danger @(_dismissible ? "alert-dismissible" : "") fade show" role="alert">
         <div class="d-flex align-items-start gap-2">
             <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
             <div class="flex-grow-1">
@@ -33,7 +35,18 @@
     [Parameter]
     public EventCallback OnDismiss { get; set; }
 
+    private ElementReference _alertRef;
     private bool _dismissible => OnDismiss.HasDelegate;
+    private int _lastErrorCount;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Errors.Count > 0 && Errors.Count != _lastErrorCount)
+        {
+            await JS.InvokeVoidAsync("scrollToElement", _alertRef);
+        }
+        _lastErrorCount = Errors.Count;
+    }
 
     private async Task Dismiss()
     {
