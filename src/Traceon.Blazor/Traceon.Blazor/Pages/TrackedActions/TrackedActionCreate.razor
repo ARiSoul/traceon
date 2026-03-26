@@ -1,18 +1,19 @@
 @page "/tracked-actions/create"
 @attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Create Tracked Action - Traceon</PageTitle>
+<PageTitle>@L["ActionCreate_Title"] - Traceon</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="mb-1">
             <i class="bi bi-plus-circle me-2"></i>
-            Create Tracked Action
+            @L["ActionCreate_Title"]
         </h3>
-        <p class="text-muted mb-0">Set up a new action with fields and tags</p>
+        <p class="text-muted mb-0">@L["ActionCreate_Subtitle"]</p>
     </div>
     <a href="/tracked-actions" class="btn btn-outline-secondary">
-        <i class="bi bi-x-circle me-1"></i>Cancel
+        <i class="bi bi-x-circle me-1"></i>@L["Common_Cancel"]
     </a>
 </div>
 

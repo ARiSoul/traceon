@@ -1,24 +1,25 @@
 @page "/tracked-actions/{Id:guid}/edit"
 @attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Edit Tracked Action - Traceon</PageTitle>
+<PageTitle>@L["ActionEdit_Title"] - Traceon</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="mb-1">
             <i class="bi bi-pencil-square me-2"></i>
-            Edit Tracked Action
+            @L["ActionEdit_Title"]
         </h3>
         <p class="text-muted mb-0">
-            Editing: <strong>@(_model?.Name ?? "...")</strong>
+            @L["ActionEdit_Editing"]: <strong>@(_model?.Name ?? "...")</strong>
         </p>
     </div>
     <div class="d-flex gap-2">
         <a href="/tracked-actions" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to List
+            <i class="bi bi-arrow-left me-1"></i>@L["Common_BackToList"]
         </a>
         <a href="/dashboard/action/@Id/detail" class="btn btn-outline-info">
-            <i class="bi bi-graph-up-arrow me-1"></i>Analytics
+            <i class="bi bi-graph-up-arrow me-1"></i>@L["TrackedActions_Analytics"]
         </a>
         <button class="btn btn-success" @onclick="SaveBasicInfoAsync" disabled="@_saving">
             @if (_saving)
@@ -29,7 +30,7 @@
             {
                 <i class="bi bi-check-circle me-1"></i>
             }
-            Save Changes
+            @L["Common_SaveChanges"]
         </button>
     </div>
 </div>
@@ -40,7 +41,7 @@
 {
     <div class="d-flex justify-content-center py-5">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+            <span class="visually-hidden">@L["Common_Loading"]</span>
         </div>
     </div>
 }
@@ -48,7 +49,7 @@ else if (_model is null)
 {
     <div class="alert alert-warning">
         <i class="bi bi-question-circle me-2"></i>
-        Tracked action not found.
+        @L["Edit_NotFound"]
     </div>
 }
 else
@@ -58,12 +59,12 @@ else
             <ul class="nav nav-tabs card-header-tabs">
                 <li class="nav-item">
                     <button class="nav-link @(_activeTab == "basic" ? "active" : "")" @onclick='() => _activeTab = "basic"'>
-                        <i class="bi bi-info-circle me-1"></i>Basic Info
+                        <i class="bi bi-info-circle me-1"></i>@L["Edit_BasicInfo"]
                     </button>
                 </li>
                 <li class="nav-item">
                     <button class="nav-link @(_activeTab == "fields" ? "active" : "")" @onclick='() => _activeTab = "fields"'>
-                        <i class="bi bi-sliders me-1"></i>Fields
+                        <i class="bi bi-sliders me-1"></i>@L["Common_Fields"]
                         @if (_fields.Count > 0)
                         {
                             <span class="badge bg-primary ms-1">@_fields.Count</span>
@@ -72,7 +73,7 @@ else
                 </li>
                 <li class="nav-item">
                     <button class="nav-link @(_activeTab == "tags" ? "active" : "")" @onclick='() => _activeTab = "tags"'>
-                        <i class="bi bi-tags me-1"></i>Tags
+                        <i class="bi bi-tags me-1"></i>@L["Common_Tags"]
                         @if (_tags.Count > 0)
                         {
                             <span class="badge bg-primary ms-1">@_tags.Count</span>
@@ -81,7 +82,7 @@ else
                 </li>
                 <li class="nav-item">
                     <button class="nav-link @(_activeTab == "entries" ? "active" : "")" @onclick='() => _activeTab = "entries"'>
-                        <i class="bi bi-journal-text me-1"></i>Entries
+                        <i class="bi bi-journal-text me-1"></i>@L["Common_Entries"]
                     </button>
                 </li>
             </ul>
@@ -93,12 +94,12 @@ else
                 <EditForm Model="_model" FormName="EditActionForm">
                     <DataAnnotationsValidator />
                     <div class="mb-3">
-                        <label class="form-label">Name <span class="text-danger">*</span></label>
+                        <label class="form-label">@L["Common_Name"] <span class="text-danger">*</span></label>
                         <InputText @bind-Value="_model.Name" class="form-control" />
                         <ValidationMessage For="() => _model.Name" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Description</label>
+                        <label class="form-label">@L["Common_Description"]</label>
                         <InputText @bind-Value="_model.Description" class="form-control" />
                     </div>
                 </EditForm>
@@ -106,9 +107,9 @@ else
             else if (_activeTab == "fields")
             {
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <p class="text-muted mb-0">Manage the data fields captured for each entry. Click a field to edit its settings.</p>
+                    <p class="text-muted mb-0">@L["Edit_FieldsHint"]</p>
                     <button class="btn btn-outline-primary btn-sm" @onclick="() => _showFieldSelector = true">
-                        <i class="bi bi-plus-circle me-1"></i>Add Fields
+                        <i class="bi bi-plus-circle me-1"></i>@L["Edit_AddFields"]
                     </button>
                 </div>
 
@@ -116,9 +117,9 @@ else
                 {
                     <div class="text-center text-muted py-4">
                         <i class="bi bi-sliders fs-3 d-block mb-2"></i>
-                        <p>No fields assigned yet.</p>
+                        <p>@L["Edit_NoFieldsYet"]</p>
                         <button class="btn btn-primary" @onclick="() => _showFieldSelector = true">
-                            <i class="bi bi-plus-circle me-1"></i>Select Fields
+                            <i class="bi bi-plus-circle me-1"></i>@L["Edit_SelectFields"]
                         </button>
                     </div>
                 }
@@ -143,7 +144,7 @@ else
                     {
                         <div class="text-center mt-2">
                             <span class="spinner-border spinner-border-sm text-primary me-1"></span>
-                            <small class="text-muted">Saving order...</small>
+                            <small class="text-muted">@L["Edit_SavingOrder"]</small>
                         </div>
                     }
                 }
@@ -151,9 +152,9 @@ else
             else if (_activeTab == "tags")
             {
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <p class="text-muted mb-0">Manage which tags are assigned to this action.</p>
+                    <p class="text-muted mb-0">@L["Edit_TagsHint"]</p>
                     <button class="btn btn-outline-primary btn-sm" @onclick="() => _showTagSelector = true">
-                        <i class="bi bi-plus-circle me-1"></i>Add Tags
+                        <i class="bi bi-plus-circle me-1"></i>@L["Edit_AddTags"]
                     </button>
                 </div>
 
@@ -161,9 +162,9 @@ else
                 {
                     <div class="text-center text-muted py-4">
                         <i class="bi bi-tags fs-3 d-block mb-2"></i>
-                        <p>No tags assigned yet.</p>
+                        <p>@L["Edit_NoTagsYet"]</p>
                         <button class="btn btn-primary" @onclick="() => _showTagSelector = true">
-                            <i class="bi bi-plus-circle me-1"></i>Select Tags
+                            <i class="bi bi-plus-circle me-1"></i>@L["Edit_SelectTags"]
                         </button>
                     </div>
                 }
@@ -193,23 +194,23 @@ else
 <!-- Tag Selector Modal -->
 <ModalSelector TItem="TagResponse"
                @bind-IsVisible="_showTagSelector"
-               Title="Select Tags"
+               Title="@L["Modal_SelectTags"]"
                Icon="tags"
                LoadItems="() => TagService.GetAllAsync()"
                KeySelector="t => t.Id"
                SearchSelector="@(t => $"{t.Name} {t.Description}")"
-               SearchPlaceholder="Search tags..."
-               EmptyText="No tags available. Create one below."
+               SearchPlaceholder="@L["Modal_SearchTags"]"
+               EmptyText="@L["Modal_NoTagsAvailable"]"
                ExcludedKeys="_tagExcludedKeys"
                OnConfirm="OnTagsSelectedAsync">
     <CreateTemplate>
         <div class="row g-2 align-items-end">
             <div class="col">
-                <label class="form-label form-label-sm mb-1">Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control form-control-sm" @bind="_newTagName" placeholder="Tag name" />
+                <label class="form-label form-label-sm mb-1">@L["Common_Name"] <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" @bind="_newTagName" placeholder="@L["Common_Name"]" />
             </div>
             <div class="col-auto">
-                <label class="form-label form-label-sm mb-1">Color</label>
+                <label class="form-label form-label-sm mb-1">@L["Tags_Color"]</label>
                 <input type="color" class="form-control form-control-sm form-control-color" @bind="_newTagColor" />
             </div>
             <div class="col-auto">
@@ -218,7 +219,7 @@ else
                     {
                         <span class="spinner-border spinner-border-sm me-1"></span>
                     }
-                    <i class="bi bi-plus-circle me-1"></i>Create
+                    <i class="bi bi-plus-circle me-1"></i>@L["Common_Create"]
                 </button>
             </div>
         </div>
@@ -238,13 +239,13 @@ else
 <!-- Field Selector Modal -->
 <ModalSelector TItem="FieldDefinitionResponse"
                @bind-IsVisible="_showFieldSelector"
-               Title="Select Field Definitions"
+               Title="@L["Modal_SelectFields"]"
                Icon="sliders"
                LoadItems="() => FieldDefinitionService.GetAllAsync()"
                KeySelector="f => f.Id"
                SearchSelector="@(f => $"{f.DefaultName} {f.Type}")"
-               SearchPlaceholder="Search field definitions..."
-               EmptyText="No field definitions available. Create one below."
+               SearchPlaceholder="@L["Modal_SearchFields"]"
+               EmptyText="@L["Modal_NoFieldsAvailable"]"
                ExcludedKeys="_fieldExcludedKeys"
                OnConfirm="OnFieldsSelectedAsync">
     <ItemTemplate>
@@ -324,7 +325,7 @@ else
         if (success)
             Nav.NavigateTo("/tracked-actions");
         else
-            _errors = errors.Count > 0 ? errors : ["Failed to update tracked action."];
+            _errors = errors.Count > 0 ? errors : [L["Edit_UpdateFailed"]];
 
         _saving = false;
     }

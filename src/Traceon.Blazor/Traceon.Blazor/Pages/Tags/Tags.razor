@@ -1,15 +1,16 @@
 @page "/tags"
 @attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Tags - Traceon</PageTitle>
+<PageTitle>@L["Tags_Title"] - Traceon</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="mb-1">
             <i class="bi bi-tags me-2"></i>
-            Tags
+            @L["Tags_Title"]
         </h3>
-        <p class="text-muted mb-0">Create and manage tags to organize your tracked actions</p>
+        <p class="text-muted mb-0">@L["Tags_Subtitle"]</p>
     </div>
 </div>
 
@@ -55,10 +56,10 @@
           LoadData="LoadDataAsync"
           Columns="_columns"
           FilterPlaceholder="Filter by name or description..."
-          EmptyText="No tags yet. Create one to get started!">
+          EmptyText="@L["Tags_Empty"]">
     <Toolbar>
         <button class="btn btn-primary" @onclick="() => _showForm = !_showForm">
-            <i class="bi bi-plus-circle me-1"></i> New Tag
+            <i class="bi bi-plus-circle me-1"></i> @L["Tags_New"]
         </button>
     </Toolbar>
     <RowActions>
@@ -109,7 +110,7 @@
     {
         return
         [
-            ListAction.Button("Delete", () => DeleteAsync(tag.Id), "trash", ListActionStyle.Danger),
+            ListAction.Button(L["Common_Delete"], () => DeleteAsync(tag.Id), "trash", ListActionStyle.Danger),
         ];
     }
 

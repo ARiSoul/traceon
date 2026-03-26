@@ -1,0 +1,319 @@
+@page "/settings"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Settings_Title"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-gear me-2"></i>@L["Settings_Title"]
+        </h3>
+        <p class="text-muted mb-0">@L["Settings_Subtitle"]</p>
+    </div>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+@if (!string.IsNullOrEmpty(_successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>@_successMessage
+        <button type="button" class="btn-close" @onclick="() => _successMessage = null"></button>
+    </div>
+}
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <button class="nav-link @TabClass("preferences")"
+                @onclick="@(() => _activeTab = "preferences")">
+            <i class="bi bi-palette me-1"></i>@L["Settings_Preferences"]
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @TabClass("security")"
+                @onclick="@(() => _activeTab = "security")">
+            <i class="bi bi-shield-lock me-1"></i>@L["Settings_Security"]
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @TabClass("account")"
+                @onclick="@(() => _activeTab = "account")">
+            <i class="bi bi-person me-1"></i>@L["Settings_Account"]
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+@switch (_activeTab)
+{
+    case "preferences":
+        @RenderPreferences()
+        break;
+    case "security":
+        @RenderSecurity()
+        break;
+    case "account":
+        @RenderAccount()
+        break;
+}
+
+@* ── Preferences Tab ── *@
+@{ RenderFragment RenderPreferences() => __builder =>
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-palette me-2"></i>@L["Settings_Appearance"]</h5>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">@L["Settings_Theme"]</label>
+                <div class="d-flex gap-2">
+                    @foreach (var (value, labelKey, icon) in new[] {
+                        ("system", "Settings_ThemeSystem", "circle-half"),
+                        ("light", "Settings_ThemeLight", "sun-fill"),
+                        ("dark", "Settings_ThemeDark", "moon-fill") })
+                    {
+                        <button class="btn @(ThemeService.CurrentTheme == value ? "btn-primary" : "btn-outline-secondary")"
+                                @onclick="() => SetThemeAsync(value)">
+                            <i class="bi bi-@icon me-1"></i>@L[labelKey]
+                        </button>
+                    }
+                </div>
+                <div class="form-text mt-1">
+                    @(ThemeService.CurrentTheme switch
+                    {
+                        "light" => L["Settings_ThemeLightHint"],
+                        "dark" => L["Settings_ThemeDarkHint"],
+                        _ => L["Settings_ThemeSystemHint"]
+                    })
+                </div>
+            </div>
+
+            <h5 class="card-title mb-3 mt-4"><i class="bi bi-translate me-2"></i>@L["Settings_Language"]</h5>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">@L["Settings_DisplayLanguage"]</label>
+                <select class="form-select" style="max-width: 300px;"
+                        value="@LocalizationService.CurrentLanguage"
+                        @onchange="OnLanguageChanged">
+                    @foreach (var lang in Services.LocalizationService.SupportedLanguages)
+                    {
+                        <option value="@lang.Code">@lang.Name</option>
+                    }
+                </select>
+                <div class="form-text">
+                    <i class="bi bi-info-circle me-1"></i>@L["Settings_LanguageHint"]
+                </div>
+            </div>
+        </div>
+    </div>
+}; }
+
+@* ── Security Tab ── *@
+@{ RenderFragment RenderSecurity() => __builder =>
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-key me-2"></i>@L["Settings_ChangePassword"]</h5>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">@L["Settings_CurrentPassword"]</label>
+                        <input type="password" class="form-control" @bind="_currentPassword" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">@L["Settings_NewPassword"]</label>
+                        <input type="password" class="form-control" @bind="_newPassword" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">@L["Settings_ConfirmNewPassword"]</label>
+                        <input type="password" class="form-control" @bind="_confirmPassword" />
+                    </div>
+                    <button class="btn btn-primary" @onclick="ChangePasswordAsync" disabled="@_changingPassword">
+                        @if (_changingPassword)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle me-1"></i>
+                        }
+                        @L["Settings_ChangePassword"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}; }
+
+@* ── Account Tab ── *@
+@{ RenderFragment RenderAccount() => __builder =>
+{
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-person me-2"></i>@L["Settings_AccountInfo"]</h5>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">@L["Common_Email"]</label>
+                        <div class="form-control-plaintext">@_email</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-danger">
+        <div class="card-body">
+            <h5 class="card-title text-danger mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>@L["Settings_DangerZone"]
+            </h5>
+            <p class="text-muted mb-3">@L["Settings_DeleteAccountWarning"]</p>
+
+            @if (!_showDeleteConfirmation)
+            {
+                <button class="btn btn-outline-danger" @onclick="() => _showDeleteConfirmation = true">
+                    <i class="bi bi-trash me-1"></i>@L["Settings_DeleteMyAccount"]
+                </button>
+            }
+            else
+            {
+                <div class="alert alert-danger">
+                    <strong>@L["Settings_DeleteConfirmation"]</strong>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">@L["Settings_TypeDelete"]</label>
+                    <input type="text" class="form-control" style="max-width: 200px;" @bind="_deleteConfirmText" />
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-danger"
+                            disabled="@(_deleteConfirmText != "DELETE" || _deletingAccount)"
+                            @onclick="DeleteAccountAsync">
+                        @if (_deletingAccount)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-trash me-1"></i>
+                        }
+                        @L["Settings_PermanentlyDelete"]
+                    </button>
+                    <button class="btn btn-outline-secondary"
+                            @onclick="() => { _showDeleteConfirmation = false; _deleteConfirmText = string.Empty; }">
+                        @L["Common_Cancel"]
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}; }
+
+@code {
+    [Inject] private AuthService Auth { get; set; } = default!;
+    [Inject] private ThemeService ThemeService { get; set; } = default!;
+    [Inject] private LocalizationService LocalizationService { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+    [Inject] private TokenStore TokenStore { get; set; } = default!;
+
+    private string _activeTab = "preferences";
+    private IReadOnlyList<string> _errors = [];
+    private string? _successMessage;
+
+    private string TabClass(string tab) => _activeTab == tab ? "active" : "";
+
+    // Account
+    private string? _email;
+
+    // Change password
+    private string _currentPassword = string.Empty;
+    private string _newPassword = string.Empty;
+    private string _confirmPassword = string.Empty;
+    private bool _changingPassword;
+
+    // Delete account
+    private bool _showDeleteConfirmation;
+    private string _deleteConfirmText = string.Empty;
+    private bool _deletingAccount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _email = await TokenStore.GetPersistedEmailAsync();
+    }
+
+    private async Task SetThemeAsync(string theme)
+    {
+        await ThemeService.SetThemeAsync(theme);
+    }
+
+    private async Task OnLanguageChanged(ChangeEventArgs e)
+    {
+        var lang = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(lang))
+            await LocalizationService.SetLanguageAsync(lang);
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        _errors = [];
+        _successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_currentPassword) || string.IsNullOrWhiteSpace(_newPassword))
+        {
+            _errors = [L["Settings_PasswordFillAll"]];
+            return;
+        }
+
+        if (_newPassword != _confirmPassword)
+        {
+            _errors = [L["Settings_PasswordNoMatch"]];
+            return;
+        }
+
+        if (_newPassword.Length < 6)
+        {
+            _errors = [L["Settings_PasswordTooShort"]];
+            return;
+        }
+
+        _changingPassword = true;
+
+        var (success, errors) = await Auth.ChangePasswordAsync(_currentPassword, _newPassword);
+
+        if (success)
+        {
+            _successMessage = L["Settings_PasswordChanged"];
+            _currentPassword = string.Empty;
+            _newPassword = string.Empty;
+            _confirmPassword = string.Empty;
+        }
+        else
+        {
+            _errors = errors;
+        }
+
+        _changingPassword = false;
+    }
+
+    private async Task DeleteAccountAsync()
+    {
+        _errors = [];
+        _deletingAccount = true;
+
+        var (success, errors) = await Auth.DeleteAccountAsync();
+
+        if (success)
+        {
+            await Auth.LogoutAsync();
+            Nav.NavigateTo("/auth/login", forceLoad: true);
+        }
+        else
+        {
+            _errors = errors;
+            _deletingAccount = false;
+        }
+    }
+}

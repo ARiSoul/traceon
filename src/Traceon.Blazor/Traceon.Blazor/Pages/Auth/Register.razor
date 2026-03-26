@@ -1,36 +1,37 @@
 @page "/auth/register"
+@inject IStringLocalizer<SharedResource> L
 
-<h3>Register</h3>
+<h3>@L["Auth_Register"]</h3>
 
 <ErrorAlert Errors="_errors" />
 
 @if (_registered)
 {
-    <div class="alert alert-success">Registration successful! <a href="/auth/login">Login here</a>.</div>
+    <div class="alert alert-success">@L["Auth_RegisterSuccess"] <a href="/auth/login">@L["Auth_Login"]</a>.</div>
 }
 else
 {
     <EditForm Model="_model" OnValidSubmit="HandleRegister" FormName="RegisterForm">
         <DataAnnotationsValidator />
         <div class="mb-3">
-            <label class="form-label">Email</label>
+            <label class="form-label">@L["Common_Email"]</label>
             <InputText @bind-Value="_model.Email" class="form-control" />
             <ValidationMessage For="() => _model.Email" />
         </div>
         <div class="mb-3">
-            <label class="form-label">Password</label>
+            <label class="form-label">@L["Common_Password"]</label>
             <InputText @bind-Value="_model.Password" type="password" class="form-control" />
             <ValidationMessage For="() => _model.Password" />
         </div>
         <div class="mb-3">
-            <label class="form-label">Confirm Password</label>
+            <label class="form-label">@L["Auth_ConfirmPassword"]</label>
             <InputText @bind-Value="_model.ConfirmPassword" type="password" class="form-control" />
             <ValidationMessage For="() => _model.ConfirmPassword" />
         </div>
         <button type="submit" class="btn btn-primary" disabled="@_loading">
-            @(_loading ? "Registering..." : "Register")
+            @(_loading ? L["Auth_Registering"] : L["Auth_Register"])
         </button>
-        <a href="/auth/login" class="btn btn-link">Already have an account?</a>
+        <a href="/auth/login" class="btn btn-link">@L["Auth_AlreadyHaveAccount"]</a>
     </EditForm>
 }
 

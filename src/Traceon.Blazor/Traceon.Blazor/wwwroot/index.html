@@ -40,6 +40,13 @@
         window.scrollToElement = function (element) {
             if (element) element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         };
+        window.applyTheme = function (theme) {
+            if (theme === 'dark' || theme === 'light') {
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } else {
+                document.documentElement.removeAttribute('data-bs-theme');
+            }
+        };
     </script>
 </body>
 

@@ -1,18 +1,19 @@
 @page "/tags/{Id:guid}/edit"
 @attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Edit Tag - Traceon</PageTitle>
+<PageTitle>@L["TagEdit_Title"] - Traceon</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="mb-1">
             <i class="bi bi-pencil-square me-2"></i>
-            Edit Tag
+            @L["TagEdit_Title"]
         </h3>
-        <p class="text-muted mb-0">Update the details of your tag</p>
+        <p class="text-muted mb-0">@L["TagEdit_Subtitle"]</p>
     </div>
     <a href="/tags" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Back to Tags
+        <i class="bi bi-arrow-left me-1"></i>@L["TagEdit_BackToTags"]
     </a>
 </div>
 

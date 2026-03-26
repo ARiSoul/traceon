@@ -1,19 +1,20 @@
 @page "/dashboard"
 @page "/dashboard/action/{ActionIdParam:guid}"
 @attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Dashboard - Traceon</PageTitle>
+<PageTitle>@L["Dashboard_Title"] - Traceon</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="mb-1">
             <i class="bi bi-bar-chart-line me-2"></i>
-            Dashboard
+            @L["Dashboard_Title"]
         </h3>
-        <p class="text-muted mb-0">Statistics and insights across your tracked actions</p>
+        <p class="text-muted mb-0">@L["Dashboard_StatsSubtitle"]</p>
     </div>
     <button class="btn btn-outline-secondary btn-sm" @onclick="ReloadAsync" disabled="@_loading">
-        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        <i class="bi bi-arrow-clockwise me-1"></i>@L["Dashboard_Refresh"]
     </button>
 </div>
 

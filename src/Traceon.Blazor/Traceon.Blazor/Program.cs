@@ -31,6 +31,8 @@ builder.Services.AddHttpClient("TraceonApi", client =>
 builder.Services.AddScoped(sp =>
     sp.GetRequiredService<IHttpClientFactory>().CreateClient("TraceonApi"));
 
+builder.Services.AddLocalization();
+
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<TrackedActionService>();
 builder.Services.AddScoped<TagService>();
@@ -38,5 +40,15 @@ builder.Services.AddScoped<FieldDefinitionService>();
 builder.Services.AddScoped<ActionFieldService>();
 builder.Services.AddScoped<ActionEntryService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<ThemeService>();
+builder.Services.AddScoped<LocalizationService>();
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+
+var localizationService = host.Services.GetRequiredService<LocalizationService>();
+await localizationService.InitializeAsync();
+
+var themeService = host.Services.GetRequiredService<ThemeService>();
+await themeService.InitializeAsync();
+
+await host.RunAsync();

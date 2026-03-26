@@ -1,15 +1,16 @@
 @page "/tracked-actions"
 @attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Tracked Actions - Traceon</PageTitle>
+<PageTitle>@L["TrackedActions_Title"] - Traceon</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="mb-1">
             <i class="bi bi-list-check me-2"></i>
-            Tracked Actions
+            @L["TrackedActions_Title"]
         </h3>
-        <p class="text-muted mb-0">Manage your tracked actions and monitor progress</p>
+        <p class="text-muted mb-0">@L["TrackedActions_Subtitle"]</p>
     </div>
 </div>
 
@@ -21,10 +22,10 @@
           Columns="_columns"
           DefaultSortField="SortOrder"
           FilterPlaceholder="Filter by name or description..."
-          EmptyText="No tracked actions yet. Create one to get started!">
+          EmptyText="@L["TrackedActions_Empty"]">
     <Toolbar>
         <a href="/tracked-actions/create" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> New Action
+            <i class="bi bi-plus-circle me-1"></i> @L["TrackedActions_New"]
         </a>
     </Toolbar>
     <RowActions>
@@ -104,16 +105,16 @@
     {
         return
         [
-            ListAction.Link("Analytics", $"/dashboard/action/{action.Id}/detail", "graph-up-arrow", ListActionStyle.Info),
+            ListAction.Link(L["TrackedActions_Analytics"], $"/dashboard/action/{action.Id}/detail", "graph-up-arrow", ListActionStyle.Info),
 
             ListAction.Separator(),
 
-            ListAction.Link("View Entries", $"/entries/action/{action.Id}", "journal-text", ListActionStyle.Primary),
-            ListAction.Link("New Entry", $"/tracked-actions/{action.Id}/entries/new?returnUrl=%2Ftracked-actions", "plus-square", ListActionStyle.Success),
+            ListAction.Link(L["TrackedActions_ViewEntries"], $"/entries/action/{action.Id}", "journal-text", ListActionStyle.Primary),
+            ListAction.Link(L["TrackedActions_NewEntry"], $"/tracked-actions/{action.Id}/entries/new?returnUrl=%2Ftracked-actions", "plus-square", ListActionStyle.Success),
 
             ListAction.Separator(),
 
-            ListAction.Button("Delete", () => DeleteAsync(action.Id), "trash", ListActionStyle.Danger),
+            ListAction.Button(L["Common_Delete"], () => DeleteAsync(action.Id), "trash", ListActionStyle.Danger),
         ];
     }
 

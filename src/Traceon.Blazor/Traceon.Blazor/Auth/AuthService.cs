@@ -68,6 +68,29 @@ public sealed class AuthService(HttpClient http, TokenStore tokenStore, TokenAut
         return (false, errors);
     }
 
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> ChangePasswordAsync(string currentPassword, string newPassword)
+    {
+        var response = await http.PostAsJsonAsync("/api/identity/change-password",
+            new { CurrentPassword = currentPassword, NewPassword = newPassword });
+
+        if (response.IsSuccessStatusCode)
+            return (true, []);
+
+        var errors = await ExtractErrorsAsync(response);
+        return (false, errors);
+    }
+
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> DeleteAccountAsync()
+    {
+        var response = await http.DeleteAsync("/api/identity/account");
+
+        if (response.IsSuccessStatusCode)
+            return (true, []);
+
+        var errors = await ExtractErrorsAsync(response);
+        return (false, errors);
+    }
+
     private static Task<IReadOnlyList<string>> ExtractErrorsAsync(HttpResponseMessage response)
         => ApiErrorParser.ExtractErrorsAsync(response);
 }

@@ -17,6 +17,8 @@ internal static class IdentityEndpoints
         group.MapPost("/refresh", RefreshAsync).AllowAnonymous();
         group.MapPost("/forgot-password", ForgotPasswordAsync).AllowAnonymous();
         group.MapPost("/reset-password", ResetPasswordAsync).AllowAnonymous();
+        group.MapPost("/change-password", ChangePasswordAsync);
+        group.MapDelete("/account", DeleteAccountAsync);
 
         return group;
     }
@@ -144,5 +146,53 @@ internal static class IdentityEndpoints
     private sealed record RefreshTokenRequest(string Email, string RefreshToken);
     private sealed record ForgotPasswordRequest(string Email);
     private sealed record ResetPasswordRequest(string Email, string ResetCode, string NewPassword);
+    private sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
     private sealed record AccessTokenResponse(string TokenType, string AccessToken, int ExpiresIn, string RefreshToken);
+
+    private static async Task<IResult> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        UserManager<ApplicationUser> userManager,
+        IHttpContextAccessor httpContextAccessor)
+    {
+        var userId = httpContextAccessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return TypedResults.Unauthorized();
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null) return TypedResults.Unauthorized();
+
+        var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+
+        if (!result.Succeeded)
+        {
+            return TypedResults.ValidationProblem(
+                result.Errors.ToDictionary(
+                    e => e.Code,
+                    e => new[] { e.Description }));
+        }
+
+        return TypedResults.Ok();
+    }
+
+    private static async Task<IResult> DeleteAccountAsync(
+        UserManager<ApplicationUser> userManager,
+        IHttpContextAccessor httpContextAccessor)
+    {
+        var userId = httpContextAccessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return TypedResults.Unauthorized();
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null) return TypedResults.Unauthorized();
+
+        var result = await userManager.DeleteAsync(user);
+
+        if (!result.Succeeded)
+        {
+            return TypedResults.ValidationProblem(
+                result.Errors.ToDictionary(
+                    e => e.Code,
+                    e => new[] { e.Description }));
+        }
+
+        return TypedResults.NoContent();
+    }
 }
