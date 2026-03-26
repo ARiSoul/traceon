@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+
+  <!-- ═══ Navegación ═══ -->
+  <data name="Nav_Home"><value>Inicio</value></data>
+  <data name="Nav_TrackedActions"><value>Acciones</value></data>
+  <data name="Nav_Entries"><value>Registros</value></data>
+  <data name="Nav_Dashboard"><value>Dashboard</value></data>
+  <data name="Nav_Tags"><value>Etiquetas</value></data>
+  <data name="Nav_CustomFields"><value>Campos Personalizados</value></data>
+  <data name="Nav_Settings"><value>Ajustes</value></data>
+  <data name="Nav_Tracking"><value>REGISTRO</value></data>
+  <data name="Nav_Configuration"><value>CONFIGURACIÓN</value></data>
+  <data name="Nav_Menu"><value>Menú de navegación</value></data>
+
+  <!-- ═══ Layout ═══ -->
+  <data name="Layout_Logout"><value>Cerrar sesión</value></data>
+  <data name="Layout_Login"><value>Iniciar sesión</value></data>
+  <data name="Layout_Theme"><value>Tema</value></data>
+
+  <!-- ═══ Común ═══ -->
+  <data name="Common_Save"><value>Guardar</value></data>
+  <data name="Common_Cancel"><value>Cancelar</value></data>
+  <data name="Common_Delete"><value>Eliminar</value></data>
+  <data name="Common_Edit"><value>Editar</value></data>
+  <data name="Common_Create"><value>Crear</value></data>
+  <data name="Common_Back"><value>Volver</value></data>
+  <data name="Common_Loading"><value>Cargando...</value></data>
+  <data name="Common_Yes"><value>Sí</value></data>
+  <data name="Common_No"><value>No</value></data>
+  <data name="Common_Name"><value>Nombre</value></data>
+  <data name="Common_Description"><value>Descripción</value></data>
+  <data name="Common_Type"><value>Tipo</value></data>
+  <data name="Common_Created"><value>Creado</value></data>
+  <data name="Common_Actions"><value>Acciones</value></data>
+  <data name="Common_Required"><value>Obligatorio</value></data>
+  <data name="Common_Optional"><value>opcional</value></data>
+  <data name="Common_SaveChanges"><value>Guardar Cambios</value></data>
+  <data name="Common_BackToList"><value>Volver a la Lista</value></data>
+  <data name="Common_Track"><value>Registrar</value></data>
+  <data name="Common_Email"><value>Correo electrónico</value></data>
+  <data name="Common_Password"><value>Contraseña</value></data>
+  <data name="Common_Search"><value>Buscar</value></data>
+  <data name="Common_Filter"><value>Filtrar</value></data>
+  <data name="Common_AllTime"><value>Todo el Período</value></data>
+  <data name="Common_Entries"><value>Registros</value></data>
+  <data name="Common_Fields"><value>Campos</value></data>
+  <data name="Common_Tags"><value>Etiquetas</value></data>
+  <data name="Common_NoDataYet"><value>Sin datos todavía</value></data>
+  <data name="Common_MoveUp"><value>Mover arriba</value></data>
+  <data name="Common_MoveDown"><value>Mover abajo</value></data>
+
+  <!-- ═══ Inicio ═══ -->
+  <data name="Home_AppName"><value>Traceon</value></data>
+  <data name="Home_Subtitle"><value>Registra, mide y mejora tus acciones diarias</value></data>
+  <data name="Home_TrackedSuccess"><value>¡registrado con éxito!</value></data>
+  <data name="Home_NoActionsYet"><value>Sin acciones todavía</value></data>
+  <data name="Home_NoActionsHint"><value>Crea tu primera acción para empezar a registrar.</value></data>
+  <data name="Home_CreateAction"><value>Crear Acción</value></data>
+  <data name="Home_QuickTracking"><value>Registro Rápido</value></data>
+  <data name="Home_Reorder"><value>Reordenar</value></data>
+  <data name="Home_Done"><value>Hecho</value></data>
+  <data name="Home_Welcome"><value>Bienvenido a Traceon</value></data>
+  <data name="Home_WelcomeHint"><value>Registra, mide y mejora tus acciones diarias.</value></data>
+  <data name="Home_Register"><value>Registrarse</value></data>
+
+  <!-- ═══ Autenticación ═══ -->
+  <data name="Auth_Login"><value>Iniciar sesión</value></data>
+  <data name="Auth_LoggingIn"><value>Iniciando sesión...</value></data>
+  <data name="Auth_CreateAccount"><value>Crear una cuenta</value></data>
+  <data name="Auth_ForgotPassword"><value>¿Olvidaste la contraseña?</value></data>
+  <data name="Auth_LoginFailed"><value>Error al iniciar sesión.</value></data>
+  <data name="Auth_Register"><value>Registrarse</value></data>
+  <data name="Auth_Registering"><value>Registrando...</value></data>
+  <data name="Auth_AlreadyHaveAccount"><value>¿Ya tienes una cuenta? Iniciar sesión</value></data>
+  <data name="Auth_RegisterSuccess"><value>¡Registro exitoso! Verifica tu correo electrónico para confirmar tu cuenta y luego inicia sesión.</value></data>
+  <data name="Auth_ForgotPasswordTitle"><value>Olvidé mi Contraseña</value></data>
+  <data name="Auth_ForgotPasswordHint"><value>Introduce tu correo electrónico y te enviaremos un código de recuperación.</value></data>
+  <data name="Auth_SendResetCode"><value>Enviar Código</value></data>
+  <data name="Auth_Sending"><value>Enviando...</value></data>
+  <data name="Auth_ResetCodeSent"><value>Si existe una cuenta con ese correo, se ha enviado un código de recuperación.</value></data>
+  <data name="Auth_BackToLogin"><value>Volver al Login</value></data>
+  <data name="Auth_ResetPassword"><value>Restablecer Contraseña</value></data>
+  <data name="Auth_ResetCode"><value>Código de Recuperación</value></data>
+  <data name="Auth_NewPassword"><value>Nueva Contraseña</value></data>
+  <data name="Auth_Resetting"><value>Restableciendo...</value></data>
+  <data name="Auth_ResetSuccess"><value>¡Contraseña restablecida con éxito! Ya puedes iniciar sesión con tu nueva contraseña.</value></data>
+  <data name="Auth_ConfirmPassword"><value>Confirmar Contraseña</value></data>
+
+  <!-- ═══ Registro Rápido ═══ -->
+  <data name="QuickTrack_When"><value>¿Cuándo?</value></data>
+  <data name="QuickTrack_Notes"><value>Notas</value></data>
+  <data name="QuickTrack_NotesPlaceholder"><value>Notas sobre este registro...</value></data>
+
+  <!-- ═══ Acciones ═══ -->
+  <data name="TrackedActions_Title"><value>Acciones</value></data>
+  <data name="TrackedActions_Subtitle"><value>Gestiona tus acciones y monitoriza el progreso</value></data>
+  <data name="TrackedActions_New"><value>Nueva Acción</value></data>
+  <data name="TrackedActions_Empty"><value>Sin acciones todavía. ¡Crea una para empezar!</value></data>
+  <data name="TrackedActions_Analytics"><value>Estadísticas</value></data>
+  <data name="TrackedActions_ViewEntries"><value>Ver Registros</value></data>
+  <data name="TrackedActions_NewEntry"><value>Nuevo Registro</value></data>
+  <data name="TrackedActions_EditAction"><value>Editar Acción</value></data>
+
+  <!-- ═══ Crear Acción ═══ -->
+  <data name="ActionCreate_Title"><value>Crear Acción</value></data>
+  <data name="ActionCreate_Subtitle"><value>Configura una nueva acción con campos y etiquetas</value></data>
+  <data name="ActionCreate_Next"><value>Siguiente</value></data>
+  <data name="ActionCreate_Previous"><value>Anterior</value></data>
+  <data name="ActionCreate_CreateNow"><value>Crear Acción</value></data>
+
+  <!-- ═══ Editar Acción ═══ -->
+  <data name="ActionEdit_Title"><value>Editar Acción</value></data>
+  <data name="ActionEdit_Editing"><value>Editando</value></data>
+
+  <!-- ═══ Dashboard ═══ -->
+  <data name="Dashboard_Title"><value>Dashboard</value></data>
+  <data name="Dashboard_Subtitle"><value>Visión general de tu actividad</value></data>
+  <data name="Dashboard_TotalActions"><value>Total de Acciones</value></data>
+  <data name="Dashboard_TotalEntries"><value>Total de Registros</value></data>
+  <data name="Dashboard_Today"><value>Hoy</value></data>
+  <data name="Dashboard_ThisWeek"><value>Esta Semana</value></data>
+  <data name="Dashboard_ThisMonth"><value>Este Mes</value></data>
+  <data name="Dashboard_Streak"><value>Racha</value></data>
+  <data name="Dashboard_GlobalFrequency"><value>Frecuencia Global de Registros</value></data>
+  <data name="Dashboard_Period"><value>Período</value></data>
+  <data name="Dashboard_LastNDays"><value>Últimos N Días</value></data>
+  <data name="Dashboard_LastNMonths"><value>Últimos N Meses</value></data>
+  <data name="Dashboard_LastNYears"><value>Últimos N Años</value></data>
+  <data name="Dashboard_CustomRange"><value>Rango Personalizado</value></data>
+  <data name="Dashboard_Days"><value>Días</value></data>
+  <data name="Dashboard_Months"><value>Meses</value></data>
+  <data name="Dashboard_Years"><value>Años</value></data>
+  <data name="Dashboard_From"><value>Desde</value></data>
+  <data name="Dashboard_To"><value>Hasta</value></data>
+  <data name="Dashboard_PerActionStats"><value>Estadísticas por Acción</value></data>
+  <data name="Dashboard_NoActionsMatch"><value>Ninguna acción coincide con el filtro seleccionado.</value></data>
+  <data name="Dashboard_WeeklyActivity"><value>Actividad Semanal (últimos 3 meses)</value></data>
+  <data name="Dashboard_FullAnalytics"><value>Estadísticas Completas</value></data>
+  <data name="Dashboard_FieldAnalytics"><value>Estadísticas de Campos</value></data>
+  <data name="Dashboard_FieldTrends"><value>Tendencias de Campos</value></data>
+  <data name="Dashboard_FieldSummary"><value>Resumen de Campos</value></data>
+  <data name="Dashboard_NoEntriesYet"><value>Sin registros todavía para esta acción.</value></data>
+  <data name="Dashboard_AddEntry"><value>Añadir Registro</value></data>
+  <data name="Dashboard_TotalEntries_Label"><value>Total de Registros</value></data>
+  <data name="Dashboard_LastEntry"><value>Último Registro</value></data>
+  <data name="Dashboard_AvgGap"><value>Intervalo Medio</value></data>
+  <data name="Dashboard_DayStreak"><value>Racha Diaria</value></data>
+  <data name="Dashboard_Tag"><value>Etiqueta</value></data>
+  <data name="Dashboard_All"><value>Todos</value></data>
+  <data name="Dashboard_AllActions"><value>Todas las Acciones</value></data>
+
+  <!-- ═══ Estadísticas de Acción ═══ -->
+  <data name="Analytics_Title"><value>Estadísticas de Acción</value></data>
+  <data name="Analytics_DeepDive"><value>Análisis detallado de</value></data>
+  <data name="Analytics_BackToDashboard"><value>Volver al Dashboard</value></data>
+  <data name="Analytics_EntryFrequency"><value>Frecuencia de Registros</value></data>
+  <data name="Analytics_ActionNotFound"><value>Acción no encontrada.</value></data>
+  <data name="Analytics_ValuesRecorded"><value>valores registrados</value></data>
+
+  <!-- ═══ Registros ═══ -->
+  <data name="Entries_Title"><value>Registros</value></data>
+  <data name="Entries_Subtitle"><value>Consulta y gestiona todos tus registros</value></data>
+  <data name="Entries_NewEntry"><value>Nuevo Registro</value></data>
+
+  <!-- ═══ Etiquetas ═══ -->
+  <data name="Tags_Title"><value>Etiquetas</value></data>
+  <data name="Tags_Subtitle"><value>Organiza tus acciones con etiquetas de colores</value></data>
+  <data name="Tags_New"><value>Nueva Etiqueta</value></data>
+  <data name="Tags_Empty"><value>Sin etiquetas todavía. ¡Crea una para empezar!</value></data>
+  <data name="Tags_Color"><value>Color</value></data>
+
+  <!-- ═══ Campos Personalizados ═══ -->
+  <data name="Fields_Title"><value>Campos Personalizados</value></data>
+  <data name="Fields_Subtitle"><value>Define plantillas de campos reutilizables que se pueden asignar a acciones</value></data>
+  <data name="Fields_New"><value>Nuevo Campo Personalizado</value></data>
+  <data name="Fields_Empty"><value>Sin campos personalizados todavía. ¡Crea uno para empezar!</value></data>
+  <data name="Fields_Unit"><value>Unidad</value></data>
+  <data name="Fields_UnitHint"><value>La unidad de medida para este campo (por defecto: UN).</value></data>
+  <data name="Fields_UnitPlaceholder"><value>ej.: €, kg, km, min</value></data>
+  <data name="Fields_MinValue"><value>Valor Mínimo</value></data>
+  <data name="Fields_MaxValue"><value>Valor Máximo</value></data>
+  <data name="Fields_MinDate"><value>Fecha Mínima</value></data>
+  <data name="Fields_MaxDate"><value>Fecha Máxima</value></data>
+  <data name="Fields_DefaultValue"><value>Valor Predeterminado</value></data>
+  <data name="Fields_RequiredByDefault"><value>Obligatorio por defecto</value></data>
+  <data name="Fields_DropdownValues"><value>Valores del Desplegable</value></data>
+  <data name="Fields_DropdownHint"><value>Introduce valores separados por comas para las opciones del desplegable.</value></data>
+  <data name="Fields_DropdownPlaceholder"><value>Valores separados por comas, ej.: Bajo, Medio, Alto</value></data>
+  <data name="Fields_CheckedByDefault"><value>Marcado por defecto</value></data>
+  <data name="Fields_CreateField"><value>Crear Campo</value></data>
+  <data name="Fields_SelectDefault"><value>— Seleccionar predeterminado —</value></data>
+  <data name="Fields_DefineDropdownFirst"><value>Define los valores del desplegable arriba primero.</value></data>
+
+  <!-- ═══ Editor de Campos ═══ -->
+  <data name="FieldEditor_AnalyticsConfig"><value>Configuración de Estadísticas</value></data>
+  <data name="FieldEditor_SummaryMetrics"><value>Métricas de Resumen</value></data>
+  <data name="FieldEditor_TrendAggregation"><value>Agregación de Tendencia</value></data>
+  <data name="FieldEditor_AllPoints"><value>Todos los Puntos</value></data>
+  <data name="FieldEditor_DailyAverage"><value>Media Diaria</value></data>
+  <data name="FieldEditor_DailyMin"><value>Mínimo Diario</value></data>
+  <data name="FieldEditor_DailyMax"><value>Máximo Diario</value></data>
+  <data name="FieldEditor_DailySum"><value>Suma Diaria</value></data>
+  <data name="FieldEditor_ChartType"><value>Tipo de Gráfico</value></data>
+  <data name="FieldEditor_Line"><value>Línea</value></data>
+  <data name="FieldEditor_Bar"><value>Barra</value></data>
+  <data name="FieldEditor_Area"><value>Área</value></data>
+  <data name="FieldEditor_TargetValue"><value>Valor Objetivo</value></data>
+
+  <!-- ═══ Ajustes ═══ -->
+  <data name="Settings_Title"><value>Ajustes</value></data>
+  <data name="Settings_Subtitle"><value>Gestiona tu cuenta y preferencias</value></data>
+  <data name="Settings_Preferences"><value>Preferencias</value></data>
+  <data name="Settings_Security"><value>Seguridad</value></data>
+  <data name="Settings_Account"><value>Cuenta</value></data>
+  <data name="Settings_Appearance"><value>Apariencia</value></data>
+  <data name="Settings_Theme"><value>Tema</value></data>
+  <data name="Settings_ThemeSystem"><value>Sistema</value></data>
+  <data name="Settings_ThemeLight"><value>Claro</value></data>
+  <data name="Settings_ThemeDark"><value>Oscuro</value></data>
+  <data name="Settings_ThemeSystemHint"><value>Sigue la preferencia del sistema operativo.</value></data>
+  <data name="Settings_ThemeLightHint"><value>Usar siempre el modo claro.</value></data>
+  <data name="Settings_ThemeDarkHint"><value>Usar siempre el modo oscuro.</value></data>
+  <data name="Settings_Language"><value>Idioma</value></data>
+  <data name="Settings_DisplayLanguage"><value>Idioma de Visualización</value></data>
+  <data name="Settings_LanguageHint"><value>Selecciona tu idioma preferido. La aplicación se recargará para aplicar.</value></data>
+  <data name="Settings_ChangePassword"><value>Cambiar Contraseña</value></data>
+  <data name="Settings_CurrentPassword"><value>Contraseña Actual</value></data>
+  <data name="Settings_NewPassword"><value>Nueva Contraseña</value></data>
+  <data name="Settings_ConfirmNewPassword"><value>Confirmar Nueva Contraseña</value></data>
+  <data name="Settings_PasswordChanged"><value>Contraseña cambiada con éxito.</value></data>
+  <data name="Settings_PasswordFillAll"><value>Por favor, rellena todos los campos de contraseña.</value></data>
+  <data name="Settings_PasswordNoMatch"><value>La nueva contraseña y la confirmación no coinciden.</value></data>
+  <data name="Settings_PasswordTooShort"><value>La nueva contraseña debe tener al menos 6 caracteres.</value></data>
+  <data name="Settings_AccountInfo"><value>Información de la Cuenta</value></data>
+  <data name="Settings_DangerZone"><value>Zona de Peligro</value></data>
+  <data name="Settings_DeleteAccountWarning"><value>Eliminar permanentemente tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.</value></data>
+  <data name="Settings_DeleteMyAccount"><value>Eliminar Mi Cuenta</value></data>
+  <data name="Settings_DeleteConfirmation"><value>¿Estás seguro? Esto eliminará permanentemente tu cuenta y todas tus acciones, registros, campos personalizados y etiquetas.</value></data>
+  <data name="Settings_TypeDelete"><value>Escribe DELETE para confirmar</value></data>
+  <data name="Settings_PermanentlyDelete"><value>Eliminar Permanentemente</value></data>
+
+  <!-- ═══ DataGrid ═══ -->
+  <data name="DataGrid_NoResults"><value>Sin resultados encontrados.</value></data>
+  <data name="DataGrid_Showing"><value>Mostrando</value></data>
+  <data name="DataGrid_Of"><value>de</value></data>
+
+  <!-- ═══ Métricas ═══ -->
+  <data name="Metric_Min"><value>Mín</value></data>
+  <data name="Metric_Max"><value>Máx</value></data>
+  <data name="Metric_Avg"><value>Med</value></data>
+  <data name="Metric_Sum"><value>Suma</value></data>
+  <data name="Metric_Count"><value>Conteo</value></data>
+  <data name="Metric_Latest"><value>Último</value></data>
+  <data name="Metric_Target"><value>Objetivo</value></data>
+
+  <!-- ═══ Edición de Registro ═══ -->
+  <data name="Entry_NewTitle"><value>Nuevo Registro</value></data>
+  <data name="Entry_EditTitle"><value>Editar Registro</value></data>
+  <data name="Entry_NewSubtitle"><value>Registrar un nuevo registro para</value></data>
+  <data name="Entry_EditSubtitle"><value>Actualizar este registro para</value></data>
+  <data name="Entry_SaveEntry"><value>Guardar Registro</value></data>
+  <data name="Entry_Select"><value>— Seleccionar —</value></data>
+
+  <!-- ═══ Edición de Acción - Pestañas ═══ -->
+  <data name="ActionEdit_BasicInfo"><value>Información Básica</value></data>
+  <data name="ActionEdit_FieldsHint"><value>Gestiona los campos de datos capturados para cada registro. Haz clic en un campo para editar sus ajustes.</value></data>
+  <data name="ActionEdit_AddFields"><value>Añadir Campos</value></data>
+  <data name="ActionEdit_NoFields"><value>Sin campos asignados todavía.</value></data>
+  <data name="ActionEdit_SelectFields"><value>Seleccionar Campos</value></data>
+  <data name="ActionEdit_TagsHint"><value>Gestiona qué etiquetas están asignadas a esta acción.</value></data>
+  <data name="ActionEdit_AddTags"><value>Añadir Etiquetas</value></data>
+  <data name="ActionEdit_NoTags"><value>Sin etiquetas asignadas todavía.</value></data>
+  <data name="ActionEdit_SelectTags"><value>Seleccionar Etiquetas</value></data>
+  <data name="ActionEdit_SavingOrder"><value>Guardando orden...</value></data>
+  <data name="ActionEdit_NotFound"><value>Acción no encontrada.</value></data>
+
+  <!-- ═══ ModalSelector ═══ -->
+  <data name="ModalSelector_SelectAll"><value>Seleccionar Todos</value></data>
+  <data name="ModalSelector_DeselectAll"><value>Deseleccionar Todos</value></data>
+  <data name="ModalSelector_Selected"><value>seleccionados</value></data>
+  <data name="ModalSelector_Confirm"><value>Confirmar Selección</value></data>
+  <data name="ModalSelector_CreateNew"><value>Crear Nuevo</value></data>
+
+  <!-- ═══ EntryDataGrid ═══ -->
+  <data name="EntryGrid_Action"><value>Acción</value></data>
+  <data name="EntryGrid_Date"><value>Fecha</value></data>
+  <data name="EntryGrid_Notes"><value>Notas</value></data>
+  <data name="EntryGrid_AllActions"><value>Todas las Acciones</value></data>
+  <data name="EntryGrid_Empty"><value>Sin registros todavía. ¡Empieza a registrar!</value></data>
+
+  <!-- ═══ No Encontrado ═══ -->
+  <data name="NotFound_Title"><value>Página No Encontrada</value></data>
+  <data name="NotFound_Message"><value>Lo sentimos, no hay nada en esta dirección.</value></data>
+
+  <!-- ═══ Página de Edición ═══ -->
+  <data name="Edit_BasicInfo"><value>Información Básica</value></data>
+  <data name="Edit_NotFound"><value>Acción no encontrada.</value></data>
+  <data name="Edit_FieldsHint"><value>Gestiona los campos de datos capturados para cada registro. Haz clic en un campo para editar sus ajustes.</value></data>
+  <data name="Edit_AddFields"><value>Añadir Campos</value></data>
+  <data name="Edit_NoFieldsYet"><value>Sin campos asignados todavía.</value></data>
+  <data name="Edit_SelectFields"><value>Seleccionar Campos</value></data>
+  <data name="Edit_SavingOrder"><value>Guardando orden...</value></data>
+  <data name="Edit_TagsHint"><value>Gestiona qué etiquetas están asignadas a esta acción.</value></data>
+  <data name="Edit_AddTags"><value>Añadir Etiquetas</value></data>
+  <data name="Edit_NoTagsYet"><value>Sin etiquetas asignadas todavía.</value></data>
+  <data name="Edit_SelectTags"><value>Seleccionar Etiquetas</value></data>
+  <data name="Edit_UpdateFailed"><value>Error al actualizar la acción.</value></data>
+
+  <!-- ═══ Modales ═══ -->
+  <data name="Modal_SelectTags"><value>Seleccionar Etiquetas</value></data>
+  <data name="Modal_SelectFields"><value>Seleccionar Campos Personalizados</value></data>
+  <data name="Modal_SearchTags"><value>Buscar etiquetas...</value></data>
+  <data name="Modal_SearchFields"><value>Buscar campos personalizados...</value></data>
+  <data name="Modal_NoTagsAvailable"><value>Sin etiquetas disponibles. Crea una abajo.</value></data>
+  <data name="Modal_NoFieldsAvailable"><value>Sin campos personalizados disponibles. Crea uno abajo.</value></data>
+
+  <!-- ═══ Dashboard (extra) ═══ -->
+  <data name="Dashboard_Refresh"><value>Actualizar</value></data>
+  <data name="Dashboard_AvgVsMax"><value>Media vs máximo configurado ({0})</value></data>
+  <data name="Dashboard_StatsSubtitle"><value>Estadísticas e información sobre tus acciones</value></data>
+
+  <!-- ═══ Editar Etiqueta ═══ -->
+  <data name="TagEdit_Title"><value>Editar Etiqueta</value></data>
+  <data name="TagEdit_Subtitle"><value>Actualizar los detalles de tu etiqueta</value></data>
+  <data name="TagEdit_BackToTags"><value>Volver a Etiquetas</value></data>
+
+  <!-- ═══ Editar Campo ═══ -->
+  <data name="FieldEdit_EditTitle"><value>Editar Campo Personalizado</value></data>
+  <data name="FieldEdit_CreateTitle"><value>Crear Campo Personalizado</value></data>
+  <data name="FieldEdit_EditSubtitle"><value>Actualizar los detalles de tu campo personalizado</value></data>
+  <data name="FieldEdit_CreateSubtitle"><value>Definir una nueva plantilla de campo reutilizable</value></data>
+  <data name="FieldEdit_BackToFields"><value>Volver a Campos Personalizados</value></data>
+
+  <!-- ═══ Filtros / Placeholders ═══ -->
+  <data name="Filter_ByNameOrDesc"><value>Filtrar por nombre o descripción...</value></data>
+  <data name="Filter_ByName"><value>Filtrar por nombre...</value></data>
+  <data name="Filter_ByNotes"><value>Filtrar por notas...</value></data>
+  <data name="Filter_DateField"><value>Campo de fecha</value></data>
+  <data name="Filter_Occurred"><value>Ocurrido</value></data>
+  <data name="Filter_TagName"><value>Nombre de etiqueta</value></data>
+  <data name="Filter_WhatTracking"><value>¿Qué estás registrando?</value></data>
+  <data name="Filter_NamePlaceholder"><value>ej.: Ejercicio Diario</value></data>
+  <data name="Filter_AnyNotes"><value>Cualquier nota...</value></data>
+
+  <!-- ═══ Edición de Etiqueta ═══ -->
+  <data name="TagEdit_NotFound"><value>Etiqueta no encontrada.</value></data>
+  <data name="TagEdit_UpdateFailed"><value>Error al actualizar etiqueta.</value></data>
+
+  <!-- ═══ Edición de Campo Personalizado ═══ -->
+  <data name="FieldEdit_NotFound"><value>Campo personalizado no encontrado.</value></data>
+  <data name="FieldEdit_UpdateFailed"><value>Error al actualizar campo personalizado.</value></data>
+
+  <!-- ═══ Asistente de Creación ═══ -->
+  <data name="Wizard_BasicInfo"><value>Información Básica</value></data>
+  <data name="Wizard_Review"><value>Revisión</value></data>
+  <data name="Wizard_NameRequired"><value>El nombre es obligatorio.</value></data>
+  <data name="Wizard_ActionNotFound"><value>Acción creada pero no se pudo encontrar.</value></data>
+  <data name="Wizard_NoTagsHint"><value>Sin etiquetas seleccionadas. Las etiquetas ayudan a organizar y filtrar tus acciones.</value></data>
+  <data name="Wizard_NoFieldsHint"><value>Sin campos seleccionados. Los campos definen qué datos capturas por registro.</value></data>
+  <data name="Wizard_NoDropdownValues"><value>Sin valores de lista definidos.</value></data>
+  <data name="Wizard_NoTagsSelected"><value>Sin etiquetas seleccionadas</value></data>
+  <data name="Wizard_NoFieldsSelected"><value>Sin campos seleccionados</value></data>
+  <data name="Wizard_NoEntriesAdded"><value>Sin registros añadidos</value></data>
+  <data name="Wizard_HasCustomFields"><value>Esta acción tiene campos personalizados</value></data>
+  <data name="Wizard_CustomFieldsHint"><value>Como has definido campos, los registros deben crearse después de la configuración — para que todos los valores puedan rellenarse correctamente.</value></data>
+  <data name="Wizard_RedirectToEntry"><value>Llévame a añadir el primer registro después de la creación</value></data>
+  <data name="Wizard_WillRedirect"><value>Serás redirigido para añadir el primer registro después de la creación</value></data>
+  <data name="Wizard_EntriesAfterCreation"><value>Los registros pueden añadirse después de la creación (los campos personalizados necesitan rellenarse)</value></data>
+  <data name="Wizard_NoEntriesHint"><value>Sin registros añadidos todavía. Puedes añadir registros ahora o hacerlo más tarde desde la página de inicio.</value></data>
+  <data name="Wizard_AddEntry"><value>Añadir Registro</value></data>
+
+  <!-- ═══ Dashboard (extra) ═══ -->
+  <data name="Dashboard_NoDataHint"><value>Crea acciones y añade registros para ver tu dashboard.</value></data>
+  <data name="Dashboard_CreateAction"><value>Crear Acción</value></data>
+  <data name="Dashboard_Entries"><value>registros</value></data>
+  <data name="Dashboard_Day"><value>día</value></data>
+  <data name="Dashboard_DayPlural"><value>días</value></data>
+  <data name="Dashboard_EditAction"><value>Editar Acción</value></data>
+  <data name="Dashboard_ViewEntries"><value>Ver Registros</value></data>
+  <data name="Dashboard_NewEntry"><value>Nuevo Registro</value></data>
+  <data name="Dashboard_True"><value>Verdadero</value></data>
+  <data name="Dashboard_False"><value>Falso</value></data>
+  <data name="Dashboard_Responses"><value>respuestas</value></data>
+
+  <!-- ═══ DataGrid (extra) ═══ -->
+  <data name="DataGrid_Filter"><value>Filtrar</value></data>
+  <data name="DataGrid_Clear"><value>Limpiar</value></data>
+  <data name="DataGrid_FirstPage"><value>Primera página</value></data>
+  <data name="DataGrid_LastPage"><value>Última página</value></data>
+  <data name="DataGrid_PerPage"><value>/ página</value></data>
+
+  <!-- ═══ Estadísticas (extra) ═══ -->
+  <data name="Analytics_Distribution"><value>Distribución</value></data>
+  <data name="Dashboard_LoadFailed"><value>Error al cargar el dashboard: {0}</value></data>
+  <data name="Analytics_LoadFailed"><value>Error al cargar: {0}</value></data>
+
+  <!-- ═══ Común (extra) ═══ -->
+  <data name="Common_ErrorOccurred"><value>Ha ocurrido un error.</value></data>
+
+  <!-- ═══ Formato de Tiempo ═══ -->
+  <data name="Time_JustNow"><value>ahora mismo</value></data>
+  <data name="Time_MinAgo"><value>hace {0}m</value></data>
+  <data name="Time_HAgo"><value>hace {0}h</value></data>
+  <data name="Time_Yesterday"><value>ayer</value></data>
+  <data name="Time_DAgo"><value>hace {0}d</value></data>
+  <data name="Time_Now"><value>ahora</value></data>
+  <data name="Time_YDay"><value>ayer</value></data>
+  <data name="Gap_Hours"><value>{0}h</value></data>
+  <data name="Gap_About1Day"><value>~1 día</value></data>
+  <data name="Gap_Days"><value>{0} días</value></data>
+  <data name="Gap_About1Week"><value>~1 semana</value></data>
+  <data name="Gap_Weeks"><value>{0} semanas</value></data>
+  <data name="Gap_About1D"><value>~1d</value></data>
+  <data name="Gap_DShort"><value>{0}d</value></data>
+  <data name="Gap_WShort"><value>{0}s</value></data>
+
+  <!-- ═══ ItemSelector / ListActions ═══ -->
+  <data name="Common_Available"><value>Disponibles</value></data>
+  <data name="Common_Assigned"><value>Asignados</value></data>
+  <data name="Common_NoItemsAvailable"><value>Sin elementos disponibles</value></data>
+  <data name="Common_NoItemsAssigned"><value>Sin elementos asignados</value></data>
+  <data name="Common_MoreActions"><value>Más acciones</value></data>
+  <data name="Common_NoItemsFound"><value>Sin elementos encontrados.</value></data>
+
+  <!-- ═══ Validación ═══ -->
+  <data name="Validation_NameRequired"><value>El nombre es obligatorio.</value></data>
+  <data name="Validation_MinGreaterThanMax"><value>El valor mínimo no puede ser mayor que el valor máximo.</value></data>
+  <data name="Validation_DefaultLessThanMin"><value>El valor predeterminado no puede ser menor que el valor mínimo ({0}).</value></data>
+  <data name="Validation_DefaultGreaterThanMax"><value>El valor predeterminado no puede ser mayor que el valor máximo ({0}).</value></data>
+  <data name="Validation_MinDateAfterMax"><value>La fecha mínima no puede ser posterior a la fecha máxima.</value></data>
+  <data name="Validation_DefaultDateBeforeMin"><value>La fecha predeterminada no puede ser anterior a la fecha mínima ({0}).</value></data>
+  <data name="Validation_DefaultDateAfterMax"><value>La fecha predeterminada no puede ser posterior a la fecha máxima ({0}).</value></data>
+  <data name="Validation_FieldRequired"><value>'{0}' es obligatorio.</value></data>
+  <data name="Validation_FieldMinValue"><value>'{0}' debe ser al menos {1}.</value></data>
+  <data name="Validation_FieldMaxValue"><value>'{0}' debe ser como máximo {1}.</value></data>
+  <data name="Validation_PasswordsNoMatch"><value>Las contraseñas no coinciden.</value></data>
+
+  <!-- ═══ Errores de Autenticación ═══ -->
+  <data name="Auth_RequestFailed"><value>Solicitud fallida.</value></data>
+  <data name="Auth_RegisterFailed"><value>Registro fallido.</value></data>
+  <data name="Auth_ResetFailed"><value>Error al restablecer la contraseña.</value></data>
+
+  <!-- ═══ Formulario de Campo ═══ -->
+  <data name="Fields_CreatedNotRetrieved"><value>Campo creado pero no se pudo recuperar.</value></data>
+  <data name="Fields_AssignmentNotFound"><value>Asignación de campo no encontrada.</value></data>
+
+  <!-- ═══ Página de Campos de Acción ═══ -->
+  <data name="Fields_ManageTitle"><value>Gestionar Campos</value></data>
+  <data name="Fields_ManageSubtitle"><value>Asignar o eliminar campos para</value></data>
+  <data name="Fields_BackToActions"><value>Volver a Acciones</value></data>
+  <data name="Fields_AllAssigned"><value>Todos los campos personalizados están asignados</value></data>
+  <data name="Fields_NoneAssigned"><value>Sin campos asignados todavía</value></data>
+
+  <!-- ═══ Página de Etiquetas de Acción ═══ -->
+  <data name="Tags_ManageTitle"><value>Gestionar Etiquetas</value></data>
+  <data name="Tags_ManageSubtitle"><value>Asignar o eliminar etiquetas para</value></data>
+  <data name="Tags_BackToActions"><value>Volver a Acciones</value></data>
+  <data name="Tags_AllAssigned"><value>Todas las etiquetas están asignadas</value></data>
+  <data name="Tags_NoneAssigned"><value>Sin etiquetas asignadas todavía</value></data>
+</root>

@@ -183,7 +183,7 @@
         _saving = true;
         _errors = [];
 
-        var validationErrors = _model.ValidateMinMax();
+        var validationErrors = _model.ValidateMinMax(L);
         if (validationErrors.Count > 0)
         {
             _errors = validationErrors;
@@ -222,7 +222,7 @@
         }
         else
         {
-            _errors = new[] { "Field created but could not be retrieved." };
+            _errors = new[] { L["Fields_CreatedNotRetrieved"].Value };
         }
 
         _saving = false;

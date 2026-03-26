@@ -1,11 +1,12 @@
 @typeparam TItem
+@inject IStringLocalizer<SharedResource> L
 
 <div class="item-selector">
     @if (_loading)
     {
         <div class="d-flex justify-content-center py-3">
             <div class="spinner-border spinner-border-sm text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+                <span class="visually-hidden">@L["Common_Loading"]</span>
             </div>
         </div>
     }
@@ -17,14 +18,14 @@
             <div class="col-md-5">
                 <div class="card h-100">
                     <div class="card-header d-flex justify-content-between align-items-center py-2">
-                        <small class="fw-semibold text-muted">Available</small>
+                        <small class="fw-semibold text-muted">@L["Common_Available"]</small>
                         <span class="badge bg-secondary">@AvailableItems.Count</span>
                     </div>
                     <div class="card-body p-0">
                         @if (AvailableItems.Count == 0)
                         {
                             <div class="text-center text-muted py-3">
-                                <small>@(EmptyAvailableText ?? "No items available")</small>
+                                <small>@(EmptyAvailableText ?? L["Common_NoItemsAvailable"])</small>
                             </div>
                         }
                         else
@@ -57,14 +58,14 @@
             <div class="col-md-5">
                 <div class="card h-100">
                     <div class="card-header d-flex justify-content-between align-items-center py-2">
-                        <small class="fw-semibold text-muted">Assigned</small>
+                        <small class="fw-semibold text-muted">@L["Common_Assigned"]</small>
                         <span class="badge bg-primary">@SelectedItems.Count</span>
                     </div>
                     <div class="card-body p-0">
                         @if (SelectedItems.Count == 0)
                         {
                             <div class="text-center text-muted py-3">
-                                <small>@(EmptySelectedText ?? "No items assigned")</small>
+                                <small>@(EmptySelectedText ?? L["Common_NoItemsAssigned"])</small>
                             </div>
                         }
                         else

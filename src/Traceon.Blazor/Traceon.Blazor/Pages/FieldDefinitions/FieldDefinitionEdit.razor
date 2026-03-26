@@ -24,7 +24,7 @@
 {
     <div class="d-flex justify-content-center py-5">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+            <span class="visually-hidden">@L["Common_Loading"]</span>
         </div>
     </div>
 }
@@ -253,7 +253,7 @@ else
         _saving = true;
         _errors = [];
 
-        var validationErrors = _model.ValidateMinMax();
+        var validationErrors = _model.ValidateMinMax(L);
         if (validationErrors.Count > 0)
         {
             _errors = validationErrors;
@@ -298,7 +298,7 @@ else
         if (success)
             Nav.NavigateTo("/field-definitions");
         else
-            _errors = errors.Count > 0 ? errors : ["An error occurred."];
+            _errors = errors.Count > 0 ? errors : [L["Common_ErrorOccurred"]];
 
         _saving = false;
     }

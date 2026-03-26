@@ -8,10 +8,10 @@
          @onclick="ToggleExpand">
         <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden">
             <div class="btn-group btn-group-sm me-1" role="group" @onclick:stopPropagation="true">
-                <button class="btn btn-outline-secondary py-0 px-1" @onclick="OnMoveUp" disabled="@IsFirst" title="Move up">
+                <button class="btn btn-outline-secondary py-0 px-1" @onclick="OnMoveUp" disabled="@IsFirst" title="@L["Common_MoveUp"]">
                     <i class="bi bi-chevron-up"></i>
                 </button>
-                <button class="btn btn-outline-secondary py-0 px-1" @onclick="OnMoveDown" disabled="@IsLast" title="Move down">
+                <button class="btn btn-outline-secondary py-0 px-1" @onclick="OnMoveDown" disabled="@IsLast" title="@L["Common_MoveDown"]">
                     <i class="bi bi-chevron-down"></i>
                 </button>
             </div>
@@ -28,7 +28,7 @@
             }
         </div>
         <div class="d-flex gap-1" @onclick:stopPropagation="true">
-            <button class="btn btn-outline-danger btn-sm" @onclick="() => OnRemove.InvokeAsync(Field)" title="Remove">
+            <button class="btn btn-outline-danger btn-sm" @onclick="() => OnRemove.InvokeAsync(Field)" title="@L["Common_Delete"]">
                 <i class="bi bi-trash"></i>
             </button>
         </div>
@@ -204,7 +204,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label form-label-sm mb-1">@L["FieldEditor_TargetValue"]</label>
-                        <input type="number" class="form-control form-control-sm" @bind="_targetValue" placeholder="e.g., 75" />
+                        <input type="number" class="form-control form-control-sm" @bind="_targetValue" />
                     </div>
                 </div>
             }
@@ -334,7 +334,7 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _fieldErrors = ["Name is required."];
+            _fieldErrors = [L["Validation_NameRequired"]];
             return;
         }
 
@@ -396,35 +396,35 @@
         {
             case FieldType.Integer:
                 if (_intMinValue.HasValue && _intMaxValue.HasValue && _intMinValue > _intMaxValue)
-                    errors.Add("Min value cannot be greater than max value.");
+                    errors.Add(L["Validation_MinGreaterThanMax"]);
                 if (_defaultInt.HasValue)
                 {
                     if (_intMinValue.HasValue && _defaultInt < _intMinValue)
-                        errors.Add($"Default value cannot be less than min value ({_intMinValue}).");
+                        errors.Add(L["Validation_DefaultLessThanMin", _intMinValue]);
                     if (_intMaxValue.HasValue && _defaultInt > _intMaxValue)
-                        errors.Add($"Default value cannot be greater than max value ({_intMaxValue}).");
+                        errors.Add(L["Validation_DefaultGreaterThanMax", _intMaxValue]);
                 }
                 break;
             case FieldType.Decimal:
                 if (_decimalMinValue.HasValue && _decimalMaxValue.HasValue && _decimalMinValue > _decimalMaxValue)
-                    errors.Add("Min value cannot be greater than max value.");
+                    errors.Add(L["Validation_MinGreaterThanMax"]);
                 if (_defaultDecimal.HasValue)
                 {
                     if (_decimalMinValue.HasValue && _defaultDecimal < _decimalMinValue)
-                        errors.Add($"Default value cannot be less than min value ({_decimalMinValue}).");
+                        errors.Add(L["Validation_DefaultLessThanMin", _decimalMinValue]);
                     if (_decimalMaxValue.HasValue && _defaultDecimal > _decimalMaxValue)
-                        errors.Add($"Default value cannot be greater than max value ({_decimalMaxValue}).");
+                        errors.Add(L["Validation_DefaultGreaterThanMax", _decimalMaxValue]);
                 }
                 break;
             case FieldType.Date:
                 if (_minDate.HasValue && _maxDate.HasValue && _minDate > _maxDate)
-                    errors.Add("Min date cannot be later than max date.");
+                    errors.Add(L["Validation_MinDateAfterMax"]);
                 if (_defaultDate.HasValue)
                 {
                     if (_minDate.HasValue && _defaultDate < _minDate)
-                        errors.Add($"Default date cannot be earlier than min date ({_minDate:yyyy-MM-dd}).");
+                        errors.Add(L["Validation_DefaultDateBeforeMin", _minDate.Value.ToString("yyyy-MM-dd")]);
                     if (_maxDate.HasValue && _defaultDate > _maxDate)
-                        errors.Add($"Default date cannot be later than max date ({_maxDate:yyyy-MM-dd}).");
+                        errors.Add(L["Validation_DefaultDateAfterMax", _maxDate.Value.ToString("yyyy-MM-dd")]);
                 }
                 break;
         }

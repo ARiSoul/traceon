@@ -1,3 +1,5 @@
+@inject IStringLocalizer<SharedResource> L
+
 @if (_isOpen)
 {
     <div class="list-actions-backdrop" @onclick="CloseDropdown"></div>
@@ -20,7 +22,7 @@
         <button type="button"
                 class="btn btn-outline-@PrimaryButtonStyle dropdown-toggle dropdown-toggle-split"
                 @onclick="ToggleDropdown">
-            <span class="visually-hidden">More actions</span>
+            <span class="visually-hidden">@L["Common_MoreActions"]</span>
         </button>
 
         <ul class="dropdown-menu dropdown-menu-end @(_isOpen ? "show" : "")">

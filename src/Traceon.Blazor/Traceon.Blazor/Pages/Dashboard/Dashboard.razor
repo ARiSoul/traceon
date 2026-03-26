@@ -24,7 +24,7 @@
 {
     <div class="d-flex justify-content-center py-5">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+            <span class="visually-hidden">@L["Common_Loading"]</span>
         </div>
     </div>
 }
@@ -108,7 +108,7 @@ else if (_data is not null)
                         <ApexPointSeries TItem="DailyCount"
                                         Items="_data.GlobalDailyEntries"
                                         SeriesType="SeriesType.Area"
-                                        Name="Entries"
+                                        Name="@L["Common_Entries"]"
                                         XValue="d => d.Date"
                                         YValue="d => d.Count"
                                         OrderBy="d => d.X" />
@@ -332,7 +332,7 @@ else if (_data is not null)
                                     <ApexPointSeries TItem="WeekBucket"
                                                     Items="action.WeeklyActivity"
                                                     SeriesType="SeriesType.Bar"
-                                                    Name="Entries"
+                                                    Name="@L["Common_Entries"]"
                                                     XValue="@(w => w.WeekStart.ToString("MMM d"))"
                                                     YValue="w => w.Count"
                                                     OrderBy="w => w.X" />
@@ -421,20 +421,7 @@ else if (_data is not null)
 
     private List<(string Name, string Color)> _allTags = [];
 
-    private ApexChartOptions<DailyCount> _globalFreqOptions = new()
-    {
-        Chart = new Chart
-        {
-            Toolbar = new Toolbar { Show = true },
-            Zoom = new Zoom { Enabled = true }
-        },
-        Xaxis = new XAxis { Type = XAxisType.Datetime },
-        Yaxis = [new YAxis { Title = new AxisTitle { Text = "Entries" }, Min = 0 }],
-        Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
-        Fill = new Fill { Opacity = new Opacity(0.3) },
-        Colors = ["#198754"],
-        Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
-    };
+    private ApexChartOptions<DailyCount> _globalFreqOptions = new();
 
     private static ApexChartOptions<WeekBucket> BuildWeeklyOptions() => new()
     {
@@ -448,7 +435,7 @@ else if (_data is not null)
         DataLabels = new DataLabels { Enabled = false }
     };
 
-    private static ApexChartOptions<NumericDataPoint> BuildMiniChartOptions(NumericFieldSeries series)
+    private ApexChartOptions<NumericDataPoint> BuildMiniChartOptions(NumericFieldSeries series)
     {
         var options = new ApexChartOptions<NumericDataPoint>
         {
@@ -480,7 +467,7 @@ else if (_data is not null)
                         StrokeDashArray = 4,
                         Label = new Label
                         {
-                            Text = $"Target: {FormatNumericValue(series.TargetValue, series.IsInteger)}",
+                            Text = $"{L["Metric_Target"]}: {FormatNumericValue(series.TargetValue, series.IsInteger)}",
                             Style = new Style { Background = "#ff9800", Color = "#fff" }
                         }
                     }
@@ -514,6 +501,21 @@ else if (_data is not null)
 
     protected override async Task OnInitializedAsync()
     {
+        _globalFreqOptions = new()
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = true },
+                Zoom = new Zoom { Enabled = true }
+            },
+            Xaxis = new XAxis { Type = XAxisType.Datetime },
+            Yaxis = [new YAxis { Title = new AxisTitle { Text = L["Common_Entries"].Value }, Min = 0 }],
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Fill = new Fill { Opacity = new Opacity(0.3) },
+            Colors = ["#198754"],
+            Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+        };
+
         if (ActionIdParam.HasValue)
         {
             _selectedActionId = ActionIdParam.Value.ToString();
@@ -598,7 +600,7 @@ else if (_data is not null)
         }
         catch (Exception ex)
         {
-            _errors = [$"Failed to load dashboard: {ex.Message}"];
+            _errors = [L["Dashboard_LoadFailed", ex.Message]];
         }
 
         _loading = false;
@@ -610,7 +612,7 @@ else if (_data is not null)
             _expandedActions.Add(actionId);
     }
 
-    private static string FormatRelativeDate(DateTime? utc)
+    private string FormatRelativeDate(DateTime? utc)
     {
         if (utc is null) return "—";
         var local = utc.Value.ToLocalTime();
@@ -618,23 +620,23 @@ else if (_data is not null)
 
         return diff.TotalMinutes switch
         {
-            < 1 => "just now",
-            < 60 => $"{(int)diff.TotalMinutes}m ago",
-            < 1440 => $"{(int)diff.TotalHours}h ago",
-            < 2880 => "yesterday",
-            _ => $"{(int)diff.TotalDays}d ago"
+            < 1 => L["Time_JustNow"],
+            < 60 => L["Time_MinAgo", (int)diff.TotalMinutes],
+            < 1440 => L["Time_HAgo", (int)diff.TotalHours],
+            < 2880 => L["Time_Yesterday"],
+            _ => L["Time_DAgo", (int)diff.TotalDays]
         };
     }
 
-    private static string FormatGap(double days)
+    private string FormatGap(double days)
     {
         return days switch
         {
-            < 1 => $"{(int)(days * 24)}h",
-            < 2 => "~1 day",
-            < 7 => $"{days:F1} days",
-            < 14 => "~1 week",
-            _ => $"{days / 7:F1} weeks"
+            < 1 => L["Gap_Hours", (int)(days * 24)],
+            < 2 => L["Gap_About1Day"],
+            < 7 => L["Gap_Days", days.ToString("F1")],
+            < 14 => L["Gap_About1Week"],
+            _ => L["Gap_Weeks", (days / 7).ToString("F1")]
         };
     }
 
@@ -655,7 +657,7 @@ else if (_data is not null)
 
                 @if (field.TotalValues == 0)
                 {
-                    <small class="text-muted">No data yet</small>
+                    <small class="text-muted">@L["Common_NoDataYet"]</small>
                 }
                 else
                 {
@@ -672,7 +674,7 @@ else if (_data is not null)
                             @RenderDropdownStats(field)
                             break;
                         default:
-                            <small class="text-muted">@field.TextFilledCount value@(field.TextFilledCount != 1 ? "s" : "") recorded</small>
+                            <small class="text-muted">@field.TextFilledCount @L["Analytics_ValuesRecorded"]</small>
                             break;
                     }
                 }
@@ -685,12 +687,12 @@ else if (_data is not null)
         var u = field.Unit != "UN" ? $" {field.Unit}" : "";
         var m = field.EnabledMetrics;
         var cols = new List<(string Label, string Color, string Display)>();
-        if (m.HasFlag(SummaryMetrics.Min)) cols.Add(("Min", "text-primary", $"{FormatNumeric(field.NumericMin, field.IsInteger)}{u}"));
-        if (m.HasFlag(SummaryMetrics.Avg)) cols.Add(("Avg", "text-success", $"{FormatNumeric(field.NumericAvg, false)}{u}"));
-        if (m.HasFlag(SummaryMetrics.Max)) cols.Add(("Max", "text-danger", $"{FormatNumeric(field.NumericMax, field.IsInteger)}{u}"));
-        if (m.HasFlag(SummaryMetrics.Sum)) cols.Add(("Sum", "text-warning", $"{FormatNumeric(field.NumericSum, field.IsInteger)}{u}"));
-        if (m.HasFlag(SummaryMetrics.Count)) cols.Add(("Count", "text-info", $"{field.NumericCount}"));
-        if (m.HasFlag(SummaryMetrics.Latest) && field.NumericLatest.HasValue) cols.Add(("Latest", "text-dark", $"{FormatNumeric(field.NumericLatest, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Min)) cols.Add((L["Metric_Min"], "text-primary", $"{FormatNumeric(field.NumericMin, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Avg)) cols.Add((L["Metric_Avg"], "text-success", $"{FormatNumeric(field.NumericAvg, false)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Max)) cols.Add((L["Metric_Max"], "text-danger", $"{FormatNumeric(field.NumericMax, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Sum)) cols.Add((L["Metric_Sum"], "text-warning", $"{FormatNumeric(field.NumericSum, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Count)) cols.Add((L["Metric_Count"], "text-info", $"{field.NumericCount}"));
+        if (m.HasFlag(SummaryMetrics.Latest) && field.NumericLatest.HasValue) cols.Add((L["Metric_Latest"], "text-dark", $"{FormatNumeric(field.NumericLatest, field.IsInteger)}{u}"));
 
         @if (cols.Count > 0)
         {
@@ -706,13 +708,13 @@ else if (_data is not null)
         }
         else
         {
-            <small class="text-muted">@field.NumericCount values recorded</small>
+            <small class="text-muted">@field.NumericCount @L["Analytics_ValuesRecorded"]</small>
         }
 
         @if (field.ConfiguredMax.HasValue && field.NumericAvg.HasValue)
         {
             var pct = Math.Min((double)(field.NumericAvg.Value / field.ConfiguredMax.Value * 100), 100);
-            <div class="progress" style="height: 6px;" title="Avg vs configured max (@field.ConfiguredMax)">
+            <div class="progress" style="height: 6px;" title="@L["Dashboard_AvgVsMax", field.ConfiguredMax]">
                 <div class="progress-bar bg-success" style="width: @pct%"></div>
             </div>
         }
@@ -725,20 +727,20 @@ else if (_data is not null)
         var falsePct = 100 - truePct;
 
         <div class="d-flex justify-content-between mb-1">
-            <small><i class="bi bi-check-circle text-success me-1"></i>True: @field.BoolTrueCount</small>
-            <small><i class="bi bi-x-circle text-danger me-1"></i>False: @field.BoolFalseCount</small>
+            <small><i class="bi bi-check-circle text-success me-1"></i>@L["Dashboard_True"]: @field.BoolTrueCount</small>
+            <small><i class="bi bi-x-circle text-danger me-1"></i>@L["Dashboard_False"]: @field.BoolFalseCount</small>
         </div>
 
         <div class="progress" style="height: 20px;">
             <div class="progress-bar bg-success" style="width: @truePct%"
-                 title="True: @field.BoolTrueCount (@truePct%)">
+                 title="@L["Dashboard_True"]: @field.BoolTrueCount (@truePct%)">
                 @if (truePct >= 15)
                 {
                     <small>@truePct%</small>
                 }
             </div>
             <div class="progress-bar bg-danger" style="width: @falsePct%"
-                 title="False: @field.BoolFalseCount (@falsePct%)">
+                 title="@L["Dashboard_False"]: @field.BoolFalseCount (@falsePct%)">
                 @if (falsePct >= 15)
                 {
                     <small>@(100 - truePct)%</small>
@@ -746,7 +748,7 @@ else if (_data is not null)
             </div>
         </div>
 
-        <small class="text-muted d-block mt-1">@total responses</small>
+        <small class="text-muted d-block mt-1">@total @L["Dashboard_Responses"]</small>
     };
 
     private RenderFragment RenderDropdownStats(FieldStats field) => __builder =>

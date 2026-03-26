@@ -28,6 +28,7 @@
   <data name="Nav_Settings"><value>Settings</value></data>
   <data name="Nav_Tracking"><value>TRACKING</value></data>
   <data name="Nav_Configuration"><value>CONFIGURATION</value></data>
+  <data name="Nav_Menu"><value>Navigation menu</value></data>
 
   <!-- ═══ Layout ═══ -->
   <data name="Layout_Logout"><value>Logout</value></data>
@@ -63,6 +64,8 @@
   <data name="Common_Fields"><value>Fields</value></data>
   <data name="Common_Tags"><value>Tags</value></data>
   <data name="Common_NoDataYet"><value>No data yet</value></data>
+  <data name="Common_MoveUp"><value>Move up</value></data>
+  <data name="Common_MoveDown"><value>Move down</value></data>
 
   <!-- ═══ Home ═══ -->
   <data name="Home_AppName"><value>Traceon</value></data>
@@ -268,8 +271,43 @@
   <data name="Metric_Latest"><value>Latest</value></data>
   <data name="Metric_Target"><value>Target</value></data>
 
-  <!-- ═══ Edit Page ═══ -->
+  <!-- ═══ Entry Edit ═══ -->
+  <data name="Entry_NewTitle"><value>New Entry</value></data>
+  <data name="Entry_EditTitle"><value>Edit Entry</value></data>
+  <data name="Entry_NewSubtitle"><value>Record a new entry for</value></data>
+  <data name="Entry_EditSubtitle"><value>Update this entry for</value></data>
+  <data name="Entry_SaveEntry"><value>Save Entry</value></data>
+  <data name="Entry_Select"><value>— Select —</value></data>
+
+  <!-- ═══ Action Edit Tabs ═══ -->
+  <data name="ActionEdit_BasicInfo"><value>Basic Info</value></data>
+  <data name="ActionEdit_FieldsHint"><value>Manage the data fields captured for each entry. Click a field to edit its settings.</value></data>
+  <data name="ActionEdit_AddFields"><value>Add Fields</value></data>
+  <data name="ActionEdit_NoFields"><value>No fields assigned yet.</value></data>
+  <data name="ActionEdit_SelectFields"><value>Select Fields</value></data>
+  <data name="ActionEdit_TagsHint"><value>Manage which tags are assigned to this action.</value></data>
+  <data name="ActionEdit_AddTags"><value>Add Tags</value></data>
+  <data name="ActionEdit_NoTags"><value>No tags assigned yet.</value></data>
+  <data name="ActionEdit_SelectTags"><value>Select Tags</value></data>
+  <data name="ActionEdit_SavingOrder"><value>Saving order...</value></data>
   <data name="ActionEdit_NotFound"><value>Tracked action not found.</value></data>
+
+  <!-- ═══ ModalSelector ═══ -->
+  <data name="ModalSelector_SelectAll"><value>Select All</value></data>
+  <data name="ModalSelector_DeselectAll"><value>Deselect All</value></data>
+  <data name="ModalSelector_Selected"><value>selected</value></data>
+  <data name="ModalSelector_Confirm"><value>Confirm Selection</value></data>
+  <data name="ModalSelector_CreateNew"><value>Create New</value></data>
+
+  <!-- ═══ EntryDataGrid ═══ -->
+  <data name="EntryGrid_Action"><value>Action</value></data>
+  <data name="EntryGrid_Date"><value>Date</value></data>
+  <data name="EntryGrid_Notes"><value>Notes</value></data>
+  <data name="EntryGrid_AllActions"><value>All Actions</value></data>
+  <data name="EntryGrid_Empty"><value>No entries yet. Start tracking!</value></data>
+
+  <!-- ═══ NotFound ═══ -->
+  <data name="NotFound_Title"><value>Page Not Found</value></data>
   <data name="NotFound_Message"><value>Sorry, there's nothing at this address.</value></data>
 
   <!-- ═══ Edit Page (extra) ═══ -->
@@ -353,4 +391,86 @@
   <data name="Dashboard_EditAction"><value>Edit Action</value></data>
   <data name="Dashboard_ViewEntries"><value>View Entries</value></data>
   <data name="Dashboard_NewEntry"><value>New Entry</value></data>
+  <data name="Dashboard_Refresh"><value>Refresh</value></data>
+  <data name="Dashboard_AvgVsMax"><value>Avg vs configured max ({0})</value></data>
+  <data name="Dashboard_StatsSubtitle"><value>Statistics and insights about your tracked actions</value></data>
+  <data name="Dashboard_True"><value>True</value></data>
+  <data name="Dashboard_False"><value>False</value></data>
+  <data name="Dashboard_Responses"><value>responses</value></data>
+
+  <!-- ═══ DataGrid (extra) ═══ -->
+  <data name="DataGrid_Filter"><value>Filter</value></data>
+  <data name="DataGrid_Clear"><value>Clear</value></data>
+  <data name="DataGrid_FirstPage"><value>First page</value></data>
+  <data name="DataGrid_LastPage"><value>Last page</value></data>
+  <data name="DataGrid_PerPage"><value>/ page</value></data>
+
+  <!-- ═══ Analytics (extra) ═══ -->
+  <data name="Analytics_Distribution"><value>Distribution</value></data>
+  <data name="Dashboard_LoadFailed"><value>Failed to load dashboard: {0}</value></data>
+  <data name="Analytics_LoadFailed"><value>Failed to load: {0}</value></data>
+
+  <!-- ═══ Common (extra) ═══ -->
+  <data name="Common_ErrorOccurred"><value>An error occurred.</value></data>
+
+  <!-- ═══ Time Formatting ═══ -->
+  <data name="Time_JustNow"><value>just now</value></data>
+  <data name="Time_MinAgo"><value>{0}m ago</value></data>
+  <data name="Time_HAgo"><value>{0}h ago</value></data>
+  <data name="Time_Yesterday"><value>yesterday</value></data>
+  <data name="Time_DAgo"><value>{0}d ago</value></data>
+  <data name="Time_Now"><value>now</value></data>
+  <data name="Time_YDay"><value>yday</value></data>
+  <data name="Gap_Hours"><value>{0}h</value></data>
+  <data name="Gap_About1Day"><value>~1 day</value></data>
+  <data name="Gap_Days"><value>{0} days</value></data>
+  <data name="Gap_About1Week"><value>~1 week</value></data>
+  <data name="Gap_Weeks"><value>{0} weeks</value></data>
+  <data name="Gap_About1D"><value>~1d</value></data>
+  <data name="Gap_DShort"><value>{0}d</value></data>
+  <data name="Gap_WShort"><value>{0}w</value></data>
+
+  <!-- ═══ ItemSelector / ListActions ═══ -->
+  <data name="Common_Available"><value>Available</value></data>
+  <data name="Common_Assigned"><value>Assigned</value></data>
+  <data name="Common_NoItemsAvailable"><value>No items available</value></data>
+  <data name="Common_NoItemsAssigned"><value>No items assigned</value></data>
+  <data name="Common_MoreActions"><value>More actions</value></data>
+  <data name="Common_NoItemsFound"><value>No items found.</value></data>
+
+  <!-- ═══ Validation ═══ -->
+  <data name="Validation_NameRequired"><value>Name is required.</value></data>
+  <data name="Validation_MinGreaterThanMax"><value>Min value cannot be greater than max value.</value></data>
+  <data name="Validation_DefaultLessThanMin"><value>Default value cannot be less than min value ({0}).</value></data>
+  <data name="Validation_DefaultGreaterThanMax"><value>Default value cannot be greater than max value ({0}).</value></data>
+  <data name="Validation_MinDateAfterMax"><value>Min date cannot be later than max date.</value></data>
+  <data name="Validation_DefaultDateBeforeMin"><value>Default date cannot be earlier than min date ({0}).</value></data>
+  <data name="Validation_DefaultDateAfterMax"><value>Default date cannot be later than max date ({0}).</value></data>
+  <data name="Validation_FieldRequired"><value>'{0}' is required.</value></data>
+  <data name="Validation_FieldMinValue"><value>'{0}' must be at least {1}.</value></data>
+  <data name="Validation_FieldMaxValue"><value>'{0}' must be at most {1}.</value></data>
+  <data name="Validation_PasswordsNoMatch"><value>Passwords do not match.</value></data>
+
+  <!-- ═══ Auth Errors ═══ -->
+  <data name="Auth_RequestFailed"><value>Request failed.</value></data>
+  <data name="Auth_RegisterFailed"><value>Registration failed.</value></data>
+  <data name="Auth_ResetFailed"><value>Password reset failed.</value></data>
+
+  <!-- ═══ Field Form ═══ -->
+  <data name="Fields_CreatedNotRetrieved"><value>Field created but could not be retrieved.</value></data>
+  <data name="Fields_AssignmentNotFound"><value>Field assignment not found.</value></data>
+
+  <!-- ═══ TrackedAction Fields Page ═══ -->
+  <data name="Fields_ManageTitle"><value>Manage Fields</value></data>
+  <data name="Fields_ManageSubtitle"><value>Assign or remove fields for</value></data>
+  <data name="Fields_BackToActions"><value>Back to Actions</value></data>
+  <data name="Fields_AllAssigned"><value>All custom fields are assigned</value></data>
+  <data name="Fields_NoneAssigned"><value>No fields assigned yet</value></data>
+
+  <!-- ═══ TrackedAction Tags Page ═══ -->
+  <data name="Tags_ManageTitle"><value>Manage Tags</value></data>
+  <data name="Tags_ManageSubtitle"><value>Assign or remove tags for</value></data>
+  <data name="Tags_BackToActions"><value>Back to Actions</value></data>
+  <data name="Tags_AllAssigned"><value>All tags are assigned</value></data>
+  <data name="Tags_NoneAssigned"><value>No tags assigned yet</value></data>
 </root>

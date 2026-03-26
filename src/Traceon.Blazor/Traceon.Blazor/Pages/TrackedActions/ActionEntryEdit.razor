@@ -290,7 +290,7 @@ else
             return;
         }
 
-        _errors = errors.Count > 0 ? errors : ["An error occurred."];
+        _errors = errors.Count > 0 ? errors : [L["Common_ErrorOccurred"]];
         _saving = false;
     }
 
@@ -302,7 +302,7 @@ else
         {
             var value = model.ResolveValue();
             if (string.IsNullOrWhiteSpace(value))
-                errors.Add($"'{model.Field.Name}' is required.");
+                errors.Add(L["Validation_FieldRequired", model.Field.Name]);
         }
 
         foreach (var model in _fieldModels)
@@ -315,9 +315,9 @@ else
                 if (decimal.TryParse(value, out var numericValue))
                 {
                     if (model.Field.MinValue.HasValue && numericValue < model.Field.MinValue)
-                        errors.Add($"'{model.Field.Name}' must be at least {model.Field.MinValue}.");
+                        errors.Add(L["Validation_FieldMinValue", model.Field.Name, model.Field.MinValue]);
                     if (model.Field.MaxValue.HasValue && numericValue > model.Field.MaxValue)
-                        errors.Add($"'{model.Field.Name}' must be at most {model.Field.MaxValue}.");
+                        errors.Add(L["Validation_FieldMaxValue", model.Field.Name, model.Field.MaxValue]);
                 }
             }
         }

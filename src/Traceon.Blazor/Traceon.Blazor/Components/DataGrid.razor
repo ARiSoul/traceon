@@ -15,12 +15,12 @@
                            @bind:event="oninput"
                            @onkeydown="OnFilterKeyDownAsync" />
                     <button class="btn btn-outline-primary" @onclick="ApplyFilterAsync" disabled="@_loading">
-                        <i class="bi bi-funnel me-1"></i>Filter
+                        <i class="bi bi-funnel me-1"></i>@L["DataGrid_Filter"]
                     </button>
                     @if (!string.IsNullOrWhiteSpace(_appliedFilter))
                     {
                         <button class="btn btn-outline-secondary" @onclick="ClearFilterAsync" disabled="@_loading">
-                            <i class="bi bi-x-circle me-1"></i>Clear
+                             <i class="bi bi-x-circle me-1"></i>@L["DataGrid_Clear"]
                         </button>
                     }
                 </div>
@@ -45,7 +45,7 @@
     else if (_items.Count == 0)
     {
         <div class="data-grid-empty">
-            <p class="text-muted mb-0">@(EmptyText ?? "No items found.")</p>
+            <p class="text-muted mb-0">@(EmptyText ?? L["Common_NoItemsFound"])</p>
         </div>
     }
     else
@@ -113,7 +113,7 @@
                 <nav class="data-grid-pagination">
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item @(_page <= 1 ? "disabled" : "")">
-                            <button class="page-link" @onclick="GoToFirstPageAsync" disabled="@(_page <= 1)" title="First page">
+                            <button class="page-link" @onclick="GoToFirstPageAsync" disabled="@(_page <= 1)" title="@L["DataGrid_FirstPage"]">
                                 <i class="bi bi-chevron-double-left"></i>
                             </button>
                         </li>
@@ -136,7 +136,7 @@
                             </button>
                         </li>
                         <li class="page-item @(_page >= _totalPages ? "disabled" : "")">
-                            <button class="page-link" @onclick="GoToLastPageAsync" disabled="@(_page >= _totalPages)" title="Last page">
+                            <button class="page-link" @onclick="GoToLastPageAsync" disabled="@(_page >= _totalPages)" title="@L["DataGrid_LastPage"]">
                                 <i class="bi bi-chevron-double-right"></i>
                             </button>
                         </li>
@@ -147,7 +147,7 @@
                     <select class="form-select form-select-sm" value="@_pageSize" @onchange="OnPageSizeChangedAsync">
                         @foreach (var size in PageSizeOptions)
                         {
-                            <option value="@size">@size / page</option>
+                            <option value="@size">@size @L["DataGrid_PerPage"]</option>
                         }
                     </select>
                 </div>

@@ -11,7 +11,8 @@ public sealed class LocalizationService(ILocalStorageService localStorage, IJSRu
     public static readonly (string Code, string Name)[] SupportedLanguages =
     [
         ("en", "English"),
-        ("pt", "Português")
+        ("pt", "Português"),
+        ("es", "Español")
     ];
 
     public string CurrentLanguage { get; private set; } = "en";

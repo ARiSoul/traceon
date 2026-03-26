@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Localization;
 using Traceon.Contracts.FieldDefinitions;
 using Traceon.Contracts.Enums;
 
@@ -87,7 +88,7 @@ public sealed class FieldDefinitionModel
         _ => (null, null)
     };
 
-    public IReadOnlyList<string> ValidateMinMax()
+    public IReadOnlyList<string> ValidateMinMax(IStringLocalizer L)
     {
         var errors = new List<string>();
 
@@ -95,37 +96,37 @@ public sealed class FieldDefinitionModel
         {
             case FieldType.Integer:
                 if (IntMinValue.HasValue && IntMaxValue.HasValue && IntMinValue > IntMaxValue)
-                    errors.Add("Min value cannot be greater than max value.");
+                    errors.Add(L["Validation_MinGreaterThanMax"]);
                 if (DefaultIntValue.HasValue)
                 {
                     if (IntMinValue.HasValue && DefaultIntValue < IntMinValue)
-                        errors.Add($"Default value cannot be less than min value ({IntMinValue}).");
+                        errors.Add(L["Validation_DefaultLessThanMin", IntMinValue]);
                     if (IntMaxValue.HasValue && DefaultIntValue > IntMaxValue)
-                        errors.Add($"Default value cannot be greater than max value ({IntMaxValue}).");
+                        errors.Add(L["Validation_DefaultGreaterThanMax", IntMaxValue]);
                 }
                 break;
 
             case FieldType.Decimal:
                 if (DecimalMinValue.HasValue && DecimalMaxValue.HasValue && DecimalMinValue > DecimalMaxValue)
-                    errors.Add("Min value cannot be greater than max value.");
+                    errors.Add(L["Validation_MinGreaterThanMax"]);
                 if (DefaultDecimalValue.HasValue)
                 {
                     if (DecimalMinValue.HasValue && DefaultDecimalValue < DecimalMinValue)
-                        errors.Add($"Default value cannot be less than min value ({DecimalMinValue}).");
+                        errors.Add(L["Validation_DefaultLessThanMin", DecimalMinValue]);
                     if (DecimalMaxValue.HasValue && DefaultDecimalValue > DecimalMaxValue)
-                        errors.Add($"Default value cannot be greater than max value ({DecimalMaxValue}).");
+                        errors.Add(L["Validation_DefaultGreaterThanMax", DecimalMaxValue]);
                 }
                 break;
 
             case FieldType.Date:
                 if (MinDateValue.HasValue && MaxDateValue.HasValue && MinDateValue > MaxDateValue)
-                    errors.Add("Min date cannot be later than max date.");
+                    errors.Add(L["Validation_MinDateAfterMax"]);
                 if (DefaultDateValue.HasValue)
                 {
                     if (MinDateValue.HasValue && DefaultDateValue < MinDateValue)
-                        errors.Add($"Default date cannot be earlier than min date ({MinDateValue:yyyy-MM-dd}).");
+                        errors.Add(L["Validation_DefaultDateBeforeMin", MinDateValue.Value.ToString("yyyy-MM-dd")]);
                     if (MaxDateValue.HasValue && DefaultDateValue > MaxDateValue)
-                        errors.Add($"Default date cannot be later than max date ({MaxDateValue:yyyy-MM-dd}).");
+                        errors.Add(L["Validation_DefaultDateAfterMax", MaxDateValue.Value.ToString("yyyy-MM-dd")]);
                 }
                 break;
         }

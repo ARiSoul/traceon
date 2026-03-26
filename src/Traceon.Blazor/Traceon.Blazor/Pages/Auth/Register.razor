@@ -53,7 +53,7 @@ else
         if (success)
             _registered = true;
         else
-            _errors = errors.Count > 0 ? errors : ["Registration failed."];
+            _errors = errors.Count > 0 ? errors : [L["Auth_RegisterFailed"]];
 
         _loading = false;
     }
@@ -66,7 +66,7 @@ else
         [Required]
         public string Password { get; set; } = string.Empty;
 
-        [Required, Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+        [Required, Compare(nameof(Password))]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 }
