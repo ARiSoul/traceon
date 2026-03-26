@@ -17,6 +17,9 @@
         <a href="/tracked-actions" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Back to List
         </a>
+        <a href="/dashboard/action/@Id/detail" class="btn btn-outline-info">
+            <i class="bi bi-graph-up-arrow me-1"></i>Analytics
+        </a>
         <button class="btn btn-success" @onclick="SaveBasicInfoAsync" disabled="@_saving">
             @if (_saving)
             {
@@ -241,7 +244,7 @@ else
                KeySelector="f => f.Id"
                SearchSelector="@(f => $"{f.DefaultName} {f.Type}")"
                SearchPlaceholder="Search field definitions..."
-               EmptyText="No field definitions available."
+               EmptyText="No field definitions available. Create one below."
                ExcludedKeys="_fieldExcludedKeys"
                OnConfirm="OnFieldsSelectedAsync">
     <ItemTemplate>
@@ -250,6 +253,9 @@ else
             <span class="badge bg-secondary ms-auto">@context.Type</span>
         </div>
     </ItemTemplate>
+    <CreateTemplate>
+        <FieldDefinitionForm OnCreated="async fd => await OnFieldCreatedInlineAsync(fd, context)" />
+    </CreateTemplate>
 </ModalSelector>
 
 @code {
@@ -409,6 +415,12 @@ else
     private async Task ReloadFieldsAsync()
     {
         _fields = await ActionFieldService.GetByTrackedActionAsync(Id);
+    }
+
+    private async Task OnFieldCreatedInlineAsync(FieldDefinitionResponse def, EventCallback onCreated)
+    {
+        await OnFieldsSelectedAsync([def]);
+        await onCreated.InvokeAsync();
     }
 
     // Reorder handlers

@@ -103,8 +103,7 @@
     {
         return
         [
-            ListAction.Link("Manage Fields", $"/tracked-actions/{action.Id}/fields", "sliders", ListActionStyle.Info),
-            ListAction.Link("Manage Tags", $"/tracked-actions/{action.Id}/tags", "tags", ListActionStyle.Info),
+            ListAction.Link("Analytics", $"/dashboard/action/{action.Id}/detail", "graph-up-arrow", ListActionStyle.Info),
 
             ListAction.Separator(),
 
