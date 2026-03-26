@@ -1,4 +1,5 @@
 @typeparam TItem
+@inject IStringLocalizer<SharedResource> L
 
 <div class="data-grid">
     @if (FilterPlaceholder is not null || Toolbar is not null)
@@ -37,7 +38,7 @@
     {
         <div class="data-grid-loading">
             <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+                <span class="visually-hidden">@L["Common_Loading"]</span>
             </div>
         </div>
     }
@@ -105,7 +106,7 @@
             <div class="data-grid-footer">
                 <div class="data-grid-info">
                     <span class="text-muted small">
-                        Showing <strong>@(_firstRecord)–@(_lastRecord)</strong> of <strong>@_totalCount</strong> records
+                        @L["DataGrid_Showing"] <strong>@(_firstRecord)–@(_lastRecord)</strong> @L["DataGrid_Of"] <strong>@_totalCount</strong>
                     </span>
                 </div>
 

@@ -35,10 +35,10 @@ else if (_data is not null)
         <div class="card">
             <div class="card-body text-center py-5">
                 <i class="bi bi-bar-chart-line display-4 text-muted mb-3 d-block"></i>
-                <h5>No data yet</h5>
-                <p class="text-muted">Create some tracked actions and log entries to see your dashboard.</p>
+                <h5>@L["Common_NoDataYet"]</h5>
+                <p class="text-muted">@L["Dashboard_NoDataHint"]</p>
                 <a href="/tracked-actions/create" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-1"></i>Create Tracked Action
+                    <i class="bi bi-plus-circle me-1"></i>@L["Dashboard_CreateAction"]
                 </a>
             </div>
         </div>
@@ -52,7 +52,7 @@ else if (_data is not null)
                     <div class="card-body text-center">
                         <i class="bi bi-list-check fs-3 text-primary d-block mb-1"></i>
                         <div class="fs-2 fw-bold">@_data.TotalActions</div>
-                        <small class="text-muted">Actions</small>
+                        <small class="text-muted">@L["Dashboard_TotalActions"]</small>
                     </div>
                 </div>
             </div>
@@ -61,7 +61,7 @@ else if (_data is not null)
                     <div class="card-body text-center">
                         <i class="bi bi-journal-text fs-3 text-success d-block mb-1"></i>
                         <div class="fs-2 fw-bold">@_data.TotalEntries</div>
-                        <small class="text-muted">Total Entries</small>
+                        <small class="text-muted">@L["Dashboard_TotalEntries"]</small>
                     </div>
                 </div>
             </div>
@@ -70,7 +70,7 @@ else if (_data is not null)
                     <div class="card-body text-center">
                         <i class="bi bi-calendar-day fs-3 text-info d-block mb-1"></i>
                         <div class="fs-2 fw-bold">@_data.EntriesToday</div>
-                        <small class="text-muted">Today</small>
+                        <small class="text-muted">@L["Dashboard_Today"]</small>
                     </div>
                 </div>
             </div>
@@ -79,7 +79,7 @@ else if (_data is not null)
                     <div class="card-body text-center">
                         <i class="bi bi-calendar-week fs-3 text-warning d-block mb-1"></i>
                         <div class="fs-2 fw-bold">@_data.EntriesThisWeek</div>
-                        <small class="text-muted">This Week</small>
+                        <small class="text-muted">@L["Dashboard_ThisWeek"]</small>
                     </div>
                 </div>
             </div>
@@ -88,7 +88,7 @@ else if (_data is not null)
                     <div class="card-body text-center">
                         <i class="bi bi-fire fs-3 @(_data.OverallStreak > 0 ? "text-danger" : "text-muted") d-block mb-1"></i>
                         <div class="fs-2 fw-bold">@_data.OverallStreak</div>
-                        <small class="text-muted">Day Streak</small>
+                        <small class="text-muted">@L["Dashboard_DayStreak"]</small>
                     </div>
                 </div>
             </div>
@@ -99,7 +99,7 @@ else if (_data is not null)
         {
             <div class="card mb-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-activity me-2"></i>Global Entry Frequency</h6>
+                    <h6 class="mb-0"><i class="bi bi-activity me-2"></i>@L["Dashboard_GlobalFrequency"]</h6>
                 </div>
                 <div class="card-body">
                     <ApexChart TItem="DailyCount"
@@ -121,14 +121,14 @@ else if (_data is not null)
         <div class="row g-2 mb-4">
             <div class="col-12 col-md-3">
                 <label class="form-label form-label-sm mb-1">
-                    <i class="bi bi-calendar-range me-1"></i>Period
+                    <i class="bi bi-calendar-range me-1"></i>@L["Dashboard_Period"]
                 </label>
                 <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeChanged">
-                    <option value="all">All Time</option>
-                    <option value="days">Last N Days</option>
-                    <option value="months">Last N Months</option>
-                    <option value="years">Last N Years</option>
-                    <option value="custom">Custom Range</option>
+                    <option value="all">@L["Common_AllTime"]</option>
+                    <option value="days">@L["Dashboard_LastNDays"]</option>
+                    <option value="months">@L["Dashboard_LastNMonths"]</option>
+                    <option value="years">@L["Dashboard_LastNYears"]</option>
+                    <option value="custom">@L["Dashboard_CustomRange"]</option>
                 </select>
             </div>
 
@@ -136,7 +136,7 @@ else if (_data is not null)
             {
                 <div class="col-6 col-md-2">
                     <label class="form-label form-label-sm mb-1">
-                        @(_periodMode switch { "days" => "Days", "months" => "Months", _ => "Years" })
+                        @(_periodMode switch { "days" => L["Dashboard_Days"], "months" => L["Dashboard_Months"], _ => L["Dashboard_Years"] })
                     </label>
                     <input type="number"
                            class="form-control form-control-sm"
@@ -148,14 +148,14 @@ else if (_data is not null)
             else if (_periodMode == "custom")
             {
                 <div class="col-6 col-md-2">
-                    <label class="form-label form-label-sm mb-1">From</label>
+                    <label class="form-label form-label-sm mb-1">@L["Dashboard_From"]</label>
                     <input type="date"
                            class="form-control form-control-sm"
                            value="@_customFrom?.ToString("yyyy-MM-dd")"
                            @onchange="OnCustomFromChanged" />
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label form-label-sm mb-1">To</label>
+                    <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
                     <input type="date"
                            class="form-control form-control-sm"
                            value="@_customTo?.ToString("yyyy-MM-dd")"
@@ -168,10 +168,10 @@ else if (_data is not null)
         @if (_allTags.Count > 0)
         {
             <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
-                <small class="text-muted me-1"><i class="bi bi-funnel me-1"></i>Tag:</small>
+                <small class="text-muted me-1"><i class="bi bi-funnel me-1"></i>@L["Dashboard_Tag"]:</small>
                 <button class="btn btn-sm @(_selectedTag is null ? "btn-primary" : "btn-outline-secondary")"
                         @onclick="() => _selectedTag = null">
-                    All
+                    @L["Dashboard_All"]
                 </button>
                 @foreach (var tag in _allTags)
                 {
@@ -192,7 +192,7 @@ else if (_data is not null)
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="bi bi-funnel"></i></span>
                         <select class="form-select form-select-sm" value="@_selectedActionId" @onchange="OnActionFilterChanged">
-                            <option value="">All Actions</option>
+                            <option value="">@L["Dashboard_AllActions"]</option>
                             @foreach (var action in _data.Actions.OrderBy(a => a.Name))
                             {
                                 <option value="@action.ActionId">@action.Name</option>
@@ -210,14 +210,14 @@ else if (_data is not null)
         }
 
         <!-- Per-Action Stats -->
-        <h5 class="mb-3"><i class="bi bi-graph-up me-2"></i>Per-Action Statistics</h5>
+        <h5 class="mb-3"><i class="bi bi-graph-up me-2"></i>@L["Dashboard_PerActionStats"]</h5>
 
         @if (FilteredActions.Count == 0)
         {
             <div class="card mb-4">
                 <div class="card-body text-center py-4 text-muted">
                     <i class="bi bi-funnel fs-3 d-block mb-2"></i>
-                    No actions match the selected filter.
+                    @L["Dashboard_NoActionsMatch"]
                 </div>
             </div>
         }
@@ -240,11 +240,11 @@ else if (_data is not null)
                         }
                     </div>
                     <div class="d-flex align-items-center gap-3 flex-shrink-0">
-                        <span class="badge bg-primary rounded-pill">@action.EntryCount entries</span>
+                        <span class="badge bg-primary rounded-pill">@action.EntryCount @L["Dashboard_Entries"]</span>
                         @if (action.Streak > 0)
                         {
                             <span class="badge bg-danger rounded-pill">
-                                <i class="bi bi-fire me-1"></i>@action.Streak day@(action.Streak != 1 ? "s" : "")
+                                <i class="bi bi-fire me-1"></i>@action.Streak @(action.Streak != 1 ? L["Dashboard_DayPlural"] : L["Dashboard_Day"])
                             </span>
                         }
                     </div>
@@ -256,24 +256,24 @@ else if (_data is not null)
                         <!-- Navigation links -->
                         <div class="d-flex gap-2 mb-3">
                             <a href="/tracked-actions/@action.ActionId/edit" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-pencil-square me-1"></i>Edit Action
+                                <i class="bi bi-pencil-square me-1"></i>@L["Dashboard_EditAction"]
                             </a>
                             <a href="/entries/action/@action.ActionId" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-journal-text me-1"></i>View Entries
+                                <i class="bi bi-journal-text me-1"></i>@L["Dashboard_ViewEntries"]
                             </a>
                             <a href="/tracked-actions/@action.ActionId/entries/new?returnUrl=%2Fdashboard"
                                class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-plus-circle me-1"></i>New Entry
+                                <i class="bi bi-plus-circle me-1"></i>@L["Dashboard_NewEntry"]
                             </a>
                         </div>
 
                         @if (action.EntryCount == 0)
                         {
                             <div class="text-center text-muted py-3">
-                                <p class="mb-2">No entries yet for this action.</p>
+                                <p class="mb-2">@L["Dashboard_NoEntriesYet"]</p>
                                 <a href="/tracked-actions/@action.ActionId/entries/new?returnUrl=%2Fdashboard"
                                    class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-plus-circle me-1"></i>Add Entry
+                                    <i class="bi bi-plus-circle me-1"></i>@L["Dashboard_AddEntry"]
                                 </a>
                             </div>
                         }
@@ -284,13 +284,13 @@ else if (_data is not null)
                                 <div class="col">
                                     <div class="border rounded p-2 text-center bg-light">
                                         <div class="fw-bold">@action.EntryCount</div>
-                                        <small class="text-muted">Total Entries</small>
+                                        <small class="text-muted">@L["Dashboard_TotalEntries_Label"]</small>
                                     </div>
                                 </div>
                                 <div class="col">
                                     <div class="border rounded p-2 text-center bg-light">
                                         <div class="fw-bold">@FormatRelativeDate(action.LastEntryUtc)</div>
-                                        <small class="text-muted">Last Entry</small>
+                                        <small class="text-muted">@L["Dashboard_LastEntry"]</small>
                                     </div>
                                 </div>
                                 <div class="col">
@@ -305,7 +305,7 @@ else if (_data is not null)
                                                 <span>—</span>
                                             }
                                         </div>
-                                        <small class="text-muted">Avg. Gap</small>
+                                        <small class="text-muted">@L["Dashboard_AvgGap"]</small>
                                     </div>
                                 </div>
                                 <div class="col">
@@ -313,7 +313,7 @@ else if (_data is not null)
                                         <div class="fw-bold">
                                             <i class="bi bi-fire @(action.Streak > 0 ? "text-danger" : "text-muted") me-1"></i>@action.Streak
                                         </div>
-                                        <small class="text-muted">Day Streak</small>
+                                        <small class="text-muted">@L["Dashboard_DayStreak"]</small>
                                     </div>
                                 </div>
                             </div>
@@ -321,9 +321,9 @@ else if (_data is not null)
                             <!-- Weekly Activity -->
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="text-muted mb-0"><i class="bi bi-bar-chart me-1"></i>Weekly Activity (last 3 months)</h6>
+                                    <h6 class="text-muted mb-0"><i class="bi bi-bar-chart me-1"></i>@L["Dashboard_WeeklyActivity"]</h6>
                                     <a href="/dashboard/action/@action.ActionId/detail" class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-graph-up-arrow me-1"></i>Full Analytics
+                                        <i class="bi bi-graph-up-arrow me-1"></i>@L["Dashboard_FullAnalytics"]
                                     </a>
                                 </div>
                                 <ApexChart TItem="WeekBucket"
@@ -342,7 +342,7 @@ else if (_data is not null)
                             <!-- Field Statistics -->
                             @if (action.FieldStats.Count > 0)
                             {
-                                <h6 class="text-muted mb-2"><i class="bi bi-sliders me-1"></i>Field Analytics</h6>
+                                <h6 class="text-muted mb-2"><i class="bi bi-sliders me-1"></i>@L["Dashboard_FieldAnalytics"]</h6>
                                 <div class="row g-2">
                                     @foreach (var field in action.FieldStats)
                                     {
@@ -356,7 +356,7 @@ else if (_data is not null)
                             <!-- Numeric Field Trend Charts -->
                             @if (action.NumericSeries.Count > 0)
                             {
-                                <h6 class="text-muted mb-2 mt-3"><i class="bi bi-graph-up me-1"></i>Field Trends</h6>
+                                <h6 class="text-muted mb-2 mt-3"><i class="bi bi-graph-up me-1"></i>@L["Dashboard_FieldTrends"]</h6>
                                 <div class="row g-2">
                                     @foreach (var series in action.NumericSeries)
                                     {

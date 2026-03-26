@@ -1,4 +1,5 @@
 @using Traceon.Contracts.Enums
+@inject IStringLocalizer<SharedResource> L
 
 <div class="list-group-item p-0">
     <!-- Summary row -->
@@ -23,7 +24,7 @@
             }
             @if (Field.IsRequired)
             {
-                <span class="badge bg-danger">Required</span>
+                <span class="badge bg-danger">@L["Common_Required"]</span>
             }
         </div>
         <div class="d-flex gap-1" @onclick:stopPropagation="true">
@@ -41,11 +42,11 @@
 
             <div class="row g-2">
                 <div class="col-md-6">
-                    <label class="form-label form-label-sm mb-1">Name <span class="text-danger">*</span></label>
+                    <label class="form-label form-label-sm mb-1">@L["Common_Name"] <span class="text-danger">*</span></label>
                     <input type="text" class="form-control form-control-sm" @bind="_name" />
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label form-label-sm mb-1">Description</label>
+                    <label class="form-label form-label-sm mb-1">@L["Common_Description"]</label>
                     <input type="text" class="form-control form-control-sm" @bind="_description" />
                 </div>
             </div>
@@ -54,7 +55,7 @@
             {
                 <div class="row g-2 mt-1">
                     <div class="col-md-6">
-                        <label class="form-label form-label-sm mb-1">Min @(Field.FieldType == FieldType.Date ? "Date" : "Value")</label>
+                        <label class="form-label form-label-sm mb-1">@(Field.FieldType == FieldType.Date ? L["Fields_MinDate"] : L["Fields_MinValue"])</label>
                         @switch (Field.FieldType)
                         {
                             case FieldType.Integer:
@@ -69,7 +70,7 @@
                         }
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label form-label-sm mb-1">Max @(Field.FieldType == FieldType.Date ? "Date" : "Value")</label>
+                        <label class="form-label form-label-sm mb-1">@(Field.FieldType == FieldType.Date ? L["Fields_MaxDate"] : L["Fields_MaxValue"])</label>
                         @switch (Field.FieldType)
                         {
                             case FieldType.Integer:
@@ -90,21 +91,21 @@
             {
                 <div class="row g-2 mt-1">
                     <div class="col-md-6">
-                        <label class="form-label form-label-sm mb-1">Unit</label>
-                        <input type="text" class="form-control form-control-sm" @bind="_unit" placeholder="e.g., €, kg, km" />
+                        <label class="form-label form-label-sm mb-1">@L["Fields_Unit"]</label>
+                        <input type="text" class="form-control form-control-sm" @bind="_unit" placeholder="@L["Fields_UnitPlaceholder"]" />
                     </div>
                 </div>
             }
 
             <div class="row g-2 mt-1">
                 <div class="col-md-6">
-                    <label class="form-label form-label-sm mb-1">Default Value</label>
+                    <label class="form-label form-label-sm mb-1">@L["Fields_DefaultValue"]</label>
                     @switch (Field.FieldType)
                     {
                         case FieldType.Boolean:
                             <div class="form-check mt-1">
                                 <input type="checkbox" class="form-check-input" id="@($"dfBool-{Field.Id}")" @bind="_defaultBool" />
-                                <label class="form-check-label" for="@($"dfBool-{Field.Id}")">Checked by default</label>
+                                <label class="form-check-label" for="@($"dfBool-{Field.Id}")">@L["Fields_CheckedByDefault"]</label>
                             </div>
                             break;
                         case FieldType.Integer:
@@ -120,7 +121,7 @@
                             @if (ParsedDropdownValues.Length > 0)
                             {
                                 <select class="form-select form-select-sm" @bind="_defaultValue">
-                                    <option value="">— Select a default —</option>
+                                    <option value="">@L["Fields_SelectDefault"]</option>
                                     @foreach (var val in ParsedDropdownValues)
                                     {
                                         <option value="@val">@val</option>
@@ -131,7 +132,7 @@
                             {
                                 <input type="text" class="form-control form-control-sm" disabled />
                                 <small class="text-warning">
-                                    <i class="bi bi-info-circle me-1"></i>No dropdown values defined in the field definition.
+                                    <i class="bi bi-info-circle me-1"></i>@L["Fields_DefineDropdownFirst"]
                                 </small>
                             }
                             break;
@@ -143,7 +144,7 @@
                 <div class="col-md-6 d-flex align-items-end">
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="@($"req-{Field.Id}")" @bind="_isRequired" />
-                        <label class="form-check-label" for="@($"req-{Field.Id}")">Required</label>
+                        <label class="form-check-label" for="@($"req-{Field.Id}")">@L["Common_Required"]</label>
                     </div>
                 </div>
             </div>
@@ -153,20 +154,20 @@
                 <hr class="my-2" />
                 <div class="d-flex align-items-center gap-1 mb-2">
                     <i class="bi bi-bar-chart-line text-muted"></i>
-                    <strong class="small">Analytics Configuration</strong>
+                    <strong class="small">@L["FieldEditor_AnalyticsConfig"]</strong>
                 </div>
 
                 <div class="row g-2">
                     <div class="col-12">
-                        <label class="form-label form-label-sm mb-1">Summary Metrics</label>
+                        <label class="form-label form-label-sm mb-1">@L["FieldEditor_SummaryMetrics"]</label>
                         <div class="d-flex flex-wrap gap-3">
                             @foreach (var metric in new[] {
-                                (SummaryMetrics.Min, "Min"),
-                                (SummaryMetrics.Max, "Max"),
-                                (SummaryMetrics.Avg, "Avg"),
-                                (SummaryMetrics.Sum, "Sum"),
-                                (SummaryMetrics.Count, "Count"),
-                                (SummaryMetrics.Latest, "Latest") })
+                                (SummaryMetrics.Min, L["Metric_Min"].Value),
+                                (SummaryMetrics.Max, L["Metric_Max"].Value),
+                                (SummaryMetrics.Avg, L["Metric_Avg"].Value),
+                                (SummaryMetrics.Sum, L["Metric_Sum"].Value),
+                                (SummaryMetrics.Count, L["Metric_Count"].Value),
+                                (SummaryMetrics.Latest, L["Metric_Latest"].Value) })
                             {
                                 var flag = metric.Item1;
                                 var label = metric.Item2;
@@ -184,25 +185,25 @@
 
                 <div class="row g-2 mt-1">
                     <div class="col-md-4">
-                        <label class="form-label form-label-sm mb-1">Trend Aggregation</label>
+                        <label class="form-label form-label-sm mb-1">@L["FieldEditor_TrendAggregation"]</label>
                         <select class="form-select form-select-sm" @bind="_trendAggregation">
-                            <option value="@TrendAggregation.AllPoints">All Points</option>
-                            <option value="@TrendAggregation.Average">Daily Average</option>
-                            <option value="@TrendAggregation.Min">Daily Min</option>
-                            <option value="@TrendAggregation.Max">Daily Max</option>
-                            <option value="@TrendAggregation.Sum">Daily Sum</option>
+                            <option value="@TrendAggregation.AllPoints">@L["FieldEditor_AllPoints"]</option>
+                            <option value="@TrendAggregation.Average">@L["FieldEditor_DailyAverage"]</option>
+                            <option value="@TrendAggregation.Min">@L["FieldEditor_DailyMin"]</option>
+                            <option value="@TrendAggregation.Max">@L["FieldEditor_DailyMax"]</option>
+                            <option value="@TrendAggregation.Sum">@L["FieldEditor_DailySum"]</option>
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label form-label-sm mb-1">Chart Type</label>
+                        <label class="form-label form-label-sm mb-1">@L["FieldEditor_ChartType"]</label>
                         <select class="form-select form-select-sm" @bind="_trendChartType">
-                            <option value="@TrendChartType.Line">Line</option>
-                            <option value="@TrendChartType.Bar">Bar</option>
-                            <option value="@TrendChartType.Area">Area</option>
+                            <option value="@TrendChartType.Line">@L["FieldEditor_Line"]</option>
+                            <option value="@TrendChartType.Bar">@L["FieldEditor_Bar"]</option>
+                            <option value="@TrendChartType.Area">@L["FieldEditor_Area"]</option>
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label form-label-sm mb-1">Target Value</label>
+                        <label class="form-label form-label-sm mb-1">@L["FieldEditor_TargetValue"]</label>
                         <input type="number" class="form-control form-control-sm" @bind="_targetValue" placeholder="e.g., 75" />
                     </div>
                 </div>
@@ -214,10 +215,10 @@
                     {
                         <span class="spinner-border spinner-border-sm me-1"></span>
                     }
-                    <i class="bi bi-check-circle me-1"></i>Save
+                    <i class="bi bi-check-circle me-1"></i>@L["Common_Save"]
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">
-                    <i class="bi bi-x me-1"></i>Cancel
+                    <i class="bi bi-x me-1"></i>@L["Common_Cancel"]
                 </button>
             </div>
         </div>

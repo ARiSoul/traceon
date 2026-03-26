@@ -20,7 +20,7 @@
           TItem="FieldDefinitionResponse"
           LoadData="LoadDataAsync"
           Columns="_columns"
-          FilterPlaceholder="Filter by name..."
+          FilterPlaceholder="@L["Filter_ByName"]"
           EmptyText="@L["Fields_Empty"]">
     <Toolbar>
         <a href="/field-definitions/create" class="btn btn-primary">
@@ -28,7 +28,7 @@
         </a>
     </Toolbar>
     <RowActions>
-        <ListActionsDropdown PrimaryText="Edit"
+        <ListActionsDropdown PrimaryText="@L["Common_Edit"]"
                              PrimaryIcon="pencil-square"
                              PrimaryButtonStyle="primary"
                              PrimaryAction="() => EditField(context.Id)"
@@ -44,13 +44,18 @@
     private DataGrid<FieldDefinitionResponse> _grid = default!;
     private IReadOnlyList<string> _errors = [];
 
-    private static readonly List<DataGridColumn<FieldDefinitionResponse>> _columns =
-    [
-        new() { Title = "Name", Selector = x => x.DefaultName, SortField = "DefaultName" },
-        new() { Title = "Type", Selector = x => x.Type },
-        new() { Title = "Required", Selector = x => x.DefaultIsRequired ? "Yes" : "No" },
-        new() { Title = "Created", Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
-    ];
+    private List<DataGridColumn<FieldDefinitionResponse>> _columns = [];
+
+    protected override void OnInitialized()
+    {
+        _columns =
+        [
+            new() { Title = L["Common_Name"], Selector = x => x.DefaultName, SortField = "DefaultName" },
+            new() { Title = L["Common_Type"], Selector = x => x.Type },
+            new() { Title = L["Common_Required"], Selector = x => x.DefaultIsRequired ? L["Common_Yes"] : L["Common_No"] },
+            new() { Title = L["Common_Created"], Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
+        ];
+    }
 
     private Task<DataGridResult<FieldDefinitionResponse>> LoadDataAsync(DataGridRequest request)
         => Service.QueryAsync(request, ["DefaultName"]);

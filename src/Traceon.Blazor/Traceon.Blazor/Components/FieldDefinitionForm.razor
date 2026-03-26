@@ -1,5 +1,6 @@
 @using Traceon.Contracts.FieldDefinitions
 @inject FieldDefinitionService FieldDefinitionService
+@inject IStringLocalizer<SharedResource> L
 
 <div>
     <EditForm Model="_model" OnValidSubmit="SaveAsync" Class="mb-2">
@@ -7,12 +8,12 @@
 
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label">Name <span class="text-danger">*</span></label>
+                <label class="form-label">@L["Common_Name"] <span class="text-danger">*</span></label>
                 <InputText @bind-Value="_model!.DefaultName" class="form-control form-control-sm" />
                 <ValidationMessage For="() => _model!.DefaultName" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Type <span class="text-danger">*</span></label>
+                <label class="form-label">@L["Common_Type"] <span class="text-danger">*</span></label>
                 <InputSelect @bind-Value="_model!.Type" class="form-select form-select-sm">
                     @foreach (var type in Enum.GetValues<FieldType>())
                     {
@@ -21,10 +22,10 @@
                 </InputSelect>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Required by default</label>
+                <label class="form-label">@L["Fields_RequiredByDefault"]</label>
                 <div class="form-check mt-2">
                     <InputCheckbox @bind-Value="_model!.DefaultIsRequired" class="form-check-input" id="isRequiredInline" />
-                    <label class="form-check-label" for="isRequiredInline">Yes</label>
+                    <label class="form-check-label" for="isRequiredInline">@L["Common_Yes"]</label>
                 </div>
             </div>
         </div>
@@ -33,16 +34,16 @@
         {
             <div class="row g-3 mt-2">
                 <div class="col-md-6">
-                    <label class="form-label form-label-sm mb-1">Unit</label>
-                    <input type="text" class="form-control form-control-sm" @bind="_model.Unit" placeholder="e.g., €, kg, km, min" />
-                    <div class="form-text">The measurement unit for this field (defaults to UN).</div>
+                    <label class="form-label form-label-sm mb-1">@L["Fields_Unit"]</label>
+                    <input type="text" class="form-control form-control-sm" @bind="_model.Unit" placeholder="@L["Fields_UnitPlaceholder"]" />
+                    <div class="form-text">@L["Fields_UnitHint"]</div>
                 </div>
             </div>
         }
 
         <div class="row g-3 mt-2">
             <div class="col-12">
-                <label class="form-label">Description</label>
+                <label class="form-label">@L["Common_Description"]</label>
                 <InputText @bind-Value="_model!.DefaultDescription" class="form-control form-control-sm" />
             </div>
         </div>
@@ -51,7 +52,7 @@
         {
             <div class="row g-3 mt-2">
                 <div class="col-md-6">
-                    <label class="form-label">Min @(_model.Type == FieldType.Date ? "Date" : "Value")</label>
+                    <label class="form-label">@(_model.Type == FieldType.Date ? L["Fields_MinDate"] : L["Fields_MinValue"])</label>
                     @switch (_model.Type)
                     {
                         case FieldType.Integer:
@@ -66,7 +67,7 @@
                     }
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Max @(_model.Type == FieldType.Date ? "Date" : "Value")</label>
+                    <label class="form-label">@(_model.Type == FieldType.Date ? L["Fields_MaxDate"] : L["Fields_MaxValue"])</label>
                     @switch (_model.Type)
                     {
                         case FieldType.Integer:
@@ -87,24 +88,24 @@
         {
             <div class="row g-3 mt-2">
                 <div class="col-12">
-                    <label class="form-label">Dropdown Values <span class="text-danger">*</span></label>
+                    <label class="form-label">@L["Fields_DropdownValues"] <span class="text-danger">*</span></label>
                     <InputText @bind-Value="_model.DropdownValues" class="form-control form-control-sm"
-                               placeholder="Comma-separated values, e.g.: Low, Medium, High" />
-                    <div class="form-text">Enter comma-separated values for the dropdown options.</div>
+                               placeholder="@L["Fields_DropdownPlaceholder"]" />
+                    <div class="form-text">@L["Fields_DropdownHint"]</div>
                 </div>
             </div>
         }
 
         <div class="row g-3 mt-2">
             <div class="col-12">
-                <label class="form-label">Default Value</label>
+                <label class="form-label">@L["Fields_DefaultValue"]</label>
 
                 @switch (_model.Type)
                 {
                     case FieldType.Boolean:
                         <div class="form-check mt-2">
                             <InputCheckbox @bind-Value="_model.DefaultBoolValue" class="form-check-input" id="defaultBoolInline" />
-                            <label class="form-check-label" for="defaultBoolInline">Checked by default</label>
+                            <label class="form-check-label" for="defaultBoolInline">@L["Fields_CheckedByDefault"]</label>
                         </div>
                         break;
 
@@ -124,7 +125,7 @@
                         @if (_model.ParsedDropdownValues.Length > 0)
                         {
                             <InputSelect @bind-Value="_model.DefaultValue" class="form-select form-select-sm">
-                                <option value="">— Select a default —</option>
+                                <option value="">@L["Fields_SelectDefault"]</option>
                                 @foreach (var val in _model.ParsedDropdownValues)
                                 {
                                     <option value="@val">@val</option>
@@ -135,7 +136,7 @@
                         {
                             <InputText @bind-Value="_model.DefaultValue" class="form-control form-control-sm" disabled />
                             <div class="form-text text-warning">
-                                <i class="bi bi-info-circle me-1"></i>Define dropdown values above first.
+                                <i class="bi bi-info-circle me-1"></i>@L["Fields_DefineDropdownFirst"]
                             </div>
                         }
                         break;
@@ -157,7 +158,7 @@
                 {
                     <i class="bi bi-check-circle me-1"></i>
                 }
-                Create Field
+                @L["Fields_CreateField"]
             </button>
         </div>
 

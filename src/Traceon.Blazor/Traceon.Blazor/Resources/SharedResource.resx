@@ -17,7 +17,6 @@
     </xsd:element>
   </xsd:schema>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
 
   <!-- ═══ Navigation ═══ -->
   <data name="Nav_Home"><value>Home</value></data>
@@ -270,6 +269,11 @@
   <data name="Metric_Target"><value>Target</value></data>
 
   <!-- ═══ Edit Page ═══ -->
+  <data name="ActionEdit_NotFound"><value>Tracked action not found.</value></data>
+  <data name="NotFound_Message"><value>Sorry, there's nothing at this address.</value></data>
+
+  <!-- ═══ Edit Page (extra) ═══ -->
+  <data name="Edit_UpdateFailed"><value>Failed to update tracked action.</value></data>
   <data name="Edit_BasicInfo"><value>Basic Info</value></data>
   <data name="Edit_NotFound"><value>Tracked action not found.</value></data>
   <data name="Edit_FieldsHint"><value>Manage the data fields captured for each entry. Click a field to edit its settings.</value></data>
@@ -281,7 +285,6 @@
   <data name="Edit_AddTags"><value>Add Tags</value></data>
   <data name="Edit_NoTagsYet"><value>No tags assigned yet.</value></data>
   <data name="Edit_SelectTags"><value>Select Tags</value></data>
-  <data name="Edit_UpdateFailed"><value>Failed to update tracked action.</value></data>
 
   <!-- ═══ Modals ═══ -->
   <data name="Modal_SelectTags"><value>Select Tags</value></data>
@@ -291,19 +294,63 @@
   <data name="Modal_NoTagsAvailable"><value>No tags available. Create one below.</value></data>
   <data name="Modal_NoFieldsAvailable"><value>No field definitions available. Create one below.</value></data>
 
-  <!-- ═══ Dashboard Refresh ═══ -->
-  <data name="Dashboard_Refresh"><value>Refresh</value></data>
-  <data name="Dashboard_StatsSubtitle"><value>Statistics and insights across your tracked actions</value></data>
-
   <!-- ═══ Tag Edit ═══ -->
   <data name="TagEdit_Title"><value>Edit Tag</value></data>
-  <data name="TagEdit_Subtitle"><value>Update the details of your tag</value></data>
+  <data name="TagEdit_Subtitle"><value>Update your tag details</value></data>
   <data name="TagEdit_BackToTags"><value>Back to Tags</value></data>
 
   <!-- ═══ Field Edit ═══ -->
   <data name="FieldEdit_EditTitle"><value>Edit Custom Field</value></data>
   <data name="FieldEdit_CreateTitle"><value>Create Custom Field</value></data>
-  <data name="FieldEdit_EditSubtitle"><value>Update the details of your custom field</value></data>
+  <data name="FieldEdit_EditSubtitle"><value>Update your custom field details</value></data>
   <data name="FieldEdit_CreateSubtitle"><value>Define a new reusable field template</value></data>
   <data name="FieldEdit_BackToFields"><value>Back to Custom Fields</value></data>
+
+  <!-- ═══ Filter / Placeholders ═══ -->
+  <data name="Filter_ByNameOrDesc"><value>Filter by name or description...</value></data>
+  <data name="Filter_ByName"><value>Filter by name...</value></data>
+  <data name="Filter_ByNotes"><value>Filter by notes...</value></data>
+  <data name="Filter_DateField"><value>Date field</value></data>
+  <data name="Filter_Occurred"><value>Occurred</value></data>
+  <data name="Filter_TagName"><value>Tag name</value></data>
+  <data name="Filter_WhatTracking"><value>What are you tracking?</value></data>
+  <data name="Filter_NamePlaceholder"><value>e.g., Daily Exercise</value></data>
+  <data name="Filter_AnyNotes"><value>Any notes...</value></data>
+
+  <!-- ═══ Tags Edit ═══ -->
+  <data name="TagEdit_NotFound"><value>Tag not found.</value></data>
+  <data name="TagEdit_UpdateFailed"><value>Failed to update tag.</value></data>
+
+  <!-- ═══ FieldDefinition Edit ═══ -->
+  <data name="FieldEdit_NotFound"><value>Custom field not found.</value></data>
+  <data name="FieldEdit_UpdateFailed"><value>Failed to update custom field.</value></data>
+
+  <!-- ═══ Create Wizard ═══ -->
+  <data name="Wizard_BasicInfo"><value>Basic Info</value></data>
+  <data name="Wizard_Review"><value>Review</value></data>
+  <data name="Wizard_NameRequired"><value>Name is required.</value></data>
+  <data name="Wizard_ActionNotFound"><value>Action created but could not be found.</value></data>
+  <data name="Wizard_NoTagsHint"><value>No tags selected. Tags help you organize and filter your tracked actions.</value></data>
+  <data name="Wizard_NoFieldsHint"><value>No fields selected. Fields define what data you capture per entry.</value></data>
+  <data name="Wizard_NoDropdownValues"><value>No dropdown values defined.</value></data>
+  <data name="Wizard_NoTagsSelected"><value>No tags selected</value></data>
+  <data name="Wizard_NoFieldsSelected"><value>No fields selected</value></data>
+  <data name="Wizard_NoEntriesAdded"><value>No entries added</value></data>
+  <data name="Wizard_HasCustomFields"><value>This action has custom fields</value></data>
+  <data name="Wizard_CustomFieldsHint"><value>Since you've defined fields, entries need to be created after the action is set up — so all field values can be properly filled in.</value></data>
+  <data name="Wizard_RedirectToEntry"><value>Take me to add the first entry after creation</value></data>
+  <data name="Wizard_WillRedirect"><value>You'll be redirected to add the first entry after creation</value></data>
+  <data name="Wizard_EntriesAfterCreation"><value>Entries can be added after creation (custom fields need to be filled in)</value></data>
+  <data name="Wizard_NoEntriesHint"><value>No entries added yet. You can add entries now or do it later from the home page.</value></data>
+  <data name="Wizard_AddEntry"><value>Add Entry</value></data>
+
+  <!-- ═══ Dashboard (extra) ═══ -->
+  <data name="Dashboard_NoDataHint"><value>Create some tracked actions and log entries to see your dashboard.</value></data>
+  <data name="Dashboard_CreateAction"><value>Create Tracked Action</value></data>
+  <data name="Dashboard_Entries"><value>entries</value></data>
+  <data name="Dashboard_Day"><value>day</value></data>
+  <data name="Dashboard_DayPlural"><value>days</value></data>
+  <data name="Dashboard_EditAction"><value>Edit Action</value></data>
+  <data name="Dashboard_ViewEntries"><value>View Entries</value></data>
+  <data name="Dashboard_NewEntry"><value>New Entry</value></data>
 </root>

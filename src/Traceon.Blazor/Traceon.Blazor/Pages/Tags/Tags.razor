@@ -20,30 +20,30 @@
 {
     <div class="card mb-3">
         <div class="card-body">
-            <h5 class="card-title">New Tag</h5>
+            <h5 class="card-title">@L["Tags_New"]</h5>
             <EditForm Model="_newTag" OnValidSubmit="CreateAsync" FormName="CreateTagForm">
                 <DataAnnotationsValidator />
                 <div class="row g-3">
                     <div class="col-md-5">
-                        <label class="form-label">Name <span class="text-danger">*</span></label>
+                        <label class="form-label">@L["Common_Name"] <span class="text-danger">*</span></label>
                         <InputText @bind-Value="_newTag.Name" class="form-control" />
                         <ValidationMessage For="() => _newTag.Name" />
                     </div>
                     <div class="col-md-5">
-                        <label class="form-label">Description</label>
+                        <label class="form-label">@L["Common_Description"]</label>
                         <InputText @bind-Value="_newTag.Description" class="form-control" />
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Color</label>
+                        <label class="form-label">@L["Tags_Color"]</label>
                         <input type="color" class="form-control form-control-color w-100" @bind="_newTag.Color" />
                     </div>
                 </div>
                 <div class="d-flex gap-2 mt-3">
                     <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle me-1"></i>Create
+                        <i class="bi bi-check-circle me-1"></i>@L["Common_Create"]
                     </button>
                     <button type="button" class="btn btn-outline-secondary" @onclick="() => _showForm = false">
-                        <i class="bi bi-x-circle me-1"></i>Cancel
+                        <i class="bi bi-x-circle me-1"></i>@L["Common_Cancel"]
                     </button>
                 </div>
             </EditForm>
@@ -55,7 +55,7 @@
           TItem="TagResponse"
           LoadData="LoadDataAsync"
           Columns="_columns"
-          FilterPlaceholder="Filter by name or description..."
+          FilterPlaceholder="@L["Filter_ByNameOrDesc"]"
           EmptyText="@L["Tags_Empty"]">
     <Toolbar>
         <button class="btn btn-primary" @onclick="() => _showForm = !_showForm">
@@ -63,7 +63,7 @@
         </button>
     </Toolbar>
     <RowActions>
-        <ListActionsDropdown PrimaryText="Edit"
+        <ListActionsDropdown PrimaryText="@L["Common_Edit"]"
                              PrimaryIcon="pencil-square"
                              PrimaryButtonStyle="primary"
                              PrimaryAction="() => EditTag(context.Id)"
@@ -81,18 +81,23 @@
     private IReadOnlyList<string> _errors = [];
     private bool _showForm;
 
-    private static readonly List<DataGridColumn<TagResponse>> _columns =
-    [
-        new() { Title = "Name", Selector = x => x.Name, SortField = "Name" },
-        new() { Title = "Description", Selector = x => x.Description },
-        new()
-        {
-            Title = "Color",
-            Selector = x => x.Color,
-            Template = ColorBadge
-        },
-        new() { Title = "Created", Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
-    ];
+    private List<DataGridColumn<TagResponse>> _columns = [];
+
+    protected override void OnInitialized()
+    {
+        _columns =
+        [
+            new() { Title = L["Common_Name"], Selector = x => x.Name, SortField = "Name" },
+            new() { Title = L["Common_Description"], Selector = x => x.Description },
+            new()
+            {
+                Title = L["Tags_Color"],
+                Selector = x => x.Color,
+                Template = ColorBadge
+            },
+            new() { Title = L["Common_Created"], Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
+        ];
+    }
 
     private static RenderFragment ColorBadge(TagResponse tag) => builder =>
     {

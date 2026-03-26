@@ -1,22 +1,23 @@
 @page "/tracked-actions/{TrackedActionId:guid}/entries/new"
 @page "/tracked-actions/{TrackedActionId:guid}/entries/{EntryId:guid}/edit"
 @attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>@(_isEdit ? "Edit" : "New") Entry - Traceon</PageTitle>
+<PageTitle>@(_isEdit ? L["Entry_EditTitle"] : L["Entry_NewTitle"]) - Traceon</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="mb-1">
             <i class="bi bi-@(_isEdit ? "pencil-square" : "plus-square") me-2"></i>
-            @(_isEdit ? "Edit" : "New") Entry
+            @(_isEdit ? L["Entry_EditTitle"] : L["Entry_NewTitle"])
         </h3>
         <p class="text-muted mb-0">
-            @(_isEdit ? "Update this entry for" : "Record a new entry for")
+            @(_isEdit ? L["Entry_EditSubtitle"] : L["Entry_NewSubtitle"])
             <strong>@(_actionName ?? "...")</strong>
         </p>
     </div>
     <a href="@_returnUrl" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Back
+        <i class="bi bi-arrow-left me-1"></i>@L["Common_Back"]
     </a>
 </div>
 
@@ -26,7 +27,7 @@
 {
     <div class="d-flex justify-content-center py-5">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+            <span class="visually-hidden">@L["Common_Loading"]</span>
         </div>
     </div>
 }
@@ -38,7 +39,7 @@ else
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">
-                        <i class="bi bi-calendar-event me-1"></i>When? <span class="text-danger">*</span>
+                        <i class="bi bi-calendar-event me-1"></i>@L["QuickTrack_When"] <span class="text-danger">*</span>
                     </label>
                     <input type="datetime-local"
                            class="form-control"
@@ -48,11 +49,11 @@ else
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">
-                        <i class="bi bi-chat-text me-1"></i>Notes <span class="text-muted fw-normal">(optional)</span>
+                        <i class="bi bi-chat-text me-1"></i>@L["QuickTrack_Notes"] <span class="text-muted fw-normal">(@L["Common_Optional"])</span>
                     </label>
                     <textarea class="form-control"
                               rows="2"
-                              placeholder="Any notes about this entry..."
+                              placeholder="@L["QuickTrack_NotesPlaceholder"]"
                               data-select-on-focus
                               @bind="_notes"></textarea>
                 </div>
@@ -63,7 +64,7 @@ else
             {
                 <hr />
                 <h6 class="mb-3">
-                    <i class="bi bi-sliders me-1"></i>Fields
+                    <i class="bi bi-sliders me-1"></i>@L["Common_Fields"]
                 </h6>
 
                 <div class="row g-3">
@@ -141,14 +142,14 @@ else
                                                id="@($"field-{model.Field.Id}")"
                                                @bind="model.BoolValue" />
                                         <label class="form-check-label" for="@($"field-{model.Field.Id}")">
-                                            @(model.BoolValue ? "Yes" : "No")
+                                            @(model.BoolValue ? L["Common_Yes"] : L["Common_No"])
                                         </label>
                                     </div>
                                     break;
 
                                 case FieldType.Dropdown:
                                     <select class="form-select" @bind="model.TextValue">
-                                        <option value="">— Select —</option>
+                                        <option value="">@L["Entry_Select"]</option>
                                         @foreach (var opt in model.DropdownOptions)
                                         {
                                             <option value="@opt">@opt</option>
@@ -164,7 +165,7 @@ else
         <div class="card-footer bg-light">
             <div class="d-flex justify-content-between">
                 <a href="@_returnUrl" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle me-1"></i>Cancel
+                    <i class="bi bi-x-circle me-1"></i>@L["Common_Cancel"]
                 </a>
                 <button class="btn btn-success" @onclick="SaveAsync" disabled="@_saving">
                     @if (_saving)
@@ -175,7 +176,7 @@ else
                     {
                         <i class="bi bi-check-circle me-1"></i>
                     }
-                    @(_isEdit ? "Save Changes" : "Save Entry")
+                    @(_isEdit ? L["Common_SaveChanges"] : L["Entry_SaveEntry"])
                 </button>
             </div>
         </div>

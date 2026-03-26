@@ -1,4 +1,5 @@
 @typeparam TItem
+@inject IStringLocalizer<SharedResource> L
 
 @if (IsVisible)
 {
@@ -17,7 +18,7 @@
                     {
                         <div class="text-center py-5">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                                <span class="visually-hidden">@L["Common_Loading"]</span>
                             </div>
                         </div>
                     }
@@ -36,7 +37,7 @@
                             else
                             {
                                 <button class="btn btn-outline-primary btn-sm mb-3" @onclick="() => _showCreateForm = true">
-                                    <i class="bi bi-plus-circle me-1"></i>Create New
+                                    <i class="bi bi-plus-circle me-1"></i>@L["ModalSelector_CreateNew"]
                                 </button>
                             }
                         }
@@ -65,8 +66,8 @@
                         {
                             <div class="alert alert-info py-2 mb-3">
                                 <i class="bi bi-check-circle me-1"></i>
-                                <strong>@_selected.Count</strong> selected
-                                <button class="btn btn-sm btn-link p-0 ms-2" @onclick="() => _selected.Clear()">Clear</button>
+                                <strong>@_selected.Count</strong> @L["ModalSelector_Selected"]
+                                <button class="btn btn-sm btn-link p-0 ms-2" @onclick="() => _selected.Clear()">@L["ModalSelector_DeselectAll"]</button>
                             </div>
                         }
 
@@ -112,10 +113,10 @@
                     }
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CancelAsync">Cancel</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CancelAsync">@L["Common_Cancel"]</button>
                     <button type="button" class="btn btn-primary" @onclick="ConfirmAsync" disabled="@(_selected.Count == 0)">
                         <i class="bi bi-check-circle me-1"></i>
-                        @(AllowMultiple ? $"Add Selected ({_selected.Count})" : "Select")
+                        @(AllowMultiple ? $"{L["ModalSelector_Confirm"]} ({_selected.Count})" : L["ModalSelector_Confirm"])
                     </button>
                 </div>
             </div>

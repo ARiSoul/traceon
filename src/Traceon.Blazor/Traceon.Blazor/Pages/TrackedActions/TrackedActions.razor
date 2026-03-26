@@ -21,7 +21,7 @@
           LoadData="LoadDataAsync"
           Columns="_columns"
           DefaultSortField="SortOrder"
-          FilterPlaceholder="Filter by name or description..."
+          FilterPlaceholder="@L["Filter_ByNameOrDesc"]"
           EmptyText="@L["TrackedActions_Empty"]">
     <Toolbar>
         <a href="/tracked-actions/create" class="btn btn-primary">
@@ -29,7 +29,7 @@
         </a>
     </Toolbar>
     <RowActions>
-        <ListActionsDropdown PrimaryText="Edit"
+        <ListActionsDropdown PrimaryText="@L["Common_Edit"]"
                              PrimaryIcon="pencil-square"
                              PrimaryButtonStyle="primary"
                              PrimaryAction="() => EditAction(context.Id)"
@@ -45,58 +45,63 @@
     private DataGrid<TrackedActionResponse> _grid = default!;
     private IReadOnlyList<string> _errors = [];
 
-    private static readonly List<DataGridColumn<TrackedActionResponse>> _columns =
-    [
-        new() { Title = "#", Selector = x => x.SortOrder, SortField = "SortOrder" },
-        new() { Title = "Name", Selector = x => x.Name, SortField = "Name" },
-        new() { Title = "Description", Selector = x => x.Description },
-        new()
-        {
-            Title = "Fields",
-            Selector = x => x.FieldCount,
-            Template = item => builder =>
+    private List<DataGridColumn<TrackedActionResponse>> _columns = [];
+
+    protected override void OnInitialized()
+    {
+        _columns =
+        [
+            new() { Title = "#", Selector = x => x.SortOrder, SortField = "SortOrder" },
+            new() { Title = L["Common_Name"], Selector = x => x.Name, SortField = "Name" },
+            new() { Title = L["Common_Description"], Selector = x => x.Description },
+            new()
             {
-                builder.OpenElement(0, "span");
-                builder.AddAttribute(1, "class", "badge bg-secondary bg-opacity-10 text-secondary");
-                builder.OpenElement(2, "i");
-                builder.AddAttribute(3, "class", "bi bi-sliders me-1");
-                builder.CloseElement();
-                builder.AddContent(4, item.FieldCount);
-                builder.CloseElement();
-            }
-        },
-        new()
-        {
-            Title = "Tags",
-            Selector = x => x.Tags.Count,
-            Template = item => builder =>
-            {
-                if (item.Tags.Count == 0)
+                Title = L["Common_Fields"],
+                Selector = x => x.FieldCount,
+                Template = item => builder =>
                 {
                     builder.OpenElement(0, "span");
-                    builder.AddAttribute(1, "class", "text-muted");
-                    builder.AddContent(2, "\u2014");
+                    builder.AddAttribute(1, "class", "badge bg-secondary bg-opacity-10 text-secondary");
+                    builder.OpenElement(2, "i");
+                    builder.AddAttribute(3, "class", "bi bi-sliders me-1");
                     builder.CloseElement();
-                    return;
+                    builder.AddContent(4, item.FieldCount);
+                    builder.CloseElement();
                 }
-
-                builder.OpenElement(3, "div");
-                builder.AddAttribute(4, "class", "d-flex flex-wrap gap-1");
-                var seq = 5;
-                foreach (var tag in item.Tags)
+            },
+            new()
+            {
+                Title = L["Common_Tags"],
+                Selector = x => x.Tags.Count,
+                Template = item => builder =>
                 {
-                    builder.OpenElement(seq++, "span");
-                    builder.AddAttribute(seq++, "class", "badge rounded-pill");
-                    builder.AddAttribute(seq++, "style", $"background-color: {tag.Color}");
-                    builder.AddContent(seq++, tag.Name);
+                    if (item.Tags.Count == 0)
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "text-muted");
+                        builder.AddContent(2, "\u2014");
+                        builder.CloseElement();
+                        return;
+                    }
+
+                    builder.OpenElement(3, "div");
+                    builder.AddAttribute(4, "class", "d-flex flex-wrap gap-1");
+                    var seq = 5;
+                    foreach (var tag in item.Tags)
+                    {
+                        builder.OpenElement(seq++, "span");
+                        builder.AddAttribute(seq++, "class", "badge rounded-pill");
+                        builder.AddAttribute(seq++, "style", $"background-color: {tag.Color}");
+                        builder.AddContent(seq++, tag.Name);
+                        builder.CloseElement();
+                    }
                     builder.CloseElement();
                 }
-                builder.CloseElement();
-            }
-        },
-        new() { Title = "Entries", Selector = x => x.EntryCount, SortField = "EntryCount" },
-        new() { Title = "Created", Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
-    ];
+            },
+            new() { Title = L["Common_Entries"], Selector = x => x.EntryCount, SortField = "EntryCount" },
+            new() { Title = L["Common_Created"], Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
+        ];
+    }
 
     private Task<DataGridResult<TrackedActionResponse>> LoadDataAsync(DataGridRequest request)
         => Service.QueryAsync(request, ["Name", "Description"]);

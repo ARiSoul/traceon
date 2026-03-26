@@ -1,4 +1,5 @@
 @inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> L
 
 <div class="card h-100 @(Highlighted ? "border-success" : "")">
     <div class="card-body d-flex flex-column">
@@ -7,12 +8,12 @@
             <div class="d-flex gap-1">
                 <a href="/dashboard/action/@Action.Id"
                    class="btn btn-outline-secondary btn-sm py-0 px-1"
-                   title="View statistics">
+                   title="@L["TrackedActions_Analytics"]">
                     <i class="bi bi-bar-chart-line"></i>
                 </a>
                 <a href="/entries/action/@Action.Id"
                    class="btn btn-outline-secondary btn-sm py-0 px-1"
-                   title="View entries">
+                   title="@L["TrackedActions_ViewEntries"]">
                     <i class="bi bi-journal-text"></i>
                     @if (Action.EntryCount > 0)
                     {
@@ -40,7 +41,7 @@
         <div class="mt-auto pt-2 d-flex gap-2">
             <button class="btn btn-success btn-sm flex-fill"
                     @onclick="HandleTrack">
-                <i class="bi bi-bullseye me-1"></i>Track
+                <i class="bi bi-bullseye me-1"></i>@L["Common_Track"]
             </button>
         </div>
     </div>

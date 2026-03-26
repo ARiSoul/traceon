@@ -31,7 +31,7 @@ else if (_model is null)
 {
     <div class="alert alert-warning">
         <i class="bi bi-question-circle me-2"></i>
-        Tag not found.
+        @L["TagEdit_NotFound"]
     </div>
 }
 else
@@ -42,16 +42,16 @@ else
                 <DataAnnotationsValidator />
                 <div class="row g-3">
                     <div class="col-md-5">
-                        <label class="form-label">Name <span class="text-danger">*</span></label>
+                        <label class="form-label">@L["Common_Name"] <span class="text-danger">*</span></label>
                         <InputText @bind-Value="_model.Name" class="form-control" />
                         <ValidationMessage For="() => _model.Name" />
                     </div>
                     <div class="col-md-5">
-                        <label class="form-label">Description</label>
+                        <label class="form-label">@L["Common_Description"]</label>
                         <InputText @bind-Value="_model.Description" class="form-control" />
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Color</label>
+                        <label class="form-label">@L["Tags_Color"]</label>
                         <input type="color" class="form-control form-control-color w-100" @bind="_model.Color" />
                     </div>
                 </div>
@@ -65,10 +65,10 @@ else
                         {
                             <i class="bi bi-check-circle me-1"></i>
                         }
-                        Save Changes
+                        @L["Common_SaveChanges"]
                     </button>
                     <a href="/tags" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle me-1"></i>Cancel
+                        <i class="bi bi-x-circle me-1"></i>@L["Common_Cancel"]
                     </a>
                 </div>
             </EditForm>
@@ -115,7 +115,7 @@ else
         if (success)
             Nav.NavigateTo("/tags");
         else
-            _errors = errors.Count > 0 ? errors : ["Failed to update tag."];
+            _errors = errors.Count > 0 ? errors : [L["TagEdit_UpdateFailed"]];
 
         _saving = false;
     }

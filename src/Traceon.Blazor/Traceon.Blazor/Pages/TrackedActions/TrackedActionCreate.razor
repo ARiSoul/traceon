@@ -47,7 +47,7 @@
                         @step.Title
                         @if (step.IsOptional)
                         {
-                            <span class="badge bg-secondary ms-1">Optional</span>
+                            <span class="badge bg-secondary ms-1">@L["Common_Optional"]</span>
                         }
                     </small>
                 </div>
@@ -88,8 +88,8 @@
             <div>
                 @if (_currentStep > 1)
                 {
-                    <button class="btn btn-outline-secondary" @onclick="PreviousStep">
-                        <i class="bi bi-chevron-left me-1"></i>Back
+                     <button class="btn btn-outline-secondary" @onclick="PreviousStep">
+                        <i class="bi bi-chevron-left me-1"></i>@L["ActionCreate_Previous"]
                     </button>
                 }
             </div>
@@ -97,7 +97,7 @@
                 @if (_currentStep < _steps.Length)
                 {
                     <button class="btn btn-primary" @onclick="NextStep">
-                        Next<i class="bi bi-chevron-right ms-1"></i>
+                        @L["ActionCreate_Next"]<i class="bi bi-chevron-right ms-1"></i>
                     </button>
                 }
                 else
@@ -108,7 +108,7 @@
                             <span class="spinner-border spinner-border-sm me-1"></span>
                         }
                         <i class="bi bi-check-circle me-1"></i>
-                        Create Tracked Action
+                        @L["ActionCreate_CreateNow"]
                     </button>
                 }
             </div>
@@ -119,23 +119,23 @@
 <!-- Tag Selector Modal -->
 <ModalSelector TItem="TagResponse"
                @bind-IsVisible="_showTagSelector"
-               Title="Select Tags"
+               Title="@L["Modal_SelectTags"]"
                Icon="tags"
                LoadItems="LoadAvailableTagsAsync"
                KeySelector="t => t.Id"
                SearchSelector="@(t => $"{t.Name} {t.Description}")"
-               SearchPlaceholder="Search tags..."
-               EmptyText="No tags available. Create one below."
+               SearchPlaceholder="@L["Modal_SearchTags"]"
+               EmptyText="@L["Modal_NoTagsAvailable"]"
                ExcludedKeys="_selectedTagIds"
                OnConfirm="OnTagsSelected">
     <CreateTemplate>
         <div class="row g-2 align-items-end">
             <div class="col">
-                <label class="form-label form-label-sm mb-1">Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control form-control-sm" @bind="_newTagName" placeholder="Tag name" />
+                <label class="form-label form-label-sm mb-1">@L["Common_Name"] <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" @bind="_newTagName" placeholder="@L["Filter_TagName"]" />
             </div>
             <div class="col-auto">
-                <label class="form-label form-label-sm mb-1">Color</label>
+                <label class="form-label form-label-sm mb-1">@L["Tags_Color"]</label>
                 <input type="color" class="form-control form-control-sm form-control-color" @bind="_newTagColor" />
             </div>
             <div class="col-auto">
@@ -144,7 +144,7 @@
                     {
                         <span class="spinner-border spinner-border-sm me-1"></span>
                     }
-                    <i class="bi bi-plus-circle me-1"></i>Create
+                    <i class="bi bi-plus-circle me-1"></i>@L["Common_Create"]
                 </button>
             </div>
         </div>
@@ -168,13 +168,13 @@
 <!-- Field Selector Modal -->
 <ModalSelector TItem="FieldDefinitionResponse"
                @bind-IsVisible="_showFieldSelector"
-               Title="Select Custom Fields"
+               Title="@L["Modal_SelectFields"]"
                Icon="sliders"
                LoadItems="LoadAvailableFieldsAsync"
                KeySelector="f => f.Id"
                SearchSelector="@(f => $"{f.DefaultName} {f.Type}")"
-               SearchPlaceholder="Search custom fields..."
-               EmptyText="No custom fields available. Create some first."
+               SearchPlaceholder="@L["Modal_SearchFields"]"
+               EmptyText="@L["Modal_NoFieldsAvailable"]"
                ExcludedKeys="_selectedFieldIds"
                OnConfirm="OnFieldsSelected">
     <ItemTemplate>
@@ -224,20 +224,25 @@
     private string? _entryNotes;
     private bool _redirectToEntryForm;
 
-    private readonly (string Title, bool IsOptional)[] _steps =
-    [
-        ("Basic Info", false),
-        ("Fields", true),
-        ("Tags", true),
-        ("Entries", true),
-        ("Review", false)
-    ];
+    private (string Title, bool IsOptional)[] _steps = [];
+
+    protected override void OnInitialized()
+    {
+        _steps =
+        [
+            (L["Wizard_BasicInfo"], false),
+            (L["Common_Fields"], true),
+            (L["Common_Tags"], true),
+            (L["Common_Entries"], true),
+            (L["Wizard_Review"], false)
+        ];
+    }
 
     private void GoToStep(int step)
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _errors = ["Name is required."];
+            _errors = [L["Wizard_NameRequired"]];
             return;
         }
 
@@ -249,7 +254,7 @@
     {
         if (_currentStep == 1 && string.IsNullOrWhiteSpace(_name))
         {
-            _errors = ["Name is required."];
+            _errors = [L["Wizard_NameRequired"]];
             return;
         }
 
@@ -372,7 +377,7 @@
         var created = all.FirstOrDefault(a => a.Name == _name.Trim());
         if (created is null)
         {
-            _errors = ["Action created but could not be found."];
+            _errors = [L["Wizard_ActionNotFound"]];
             _creating = false;
             return;
         }
@@ -428,24 +433,24 @@
 
     private RenderFragment RenderBasicInfoStep() => __builder =>
     {
-        <h5 class="mb-3"><i class="bi bi-info-circle me-2"></i>Basic Information</h5>
+        <h5 class="mb-3"><i class="bi bi-info-circle me-2"></i>@L["Wizard_BasicInfo"]</h5>
 
         <div class="mb-3">
-            <label class="form-label">Name <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" @bind="_name" @bind:event="oninput" placeholder="e.g., Daily Exercise" />
+            <label class="form-label">@L["Common_Name"] <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" @bind="_name" @bind:event="oninput" placeholder="@L["Filter_NamePlaceholder"]" />
         </div>
         <div class="mb-3">
-            <label class="form-label">Description</label>
-            <input type="text" class="form-control" @bind="_description" placeholder="What are you tracking?" />
+            <label class="form-label">@L["Common_Description"]</label>
+            <input type="text" class="form-control" @bind="_description" placeholder="@L["Filter_WhatTracking"]" />
         </div>
     };
 
     private RenderFragment RenderTagsStep() => __builder =>
     {
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Tags</h5>
+            <h5 class="mb-0"><i class="bi bi-tags me-2"></i>@L["Common_Tags"]</h5>
             <button class="btn btn-outline-primary btn-sm" @onclick="() => _showTagSelector = true">
-                <i class="bi bi-plus-circle me-1"></i>Add Tags
+                <i class="bi bi-plus-circle me-1"></i>@L["ActionEdit_AddTags"]
             </button>
         </div>
 
@@ -453,9 +458,9 @@
         {
             <div class="text-center text-muted py-4">
                 <i class="bi bi-tags fs-3 d-block mb-2"></i>
-                <p>No tags selected. Tags help you organize and filter your tracked actions.</p>
+                <p>@L["Wizard_NoTagsHint"]</p>
                 <button class="btn btn-primary" @onclick="() => _showTagSelector = true">
-                    <i class="bi bi-plus-circle me-1"></i>Select Tags
+                    <i class="bi bi-plus-circle me-1"></i>@L["ActionEdit_SelectTags"]
                 </button>
             </div>
         }
@@ -478,9 +483,9 @@
     private RenderFragment RenderFieldsStep() => __builder =>
     {
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0"><i class="bi bi-sliders me-2"></i>Fields</h5>
+            <h5 class="mb-0"><i class="bi bi-sliders me-2"></i>@L["Common_Fields"]</h5>
             <button class="btn btn-outline-primary btn-sm" @onclick="() => _showFieldSelector = true">
-                <i class="bi bi-plus-circle me-1"></i>Add Fields
+                <i class="bi bi-plus-circle me-1"></i>@L["ActionEdit_AddFields"]
             </button>
         </div>
 
@@ -488,9 +493,9 @@
         {
             <div class="text-center text-muted py-4">
                 <i class="bi bi-sliders fs-3 d-block mb-2"></i>
-                <p>No fields selected. Fields define what data you capture per entry.</p>
+                <p>@L["Wizard_NoFieldsHint"]</p>
                 <button class="btn btn-primary" @onclick="() => _showFieldSelector = true">
-                    <i class="bi bi-plus-circle me-1"></i>Select Fields
+                    <i class="bi bi-plus-circle me-1"></i>@L["ActionEdit_SelectFields"]
                 </button>
             </div>
         }
@@ -509,7 +514,7 @@
                                 <span class="badge bg-secondary">@field.Type</span>
                                 @if (field.IsRequired)
                                 {
-                                    <span class="badge bg-danger">Required</span>
+                                    <span class="badge bg-danger">@L["Common_Required"]</span>
                                 }
                             </div>
                             <div @onclick:stopPropagation="true">
@@ -524,11 +529,11 @@
                             <div class="border-top px-3 pb-3 pt-2 bg-light">
                                 <div class="row g-2">
                                     <div class="col-md-6">
-                                        <label class="form-label form-label-sm mb-1">Name <span class="text-danger">*</span></label>
+                                        <label class="form-label form-label-sm mb-1">@L["Common_Name"] <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control form-control-sm" @bind="field.Name" />
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label form-label-sm mb-1">Description</label>
+                                        <label class="form-label form-label-sm mb-1">@L["Common_Description"]</label>
                                         <input type="text" class="form-control form-control-sm" @bind="field.Description" />
                                     </div>
                                 </div>
@@ -537,13 +542,13 @@
                                 {
                                     <div class="row g-2 mt-1">
                                         <div class="col-md-6">
-                                            <label class="form-label form-label-sm mb-1">Min Value</label>
+                                            <label class="form-label form-label-sm mb-1">@L["Fields_MinValue"]</label>
                                             <input type="number"
                                                    step="@(field.Type == FieldType.Integer ? "1" : "any")"
                                                    class="form-control form-control-sm" @bind="field.MinValue" />
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label form-label-sm mb-1">Max Value</label>
+                                            <label class="form-label form-label-sm mb-1">@L["Fields_MaxValue"]</label>
                                             <input type="number"
                                                    step="@(field.Type == FieldType.Integer ? "1" : "any")"
                                                    class="form-control form-control-sm" @bind="field.MaxValue" />
@@ -553,7 +558,7 @@
 
                                 <div class="row g-2 mt-1">
                                     <div class="col-md-6">
-                                        <label class="form-label form-label-sm mb-1">Default Value</label>
+                                        <label class="form-label form-label-sm mb-1">@L["Fields_DefaultValue"]</label>
                                         @switch (field.Type)
                                         {
                                             case FieldType.Boolean:
@@ -562,7 +567,7 @@
                                                            id="@($"dfBool-{field.DefinitionId}")"
                                                            checked="@(field.DefaultValue?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)"
                                                            @onchange="e => field.DefaultValue = (bool?)e.Value == true ? bool.TrueString : bool.FalseString" />
-                                                    <label class="form-check-label" for="@($"dfBool-{field.DefinitionId}")">Checked by default</label>
+                                                    <label class="form-check-label" for="@($"dfBool-{field.DefinitionId}")">@L["Fields_CheckedByDefault"]</label>
                                                 </div>
                                                 break;
                                             case FieldType.Integer:
@@ -580,7 +585,7 @@
                                                 @if (field.ParsedDropdownValues.Length > 0)
                                                 {
                                                     <select class="form-select form-select-sm" @bind="field.DefaultValue">
-                                                        <option value="">— Select a default —</option>
+                                                        <option value="">@L["Fields_SelectDefault"]</option>
                                                         @foreach (var val in field.ParsedDropdownValues)
                                                         {
                                                             <option value="@val">@val</option>
@@ -591,7 +596,7 @@
                                                 {
                                                     <input type="text" class="form-control form-control-sm" disabled />
                                                     <small class="text-warning">
-                                                        <i class="bi bi-info-circle me-1"></i>No dropdown values defined.
+                                                        <i class="bi bi-info-circle me-1"></i>@L["Wizard_NoDropdownValues"]
                                                     </small>
                                                 }
                                                 break;
@@ -604,7 +609,7 @@
                                         <div class="form-check">
                                             <input type="checkbox" class="form-check-input"
                                                    id="@($"req-create-{field.DefinitionId}")" @bind="field.IsRequired" />
-                                            <label class="form-check-label" for="@($"req-create-{field.DefinitionId}")">Required</label>
+                                            <label class="form-check-label" for="@($"req-create-{field.DefinitionId}")">@L["Common_Required"]</label>
                                         </div>
                                     </div>
                                 </div>
@@ -618,15 +623,15 @@
 
     private RenderFragment RenderReviewStep() => __builder =>
     {
-        <h5 class="mb-3"><i class="bi bi-clipboard-check me-2"></i>Review</h5>
+        <h5 class="mb-3"><i class="bi bi-clipboard-check me-2"></i>@L["Wizard_Review"]</h5>
 
         <div class="card mb-3">
-            <div class="card-header"><i class="bi bi-info-circle me-1"></i>Basic Info</div>
+            <div class="card-header"><i class="bi bi-info-circle me-1"></i>@L["Wizard_BasicInfo"]</div>
             <div class="card-body">
                 <dl class="row mb-0">
-                    <dt class="col-sm-3">Name</dt>
+                    <dt class="col-sm-3">@L["Common_Name"]</dt>
                     <dd class="col-sm-9">@_name</dd>
-                    <dt class="col-sm-3">Description</dt>
+                    <dt class="col-sm-3">@L["Common_Description"]</dt>
                     <dd class="col-sm-9">@(_description ?? "—")</dd>
                 </dl>
             </div>
@@ -634,13 +639,13 @@
 
         <div class="card mb-3">
             <div class="card-header">
-                <i class="bi bi-tags me-1"></i>Tags
+                <i class="bi bi-tags me-1"></i>@L["Common_Tags"]
                 <span class="badge bg-primary ms-1">@_selectedTags.Count</span>
             </div>
             <div class="card-body">
                 @if (_selectedTags.Count == 0)
                 {
-                    <span class="text-muted">No tags selected</span>
+                    <span class="text-muted">@L["Wizard_NoTagsSelected"]</span>
                 }
                 else
                 {
@@ -656,13 +661,13 @@
 
         <div class="card mb-3">
             <div class="card-header">
-                <i class="bi bi-sliders me-1"></i>Fields
+                <i class="bi bi-sliders me-1"></i>@L["Common_Fields"]
                 <span class="badge bg-primary ms-1">@_selectedFields.Count</span>
             </div>
             <div class="card-body">
                 @if (_selectedFields.Count == 0)
                 {
-                    <span class="text-muted">No fields selected</span>
+                    <span class="text-muted">@L["Wizard_NoFieldsSelected"]</span>
                 }
                 else
                 {
@@ -674,7 +679,7 @@
                                 <span class="badge bg-secondary">@f.Type</span>
                                 @if (f.IsRequired)
                                 {
-                                    <span class="badge bg-danger ms-1">Required</span>
+                                    <span class="badge bg-danger ms-1">@L["Common_Required"]</span>
                                 }
                             </li>
                         }
@@ -685,7 +690,7 @@
 
         <div class="card">
             <div class="card-header">
-                <i class="bi bi-journal-text me-1"></i>Entries
+                <i class="bi bi-journal-text me-1"></i>@L["Common_Entries"]
                 @if (_selectedFields.Count == 0)
                 {
                     <span class="badge bg-primary ms-1">@_pendingEntries.Count</span>
@@ -697,17 +702,17 @@
                     @if (_redirectToEntryForm)
                     {
                         <span class="text-muted">
-                            <i class="bi bi-box-arrow-up-right me-1"></i>You'll be redirected to add the first entry after creation
+                            <i class="bi bi-box-arrow-up-right me-1"></i>@L["Wizard_WillRedirect"]
                         </span>
                     }
                     else
                     {
-                        <span class="text-muted">Entries can be added after creation (custom fields need to be filled in)</span>
+                        <span class="text-muted">@L["Wizard_EntriesAfterCreation"]</span>
                     }
                 }
                 else if (_pendingEntries.Count == 0)
                 {
-                    <span class="text-muted">No entries added</span>
+                    <span class="text-muted">@L["Wizard_NoEntriesAdded"]</span>
                 }
                 else
                 {
@@ -732,22 +737,21 @@
     private RenderFragment RenderEntriesStep() => __builder =>
     {
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Entries</h5>
+            <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>@L["Common_Entries"]</h5>
         </div>
 
         @if (_selectedFields.Count > 0)
         {
             <div class="text-center py-4">
                 <i class="bi bi-sliders display-6 text-info d-block mb-3"></i>
-                <h6>This action has custom fields</h6>
+                <h6>@L["Wizard_HasCustomFields"]</h6>
                 <p class="text-muted">
-                    Since you've defined <strong>@_selectedFields.Count field@(_selectedFields.Count != 1 ? "s" : "")</strong>,
-                    entries need to be created after the action is set up — so all field values can be properly filled in.
+                    @L["Wizard_CustomFieldsHint"]
                 </p>
                 <div class="form-check form-check-inline mt-2">
                     <input type="checkbox" class="form-check-input" id="redirectToEntry" @bind="_redirectToEntryForm" />
                     <label class="form-check-label" for="redirectToEntry">
-                        <i class="bi bi-box-arrow-up-right me-1"></i>Take me to add the first entry after creation
+                        <i class="bi bi-box-arrow-up-right me-1"></i>@L["Wizard_RedirectToEntry"]
                     </label>
                 </div>
             </div>
@@ -760,7 +764,7 @@
                     <div class="row g-2 align-items-end">
                         <div class="col-12 col-md-4">
                             <label class="form-label form-label-sm mb-1">
-                                <i class="bi bi-calendar-event me-1"></i>When?
+                                <i class="bi bi-calendar-event me-1"></i>@L["QuickTrack_When"]
                             </label>
                             <input type="datetime-local"
                                    class="form-control form-control-sm"
@@ -770,16 +774,16 @@
                         </div>
                         <div class="col-12 col-md-5">
                             <label class="form-label form-label-sm mb-1">
-                                <i class="bi bi-chat-text me-1"></i>Notes <span class="text-muted fw-normal">(optional)</span>
+                                <i class="bi bi-chat-text me-1"></i>@L["QuickTrack_Notes"] <span class="text-muted fw-normal">(@L["Common_Optional"])</span>
                             </label>
                             <input type="text"
                                    class="form-control form-control-sm"
-                                   placeholder="Any notes..."
+                                   placeholder="@L["Filter_AnyNotes"]"
                                    @bind="_entryNotes" />
                         </div>
                         <div class="col-12 col-md-3">
                             <button class="btn btn-success btn-sm w-100" @onclick="AddPendingEntry">
-                                <i class="bi bi-plus-circle me-1"></i>Add Entry
+                                <i class="bi bi-plus-circle me-1"></i>@L["Wizard_AddEntry"]
                             </button>
                         </div>
                     </div>
@@ -790,7 +794,7 @@
             {
                 <div class="text-center text-muted py-4">
                     <i class="bi bi-journal-text fs-3 d-block mb-2"></i>
-                    <p>No entries added yet. You can add entries now or do it later from the home page.</p>
+                    <p>@L["Wizard_NoEntriesHint"]</p>
                 </div>
             }
             else

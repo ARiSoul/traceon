@@ -269,6 +269,45 @@
   <data name="Metric_Latest"><value>Último</value></data>
   <data name="Metric_Target"><value>Alvo</value></data>
 
+  <!-- ═══ Edição de Entrada ═══ -->
+  <data name="Entry_NewTitle"><value>Nova Entrada</value></data>
+  <data name="Entry_EditTitle"><value>Editar Entrada</value></data>
+  <data name="Entry_NewSubtitle"><value>Registar uma nova entrada para</value></data>
+  <data name="Entry_EditSubtitle"><value>Atualizar esta entrada para</value></data>
+  <data name="Entry_SaveEntry"><value>Guardar Entrada</value></data>
+  <data name="Entry_Select"><value>— Selecionar —</value></data>
+
+  <!-- ═══ Edição de Ação - Separadores ═══ -->
+  <data name="ActionEdit_BasicInfo"><value>Informações Básicas</value></data>
+  <data name="ActionEdit_FieldsHint"><value>Gerir os campos de dados capturados para cada entrada. Clique num campo para editar as suas definições.</value></data>
+  <data name="ActionEdit_AddFields"><value>Adicionar Campos</value></data>
+  <data name="ActionEdit_NoFields"><value>Sem campos atribuídos ainda.</value></data>
+  <data name="ActionEdit_SelectFields"><value>Selecionar Campos</value></data>
+  <data name="ActionEdit_TagsHint"><value>Gerir quais etiquetas estão atribuídas a esta ação.</value></data>
+  <data name="ActionEdit_AddTags"><value>Adicionar Etiquetas</value></data>
+  <data name="ActionEdit_NoTags"><value>Sem etiquetas atribuídas ainda.</value></data>
+  <data name="ActionEdit_SelectTags"><value>Selecionar Etiquetas</value></data>
+  <data name="ActionEdit_SavingOrder"><value>A guardar ordem...</value></data>
+  <data name="ActionEdit_NotFound"><value>Ação rastreada não encontrada.</value></data>
+
+  <!-- ═══ ModalSelector ═══ -->
+  <data name="ModalSelector_SelectAll"><value>Selecionar Todos</value></data>
+  <data name="ModalSelector_DeselectAll"><value>Desselecionar Todos</value></data>
+  <data name="ModalSelector_Selected"><value>selecionados</value></data>
+  <data name="ModalSelector_Confirm"><value>Confirmar Seleção</value></data>
+  <data name="ModalSelector_CreateNew"><value>Criar Novo</value></data>
+
+  <!-- ═══ EntryDataGrid ═══ -->
+  <data name="EntryGrid_Action"><value>Ação</value></data>
+  <data name="EntryGrid_Date"><value>Data</value></data>
+  <data name="EntryGrid_Notes"><value>Notas</value></data>
+  <data name="EntryGrid_AllActions"><value>Todas as Ações</value></data>
+  <data name="EntryGrid_Empty"><value>Sem entradas ainda. Comece a registar!</value></data>
+
+  <!-- ═══ Não Encontrado ═══ -->
+  <data name="NotFound_Title"><value>Página Não Encontrada</value></data>
+  <data name="NotFound_Message"><value>Desculpe, não há nada neste endereço.</value></data>
+
   <!-- ═══ Página de Edição ═══ -->
   <data name="Edit_BasicInfo"><value>Informações Básicas</value></data>
   <data name="Edit_NotFound"><value>Ação rastreada não encontrada.</value></data>
@@ -306,4 +345,52 @@
   <data name="FieldEdit_EditSubtitle"><value>Atualizar os detalhes do seu campo personalizado</value></data>
   <data name="FieldEdit_CreateSubtitle"><value>Definir um novo modelo de campo reutilizável</value></data>
   <data name="FieldEdit_BackToFields"><value>Voltar aos Campos Personalizados</value></data>
+
+  <!-- ═══ Filtros / Placeholders ═══ -->
+  <data name="Filter_ByNameOrDesc"><value>Filtrar por nome ou descrição...</value></data>
+  <data name="Filter_ByName"><value>Filtrar por nome...</value></data>
+  <data name="Filter_ByNotes"><value>Filtrar por notas...</value></data>
+  <data name="Filter_DateField"><value>Campo de data</value></data>
+  <data name="Filter_Occurred"><value>Ocorrido</value></data>
+  <data name="Filter_TagName"><value>Nome da etiqueta</value></data>
+  <data name="Filter_WhatTracking"><value>O que está a rastrear?</value></data>
+  <data name="Filter_NamePlaceholder"><value>ex.: Exercício Diário</value></data>
+  <data name="Filter_AnyNotes"><value>Quaisquer notas...</value></data>
+
+  <!-- ═══ Edição de Etiqueta ═══ -->
+  <data name="TagEdit_NotFound"><value>Etiqueta não encontrada.</value></data>
+  <data name="TagEdit_UpdateFailed"><value>Falha ao atualizar etiqueta.</value></data>
+
+  <!-- ═══ Edição de Campo Personalizado ═══ -->
+  <data name="FieldEdit_NotFound"><value>Campo personalizado não encontrado.</value></data>
+  <data name="FieldEdit_UpdateFailed"><value>Falha ao atualizar campo personalizado.</value></data>
+
+  <!-- ═══ Assistente de Criação ═══ -->
+  <data name="Wizard_BasicInfo"><value>Informação Básica</value></data>
+  <data name="Wizard_Review"><value>Revisão</value></data>
+  <data name="Wizard_NameRequired"><value>O nome é obrigatório.</value></data>
+  <data name="Wizard_ActionNotFound"><value>Ação criada mas não foi possível encontrá-la.</value></data>
+  <data name="Wizard_NoTagsHint"><value>Sem etiquetas selecionadas. As etiquetas ajudam a organizar e filtrar as suas ações rastreadas.</value></data>
+  <data name="Wizard_NoFieldsHint"><value>Sem campos selecionados. Os campos definem que dados captura por entrada.</value></data>
+  <data name="Wizard_NoDropdownValues"><value>Sem valores de lista definidos.</value></data>
+  <data name="Wizard_NoTagsSelected"><value>Sem etiquetas selecionadas</value></data>
+  <data name="Wizard_NoFieldsSelected"><value>Sem campos selecionados</value></data>
+  <data name="Wizard_NoEntriesAdded"><value>Sem entradas adicionadas</value></data>
+  <data name="Wizard_HasCustomFields"><value>Esta ação tem campos personalizados</value></data>
+  <data name="Wizard_CustomFieldsHint"><value>Como definiu campos, as entradas precisam de ser criadas após a configuração — para que todos os valores dos campos possam ser preenchidos.</value></data>
+  <data name="Wizard_RedirectToEntry"><value>Levar-me para adicionar a primeira entrada após criação</value></data>
+  <data name="Wizard_WillRedirect"><value>Será redirecionado para adicionar a primeira entrada após criação</value></data>
+  <data name="Wizard_EntriesAfterCreation"><value>As entradas podem ser adicionadas após a criação (os campos personalizados precisam de ser preenchidos)</value></data>
+  <data name="Wizard_NoEntriesHint"><value>Sem entradas adicionadas ainda. Pode adicionar entradas agora ou fazê-lo mais tarde na página inicial.</value></data>
+  <data name="Wizard_AddEntry"><value>Adicionar Entrada</value></data>
+
+  <!-- ═══ Painel (extra) ═══ -->
+  <data name="Dashboard_NoDataHint"><value>Crie ações rastreadas e registe entradas para ver o seu painel.</value></data>
+  <data name="Dashboard_CreateAction"><value>Criar Ação Rastreada</value></data>
+  <data name="Dashboard_Entries"><value>entradas</value></data>
+  <data name="Dashboard_Day"><value>dia</value></data>
+  <data name="Dashboard_DayPlural"><value>dias</value></data>
+  <data name="Dashboard_EditAction"><value>Editar Ação</value></data>
+  <data name="Dashboard_ViewEntries"><value>Ver Entradas</value></data>
+  <data name="Dashboard_NewEntry"><value>Nova Entrada</value></data>
 </root>

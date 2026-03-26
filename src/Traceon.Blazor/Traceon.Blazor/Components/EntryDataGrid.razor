@@ -1,14 +1,15 @@
 @* Reusable entry list with DataGrid, filtering by action, period, sorting, pagination, edit/delete *@
+@inject IStringLocalizer<SharedResource> L
 
 <div class="row g-2 mb-3">
     @if (!LockActionFilter)
     {
         <div class="col-12 col-md-3">
             <label class="form-label form-label-sm mb-1">
-                <i class="bi bi-funnel me-1"></i>Action
+                <i class="bi bi-funnel me-1"></i>@L["EntryGrid_Action"]
             </label>
             <select class="form-select form-select-sm" value="@_selectedActionId" @onchange="OnActionFilterChanged">
-                <option value="">All Actions</option>
+                <option value="">@L["EntryGrid_AllActions"]</option>
                 @foreach (var action in _availableActions)
                 {
                     <option value="@action.Id">@action.Name</option>
@@ -19,14 +20,14 @@
 
     <div class="col-12 col-md-3">
         <label class="form-label form-label-sm mb-1">
-            <i class="bi bi-calendar-range me-1"></i>Period
+            <i class="bi bi-calendar-range me-1"></i>@L["Dashboard_Period"]
         </label>
         <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeChanged">
-            <option value="all">All Time</option>
-            <option value="days">Last N Days</option>
-            <option value="months">Last N Months</option>
-            <option value="years">Last N Years</option>
-            <option value="custom">Custom Range</option>
+            <option value="all">@L["Common_AllTime"]</option>
+            <option value="days">@L["Dashboard_LastNDays"]</option>
+            <option value="months">@L["Dashboard_LastNMonths"]</option>
+            <option value="years">@L["Dashboard_LastNYears"]</option>
+            <option value="custom">@L["Dashboard_CustomRange"]</option>
         </select>
     </div>
 
@@ -34,7 +35,7 @@
     {
         <div class="col-6 col-md-2">
             <label class="form-label form-label-sm mb-1">
-                @(_periodMode switch { "days" => "Days", "months" => "Months", _ => "Years" })
+                @(_periodMode switch { "days" => L["Dashboard_Days"], "months" => L["Dashboard_Months"], _ => L["Dashboard_Years"] })
             </label>
             <input type="number"
                    class="form-control form-control-sm"
@@ -53,14 +54,14 @@
     else if (_periodMode == "custom")
     {
         <div class="col-6 col-md-2">
-            <label class="form-label form-label-sm mb-1">From</label>
+            <label class="form-label form-label-sm mb-1">@L["Dashboard_From"]</label>
             <input type="date"
                    class="form-control form-control-sm"
                    value="@_customFrom?.ToString("yyyy-MM-dd")"
                    @onchange="OnCustomFromChanged" />
         </div>
         <div class="col-6 col-md-2">
-            <label class="form-label form-label-sm mb-1">To</label>
+            <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
             <input type="date"
                    class="form-control form-control-sm"
                    value="@_customTo?.ToString("yyyy-MM-dd")"
@@ -80,19 +81,19 @@
           TItem="ActionEntryResponse"
           LoadData="LoadDataAsync"
           Columns="_columns"
-          FilterPlaceholder="Filter by notes..."
-          EmptyText="No entries yet.">
-    <Toolbar>
-        @if (_createActionId != Guid.Empty)
-        {
-            <a href="/tracked-actions/@_createActionId/entries/new?returnUrl=@_encodedReturnUrl"
-               class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i>New Entry
-            </a>
-        }
+          FilterPlaceholder="@L["Filter_ByNotes"]"
+                 EmptyText="@L["EntryGrid_Empty"]">
+          <Toolbar>
+              @if (_createActionId != Guid.Empty)
+              {
+                  <a href="/tracked-actions/@_createActionId/entries/new?returnUrl=@_encodedReturnUrl"
+                     class="btn btn-primary">
+                      <i class="bi bi-plus-circle me-1"></i>@L["Entries_NewEntry"]
+                  </a>
+              }
     </Toolbar>
     <RowActions>
-        <ListActionsDropdown PrimaryText="Edit"
+        <ListActionsDropdown PrimaryText="@L["Common_Edit"]"
                              PrimaryIcon="pencil-square"
                              PrimaryButtonStyle="primary"
                              PrimaryAction="() => EditEntry(context)"
@@ -135,56 +136,58 @@
         ? TrackedActionId.Value
         : (Guid.TryParse(_selectedActionId, out var id) ? id : Guid.Empty);
 
-    private readonly List<DataGridColumn<ActionEntryResponse>> _columns =
-    [
-        new()
-        {
-            Title = "Action",
-            Selector = x => x.ActionName,
-            SortField = "ActionName"
-        },
-        new()
-        {
-            Title = "Occurred",
-            Selector = x => x.OccurredAtUtc.ToLocalTime(),
-            SortField = "OccurredAtUtc",
-            Format = "g"
-        },
-        new()
-        {
-            Title = "Notes",
-            Selector = x => x.Notes ?? "",
-            Template = item => builder =>
-            {
-                if (!string.IsNullOrEmpty(item.Notes))
-                {
-                    builder.OpenElement(0, "span");
-                    builder.AddAttribute(1, "class", "text-truncate d-inline-block");
-                    builder.AddAttribute(2, "style", "max-width: 200px;");
-                    builder.AddAttribute(3, "title", item.Notes);
-                    builder.AddContent(4, item.Notes);
-                    builder.CloseElement();
-                }
-                else
-                {
-                    builder.OpenElement(0, "span");
-                    builder.AddAttribute(1, "class", "text-muted");
-                    builder.AddContent(2, "\u2014");
-                    builder.CloseElement();
-                }
-            }
-        },
-        new()
-        {
-            Title = "Created",
-            Selector = x => x.CreatedAtUtc.ToLocalTime(),
-            SortField = "CreatedAtUtc",
-            Format = "g"
-        },
-    ];
+    private List<DataGridColumn<ActionEntryResponse>> _columns = [];
 
     protected override async Task OnInitializedAsync()
     {
+        _columns =
+        [
+            new()
+            {
+                Title = L["EntryGrid_Action"],
+                Selector = x => x.ActionName,
+                SortField = "ActionName"
+            },
+            new()
+            {
+                Title = L["EntryGrid_Date"],
+                Selector = x => x.OccurredAtUtc.ToLocalTime(),
+                SortField = "OccurredAtUtc",
+                Format = "g"
+            },
+            new()
+            {
+                Title = L["EntryGrid_Notes"],
+                Selector = x => x.Notes ?? "",
+                Template = item => builder =>
+                {
+                    if (!string.IsNullOrEmpty(item.Notes))
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "text-truncate d-inline-block");
+                        builder.AddAttribute(2, "style", "max-width: 200px;");
+                        builder.AddAttribute(3, "title", item.Notes);
+                        builder.AddContent(4, item.Notes);
+                        builder.CloseElement();
+                    }
+                    else
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "text-muted");
+                        builder.AddContent(2, "\u2014");
+                        builder.CloseElement();
+                    }
+                }
+            },
+            new()
+            {
+                Title = L["Common_Created"],
+                Selector = x => x.CreatedAtUtc.ToLocalTime(),
+                SortField = "CreatedAtUtc",
+                Format = "g"
+            },
+        ];
+
         _encodedReturnUrl = Uri.EscapeDataString(Nav.ToBaseRelativePath(Nav.Uri) is { Length: > 0 } rel ? $"/{rel}" : "/");
 
         if (TrackedActionId.HasValue)
@@ -266,7 +269,7 @@
     {
         return
         [
-            ListAction.Button("Delete", () => DeleteAsync(entry), "trash", ListActionStyle.Danger),
+            ListAction.Button(L["Common_Delete"], () => DeleteAsync(entry), "trash", ListActionStyle.Danger),
         ];
     }
 
