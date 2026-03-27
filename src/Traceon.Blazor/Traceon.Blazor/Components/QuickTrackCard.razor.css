@@ -1,0 +1,11 @@
+.min-width-0 {
+    min-width: 0;
+}
+
+.quick-track-tags {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 0.25rem;
+    justify-content: end;
+    max-width: 50%;
+}

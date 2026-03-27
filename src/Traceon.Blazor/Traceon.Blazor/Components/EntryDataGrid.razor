@@ -1,6 +1,15 @@
 @* Reusable entry list with DataGrid, filtering by action, period, sorting, pagination, edit/delete *@
 @inject IStringLocalizer<SharedResource> L
 
+<div class="d-md-none mb-2">
+    <button class="btn btn-outline-secondary btn-sm w-100" @onclick="() => _showFilters = !_showFilters">
+        <i class="bi bi-funnel me-1"></i>
+        @L["DataGrid_Filter"]
+        <i class="bi bi-chevron-@(_showFilters ? "up" : "down") ms-1"></i>
+    </button>
+</div>
+
+<div class="@(_showFilters ? "" : "d-none") d-md-block">
 <div class="row g-2 mb-3">
     @if (!LockActionFilter)
     {
@@ -76,6 +85,7 @@
         </div>
     }
 </div>
+</div>
 
 <DataGrid @ref="_grid"
           TItem="ActionEntryResponse"
@@ -124,6 +134,7 @@
     private List<TrackedActionResponse> _availableActions = [];
     private string _selectedActionId = "";
     private string _encodedReturnUrl = "";
+    private bool _showFilters;
 
     // Period filter state
     private string _periodMode = "years";
@@ -146,7 +157,8 @@
             {
                 Title = L["EntryGrid_Action"],
                 Selector = x => x.ActionName,
-                SortField = "ActionName"
+                SortField = "ActionName",
+                IsMobileTitle = true
             },
             new()
             {
@@ -184,7 +196,8 @@
                 Title = L["Common_Created"],
                 Selector = x => x.CreatedAtUtc.ToLocalTime(),
                 SortField = "CreatedAtUtc",
-                Format = "g"
+                Format = "g",
+                HideOnMobile = true
             },
         ];
 

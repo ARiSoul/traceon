@@ -51,9 +51,9 @@
     {
         _columns =
         [
-            new() { Title = "#", Selector = x => x.SortOrder, SortField = "SortOrder" },
-            new() { Title = L["Common_Name"], Selector = x => x.Name, SortField = "Name" },
-            new() { Title = L["Common_Description"], Selector = x => x.Description },
+            new() { Title = "#", Selector = x => x.SortOrder, SortField = "SortOrder", HideOnMobile = true },
+            new() { Title = L["Common_Name"], Selector = x => x.Name, SortField = "Name", IsMobileTitle = true },
+            new() { Title = L["Common_Description"], Selector = x => x.Description, HideOnMobile = true },
             new()
             {
                 Title = L["Common_Fields"],
@@ -67,7 +67,8 @@
                     builder.CloseElement();
                     builder.AddContent(4, item.FieldCount);
                     builder.CloseElement();
-                }
+                },
+                HideOnMobile = true
             },
             new()
             {
@@ -99,7 +100,7 @@
                 }
             },
             new() { Title = L["Common_Entries"], Selector = x => x.EntryCount, SortField = "EntryCount" },
-            new() { Title = L["Common_Created"], Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
+            new() { Title = L["Common_Created"], Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g", HideOnMobile = true },
         ];
     }
 

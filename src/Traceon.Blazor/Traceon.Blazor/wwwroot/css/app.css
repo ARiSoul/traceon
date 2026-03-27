@@ -113,3 +113,19 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* ── Mobile responsive ── */
+@media (max-width: 767.98px) {
+    .content {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+
+    h3 {
+        font-size: 1.25rem;
+    }
+
+    .page-header-subtitle {
+        font-size: 0.85rem;
+    }
+}

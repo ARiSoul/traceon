@@ -87,15 +87,15 @@
     {
         _columns =
         [
-            new() { Title = L["Common_Name"], Selector = x => x.Name, SortField = "Name" },
-            new() { Title = L["Common_Description"], Selector = x => x.Description },
+            new() { Title = L["Common_Name"], Selector = x => x.Name, SortField = "Name", IsMobileTitle = true },
+            new() { Title = L["Common_Description"], Selector = x => x.Description, HideOnMobile = true },
             new()
             {
                 Title = L["Tags_Color"],
                 Selector = x => x.Color,
                 Template = ColorBadge
             },
-            new() { Title = L["Common_Created"], Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
+            new() { Title = L["Common_Created"], Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g", HideOnMobile = true },
         ];
     }
 

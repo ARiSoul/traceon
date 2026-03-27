@@ -66,16 +66,14 @@ internal static class IdentityEndpoints
 
         var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken();
-        var sessionId = Guid.NewGuid().ToString("N");
 
-        await userManager.SetAuthenticationTokenAsync(user, LoginProvider, $"{RefreshTokenName}:{sessionId}", refreshToken);
+        await userManager.SetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName, refreshToken);
 
         return TypedResults.Ok(new AccessTokenResponse(
             "Bearer",
             accessToken,
             tokenService.AccessTokenExpirationSeconds,
-            refreshToken,
-            sessionId));
+            refreshToken));
     }
 
     private static async Task<IResult> RefreshAsync(
@@ -88,23 +86,21 @@ internal static class IdentityEndpoints
         if (user is null)
             return TypedResults.Unauthorized();
 
-        var tokenKey = $"{RefreshTokenName}:{request.SessionId}";
-        var storedToken = await userManager.GetAuthenticationTokenAsync(user, LoginProvider, tokenKey);
+        var storedToken = await userManager.GetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName);
 
         if (storedToken is null || storedToken != request.RefreshToken)
             return TypedResults.Unauthorized();
 
+        // Issue a new access token but keep the same refresh token.
+        // Rotating the refresh token here would invalidate all other
+        // browser sessions and cause logouts after page reloads.
         var accessToken = tokenService.GenerateAccessToken(user);
-        var refreshToken = tokenService.GenerateRefreshToken();
-
-        await userManager.SetAuthenticationTokenAsync(user, LoginProvider, tokenKey, refreshToken);
 
         return TypedResults.Ok(new AccessTokenResponse(
             "Bearer",
             accessToken,
             tokenService.AccessTokenExpirationSeconds,
-            refreshToken,
-            request.SessionId));
+            request.RefreshToken));
     }
 
     private static async Task<IResult> ForgotPasswordAsync(
@@ -149,11 +145,11 @@ internal static class IdentityEndpoints
 
     private sealed record RegisterRequest(string Email, string Password);
     private sealed record LoginRequest(string Email, string Password);
-    private sealed record RefreshTokenRequest(string Email, string RefreshToken, string SessionId);
+    private sealed record RefreshTokenRequest(string Email, string RefreshToken);
     private sealed record ForgotPasswordRequest(string Email);
     private sealed record ResetPasswordRequest(string Email, string ResetCode, string NewPassword);
     private sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
-    private sealed record AccessTokenResponse(string TokenType, string AccessToken, int ExpiresIn, string RefreshToken, string SessionId);
+    private sealed record AccessTokenResponse(string TokenType, string AccessToken, int ExpiresIn, string RefreshToken);
     private sealed record UserPreferencesResponse(string? Theme, string? Language);
     private sealed record UpdatePreferencesRequest(string? Theme, string? Language);
 

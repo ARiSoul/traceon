@@ -50,10 +50,10 @@
     {
         _columns =
         [
-            new() { Title = L["Common_Name"], Selector = x => x.DefaultName, SortField = "DefaultName" },
+            new() { Title = L["Common_Name"], Selector = x => x.DefaultName, SortField = "DefaultName", IsMobileTitle = true },
             new() { Title = L["Common_Type"], Selector = x => x.Type },
             new() { Title = L["Common_Required"], Selector = x => x.DefaultIsRequired ? L["Common_Yes"] : L["Common_No"] },
-            new() { Title = L["Common_Created"], Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g" },
+            new() { Title = L["Common_Created"], Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g", HideOnMobile = true },
         ];
     }
 

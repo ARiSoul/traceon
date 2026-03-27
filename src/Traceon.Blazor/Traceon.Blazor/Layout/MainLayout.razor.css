@@ -38,11 +38,21 @@ main {
 
 @media (max-width: 640.98px) {
     .top-row {
-        justify-content: space-between;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
     }
 
     .top-row ::deep a, .top-row ::deep .btn-link {
         margin-left: 0;
+        font-size: 0.85rem;
+    }
+
+    .top-row ::deep a:first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
     }
 }
 

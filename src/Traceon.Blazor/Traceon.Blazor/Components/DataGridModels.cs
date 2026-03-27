@@ -9,6 +9,12 @@ public sealed class DataGridColumn<TItem>
     public string? SortField { get; init; }
     public string? Format { get; init; }
     public RenderFragment<TItem>? Template { get; init; }
+
+    /// <summary>When true the column is hidden in the mobile card layout.</summary>
+    public bool HideOnMobile { get; init; }
+
+    /// <summary>When true the column value is used as the card title on mobile instead of showing a label/value pair.</summary>
+    public bool IsMobileTitle { get; init; }
 }
 
 public sealed record DataGridRequest(

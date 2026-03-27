@@ -50,37 +50,85 @@
     }
     else
     {
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        @foreach (var col in Columns)
-                        {
-                            <th @onclick="() => SortByAsync(col)"
-                                class="@(col.SortField is not null ? "sortable" : "")"
-                                role="@(col.SortField is not null ? "button" : null)">
-                                <span class="d-inline-flex align-items-center gap-1">
-                                    @col.Title
-                                    @if (col.SortField is not null && _sortField == col.SortField)
-                                    {
-                                        <i class="bi bi-@(_sortDescending ? "sort-down" : "sort-up") sort-indicator"></i>
-                                    }
-                                </span>
-                            </th>
-                        }
-                        @if (RowActions is not null)
-                        {
-                            <th class="text-end"></th>
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in _items)
-                    {
+        @* ── Desktop table ── *@
+        <div class="data-grid-table d-none d-md-block">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
                         <tr>
                             @foreach (var col in Columns)
                             {
-                                <td>
+                                <th @onclick="() => SortByAsync(col)"
+                                    class="@(col.SortField is not null ? "sortable" : "")"
+                                    role="@(col.SortField is not null ? "button" : null)">
+                                    <span class="d-inline-flex align-items-center gap-1">
+                                        @col.Title
+                                        @if (col.SortField is not null && _sortField == col.SortField)
+                                        {
+                                            <i class="bi bi-@(_sortDescending ? "sort-down" : "sort-up") sort-indicator"></i>
+                                        }
+                                    </span>
+                                </th>
+                            }
+                            @if (RowActions is not null)
+                            {
+                                <th class="text-end"></th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in _items)
+                        {
+                            <tr>
+                                @foreach (var col in Columns)
+                                {
+                                    <td>
+                                        @if (col.Template is not null)
+                                        {
+                                            @col.Template(item)
+                                        }
+                                        else
+                                        {
+                                            @FormatValue(col, item)
+                                        }
+                                    </td>
+                                }
+                                @if (RowActions is not null)
+                                {
+                                    <td class="text-end text-nowrap">@RowActions(item)</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @* ── Mobile cards ── *@
+        <div class="data-grid-cards d-md-none">
+            @foreach (var item in _items)
+            {
+                <div class="card mb-2">
+                    <div class="card-body py-2 px-3">
+                        @{ var titleCol = Columns.FirstOrDefault(c => c.IsMobileTitle); }
+                        @if (titleCol is not null)
+                        {
+                            <div class="fw-semibold mb-1">
+                                @if (titleCol.Template is not null)
+                                {
+                                    @titleCol.Template(item)
+                                }
+                                else
+                                {
+                                    @FormatValue(titleCol, item)
+                                }
+                            </div>
+                        }
+                        @foreach (var col in Columns.Where(c => !c.HideOnMobile && !c.IsMobileTitle))
+                        {
+                            <div class="d-flex justify-content-between align-items-start py-1 mobile-field">
+                                <span class="text-muted small me-2">@col.Title</span>
+                                <span class="text-end">
                                     @if (col.Template is not null)
                                     {
                                         @col.Template(item)
@@ -89,16 +137,18 @@
                                     {
                                         @FormatValue(col, item)
                                     }
-                                </td>
-                            }
-                            @if (RowActions is not null)
-                            {
-                                <td class="text-end text-nowrap">@RowActions(item)</td>
-                            }
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                                </span>
+                            </div>
+                        }
+                        @if (RowActions is not null)
+                        {
+                            <div class="d-flex justify-content-end pt-1 mt-1 border-top">
+                                @RowActions(item)
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
         </div>
 
         @if (_totalCount > 0)
