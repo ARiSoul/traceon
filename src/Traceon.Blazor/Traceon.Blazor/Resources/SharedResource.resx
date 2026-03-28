@@ -93,9 +93,11 @@
   <data name="Auth_RegisterSuccess"><value>Registration successful! Please check your email to confirm your account, then login.</value></data>
   <data name="Auth_ForgotPasswordTitle"><value>Forgot Password</value></data>
   <data name="Auth_ForgotPasswordHint"><value>Enter your email address and we'll send you a reset code.</value></data>
-  <data name="Auth_SendResetCode"><value>Send Reset Code</value></data>
+  <data name="Auth_SendResetCode"><value>Send Reset Link</value></data>
   <data name="Auth_Sending"><value>Sending...</value></data>
-  <data name="Auth_ResetCodeSent"><value>If an account with that email exists, a reset code has been sent.</value></data>
+  <data name="Auth_ResetCodeSent"><value>If an account with that email exists, a reset link has been sent.</value></data>
+  <data name="Auth_ResetLinkSent"><value>If an account with that email exists, a password reset link has been sent. Please check your inbox.</value></data>
+  <data name="Auth_ResetForEmail"><value>Resetting password for</value></data>
   <data name="Auth_BackToLogin"><value>Back to Login</value></data>
   <data name="Auth_ResetPassword"><value>Reset Password</value></data>
   <data name="Auth_ResetCode"><value>Reset Code</value></data>

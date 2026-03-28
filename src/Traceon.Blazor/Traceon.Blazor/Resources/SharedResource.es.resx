@@ -94,9 +94,11 @@
   <data name="Auth_RegisterSuccess"><value>¡Registro exitoso! Verifica tu correo electrónico para confirmar tu cuenta y luego inicia sesión.</value></data>
   <data name="Auth_ForgotPasswordTitle"><value>Olvidé mi Contraseña</value></data>
   <data name="Auth_ForgotPasswordHint"><value>Introduce tu correo electrónico y te enviaremos un código de recuperación.</value></data>
-  <data name="Auth_SendResetCode"><value>Enviar Código</value></data>
+  <data name="Auth_SendResetCode"><value>Enviar Enlace</value></data>
   <data name="Auth_Sending"><value>Enviando...</value></data>
-  <data name="Auth_ResetCodeSent"><value>Si existe una cuenta con ese correo, se ha enviado un código de recuperación.</value></data>
+  <data name="Auth_ResetCodeSent"><value>Si existe una cuenta con ese correo, se ha enviado un enlace de recuperación.</value></data>
+  <data name="Auth_ResetLinkSent"><value>Si existe una cuenta con ese correo, se ha enviado un enlace de recuperación de contraseña. Revise su bandeja de entrada.</value></data>
+  <data name="Auth_ResetForEmail"><value>Restableciendo contraseña para</value></data>
   <data name="Auth_BackToLogin"><value>Volver al Login</value></data>
   <data name="Auth_ResetPassword"><value>Restablecer Contraseña</value></data>
   <data name="Auth_ResetCode"><value>Código de Recuperación</value></data>

@@ -94,9 +94,11 @@
   <data name="Auth_RegisterSuccess"><value>Registo efectuado com sucesso! Verifique o seu email para confirmar a conta e depois entre.</value></data>
   <data name="Auth_ForgotPasswordTitle"><value>Esqueci a Palavra-passe</value></data>
   <data name="Auth_ForgotPasswordHint"><value>Introduza o seu email e enviaremos um código de recuperação.</value></data>
-  <data name="Auth_SendResetCode"><value>Enviar Código</value></data>
+  <data name="Auth_SendResetCode"><value>Enviar Link de Recuperação</value></data>
   <data name="Auth_Sending"><value>A enviar...</value></data>
-  <data name="Auth_ResetCodeSent"><value>Se existir uma conta com esse email, um código de recuperação foi enviado.</value></data>
+  <data name="Auth_ResetCodeSent"><value>Se existir uma conta com esse email, um link de recuperação foi enviado.</value></data>
+  <data name="Auth_ResetLinkSent"><value>Se existir uma conta com esse email, um link de recuperação de palavra-passe foi enviado. Verifique a sua caixa de entrada.</value></data>
+  <data name="Auth_ResetForEmail"><value>A redefinir palavra-passe para</value></data>
   <data name="Auth_BackToLogin"><value>Voltar ao Login</value></data>
   <data name="Auth_ResetPassword"><value>Redefinir Palavra-passe</value></data>
   <data name="Auth_ResetCode"><value>Código de Recuperação</value></data>
