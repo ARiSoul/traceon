@@ -1,0 +1,59 @@
+@page "/auth/confirm-email"
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Auth_ConfirmEmail"] - Traceon</PageTitle>
+
+<h3>@L["Auth_ConfirmEmail"]</h3>
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">@L["Common_Loading"]</span>
+        </div>
+    </div>
+}
+else if (_confirmed)
+{
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle me-1"></i>
+        @L["Auth_EmailConfirmed"]
+        <a href="/auth/login">@L["Auth_Login"]</a>.
+    </div>
+}
+else
+{
+    <ErrorAlert Errors="_errors" />
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        @L["Auth_ConfirmEmailFailed"]
+    </div>
+    <a href="/auth/login" class="btn btn-primary">@L["Auth_BackToLogin"]</a>
+}
+
+@code {
+    [Inject] private AuthService Auth { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    [SupplyParameterFromQuery] public string? Token { get; set; }
+    [SupplyParameterFromQuery] public string? Email { get; set; }
+
+    private bool _loading = true;
+    private bool _confirmed;
+    private IReadOnlyList<string> _errors = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(Token) || string.IsNullOrEmpty(Email))
+        {
+            _loading = false;
+            _errors = [L["Auth_ConfirmEmailInvalidLink"]];
+            return;
+        }
+
+        var (success, errors) = await Auth.ConfirmEmailAsync(new ConfirmEmailRequest(Email, Token));
+        _confirmed = success;
+        _errors = errors;
+        _loading = false;
+    }
+}

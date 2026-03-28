@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Traceon.Domain.Repositories;
+using Traceon.Infrastructure.Email;
 using Traceon.Infrastructure.Identity;
 using Traceon.Infrastructure.Persistence;
 using Traceon.Infrastructure.Persistence.Repositories;
@@ -56,7 +57,13 @@ public static class DependencyInjection
 
         services.AddAuthorizationBuilder();
 
-        services.AddTransient<IEmailSender<ApplicationUser>, LoggingEmailSender>();
+        var emailSettings = configuration.GetSection("Email").Get<EmailSettings>() ?? new EmailSettings();
+        services.AddSingleton(emailSettings);
+
+        if (!string.IsNullOrEmpty(emailSettings.SmtpHost) && emailSettings.SmtpHost != "localhost")
+            services.AddTransient<IEmailSender<ApplicationUser>, SmtpEmailSender>();
+        else
+            services.AddTransient<IEmailSender<ApplicationUser>, LoggingEmailSender>();
 
         services.AddScoped<ITrackedActionRepository, TrackedActionRepository>();
         services.AddScoped<IFieldDefinitionRepository, FieldDefinitionRepository>();

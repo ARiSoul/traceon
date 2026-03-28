@@ -473,4 +473,13 @@
   <data name="Tags_BackToActions"><value>Back to Actions</value></data>
   <data name="Tags_AllAssigned"><value>All tags are assigned</value></data>
   <data name="Tags_NoneAssigned"><value>No tags assigned yet</value></data>
+
+  <!-- ═══ Email Confirmation ═══ -->
+  <data name="Auth_ConfirmEmail"><value>Confirm Email</value></data>
+  <data name="Auth_EmailConfirmed"><value>Your email has been confirmed! You can now</value></data>
+  <data name="Auth_ConfirmEmailFailed"><value>Email confirmation failed. The link may have expired.</value></data>
+  <data name="Auth_ConfirmEmailInvalidLink"><value>Invalid confirmation link.</value></data>
+  <data name="Auth_EmailNotConfirmed"><value>Your email is not confirmed. Please check your inbox or</value></data>
+  <data name="Auth_ResendConfirmation"><value>resend the confirmation email</value></data>
+  <data name="Auth_ConfirmationResent"><value>Confirmation email resent! Please check your inbox.</value></data>
 </root>

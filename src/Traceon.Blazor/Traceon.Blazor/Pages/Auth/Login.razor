@@ -3,6 +3,24 @@
 
 <h3>@L["Auth_Login"]</h3>
 
+@if (_emailNotConfirmed)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-envelope-exclamation me-1"></i>
+        @L["Auth_EmailNotConfirmed"]
+        <button class="btn btn-link p-0 ms-1" @onclick="ResendConfirmationAsync" disabled="@_resending">
+            @(_resending ? L["Auth_Sending"] : L["Auth_ResendConfirmation"])
+        </button>
+    </div>
+    @if (_resent)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle me-1"></i>
+            @L["Auth_ConfirmationResent"]
+        </div>
+    }
+}
+
 <ErrorAlert Errors="_errors" />
 
 <EditForm Model="_model" OnValidSubmit="HandleLogin" FormName="LoginForm">
@@ -31,20 +49,41 @@
     private LoginModel _model = new();
     private IReadOnlyList<string> _errors = [];
     private bool _loading;
+    private bool _emailNotConfirmed;
+    private bool _resending;
+    private bool _resent;
 
     private async Task HandleLogin()
     {
         _loading = true;
         _errors = [];
+        _emailNotConfirmed = false;
+        _resent = false;
 
         var (success, errors) = await Auth.LoginAsync(new LoginRequest(_model.Email, _model.Password));
 
         if (success)
+        {
             Nav.NavigateTo("/", forceLoad: true);
+        }
+        else if (errors.Count == 1 && errors[0] == "EmailNotConfirmed")
+        {
+            _emailNotConfirmed = true;
+        }
         else
+        {
             _errors = errors.Count > 0 ? errors : [L["Auth_LoginFailed"]];
+        }
 
         _loading = false;
+    }
+
+    private async Task ResendConfirmationAsync()
+    {
+        _resending = true;
+        await Auth.ResendConfirmationAsync(new ResendConfirmationRequest(_model.Email));
+        _resent = true;
+        _resending = false;
     }
 
     private sealed class LoginModel

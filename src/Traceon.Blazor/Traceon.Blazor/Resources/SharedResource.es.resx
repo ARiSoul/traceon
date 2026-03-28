@@ -476,4 +476,13 @@
   <data name="Tags_BackToActions"><value>Volver a Acciones</value></data>
   <data name="Tags_AllAssigned"><value>Todas las etiquetas están asignadas</value></data>
   <data name="Tags_NoneAssigned"><value>Sin etiquetas asignadas todavía</value></data>
+
+  <!-- ═══ Confirmación de Email ═══ -->
+  <data name="Auth_ConfirmEmail"><value>Confirmar Email</value></data>
+  <data name="Auth_EmailConfirmed"><value>¡Su email ha sido confirmado! Ahora puede</value></data>
+  <data name="Auth_ConfirmEmailFailed"><value>La confirmación del email falló. El enlace puede haber expirado.</value></data>
+  <data name="Auth_ConfirmEmailInvalidLink"><value>Enlace de confirmación inválido.</value></data>
+  <data name="Auth_EmailNotConfirmed"><value>Su email no está confirmado. Revise su bandeja de entrada o</value></data>
+  <data name="Auth_ResendConfirmation"><value>reenviar el email de confirmación</value></data>
+  <data name="Auth_ConfirmationResent"><value>¡Email de confirmación reenviado! Revise su bandeja de entrada.</value></data>
 </root>

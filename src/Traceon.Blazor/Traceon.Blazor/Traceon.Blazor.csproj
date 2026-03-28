@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
     <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+    <UserSecretsId>7e7cf2c5-f1ab-4f46-a2bf-42591bd18145</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

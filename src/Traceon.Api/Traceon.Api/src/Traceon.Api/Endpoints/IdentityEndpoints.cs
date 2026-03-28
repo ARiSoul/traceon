@@ -15,6 +15,8 @@ internal static class IdentityEndpoints
         group.MapPost("/register", RegisterAsync).AllowAnonymous();
         group.MapPost("/login", LoginAsync).AllowAnonymous();
         group.MapPost("/refresh", RefreshAsync).AllowAnonymous();
+        group.MapPost("/confirm-email", ConfirmEmailAsync).AllowAnonymous();
+        group.MapPost("/resend-confirmation", ResendConfirmationAsync).AllowAnonymous();
         group.MapPost("/forgot-password", ForgotPasswordAsync).AllowAnonymous();
         group.MapPost("/reset-password", ResetPasswordAsync).AllowAnonymous();
         group.MapPost("/change-password", ChangePasswordAsync);
@@ -48,6 +50,40 @@ internal static class IdentityEndpoints
         return TypedResults.Ok();
     }
 
+    private static async Task<IResult> ConfirmEmailAsync(
+        ConfirmEmailRequest request,
+        UserManager<ApplicationUser> userManager)
+    {
+        var user = await userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+            return TypedResults.Unauthorized();
+
+        var tokenBytes = WebEncoders.Base64UrlDecode(request.Token);
+        var token = Encoding.UTF8.GetString(tokenBytes);
+        var result = await userManager.ConfirmEmailAsync(user, token);
+
+        return result.Succeeded ? TypedResults.Ok() : TypedResults.Unauthorized();
+    }
+
+    private static async Task<IResult> ResendConfirmationAsync(
+        ResendConfirmationRequest request,
+        UserManager<ApplicationUser> userManager,
+        IEmailSender<ApplicationUser> emailSender)
+    {
+        var user = await userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+            return TypedResults.Ok(); // Don't reveal if user exists
+
+        if (await userManager.IsEmailConfirmedAsync(user))
+            return TypedResults.Ok();
+
+        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+        await emailSender.SendConfirmationLinkAsync(user, request.Email, token);
+
+        return TypedResults.Ok();
+    }
+
     private static async Task<IResult> LoginAsync(
         LoginRequest request,
         UserManager<ApplicationUser> userManager,
@@ -58,6 +94,13 @@ internal static class IdentityEndpoints
 
         if (user is null)
             return TypedResults.Unauthorized();
+
+        if (!await userManager.IsEmailConfirmedAsync(user))
+        {
+            return TypedResults.Problem(
+                detail: "EmailNotConfirmed",
+                statusCode: 403);
+        }
 
         var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
 
@@ -146,6 +189,8 @@ internal static class IdentityEndpoints
     private sealed record RegisterRequest(string Email, string Password);
     private sealed record LoginRequest(string Email, string Password);
     private sealed record RefreshTokenRequest(string Email, string RefreshToken);
+    private sealed record ConfirmEmailRequest(string Email, string Token);
+    private sealed record ResendConfirmationRequest(string Email);
     private sealed record ForgotPasswordRequest(string Email);
     private sealed record ResetPasswordRequest(string Email, string ResetCode, string NewPassword);
     private sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);

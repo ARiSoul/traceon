@@ -20,6 +20,11 @@ public sealed class AuthService(HttpClient http, TokenStore tokenStore, TokenAut
     {
         var response = await http.PostAsJsonAsync("/api/identity/login", request);
 
+        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            return (false, ["EmailNotConfirmed"]);
+        }
+
         if (!response.IsSuccessStatusCode)
         {
             var errors = await ExtractErrorsAsync(response);
@@ -49,6 +54,28 @@ public sealed class AuthService(HttpClient http, TokenStore tokenStore, TokenAut
     public async Task<(bool Success, IReadOnlyList<string> Errors)> ForgotPasswordAsync(ForgotPasswordRequest request)
     {
         var response = await http.PostAsJsonAsync("/api/identity/forgot-password", request);
+
+        if (response.IsSuccessStatusCode)
+            return (true, []);
+
+        var errors = await ExtractErrorsAsync(response);
+        return (false, errors);
+    }
+
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> ConfirmEmailAsync(ConfirmEmailRequest request)
+    {
+        var response = await http.PostAsJsonAsync("/api/identity/confirm-email", request);
+
+        if (response.IsSuccessStatusCode)
+            return (true, []);
+
+        var errors = await ExtractErrorsAsync(response);
+        return (false, errors);
+    }
+
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> ResendConfirmationAsync(ResendConfirmationRequest request)
+    {
+        var response = await http.PostAsJsonAsync("/api/identity/resend-confirmation", request);
 
         if (response.IsSuccessStatusCode)
             return (true, []);

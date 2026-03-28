@@ -6,3 +6,5 @@ public sealed record RefreshRequest(string Email, string RefreshToken);
 public sealed record AccessTokenResponse(string TokenType, string AccessToken, int ExpiresIn, string RefreshToken);
 public sealed record ForgotPasswordRequest(string Email);
 public sealed record ResetPasswordRequest(string Email, string ResetCode, string NewPassword);
+public sealed record ConfirmEmailRequest(string Email, string Token);
+public sealed record ResendConfirmationRequest(string Email);
