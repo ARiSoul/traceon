@@ -551,4 +551,73 @@
   <data name="Feedback_SendAnother"><value>Enviar otro</value></data>
   <data name="Feedback_Failed"><value>Error al enviar feedback. Inténtalo de nuevo.</value></data>
   <data name="Audit_FeedbackSent"><value>Feedback Enviado</value></data>
+
+  <!-- ═══ Onboarding ═══ -->
+  <data name="Onboard_Welcome"><value>¡Bienvenido a Traceon!</value></data>
+  <data name="Onboard_Hint"><value>Empieza rápidamente eligiendo una plantilla, o crea tus acciones desde cero.</value></data>
+  <data name="Onboard_ChooseTemplate"><value>Elige una plantilla inicial</value></data>
+  <data name="Onboard_Or"><value>o</value></data>
+  <data name="Onboard_StartFromScratch"><value>Empezar desde cero</value></data>
+  <data name="Onboard_Installing"><value>Configurando tus acciones...</value></data>
+  <data name="Onboard_Installed"><value>¡Plantilla instalada! Cargando acciones...</value></data>
+
+  <!-- ═══ Template Packs ═══ -->
+  <data name="Template_Health_Name"><value>Salud &amp; Signos Vitales</value></data>
+  <data name="Template_Health_Desc"><value>Registra tensión arterial, peso, glucosa y más.</value></data>
+  <data name="Template_Health_BloodPressure"><value>Tensión Arterial</value></data>
+  <data name="Template_Health_BloodPressure_Desc"><value>Registra sistólica, diastólica y pulso.</value></data>
+  <data name="Template_Health_Weight"><value>Peso</value></data>
+  <data name="Template_Health_Weight_Desc"><value>Sigue tu peso a lo largo del tiempo.</value></data>
+  <data name="Template_Health_BloodGlucose"><value>Glucemia</value></data>
+  <data name="Template_Health_BloodGlucose_Desc"><value>Monitoriza los niveles de azúcar en sangre.</value></data>
+  <data name="Template_Fitness_Name"><value>Fitness &amp; Ejercicio</value></data>
+  <data name="Template_Fitness_Desc"><value>Registra entrenamientos, carrera, pasos y más.</value></data>
+  <data name="Template_Fitness_Workout"><value>Entrenamiento</value></data>
+  <data name="Template_Fitness_Workout_Desc"><value>Registra tipo, duración y calorías.</value></data>
+  <data name="Template_Fitness_Running"><value>Carrera</value></data>
+  <data name="Template_Fitness_Running_Desc"><value>Registra distancia y tiempo.</value></data>
+  <data name="Template_Fitness_Steps"><value>Pasos</value></data>
+  <data name="Template_Fitness_Steps_Desc"><value>Cuenta tus pasos diarios.</value></data>
+  <data name="Template_Habits_Name"><value>Hábitos Diarios</value></data>
+  <data name="Template_Habits_Desc"><value>Crea rutinas saludables: sueño, agua, lectura.</value></data>
+  <data name="Template_Habits_Sleep"><value>Sueño</value></data>
+  <data name="Template_Habits_Sleep_Desc"><value>Registra horas y calidad del sueño.</value></data>
+  <data name="Template_Habits_Water"><value>Consumo de Agua</value></data>
+  <data name="Template_Habits_Water_Desc"><value>Cuenta vasos de agua por día.</value></data>
+  <data name="Template_Habits_Reading"><value>Lectura</value></data>
+  <data name="Template_Habits_Reading_Desc"><value>Registra páginas o minutos leídos.</value></data>
+  <data name="Template_Habits_Meditation"><value>Meditación</value></data>
+  <data name="Template_Habits_Meditation_Desc"><value>Registra sesiones de meditación.</value></data>
+  <data name="Template_Finance_Name"><value>Finanzas</value></data>
+  <data name="Template_Finance_Desc"><value>Registra gastos e ingresos.</value></data>
+  <data name="Template_Finance_Expense"><value>Gasto</value></data>
+  <data name="Template_Finance_Expense_Desc"><value>Registra gastos con categorías.</value></data>
+  <data name="Template_Finance_Income"><value>Ingreso</value></data>
+  <data name="Template_Finance_Income_Desc"><value>Registra ingresos de varias fuentes.</value></data>
+  <data name="Template_Field_Systolic"><value>Sistólica</value></data>
+  <data name="Template_Field_Diastolic"><value>Diastólica</value></data>
+  <data name="Template_Field_Pulse"><value>Pulso</value></data>
+  <data name="Template_Field_Weight"><value>Peso</value></data>
+  <data name="Template_Field_Glucose"><value>Glucosa</value></data>
+  <data name="Template_Field_Meal"><value>Comida</value></data>
+  <data name="Template_Field_WorkoutType"><value>Tipo de Entrenamiento</value></data>
+  <data name="Template_Field_Duration"><value>Duración</value></data>
+  <data name="Template_Field_Calories"><value>Calorías</value></data>
+  <data name="Template_Field_Distance"><value>Distancia</value></data>
+  <data name="Template_Field_Steps"><value>Pasos</value></data>
+  <data name="Template_Field_Hours"><value>Horas</value></data>
+  <data name="Template_Field_Quality"><value>Calidad</value></data>
+  <data name="Template_Field_Glasses"><value>Vasos</value></data>
+  <data name="Template_Field_Pages"><value>Páginas</value></data>
+  <data name="Template_Field_Amount"><value>Monto</value></data>
+  <data name="Template_Field_Category"><value>Categoría</value></data>
+  <data name="Template_Field_Source"><value>Fuente</value></data>
+
+  <!-- ═══ Página de Plantillas ═══ -->
+  <data name="Nav_Templates"><value>Plantillas</value></data>
+  <data name="Templates_Title"><value>Plantillas de Acciones</value></data>
+  <data name="Templates_Subtitle"><value>Explora e instala paquetes de acciones preconfigurados para empezar rápidamente.</value></data>
+  <data name="Templates_Install"><value>Instalar</value></data>
+  <data name="Templates_InstallSuccess"><value>{0} instalado — {1} acciones, {2} campos, {3} etiquetas creados.</value></data>
+  <data name="Templates_InstallFailed"><value>Error al instalar plantilla. Inténtalo de nuevo.</value></data>
 </root>

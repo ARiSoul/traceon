@@ -38,16 +38,68 @@
         }
         else if (_actions.Count == 0)
         {
-            <div class="card">
-                <div class="card-body text-center py-5">
-                    <i class="bi bi-list-check display-4 text-muted mb-3 d-block"></i>
-                    <h5>@L["Home_NoActionsYet"]</h5>
-                    <p class="text-muted">@L["Home_NoActionsHint"]</p>
-                    <a href="/tracked-actions/create" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i>@L["Home_CreateAction"]
+            <div class="text-center py-4 mb-4">
+                <i class="bi bi-rocket-takeoff display-3 text-primary mb-3 d-block"></i>
+                <h4>@L["Onboard_Welcome"]</h4>
+                <p class="text-muted" style="max-width: 500px; margin: 0 auto;">@L["Onboard_Hint"]</p>
+            </div>
+
+            @if (_installingTemplate is not null)
+            {
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary mb-2"></div>
+                    <p class="text-muted">@L["Onboard_Installing"]</p>
+                </div>
+            }
+            else if (_installSuccess)
+            {
+                <div class="alert alert-success text-center">
+                    <i class="bi bi-check-circle me-1"></i>@L["Onboard_Installed"]
+                </div>
+            }
+            else
+            {
+                @if (_templates.Count > 0)
+                {
+                    <h5 class="mb-3 text-center">
+                        <i class="bi bi-box-seam me-1"></i>@L["Onboard_ChooseTemplate"]
+                    </h5>
+
+                    <div class="row g-3 justify-content-center mb-4">
+                        @foreach (var template in _templates)
+                        {
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <div class="card h-100 border-2 template-card" style="cursor: pointer; border-color: @template.Color;"
+                                     @onclick="() => InstallTemplateAsync(template.Id)">
+                                    <div class="card-body text-center">
+                                        <i class="bi @template.Icon display-5 d-block mb-2" style="color: @template.Color;"></i>
+                                        <h6 class="card-title">@L[template.NameKey]</h6>
+                                        <p class="card-text text-muted small mb-2">@L[template.DescriptionKey]</p>
+                                        <div class="d-flex flex-wrap justify-content-center gap-1">
+                                            @foreach (var action in template.Actions)
+                                            {
+                                                <span class="badge bg-light text-dark border">@L[action.NameKey]</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex align-items-center mb-3" style="max-width: 600px; margin: 0 auto;">
+                        <hr class="flex-grow-1" />
+                        <span class="px-3 text-muted small">@L["Onboard_Or"]</span>
+                        <hr class="flex-grow-1" />
+                    </div>
+                }
+
+                <div class="text-center">
+                    <a href="/tracked-actions/create" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle me-1"></i>@L["Onboard_StartFromScratch"]
                     </a>
                 </div>
-            </div>
+            }
         }
         else
         {
@@ -117,6 +169,7 @@
 @code {
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
+    [Inject] private TemplateService TemplateService { get; set; } = default!;
     [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
 
     private List<TrackedActionResponse> _actions = [];
@@ -125,6 +178,11 @@
     private string? _loggedActionName;
     private bool _reordering;
     private int _dragIndex = -1;
+
+    // Onboarding
+    private IReadOnlyList<TemplatePackResponse> _templates = [];
+    private string? _installingTemplate;
+    private bool _installSuccess;
 
     private QuickTrackModal _trackModal = default!;
     private TrackedActionResponse? _selectedAction;
@@ -138,8 +196,39 @@
                 .OrderBy(a => a.SortOrder)
                 .ThenByDescending(a => a.CreatedAtUtc)
                 .ToList();
+
+            if (_actions.Count == 0)
+            {
+                _templates = await TemplateService.GetTemplatesAsync();
+            }
         }
         _loading = false;
+    }
+
+    private async Task InstallTemplateAsync(string templateId)
+    {
+        _installingTemplate = templateId;
+        StateHasChanged();
+
+        var (success, _) = await TemplateService.InstallAsync(templateId);
+
+        if (success)
+        {
+            _installSuccess = true;
+            _installingTemplate = null;
+            StateHasChanged();
+
+            // Brief pause to show success, then reload
+            await Task.Delay(800);
+            _actions = (await ActionService.GetAllAsync())
+                .OrderBy(a => a.SortOrder)
+                .ThenByDescending(a => a.CreatedAtUtc)
+                .ToList();
+            _installSuccess = false;
+        }
+
+        _installingTemplate = null;
+        StateHasChanged();
     }
 
     private void OnDrop(int targetIndex)

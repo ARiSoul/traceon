@@ -11,6 +11,7 @@ using Traceon.Infrastructure.Audit;
 using Traceon.Infrastructure.DataPortability;
 using Traceon.Infrastructure.Email;
 using Traceon.Infrastructure.Identity;
+using Traceon.Infrastructure.Onboarding;
 using Traceon.Infrastructure.Persistence;
 using Traceon.Infrastructure.Persistence.Repositories;
 
@@ -89,6 +90,7 @@ public static class DependencyInjection
         services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<AuditService>();
         services.AddScoped<DataPortabilityService>();
+        services.AddScoped<TemplateInstallService>();
 
         return services;
     }
