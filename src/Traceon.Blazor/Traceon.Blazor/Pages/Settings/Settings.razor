@@ -43,6 +43,12 @@
             <i class="bi bi-person me-1"></i>@L["Settings_Account"]
         </button>
     </li>
+    <li class="nav-item">
+        <button class="nav-link @TabClass("activity")"
+                @onclick="@(() => { _activeTab = "activity"; _ = LoadAuditLogsAsync(); })">
+            <i class="bi bi-clock-history me-1"></i>@L["Settings_Activity"]
+        </button>
+    </li>
 </ul>
 
 <!-- Tab Content -->
@@ -56,6 +62,9 @@
         break;
     case "account":
         @RenderAccount()
+        break;
+    case "activity":
+        @RenderActivity()
         break;
 }
 
@@ -212,6 +221,117 @@
     </div>
 }; }
 
+@* ── Activity Tab ── *@
+@{ RenderFragment RenderActivity() => __builder =>
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-clock-history me-2"></i>@L["Settings_ActivityLog"]</h5>
+
+            <div class="row g-2 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label small">@L["Dashboard_From"]</label>
+                    <input type="date" class="form-control form-control-sm" @bind="_auditFrom" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">@L["Dashboard_To"]</label>
+                    <input type="date" class="form-control form-control-sm" @bind="_auditTo" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">@L["Settings_ActionFilter"]</label>
+                    <select class="form-select form-select-sm" @bind="_auditAction">
+                        <option value="">@L["Dashboard_All"]</option>
+                        @foreach (var a in _auditActionOptions)
+                        {
+                            <option value="@a">@FormatAction(a)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">@L["Common_Search"]</label>
+                    <input type="text" class="form-control form-control-sm" placeholder="@L["Settings_SearchPlaceholder"]"
+                           @bind="_auditSearch" @bind:event="oninput" />
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-3">
+                <button class="btn btn-sm btn-primary" @onclick="() => { _auditSkip = 0; _ = LoadAuditLogsAsync(); }" disabled="@_auditLoading">
+                    <i class="bi bi-search me-1"></i>@L["Common_Filter"]
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="ClearAuditFilters" disabled="@_auditLoading">
+                    <i class="bi bi-x-circle me-1"></i>@L["DataGrid_Clear"]
+                </button>
+            </div>
+
+            @if (_auditLoading)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                </div>
+            }
+            else if (_auditLogs.Count == 0)
+            {
+                <p class="text-muted text-center py-3">@L["Settings_NoActivity"]</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 160px;">@L["Settings_When"]</th>
+                                <th style="width: 160px;">@L["Settings_ActionCol"]</th>
+                                <th>@L["Settings_Details"]</th>
+                                <th style="width: 130px;">@L["Settings_IpAddress"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in _auditLogs)
+                            {
+                                <tr>
+                                    <td class="text-nowrap small">
+                                        <i class="bi bi-clock me-1 text-muted"></i>
+                                        @log.OccurredAtUtc.ToLocalTime().ToString("g")
+                                    </td>
+                                    <td>
+                                        <span class="badge @ActionBadgeClass(log.Action)">
+                                            <i class="bi @ActionIcon(log.Action) me-1"></i>@FormatAction(log.Action)
+                                        </span>
+                                    </td>
+                                    <td class="small text-muted text-truncate" style="max-width: 300px;">
+                                        @(log.Details ?? "—")
+                                    </td>
+                                    <td class="small text-muted font-monospace">@(log.IpAddress ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (_auditTotalCount > _auditPageSize)
+                {
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted">
+                            @L["DataGrid_Showing"] @(_auditSkip + 1)–@(Math.Min(_auditSkip + _auditPageSize, _auditTotalCount))
+                            @L["DataGrid_Of"] @_auditTotalCount
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary" disabled="@(_auditSkip == 0)"
+                                    @onclick="() => { _auditSkip = Math.Max(0, _auditSkip - _auditPageSize); _ = LoadAuditLogsAsync(); }">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" disabled="@(_auditSkip + _auditPageSize >= _auditTotalCount)"
+                                    @onclick="() => { _auditSkip += _auditPageSize; _ = LoadAuditLogsAsync(); }">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}; }
+
 @code {
     [Inject] private AuthService Auth { get; set; } = default!;
     [Inject] private ThemeService ThemeService { get; set; } = default!;
@@ -219,6 +339,7 @@
     [Inject] private UserPreferenceService PreferenceService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
     [Inject] private TokenStore TokenStore { get; set; } = default!;
+    [Inject] private AuditLogService AuditLogService { get; set; } = default!;
 
     private string _activeTab = "preferences";
     private IReadOnlyList<string> _errors = [];
@@ -321,4 +442,100 @@
             _deletingAccount = false;
         }
     }
+
+    // ── Activity / Audit ──
+
+    private IReadOnlyList<AuditLogResponse> _auditLogs = [];
+    private int _auditTotalCount;
+    private bool _auditLoading;
+    private DateTime? _auditFrom;
+    private DateTime? _auditTo;
+    private string _auditAction = string.Empty;
+    private string _auditSearch = string.Empty;
+    private int _auditSkip;
+    private const int _auditPageSize = 15;
+
+    private static readonly string[] _auditActionOptions =
+    [
+        "Register", "Login", "LoginExternal", "EmailConfirmed",
+        "PasswordChanged", "PasswordResetRequested", "PasswordReset",
+        "PreferencesUpdated", "ExternalLoginAdded", "AccountDeleted"
+    ];
+
+    private async Task LoadAuditLogsAsync()
+    {
+        _auditLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await AuditLogService.GetLogsAsync(
+                _auditFrom, _auditTo,
+                string.IsNullOrEmpty(_auditAction) ? null : _auditAction,
+                string.IsNullOrEmpty(_auditSearch) ? null : _auditSearch,
+                _auditSkip, _auditPageSize);
+
+            _auditLogs = result.Items;
+            _auditTotalCount = result.TotalCount;
+        }
+        catch
+        {
+            _auditLogs = [];
+            _auditTotalCount = 0;
+        }
+
+        _auditLoading = false;
+        StateHasChanged();
+    }
+
+    private void ClearAuditFilters()
+    {
+        _auditFrom = null;
+        _auditTo = null;
+        _auditAction = string.Empty;
+        _auditSearch = string.Empty;
+        _auditSkip = 0;
+        _ = LoadAuditLogsAsync();
+    }
+
+    private string FormatAction(string action) => action switch
+    {
+        "Register" => L["Audit_Register"],
+        "Login" => L["Audit_Login"],
+        "LoginExternal" => L["Audit_LoginExternal"],
+        "EmailConfirmed" => L["Audit_EmailConfirmed"],
+        "PasswordChanged" => L["Audit_PasswordChanged"],
+        "PasswordResetRequested" => L["Audit_PasswordResetRequested"],
+        "PasswordReset" => L["Audit_PasswordReset"],
+        "PreferencesUpdated" => L["Audit_PreferencesUpdated"],
+        "ExternalLoginAdded" => L["Audit_ExternalLoginAdded"],
+        "AccountDeleted" => L["Audit_AccountDeleted"],
+        "TokenRefreshed" => L["Audit_TokenRefreshed"],
+        "DataExported" => L["Audit_DataExported"],
+        "DataImported" => L["Audit_DataImported"],
+        _ => action
+    };
+
+    private static string ActionIcon(string action) => action switch
+    {
+        "Register" => "bi-person-plus",
+        "Login" or "LoginExternal" => "bi-box-arrow-in-right",
+        "EmailConfirmed" => "bi-envelope-check",
+        "PasswordChanged" or "PasswordReset" => "bi-key",
+        "PasswordResetRequested" => "bi-envelope",
+        "PreferencesUpdated" => "bi-palette",
+        "ExternalLoginAdded" => "bi-link-45deg",
+        "AccountDeleted" => "bi-trash",
+        "TokenRefreshed" => "bi-arrow-repeat",
+        _ => "bi-activity"
+    };
+
+    private static string ActionBadgeClass(string action) => action switch
+    {
+        "AccountDeleted" => "bg-danger",
+        "PasswordChanged" or "PasswordReset" or "PasswordResetRequested" => "bg-warning text-dark",
+        "Login" or "LoginExternal" or "Register" => "bg-success",
+        "EmailConfirmed" => "bg-info text-dark",
+        _ => "bg-secondary"
+    };
 }

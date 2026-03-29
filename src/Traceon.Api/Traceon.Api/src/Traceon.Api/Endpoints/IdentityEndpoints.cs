@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Traceon.Infrastructure.Audit;
 using Traceon.Infrastructure.Email;
 using Traceon.Infrastructure.Identity;
 
@@ -29,6 +30,7 @@ internal static class IdentityEndpoints
         group.MapGet("/external-login", ExternalLoginAsync).AllowAnonymous();
         group.MapGet("/external-callback", ExternalCallbackAsync).AllowAnonymous();
         group.MapGet("/external-providers", GetExternalProvidersAsync).AllowAnonymous();
+        group.MapGet("/audit-logs", GetAuditLogsAsync);
 
         return group;
     }
@@ -36,7 +38,8 @@ internal static class IdentityEndpoints
     private static async Task<IResult> RegisterAsync(
         RegisterRequest request,
         UserManager<ApplicationUser> userManager,
-        IEmailSender<ApplicationUser> emailSender)
+        IEmailSender<ApplicationUser> emailSender,
+        AuditService audit)
     {
         var user = new ApplicationUser { UserName = request.Email, Email = request.Email };
         var result = await userManager.CreateAsync(user, request.Password);
@@ -53,12 +56,15 @@ internal static class IdentityEndpoints
         token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
         await emailSender.SendConfirmationLinkAsync(user, request.Email, token);
 
+        await audit.LogAsync(user.Id, request.Email, AuditActions.Register);
+
         return TypedResults.Ok();
     }
 
     private static async Task<IResult> ConfirmEmailAsync(
         ConfirmEmailRequest request,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        AuditService audit)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user is null)
@@ -67,6 +73,9 @@ internal static class IdentityEndpoints
         var tokenBytes = WebEncoders.Base64UrlDecode(request.Token);
         var token = Encoding.UTF8.GetString(tokenBytes);
         var result = await userManager.ConfirmEmailAsync(user, token);
+
+        if (result.Succeeded)
+            await audit.LogAsync(user.Id, request.Email, AuditActions.EmailConfirmed);
 
         return result.Succeeded ? TypedResults.Ok() : TypedResults.Unauthorized();
     }
@@ -94,7 +103,8 @@ internal static class IdentityEndpoints
         LoginRequest request,
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        JwtTokenService tokenService)
+        JwtTokenService tokenService,
+        AuditService audit)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
 
@@ -117,6 +127,8 @@ internal static class IdentityEndpoints
         var refreshToken = tokenService.GenerateRefreshToken();
 
         await userManager.SetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName, refreshToken);
+
+        await audit.LogAsync(user.Id, request.Email, AuditActions.Login);
 
         return TypedResults.Ok(new AccessTokenResponse(
             "Bearer",
@@ -155,7 +167,8 @@ internal static class IdentityEndpoints
     private static async Task<IResult> ForgotPasswordAsync(
         ForgotPasswordRequest request,
         UserManager<ApplicationUser> userManager,
-        IEmailSender<ApplicationUser> emailSender)
+        IEmailSender<ApplicationUser> emailSender,
+        AuditService audit)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
 
@@ -164,6 +177,7 @@ internal static class IdentityEndpoints
             var code = await userManager.GeneratePasswordResetTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
             await emailSender.SendPasswordResetCodeAsync(user, request.Email, code);
+            await audit.LogAsync(user.Id, request.Email, AuditActions.PasswordResetRequested);
         }
 
         return TypedResults.Ok();
@@ -171,7 +185,8 @@ internal static class IdentityEndpoints
 
     private static async Task<IResult> ResetPasswordAsync(
         ResetPasswordRequest request,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        AuditService audit)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
 
@@ -189,6 +204,8 @@ internal static class IdentityEndpoints
                     e => new[] { e.Description }));
         }
 
+        await audit.LogAsync(user.Id, request.Email, AuditActions.PasswordReset);
+
         return TypedResults.Ok();
     }
 
@@ -203,6 +220,8 @@ internal static class IdentityEndpoints
     private sealed record AccessTokenResponse(string TokenType, string AccessToken, int ExpiresIn, string RefreshToken);
     private sealed record UserPreferencesResponse(string? Theme, string? Language);
     private sealed record UpdatePreferencesRequest(string? Theme, string? Language);
+    private sealed record AuditLogResponse(Guid Id, string Action, string? Details, string? IpAddress, string? UserAgent, DateTime OccurredAtUtc);
+    private sealed record AuditLogPageResponse(IReadOnlyList<AuditLogResponse> Items, int TotalCount);
 
     private static async Task<IResult> GetPreferencesAsync(
         UserManager<ApplicationUser> userManager,
@@ -220,7 +239,8 @@ internal static class IdentityEndpoints
     private static async Task<IResult> UpdatePreferencesAsync(
         UpdatePreferencesRequest request,
         UserManager<ApplicationUser> userManager,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        AuditService audit)
     {
         var userId = httpContextAccessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (userId is null) return TypedResults.Unauthorized();
@@ -234,13 +254,16 @@ internal static class IdentityEndpoints
             user.PreferredLanguage = request.Language;
         await userManager.UpdateAsync(user);
 
+        await audit.LogAsync(userId, user.Email!, AuditActions.PreferencesUpdated, new { request.Theme, request.Language });
+
         return TypedResults.Ok(new UserPreferencesResponse(user.PreferredTheme, user.PreferredLanguage));
     }
 
     private static async Task<IResult> ChangePasswordAsync(
         ChangePasswordRequest request,
         UserManager<ApplicationUser> userManager,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        AuditService audit)
     {
         var userId = httpContextAccessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (userId is null) return TypedResults.Unauthorized();
@@ -258,18 +281,24 @@ internal static class IdentityEndpoints
                     e => new[] { e.Description }));
         }
 
+        await audit.LogAsync(userId, user.Email!, AuditActions.PasswordChanged);
+
         return TypedResults.Ok();
     }
 
     private static async Task<IResult> DeleteAccountAsync(
         UserManager<ApplicationUser> userManager,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        AuditService audit)
     {
         var userId = httpContextAccessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (userId is null) return TypedResults.Unauthorized();
 
         var user = await userManager.FindByIdAsync(userId);
         if (user is null) return TypedResults.Unauthorized();
+
+        var email = user.Email!;
+        await audit.LogAsync(userId, email, AuditActions.AccountDeleted);
 
         var result = await userManager.DeleteAsync(user);
 
@@ -307,7 +336,8 @@ internal static class IdentityEndpoints
         HttpContext httpContext,
         UserManager<ApplicationUser> userManager,
         JwtTokenService tokenService,
-        EmailSettings emailSettings)
+        EmailSettings emailSettings,
+        AuditService audit)
     {
         var clientBaseUrl = emailSettings.ClientBaseUrl?.TrimEnd('/') ?? "http://localhost:5284";
         var errorUrl = $"{clientBaseUrl}/auth/login?error=ExternalLoginFailed";
@@ -355,11 +385,14 @@ internal static class IdentityEndpoints
         if (!logins.Any(l => l.LoginProvider == provider && l.ProviderKey == providerKey))
         {
             await userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerKey, provider));
+            await audit.LogAsync(user.Id, email, AuditActions.ExternalLoginAdded, new { provider });
         }
 
         var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken();
         await userManager.SetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName, refreshToken);
+
+        await audit.LogAsync(user.Id, email, AuditActions.LoginExternal, new { provider });
 
         var redirectUrl = $"{clientBaseUrl}/auth/external-callback" +
             $"?accessToken={Uri.EscapeDataString(accessToken)}" +
@@ -378,5 +411,27 @@ internal static class IdentityEndpoints
         if (!string.IsNullOrEmpty(settings.Google?.ClientId)) providers.Add("Google");
         if (!string.IsNullOrEmpty(settings.Microsoft?.ClientId)) providers.Add("Microsoft");
         return TypedResults.Ok(providers);
+    }
+
+    private static async Task<IResult> GetAuditLogsAsync(
+        IHttpContextAccessor httpContextAccessor,
+        AuditService audit,
+        DateTime? from = null,
+        DateTime? to = null,
+        string? action = null,
+        string? search = null,
+        int skip = 0,
+        int take = 20)
+    {
+        var userId = httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return TypedResults.Unauthorized();
+
+        var (items, totalCount) = await audit.QueryAsync(userId, from, to, action, search, skip, take);
+
+        var response = new AuditLogPageResponse(
+            items.Select(l => new AuditLogResponse(l.Id, l.Action, l.Details, l.IpAddress, l.UserAgent, l.OccurredAtUtc)).ToList(),
+            totalCount);
+
+        return TypedResults.Ok(response);
     }
 }

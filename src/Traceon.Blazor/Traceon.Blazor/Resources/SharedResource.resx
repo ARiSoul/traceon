@@ -491,4 +491,28 @@
   <data name="Auth_OrWithEmail"><value>or with email</value></data>
   <data name="Auth_ExternalLoginFailed"><value>External login failed. Please try again.</value></data>
   <data name="Auth_CompletingLogin"><value>Completing login...</value></data>
+
+  <!-- ═══ Activity / Audit ═══ -->
+  <data name="Settings_Activity"><value>Activity</value></data>
+  <data name="Settings_ActivityLog"><value>Activity Log</value></data>
+  <data name="Settings_ActionFilter"><value>Action</value></data>
+  <data name="Settings_SearchPlaceholder"><value>IP, browser, details...</value></data>
+  <data name="Settings_NoActivity"><value>No activity found.</value></data>
+  <data name="Settings_When"><value>When</value></data>
+  <data name="Settings_ActionCol"><value>Action</value></data>
+  <data name="Settings_Details"><value>Details</value></data>
+  <data name="Settings_IpAddress"><value>IP Address</value></data>
+  <data name="Audit_Register"><value>Registered</value></data>
+  <data name="Audit_Login"><value>Login</value></data>
+  <data name="Audit_LoginExternal"><value>External Login</value></data>
+  <data name="Audit_EmailConfirmed"><value>Email Confirmed</value></data>
+  <data name="Audit_PasswordChanged"><value>Password Changed</value></data>
+  <data name="Audit_PasswordResetRequested"><value>Reset Requested</value></data>
+  <data name="Audit_PasswordReset"><value>Password Reset</value></data>
+  <data name="Audit_PreferencesUpdated"><value>Preferences Updated</value></data>
+  <data name="Audit_ExternalLoginAdded"><value>External Login Added</value></data>
+  <data name="Audit_AccountDeleted"><value>Account Deleted</value></data>
+  <data name="Audit_TokenRefreshed"><value>Token Refreshed</value></data>
+  <data name="Audit_DataExported"><value>Data Exported</value></data>
+  <data name="Audit_DataImported"><value>Data Imported</value></data>
 </root>

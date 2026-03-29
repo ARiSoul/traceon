@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Traceon.Domain.Repositories;
+using Traceon.Infrastructure.Audit;
 using Traceon.Infrastructure.Email;
 using Traceon.Infrastructure.Identity;
 using Traceon.Infrastructure.Persistence;
@@ -85,6 +86,7 @@ public static class DependencyInjection
         services.AddScoped<IActionFieldRepository, ActionFieldRepository>();
         services.AddScoped<IActionEntryRepository, ActionEntryRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
+        services.AddScoped<AuditService>();
 
         return services;
     }

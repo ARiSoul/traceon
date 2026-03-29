@@ -494,4 +494,28 @@
   <data name="Auth_OrWithEmail"><value>ou com email</value></data>
   <data name="Auth_ExternalLoginFailed"><value>Falha no login externo. Por favor, tente novamente.</value></data>
   <data name="Auth_CompletingLogin"><value>A concluir o login...</value></data>
+
+  <!-- ═══ Atividade / Auditoria ═══ -->
+  <data name="Settings_Activity"><value>Atividade</value></data>
+  <data name="Settings_ActivityLog"><value>Registo de Atividade</value></data>
+  <data name="Settings_ActionFilter"><value>Ação</value></data>
+  <data name="Settings_SearchPlaceholder"><value>IP, browser, detalhes...</value></data>
+  <data name="Settings_NoActivity"><value>Nenhuma atividade encontrada.</value></data>
+  <data name="Settings_When"><value>Quando</value></data>
+  <data name="Settings_ActionCol"><value>Ação</value></data>
+  <data name="Settings_Details"><value>Detalhes</value></data>
+  <data name="Settings_IpAddress"><value>Endereço IP</value></data>
+  <data name="Audit_Register"><value>Registo</value></data>
+  <data name="Audit_Login"><value>Login</value></data>
+  <data name="Audit_LoginExternal"><value>Login Externo</value></data>
+  <data name="Audit_EmailConfirmed"><value>Email Confirmado</value></data>
+  <data name="Audit_PasswordChanged"><value>Palavra-passe Alterada</value></data>
+  <data name="Audit_PasswordResetRequested"><value>Recuperação Pedida</value></data>
+  <data name="Audit_PasswordReset"><value>Palavra-passe Redefinida</value></data>
+  <data name="Audit_PreferencesUpdated"><value>Preferências Atualizadas</value></data>
+  <data name="Audit_ExternalLoginAdded"><value>Login Externo Adicionado</value></data>
+  <data name="Audit_AccountDeleted"><value>Conta Eliminada</value></data>
+  <data name="Audit_TokenRefreshed"><value>Token Atualizado</value></data>
+  <data name="Audit_DataExported"><value>Dados Exportados</value></data>
+  <data name="Audit_DataImported"><value>Dados Importados</value></data>
 </root>

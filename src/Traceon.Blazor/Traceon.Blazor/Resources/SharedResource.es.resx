@@ -494,4 +494,28 @@
   <data name="Auth_OrWithEmail"><value>o con email</value></data>
   <data name="Auth_ExternalLoginFailed"><value>Error al iniciar sesión externa. Inténtelo de nuevo.</value></data>
   <data name="Auth_CompletingLogin"><value>Completando inicio de sesión...</value></data>
+
+  <!-- ═══ Actividad / Auditoría ═══ -->
+  <data name="Settings_Activity"><value>Actividad</value></data>
+  <data name="Settings_ActivityLog"><value>Registro de Actividad</value></data>
+  <data name="Settings_ActionFilter"><value>Acción</value></data>
+  <data name="Settings_SearchPlaceholder"><value>IP, navegador, detalles...</value></data>
+  <data name="Settings_NoActivity"><value>No se encontró actividad.</value></data>
+  <data name="Settings_When"><value>Cuándo</value></data>
+  <data name="Settings_ActionCol"><value>Acción</value></data>
+  <data name="Settings_Details"><value>Detalles</value></data>
+  <data name="Settings_IpAddress"><value>Dirección IP</value></data>
+  <data name="Audit_Register"><value>Registro</value></data>
+  <data name="Audit_Login"><value>Inicio de Sesión</value></data>
+  <data name="Audit_LoginExternal"><value>Login Externo</value></data>
+  <data name="Audit_EmailConfirmed"><value>Email Confirmado</value></data>
+  <data name="Audit_PasswordChanged"><value>Contraseña Cambiada</value></data>
+  <data name="Audit_PasswordResetRequested"><value>Recuperación Solicitada</value></data>
+  <data name="Audit_PasswordReset"><value>Contraseña Restablecida</value></data>
+  <data name="Audit_PreferencesUpdated"><value>Preferencias Actualizadas</value></data>
+  <data name="Audit_ExternalLoginAdded"><value>Login Externo Añadido</value></data>
+  <data name="Audit_AccountDeleted"><value>Cuenta Eliminada</value></data>
+  <data name="Audit_TokenRefreshed"><value>Token Actualizado</value></data>
+  <data name="Audit_DataExported"><value>Datos Exportados</value></data>
+  <data name="Audit_DataImported"><value>Datos Importados</value></data>
 </root>

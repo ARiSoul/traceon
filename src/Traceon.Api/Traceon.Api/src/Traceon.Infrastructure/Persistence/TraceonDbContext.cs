@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Traceon.Domain.Entities;
+using Traceon.Infrastructure.Audit;
 using Traceon.Infrastructure.Identity;
 
 namespace Traceon.Infrastructure.Persistence;
@@ -15,6 +16,7 @@ public sealed class TraceonDbContext(DbContextOptions<TraceonDbContext> options)
     public DbSet<ActionEntryField> ActionEntryFields => Set<ActionEntryField>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<TrackedActionTag> TrackedActionTags => Set<TrackedActionTag>();
+    public DbSet<UserAuditLog> UserAuditLogs => Set<UserAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
