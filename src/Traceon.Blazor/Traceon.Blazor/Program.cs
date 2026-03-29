@@ -42,6 +42,7 @@ builder.Services.AddScoped<ActionEntryService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<DataPortabilityService>();
+builder.Services.AddScoped<FeedbackService>();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<LocalizationService>();
 builder.Services.AddScoped<UserPreferenceService>();

@@ -576,7 +576,8 @@
     [
         "Register", "Login", "LoginExternal", "EmailConfirmed",
         "PasswordChanged", "PasswordResetRequested", "PasswordReset",
-        "PreferencesUpdated", "ExternalLoginAdded", "AccountDeleted"
+        "PreferencesUpdated", "ExternalLoginAdded", "AccountDeleted",
+        "FeedbackSent"
     ];
 
     private async Task LoadAuditLogsAsync()
@@ -630,6 +631,7 @@
         "TokenRefreshed" => L["Audit_TokenRefreshed"],
         "DataExported" => L["Audit_DataExported"],
         "DataImported" => L["Audit_DataImported"],
+        "FeedbackSent" => L["Audit_FeedbackSent"],
         _ => action
     };
 
@@ -644,6 +646,7 @@
         "ExternalLoginAdded" => "bi-link-45deg",
         "AccountDeleted" => "bi-trash",
         "TokenRefreshed" => "bi-arrow-repeat",
+        "FeedbackSent" => "bi-chat-dots",
         _ => "bi-activity"
     };
 
@@ -653,6 +656,7 @@
         "PasswordChanged" or "PasswordReset" or "PasswordResetRequested" => "bg-warning text-dark",
         "Login" or "LoginExternal" or "Register" => "bg-success",
         "EmailConfirmed" => "bg-info text-dark",
+        "FeedbackSent" => "bg-info text-dark",
         _ => "bg-secondary"
     };
 

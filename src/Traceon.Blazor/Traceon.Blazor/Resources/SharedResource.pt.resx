@@ -535,4 +535,20 @@
   <data name="Settings_Skipped"><value>Ignorados</value></data>
   <data name="Settings_SkippedRenamed"><value>Ignorados / Renomeados</value></data>
   <data name="Settings_RenamedHint"><value>Ações renomeadas para evitar duplicados</value></data>
+
+  <!-- ═══ Feedback ═══ -->
+  <data name="Nav_Feedback"><value>Feedback</value></data>
+  <data name="Feedback_Title"><value>Enviar Feedback</value></data>
+  <data name="Feedback_Subtitle"><value>Ajude-nos a melhorar o Traceon reportando erros ou sugerindo funcionalidades.</value></data>
+  <data name="Feedback_Category"><value>Categoria</value></data>
+  <data name="Feedback_Bug"><value>Relatório de Erro</value></data>
+  <data name="Feedback_Feature"><value>Pedido de Funcionalidade</value></data>
+  <data name="Feedback_General"><value>Feedback Geral</value></data>
+  <data name="Feedback_Message"><value>A sua mensagem</value></data>
+  <data name="Feedback_Placeholder"><value>Descreva o problema, sugestão ou feedback...</value></data>
+  <data name="Feedback_Send"><value>Enviar Feedback</value></data>
+  <data name="Feedback_Success"><value>Obrigado! O seu feedback foi enviado.</value></data>
+  <data name="Feedback_SendAnother"><value>Enviar outro</value></data>
+  <data name="Feedback_Failed"><value>Falha ao enviar feedback. Tente novamente.</value></data>
+  <data name="Audit_FeedbackSent"><value>Feedback Enviado</value></data>
 </root>

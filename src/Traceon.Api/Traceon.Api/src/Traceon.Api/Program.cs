@@ -69,5 +69,6 @@ app.MapActionEntryEndpoints().RequireAuthorization();
 app.MapEntryEndpoints().RequireAuthorization();
 app.MapTagEndpoints().RequireAuthorization();
 app.MapDataPortabilityEndpoints();
+app.MapFeedbackEndpoints();
 
 app.Run();

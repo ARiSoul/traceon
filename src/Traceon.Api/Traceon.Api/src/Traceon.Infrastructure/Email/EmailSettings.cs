@@ -10,4 +10,5 @@ public sealed class EmailSettings
     public string FromEmail { get; init; } = "noreply@traceon.app";
     public string FromName { get; init; } = "Traceon";
     public string? ClientBaseUrl { get; init; }
+    public string? FeedbackEmail { get; init; }
 }

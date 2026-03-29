@@ -16,4 +16,5 @@ public static class AuditActions
     public const string TokenRefreshed = "TokenRefreshed";
     public const string DataExported = "DataExported";
     public const string DataImported = "DataImported";
+    public const string FeedbackSent = "FeedbackSent";
 }
