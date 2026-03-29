@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +40,17 @@ public static class DependencyInjection
         services.AddSingleton(jwtSettings);
         services.AddScoped<JwtTokenService>();
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+            })
+            .AddCookie(IdentityConstants.ExternalScheme, options =>
+            {
+                options.Cookie.Name = ".Traceon.External";
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+            })
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -53,9 +64,13 @@ public static class DependencyInjection
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(jwtSettings.Key))
                 };
-            });
+            })
+            .AddExternalProviders(configuration);
 
         services.AddAuthorizationBuilder();
+
+        var externalAuth = configuration.GetSection("ExternalAuth").Get<ExternalAuthSettings>() ?? new ExternalAuthSettings();
+        services.AddSingleton(externalAuth);
 
         var emailSettings = configuration.GetSection("Email").Get<EmailSettings>() ?? new EmailSettings();
         services.AddSingleton(emailSettings);
@@ -79,5 +94,32 @@ public static class DependencyInjection
         await using var scope = services.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<TraceonDbContext>();
         await context.Database.MigrateAsync();
+    }
+
+    private static AuthenticationBuilder AddExternalProviders(this AuthenticationBuilder builder, IConfiguration configuration)
+    {
+        var settings = configuration.GetSection("ExternalAuth").Get<ExternalAuthSettings>();
+
+        if (!string.IsNullOrEmpty(settings?.Google?.ClientId))
+        {
+            builder.AddGoogle(options =>
+            {
+                options.ClientId = settings.Google.ClientId;
+                options.ClientSecret = settings.Google.ClientSecret;
+                options.CallbackPath = "/api/identity/signin-google";
+            });
+        }
+
+        if (!string.IsNullOrEmpty(settings?.Microsoft?.ClientId))
+        {
+            builder.AddMicrosoftAccount(options =>
+            {
+                options.ClientId = settings.Microsoft.ClientId;
+                options.ClientSecret = settings.Microsoft.ClientSecret;
+                options.CallbackPath = "/api/identity/signin-microsoft";
+            });
+        }
+
+        return builder;
     }
 }

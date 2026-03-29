@@ -484,4 +484,11 @@
   <data name="Auth_EmailNotConfirmed"><value>Your email is not confirmed. Please check your inbox or</value></data>
   <data name="Auth_ResendConfirmation"><value>resend the confirmation email</value></data>
   <data name="Auth_ConfirmationResent"><value>Confirmation email resent! Please check your inbox.</value></data>
+
+  <!-- ═══ Social Login ═══ -->
+  <data name="Auth_SignInWith"><value>Sign in with</value></data>
+  <data name="Auth_SignUpWith"><value>Sign up with</value></data>
+  <data name="Auth_OrWithEmail"><value>or with email</value></data>
+  <data name="Auth_ExternalLoginFailed"><value>External login failed. Please try again.</value></data>
+  <data name="Auth_CompletingLogin"><value>Completing login...</value></data>
 </root>

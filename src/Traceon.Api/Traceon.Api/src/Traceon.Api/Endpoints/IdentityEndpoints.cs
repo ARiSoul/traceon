@@ -1,6 +1,9 @@
+using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Traceon.Infrastructure.Email;
 using Traceon.Infrastructure.Identity;
 
 namespace Traceon.Api.Endpoints;
@@ -23,6 +26,9 @@ internal static class IdentityEndpoints
         group.MapDelete("/account", DeleteAccountAsync);
         group.MapGet("/preferences", GetPreferencesAsync);
         group.MapPut("/preferences", UpdatePreferencesAsync);
+        group.MapGet("/external-login", ExternalLoginAsync).AllowAnonymous();
+        group.MapGet("/external-callback", ExternalCallbackAsync).AllowAnonymous();
+        group.MapGet("/external-providers", GetExternalProvidersAsync).AllowAnonymous();
 
         return group;
     }
@@ -276,5 +282,101 @@ internal static class IdentityEndpoints
         }
 
         return TypedResults.NoContent();
+    }
+
+    private static IResult ExternalLoginAsync(
+        string provider,
+        string? returnUrl,
+        ExternalAuthSettings externalAuth,
+        EmailSettings emailSettings)
+    {
+        var clientBaseUrl = emailSettings.ClientBaseUrl?.TrimEnd('/') ?? "http://localhost:5284";
+        var callbackUrl = $"/api/identity/external-callback?returnUrl={Uri.EscapeDataString(returnUrl ?? clientBaseUrl)}";
+
+        var properties = new AuthenticationProperties
+        {
+            RedirectUri = callbackUrl,
+            Items = { ["LoginProvider"] = provider }
+        };
+
+        return TypedResults.Challenge(properties, [provider]);
+    }
+
+    private static async Task<IResult> ExternalCallbackAsync(
+        string? returnUrl,
+        HttpContext httpContext,
+        UserManager<ApplicationUser> userManager,
+        JwtTokenService tokenService,
+        EmailSettings emailSettings)
+    {
+        var clientBaseUrl = emailSettings.ClientBaseUrl?.TrimEnd('/') ?? "http://localhost:5284";
+        var errorUrl = $"{clientBaseUrl}/auth/login?error=ExternalLoginFailed";
+
+        var result = await httpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+
+        if (!result.Succeeded)
+        {
+            result = await httpContext.AuthenticateAsync();
+        }
+
+        if (!result.Succeeded)
+            return TypedResults.Redirect(errorUrl);
+
+        var email = result.Principal.FindFirstValue(ClaimTypes.Email);
+        var providerKey = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        var provider = result.Properties?.Items["LoginProvider"]
+            ?? result.Principal.Identity?.AuthenticationType
+            ?? "Unknown";
+
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(providerKey))
+            return TypedResults.Redirect(errorUrl);
+
+        var user = await userManager.FindByEmailAsync(email);
+
+        if (user is null)
+        {
+            user = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true
+            };
+            var createResult = await userManager.CreateAsync(user);
+            if (!createResult.Succeeded)
+                return TypedResults.Redirect(errorUrl);
+        }
+        else if (!user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            await userManager.UpdateAsync(user);
+        }
+
+        var logins = await userManager.GetLoginsAsync(user);
+        if (!logins.Any(l => l.LoginProvider == provider && l.ProviderKey == providerKey))
+        {
+            await userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerKey, provider));
+        }
+
+        var accessToken = tokenService.GenerateAccessToken(user);
+        var refreshToken = tokenService.GenerateRefreshToken();
+        await userManager.SetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName, refreshToken);
+
+        var redirectUrl = $"{clientBaseUrl}/auth/external-callback" +
+            $"?accessToken={Uri.EscapeDataString(accessToken)}" +
+            $"&refreshToken={Uri.EscapeDataString(refreshToken)}" +
+            $"&expiresIn={tokenService.AccessTokenExpirationSeconds}" +
+            $"&email={Uri.EscapeDataString(email)}";
+
+        await httpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+        return TypedResults.Redirect(redirectUrl);
+    }
+
+    private static IResult GetExternalProvidersAsync(ExternalAuthSettings settings)
+    {
+        var providers = new List<string>();
+        if (!string.IsNullOrEmpty(settings.Google?.ClientId)) providers.Add("Google");
+        if (!string.IsNullOrEmpty(settings.Microsoft?.ClientId)) providers.Add("Microsoft");
+        return TypedResults.Ok(providers);
     }
 }

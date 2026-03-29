@@ -487,4 +487,11 @@
   <data name="Auth_EmailNotConfirmed"><value>Su email no está confirmado. Revise su bandeja de entrada o</value></data>
   <data name="Auth_ResendConfirmation"><value>reenviar el email de confirmación</value></data>
   <data name="Auth_ConfirmationResent"><value>¡Email de confirmación reenviado! Revise su bandeja de entrada.</value></data>
+
+  <!-- ═══ Login Social ═══ -->
+  <data name="Auth_SignInWith"><value>Iniciar sesión con</value></data>
+  <data name="Auth_SignUpWith"><value>Registrarse con</value></data>
+  <data name="Auth_OrWithEmail"><value>o con email</value></data>
+  <data name="Auth_ExternalLoginFailed"><value>Error al iniciar sesión externa. Inténtelo de nuevo.</value></data>
+  <data name="Auth_CompletingLogin"><value>Completando inicio de sesión...</value></data>
 </root>

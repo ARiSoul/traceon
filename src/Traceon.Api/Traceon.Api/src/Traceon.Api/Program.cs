@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OData.Edm;
 using Scalar.AspNetCore;
 using Serilog;
@@ -35,6 +36,11 @@ var app = builder.Build();
 await app.Services.ApplyMigrationsAsync();
 
 app.UseSerilogRequestLogging();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+});
 
 if (app.Environment.IsDevelopment())
 {

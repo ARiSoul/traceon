@@ -1,0 +1,60 @@
+@page "/auth/external-callback"
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Auth_Login"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-center align-items-center py-5">
+    <div class="text-center">
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                @_error
+            </div>
+            <a href="/auth/login" class="btn btn-primary">@L["Auth_BackToLogin"]</a>
+        }
+        else
+        {
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">@L["Common_Loading"]</span>
+            </div>
+            <p class="text-muted">@L["Auth_CompletingLogin"]</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Inject] private TokenStore TokenStore { get; set; } = default!;
+    [Inject] private TokenAuthStateProvider AuthState { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    [SupplyParameterFromQuery] public string? AccessToken { get; set; }
+    [SupplyParameterFromQuery] public string? RefreshToken { get; set; }
+    [SupplyParameterFromQuery] public string? ExpiresIn { get; set; }
+    [SupplyParameterFromQuery] public string? Email { get; set; }
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(Error))
+        {
+            _error = L["Auth_ExternalLoginFailed"];
+            return;
+        }
+
+        if (string.IsNullOrEmpty(AccessToken) || string.IsNullOrEmpty(RefreshToken) ||
+            string.IsNullOrEmpty(Email) || !int.TryParse(ExpiresIn, out var expiresIn))
+        {
+            _error = L["Auth_ExternalLoginFailed"];
+            return;
+        }
+
+        TokenStore.SetSession(AccessToken, expiresIn, Email);
+        await TokenStore.PersistRefreshTokenAsync(RefreshToken, Email);
+        AuthState.NotifyUserAuthentication(Email);
+
+        Nav.NavigateTo("/", forceLoad: true);
+    }
+}

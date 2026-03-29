@@ -118,6 +118,22 @@ public sealed class AuthService(HttpClient http, TokenStore tokenStore, TokenAut
         return (false, errors);
     }
 
+    public async Task<IReadOnlyList<string>> GetExternalProvidersAsync()
+    {
+        try
+        {
+            var providers = await http.GetFromJsonAsync<List<string>>("/api/identity/external-providers");
+            return providers ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    public string GetExternalLoginUrl(string provider) =>
+        $"{http.BaseAddress}api/identity/external-login?provider={Uri.EscapeDataString(provider)}";
+
     private static Task<IReadOnlyList<string>> ExtractErrorsAsync(HttpResponseMessage response)
         => ApiErrorParser.ExtractErrorsAsync(response);
 }
