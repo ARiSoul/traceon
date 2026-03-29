@@ -515,4 +515,21 @@
   <data name="Audit_TokenRefreshed"><value>Token Refreshed</value></data>
   <data name="Audit_DataExported"><value>Data Exported</value></data>
   <data name="Audit_DataImported"><value>Data Imported</value></data>
+
+  <!-- ═══ Data Export/Import ═══ -->
+  <data name="Settings_Data"><value>Data</value></data>
+  <data name="Settings_ExportData"><value>Export Your Data</value></data>
+  <data name="Settings_ExportHint"><value>Download all your data (actions, entries, fields, tags) as a JSON file. Useful for backups or transferring to another account.</value></data>
+  <data name="Settings_DownloadExport"><value>Download Export</value></data>
+  <data name="Settings_ExportFailed"><value>Failed to export data.</value></data>
+  <data name="Settings_ImportData"><value>Import Data</value></data>
+  <data name="Settings_ImportHint"><value>Upload a previously exported Traceon JSON file to restore your data.</value></data>
+  <data name="Settings_ImportWarning"><value>Importing will create new items, not overwrite existing ones. Duplicate data may result if you import the same file twice.</value></data>
+  <data name="Settings_StartImport"><value>Start Import</value></data>
+  <data name="Settings_ImportSuccess"><value>Import completed successfully!</value></data>
+  <data name="Settings_ImportFailed"><value>Failed to import data. Check file format.</value></data>
+  <data name="Settings_Imported"><value>Imported</value></data>
+  <data name="Settings_Skipped"><value>Skipped</value></data>
+  <data name="Settings_SkippedRenamed"><value>Skipped / Renamed</value></data>
+  <data name="Settings_RenamedHint"><value>Actions renamed to avoid duplicates</value></data>
 </root>

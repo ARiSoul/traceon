@@ -518,4 +518,21 @@
   <data name="Audit_TokenRefreshed"><value>Token Atualizado</value></data>
   <data name="Audit_DataExported"><value>Dados Exportados</value></data>
   <data name="Audit_DataImported"><value>Dados Importados</value></data>
+
+  <!-- ═══ Exportar/Importar Dados ═══ -->
+  <data name="Settings_Data"><value>Dados</value></data>
+  <data name="Settings_ExportData"><value>Exportar os Seus Dados</value></data>
+  <data name="Settings_ExportHint"><value>Descarregue todos os seus dados (ações, registos, campos, etiquetas) como ficheiro JSON. Útil para cópias de segurança ou transferência para outra conta.</value></data>
+  <data name="Settings_DownloadExport"><value>Descarregar Exportação</value></data>
+  <data name="Settings_ExportFailed"><value>Falha ao exportar dados.</value></data>
+  <data name="Settings_ImportData"><value>Importar Dados</value></data>
+  <data name="Settings_ImportHint"><value>Carregue um ficheiro JSON Traceon exportado anteriormente para restaurar os seus dados.</value></data>
+  <data name="Settings_ImportWarning"><value>A importação criará novos itens, não substitui os existentes. Podem resultar dados duplicados se importar o mesmo ficheiro duas vezes.</value></data>
+  <data name="Settings_StartImport"><value>Iniciar Importação</value></data>
+  <data name="Settings_ImportSuccess"><value>Importação concluída com sucesso!</value></data>
+  <data name="Settings_ImportFailed"><value>Falha ao importar dados. Verifique o formato do ficheiro.</value></data>
+  <data name="Settings_Imported"><value>Importados</value></data>
+  <data name="Settings_Skipped"><value>Ignorados</value></data>
+  <data name="Settings_SkippedRenamed"><value>Ignorados / Renomeados</value></data>
+  <data name="Settings_RenamedHint"><value>Ações renomeadas para evitar duplicados</value></data>
 </root>
