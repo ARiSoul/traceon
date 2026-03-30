@@ -12,7 +12,8 @@ internal static class DataPortabilityEndpoints
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
     };
 
     public static IEndpointRouteBuilder MapDataPortabilityEndpoints(this IEndpointRouteBuilder app)
@@ -67,10 +68,8 @@ internal static class DataPortabilityEndpoints
         try
         {
             await using var stream = file.OpenReadStream();
-            data = await JsonSerializer.DeserializeAsync<UserDataExport>(stream, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            }) ?? throw new JsonException("Failed to parse export file.");
+            data = await JsonSerializer.DeserializeAsync<UserDataExport>(stream, JsonOptions)
+                ?? throw new JsonException("Failed to parse export file.");
         }
         catch (JsonException)
         {
@@ -79,7 +78,21 @@ internal static class DataPortabilityEndpoints
 
         var result = await portability.ImportAsync(userId, data);
 
-        await audit.LogAsync(userId, user.Email!, AuditActions.DataImported, result);
+        await audit.LogAsync(userId, user.Email!, AuditActions.DataImported, new
+        {
+            result.TagsImported,
+            result.TagsSkipped,
+            result.FieldDefinitionsImported,
+            result.FieldDefinitionsSkipped,
+            result.ActionsImported,
+            result.ActionsRenamed,
+            result.EntriesImported,
+            InputTags = data.Tags.Count,
+            InputFieldDefs = data.FieldDefinitions.Count,
+            InputActions = data.TrackedActions.Count,
+            InputEntries = data.TrackedActions.Sum(a => a.Entries.Count),
+            InputActionFields = data.TrackedActions.Sum(a => a.Fields.Count)
+        });
 
         return TypedResults.Ok(result);
     }

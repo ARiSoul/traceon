@@ -8,3 +8,5 @@ public sealed record ForgotPasswordRequest(string Email);
 public sealed record ResetPasswordRequest(string Email, string ResetCode, string NewPassword);
 public sealed record ConfirmEmailRequest(string Email, string Token);
 public sealed record ResendConfirmationRequest(string Email);
+public sealed record LinkedLoginInfo(string Provider, string DisplayName);
+public sealed record LinkedLoginsResponse(IReadOnlyList<LinkedLoginInfo> Logins, bool HasPassword);

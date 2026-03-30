@@ -620,4 +620,14 @@
   <data name="Templates_Install"><value>Instalar</value></data>
   <data name="Templates_InstallSuccess"><value>{0} instalado — {1} acciones, {2} campos, {3} etiquetas creados.</value></data>
   <data name="Templates_InstallFailed"><value>Error al instalar plantilla. Inténtalo de nuevo.</value></data>
+
+  <!-- ═══ Cuentas Vinculadas ═══ -->
+  <data name="Settings_LinkedAccounts"><value>Cuentas Vinculadas</value></data>
+  <data name="Settings_LinkedAccountsHint"><value>Proveedores externos vinculados a tu cuenta para iniciar sesión.</value></data>
+  <data name="Settings_NoLinkedAccounts"><value>Ningún proveedor externo vinculado.</value></data>
+  <data name="Settings_RemoveLoginConfirm"><value>¿Estás seguro de que quieres desvincular {0}?</value></data>
+  <data name="Settings_RemoveLoginNoPassword"><value>Este es tu único método de inicio de sesión y no tienes contraseña. Define una contraseña antes de eliminar este proveedor.</value></data>
+  <data name="Settings_LoginRemoved"><value>{0} ha sido desvinculado de tu cuenta.</value></data>
+  <data name="Common_Remove"><value>Eliminar</value></data>
+  <data name="Audit_ExternalLoginRemoved"><value>Login Externo Eliminado</value></data>
 </root>

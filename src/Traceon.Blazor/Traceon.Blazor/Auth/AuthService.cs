@@ -118,6 +118,29 @@ public sealed class AuthService(HttpClient http, TokenStore tokenStore, TokenAut
         return (false, errors);
     }
 
+    public async Task<LinkedLoginsResponse?> GetLinkedLoginsAsync()
+    {
+        try
+        {
+            return await http.GetFromJsonAsync<LinkedLoginsResponse>("/api/identity/linked-logins");
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> RemoveLinkedLoginAsync(string provider)
+    {
+        var response = await http.DeleteAsync($"/api/identity/linked-logins/{Uri.EscapeDataString(provider)}");
+
+        if (response.IsSuccessStatusCode)
+            return (true, []);
+
+        var errors = await ExtractErrorsAsync(response);
+        return (false, errors);
+    }
+
     public async Task<IReadOnlyList<string>> GetExternalProvidersAsync()
     {
         try

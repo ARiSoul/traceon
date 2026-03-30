@@ -620,4 +620,14 @@
   <data name="Templates_Install"><value>Instalar</value></data>
   <data name="Templates_InstallSuccess"><value>{0} instalado — {1} ações, {2} campos, {3} etiquetas criados.</value></data>
   <data name="Templates_InstallFailed"><value>Falha ao instalar modelo. Tente novamente.</value></data>
+
+  <!-- ═══ Contas Ligadas ═══ -->
+  <data name="Settings_LinkedAccounts"><value>Contas Ligadas</value></data>
+  <data name="Settings_LinkedAccountsHint"><value>Fornecedores externos ligados à sua conta para início de sessão.</value></data>
+  <data name="Settings_NoLinkedAccounts"><value>Nenhum fornecedor externo ligado.</value></data>
+  <data name="Settings_RemoveLoginConfirm"><value>Tem certeza que deseja desligar {0}?</value></data>
+  <data name="Settings_RemoveLoginNoPassword"><value>Este é o seu único método de login e não tem palavra-passe definida. Defina uma palavra-passe antes de remover este fornecedor.</value></data>
+  <data name="Settings_LoginRemoved"><value>{0} foi desligado da sua conta.</value></data>
+  <data name="Common_Remove"><value>Remover</value></data>
+  <data name="Audit_ExternalLoginRemoved"><value>Login Externo Removido</value></data>
 </root>

@@ -184,6 +184,84 @@
         </div>
     </div>
 
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-link-45deg me-2"></i>@L["Settings_LinkedAccounts"]</h5>
+            <p class="text-muted mb-3">@L["Settings_LinkedAccountsHint"]</p>
+
+            @if (_linkedLogins is null)
+            {
+                <div class="spinner-border spinner-border-sm text-primary"></div>
+            }
+            else
+            {
+                @if (_linkedLogins.Logins.Count > 0)
+                {
+                    <ul class="list-group mb-3">
+                        @foreach (var login in _linkedLogins.Logins)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi @ProviderIcon(login.Provider) fs-5" style="color: @ProviderColor(login.Provider);"></i>
+                                    <span class="fw-semibold">@login.DisplayName</span>
+                                </div>
+                                @if (_removingProvider == login.Provider)
+                                {
+                                    <span class="spinner-border spinner-border-sm text-danger"></span>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            disabled="@(_removingProvider is not null)"
+                                            @onclick="() => ConfirmRemoveLogin(login.Provider)">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted small mb-3">@L["Settings_NoLinkedAccounts"]</p>
+                }
+
+                @if (_showRemoveConfirmation is not null)
+                {
+                    <div class="alert @(_linkedLogins.Logins.Count <= 1 && !_linkedLogins.HasPassword ? "alert-danger" : "alert-warning")">
+                        @if (_linkedLogins.Logins.Count <= 1 && !_linkedLogins.HasPassword)
+                        {
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            <strong>@L["Settings_RemoveLoginNoPassword"]</strong>
+                        }
+                        else
+                        {
+                            <i class="bi bi-question-circle me-1"></i>
+                            @string.Format(L["Settings_RemoveLoginConfirm"], _showRemoveConfirmation)
+                        }
+                        <div class="mt-2 d-flex gap-2">
+                            @if (_linkedLogins.Logins.Count <= 1 && !_linkedLogins.HasPassword)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => _showRemoveConfirmation = null">
+                                    @L["Common_Cancel"]
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-danger" @onclick="() => RemoveLoginAsync(_showRemoveConfirmation!)">
+                                    <i class="bi bi-trash me-1"></i>@L["Common_Remove"]
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => _showRemoveConfirmation = null">
+                                    @L["Common_Cancel"]
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
     <div class="card border-danger">
         <div class="card-body">
             <h5 class="card-title text-danger mb-3">
@@ -467,6 +545,11 @@
     // Account
     private string? _email;
 
+    // Linked logins
+    private LinkedLoginsResponse? _linkedLogins;
+    private string? _removingProvider;
+    private string? _showRemoveConfirmation;
+
     // Change password
     private string _currentPassword = string.Empty;
     private string _newPassword = string.Empty;
@@ -481,6 +564,13 @@
     protected override async Task OnInitializedAsync()
     {
         _email = await TokenStore.GetPersistedEmailAsync();
+        _ = LoadLinkedLoginsAsync();
+    }
+
+    private async Task LoadLinkedLoginsAsync()
+    {
+        _linkedLogins = await Auth.GetLinkedLoginsAsync();
+        StateHasChanged();
     }
 
     private async Task SetThemeAsync(string theme)
@@ -560,6 +650,49 @@
         }
     }
 
+    // ── Linked Logins ──
+
+    private void ConfirmRemoveLogin(string provider)
+    {
+        _showRemoveConfirmation = provider;
+        _errors = [];
+    }
+
+    private async Task RemoveLoginAsync(string provider)
+    {
+        _showRemoveConfirmation = null;
+        _removingProvider = provider;
+        _errors = [];
+
+        var (success, errors) = await Auth.RemoveLinkedLoginAsync(provider);
+
+        if (success)
+        {
+            _successMessage = string.Format(L["Settings_LoginRemoved"], provider);
+            await LoadLinkedLoginsAsync();
+        }
+        else
+        {
+            _errors = errors;
+        }
+
+        _removingProvider = null;
+    }
+
+    private static string ProviderIcon(string provider) => provider switch
+    {
+        "Google" => "bi-google",
+        "Microsoft" => "bi-microsoft",
+        _ => "bi-globe"
+    };
+
+    private static string ProviderColor(string provider) => provider switch
+    {
+        "Google" => "#4285F4",
+        "Microsoft" => "#00a4ef",
+        _ => "#6c757d"
+    };
+
     // ── Activity / Audit ──
 
     private IReadOnlyList<AuditLogResponse> _auditLogs = [];
@@ -576,7 +709,7 @@
     [
         "Register", "Login", "LoginExternal", "EmailConfirmed",
         "PasswordChanged", "PasswordResetRequested", "PasswordReset",
-        "PreferencesUpdated", "ExternalLoginAdded", "AccountDeleted",
+        "PreferencesUpdated", "ExternalLoginAdded", "ExternalLoginRemoved", "AccountDeleted",
         "FeedbackSent"
     ];
 
@@ -627,6 +760,7 @@
         "PasswordReset" => L["Audit_PasswordReset"],
         "PreferencesUpdated" => L["Audit_PreferencesUpdated"],
         "ExternalLoginAdded" => L["Audit_ExternalLoginAdded"],
+        "ExternalLoginRemoved" => L["Audit_ExternalLoginRemoved"],
         "AccountDeleted" => L["Audit_AccountDeleted"],
         "TokenRefreshed" => L["Audit_TokenRefreshed"],
         "DataExported" => L["Audit_DataExported"],
@@ -644,6 +778,7 @@
         "PasswordResetRequested" => "bi-envelope",
         "PreferencesUpdated" => "bi-palette",
         "ExternalLoginAdded" => "bi-link-45deg",
+        "ExternalLoginRemoved" => "bi-link",
         "AccountDeleted" => "bi-trash",
         "TokenRefreshed" => "bi-arrow-repeat",
         "FeedbackSent" => "bi-chat-dots",

@@ -12,6 +12,7 @@ public static class AuditActions
     public const string PasswordReset = "PasswordReset";
     public const string PreferencesUpdated = "PreferencesUpdated";
     public const string ExternalLoginAdded = "ExternalLoginAdded";
+    public const string ExternalLoginRemoved = "ExternalLoginRemoved";
     public const string AccountDeleted = "AccountDeleted";
     public const string TokenRefreshed = "TokenRefreshed";
     public const string DataExported = "DataExported";

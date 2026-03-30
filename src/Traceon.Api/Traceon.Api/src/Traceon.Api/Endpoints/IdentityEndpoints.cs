@@ -30,6 +30,8 @@ internal static class IdentityEndpoints
         group.MapGet("/external-login", ExternalLoginAsync).AllowAnonymous();
         group.MapGet("/external-callback", ExternalCallbackAsync).AllowAnonymous();
         group.MapGet("/external-providers", GetExternalProvidersAsync).AllowAnonymous();
+        group.MapGet("/linked-logins", GetLinkedLoginsAsync);
+        group.MapDelete("/linked-logins/{provider}", RemoveLinkedLoginAsync);
         group.MapGet("/audit-logs", GetAuditLogsAsync);
 
         return group;
@@ -222,6 +224,8 @@ internal static class IdentityEndpoints
     private sealed record UpdatePreferencesRequest(string? Theme, string? Language);
     private sealed record AuditLogResponse(Guid Id, string Action, string? Details, string? IpAddress, string? UserAgent, DateTime OccurredAtUtc);
     private sealed record AuditLogPageResponse(IReadOnlyList<AuditLogResponse> Items, int TotalCount);
+    private sealed record LinkedLoginInfo(string Provider, string DisplayName);
+    private sealed record LinkedLoginsResponse(IReadOnlyList<LinkedLoginInfo> Logins, bool HasPassword);
 
     private static async Task<IResult> GetPreferencesAsync(
         UserManager<ApplicationUser> userManager,
@@ -433,5 +437,65 @@ internal static class IdentityEndpoints
             totalCount);
 
         return TypedResults.Ok(response);
+    }
+
+    private static async Task<IResult> GetLinkedLoginsAsync(
+        IHttpContextAccessor httpContextAccessor,
+        UserManager<ApplicationUser> userManager)
+    {
+        var userId = httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return TypedResults.Unauthorized();
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null) return TypedResults.Unauthorized();
+
+        var logins = await userManager.GetLoginsAsync(user);
+        var hasPassword = await userManager.HasPasswordAsync(user);
+
+        var response = new LinkedLoginsResponse(
+            logins.Select(l => new LinkedLoginInfo(l.LoginProvider, l.ProviderDisplayName ?? l.LoginProvider)).ToList(),
+            hasPassword);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<IResult> RemoveLinkedLoginAsync(
+        string provider,
+        IHttpContextAccessor httpContextAccessor,
+        UserManager<ApplicationUser> userManager,
+        AuditService audit)
+    {
+        var userId = httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return TypedResults.Unauthorized();
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null) return TypedResults.Unauthorized();
+
+        var logins = await userManager.GetLoginsAsync(user);
+        var hasPassword = await userManager.HasPasswordAsync(user);
+
+        // Prevent removing the last login method
+        if (logins.Count <= 1 && !hasPassword)
+            return TypedResults.BadRequest("Cannot remove the only login method. Please set a password first.");
+
+        var login = logins.FirstOrDefault(l =>
+            l.LoginProvider.Equals(provider, StringComparison.OrdinalIgnoreCase));
+
+        if (login is null)
+            return TypedResults.NotFound();
+
+        var result = await userManager.RemoveLoginAsync(user, login.LoginProvider, login.ProviderKey);
+
+        if (!result.Succeeded)
+        {
+            return TypedResults.ValidationProblem(
+                result.Errors.ToDictionary(
+                    e => e.Code,
+                    e => new[] { e.Description }));
+        }
+
+        await audit.LogAsync(user.Id, user.Email!, AuditActions.ExternalLoginRemoved, new { provider });
+
+        return TypedResults.NoContent();
     }
 }

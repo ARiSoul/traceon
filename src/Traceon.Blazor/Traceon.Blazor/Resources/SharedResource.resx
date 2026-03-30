@@ -617,4 +617,14 @@
   <data name="Templates_Install"><value>Install</value></data>
   <data name="Templates_InstallSuccess"><value>{0} installed — {1} actions, {2} fields, {3} tags created.</value></data>
   <data name="Templates_InstallFailed"><value>Failed to install template. Please try again.</value></data>
+
+  <!-- ═══ Linked Logins ═══ -->
+  <data name="Settings_LinkedAccounts"><value>Linked Accounts</value></data>
+  <data name="Settings_LinkedAccountsHint"><value>External providers linked to your account for sign-in.</value></data>
+  <data name="Settings_NoLinkedAccounts"><value>No external providers linked.</value></data>
+  <data name="Settings_RemoveLoginConfirm"><value>Are you sure you want to unlink {0}?</value></data>
+  <data name="Settings_RemoveLoginNoPassword"><value>This is your only login method and you have no password set. Please set a password before removing this provider.</value></data>
+  <data name="Settings_LoginRemoved"><value>{0} has been unlinked from your account.</value></data>
+  <data name="Common_Remove"><value>Remove</value></data>
+  <data name="Audit_ExternalLoginRemoved"><value>External Login Removed</value></data>
 </root>
