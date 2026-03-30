@@ -26,6 +26,9 @@ public partial class ActionEntryCreateOrEditViewModel
     public ActionEntryCreateOrEditViewModel(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
+        TrackedAction = new();
+        ActionEntry = new();
+        EntryId = Guid.Empty.ToString();
 
         this.PropertyChanged += (s, e) =>
         {

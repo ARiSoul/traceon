@@ -1,0 +1,78 @@
+@page "/tracked-actions/{TrackedActionId:guid}/fields"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Fields_ManageTitle"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-sliders me-2"></i>
+            @L["Fields_ManageTitle"]
+        </h3>
+        <p class="text-muted mb-0">
+            @L["Fields_ManageSubtitle"]
+            <strong>@(_actionName ?? "...")</strong>
+        </p>
+    </div>
+    <a href="/tracked-actions" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>@L["Fields_BackToActions"]
+    </a>
+</div>
+
+<ItemSelector TItem="FieldItem"
+              LoadAllItems="LoadAllFieldsAsync"
+              LoadSelectedItems="LoadSelectedFieldsAsync"
+              OnAdd="AddFieldAsync"
+              OnRemove="RemoveFieldAsync"
+              KeySelector="f => f.Id"
+              EmptyAvailableText="@L["Fields_AllAssigned"]"
+              EmptySelectedText="@L["Fields_NoneAssigned"]">
+    <ItemTemplate>
+        <span class="text-truncate">@context.Name</span>
+        <span class="badge bg-secondary ms-auto">@context.TypeLabel</span>
+    </ItemTemplate>
+</ItemSelector>
+
+@code {
+    [Parameter] public Guid TrackedActionId { get; set; }
+    [Inject] private TrackedActionService ActionService { get; set; } = default!;
+    [Inject] private ActionFieldService FieldService { get; set; } = default!;
+    [Inject] private FieldDefinitionService DefinitionService { get; set; } = default!;
+
+    private string? _actionName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var action = await ActionService.GetByIdAsync(TrackedActionId);
+        _actionName = action?.Name;
+    }
+
+    private async Task<List<FieldItem>> LoadAllFieldsAsync()
+    {
+        var definitions = await DefinitionService.GetAllAsync();
+        return definitions.Select(d => new FieldItem(d.Id, d.DefaultName, d.Type.ToString(), null)).ToList();
+    }
+
+    private async Task<List<FieldItem>> LoadSelectedFieldsAsync()
+    {
+        var fields = await FieldService.GetByTrackedActionAsync(TrackedActionId);
+        return fields.Select(f => new FieldItem(f.FieldDefinitionId, f.Name, f.FieldType.ToString(), f.Id)).ToList();
+    }
+
+    private async Task<(bool Success, IReadOnlyList<string> Errors)> AddFieldAsync(FieldItem item)
+    {
+        var request = new CreateActionFieldRequest(item.Id, item.Name);
+        return await FieldService.CreateAsync(TrackedActionId, request);
+    }
+
+    private async Task<(bool Success, IReadOnlyList<string> Errors)> RemoveFieldAsync(FieldItem item)
+    {
+        if (item.ActionFieldId is null)
+            return (false, [L["Fields_AssignmentNotFound"]]);
+
+        return await FieldService.DeleteAsync(TrackedActionId, item.ActionFieldId.Value);
+    }
+
+    public sealed record FieldItem(Guid Id, string Name, string TypeLabel, Guid? ActionFieldId);
+}

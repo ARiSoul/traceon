@@ -21,6 +21,7 @@ public partial class FieldDefinitionCreateOrEditViewModel
     {
         _unitOfWork = unitOfWork;
         InnerModel.LoadFieldTypes();
+        FieldDefinition = new();
 
         this.PropertyChanged += (s, e) =>
         {

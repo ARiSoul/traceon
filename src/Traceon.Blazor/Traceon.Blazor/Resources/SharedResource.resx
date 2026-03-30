@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+
+  <!-- ═══ Navigation ═══ -->
+  <data name="Nav_Home"><value>Home</value></data>
+  <data name="Nav_TrackedActions"><value>Tracked Actions</value></data>
+  <data name="Nav_Entries"><value>Entries</value></data>
+  <data name="Nav_Dashboard"><value>Dashboard</value></data>
+  <data name="Nav_Tags"><value>Tags</value></data>
+  <data name="Nav_CustomFields"><value>Custom Fields</value></data>
+  <data name="Nav_Settings"><value>Settings</value></data>
+  <data name="Nav_Tracking"><value>TRACKING</value></data>
+  <data name="Nav_Configuration"><value>CONFIGURATION</value></data>
+  <data name="Nav_Menu"><value>Navigation menu</value></data>
+
+  <!-- ═══ Layout ═══ -->
+  <data name="Layout_Logout"><value>Logout</value></data>
+  <data name="Layout_Login"><value>Login</value></data>
+  <data name="Layout_Theme"><value>Theme</value></data>
+
+  <!-- ═══ Common ═══ -->
+  <data name="Common_Save"><value>Save</value></data>
+  <data name="Common_Cancel"><value>Cancel</value></data>
+  <data name="Common_Delete"><value>Delete</value></data>
+  <data name="Common_Edit"><value>Edit</value></data>
+  <data name="Common_Create"><value>Create</value></data>
+  <data name="Common_Back"><value>Back</value></data>
+  <data name="Common_Loading"><value>Loading...</value></data>
+  <data name="Common_Yes"><value>Yes</value></data>
+  <data name="Common_No"><value>No</value></data>
+  <data name="Common_Name"><value>Name</value></data>
+  <data name="Common_Description"><value>Description</value></data>
+  <data name="Common_Type"><value>Type</value></data>
+  <data name="Common_Created"><value>Created</value></data>
+  <data name="Common_Actions"><value>Actions</value></data>
+  <data name="Common_Required"><value>Required</value></data>
+  <data name="Common_Optional"><value>optional</value></data>
+  <data name="Common_SaveChanges"><value>Save Changes</value></data>
+  <data name="Common_BackToList"><value>Back to List</value></data>
+  <data name="Common_Track"><value>Track</value></data>
+  <data name="Common_Email"><value>Email</value></data>
+  <data name="Common_Password"><value>Password</value></data>
+  <data name="Common_Search"><value>Search</value></data>
+  <data name="Common_Filter"><value>Filter</value></data>
+  <data name="Common_AllTime"><value>All Time</value></data>
+  <data name="Common_Entries"><value>Entries</value></data>
+  <data name="Common_Fields"><value>Fields</value></data>
+  <data name="Common_Tags"><value>Tags</value></data>
+  <data name="Common_NoDataYet"><value>No data yet</value></data>
+  <data name="Common_MoveUp"><value>Move up</value></data>
+  <data name="Common_MoveDown"><value>Move down</value></data>
+
+  <!-- ═══ Home ═══ -->
+  <data name="Home_AppName"><value>Traceon</value></data>
+  <data name="Home_Subtitle"><value>Track, measure, and improve your daily actions</value></data>
+  <data name="Home_TrackedSuccess"><value>tracked successfully!</value></data>
+  <data name="Home_NoActionsYet"><value>No tracked actions yet</value></data>
+  <data name="Home_NoActionsHint"><value>Create your first tracked action to start logging entries.</value></data>
+  <data name="Home_CreateAction"><value>Create Tracked Action</value></data>
+  <data name="Home_QuickTracking"><value>Quick Tracking</value></data>
+  <data name="Home_Reorder"><value>Reorder</value></data>
+  <data name="Home_Done"><value>Done</value></data>
+  <data name="Home_Welcome"><value>Welcome to Traceon</value></data>
+  <data name="Home_WelcomeHint"><value>Track, measure, and improve your daily actions.</value></data>
+  <data name="Home_Register"><value>Register</value></data>
+
+  <!-- ═══ Auth ═══ -->
+  <data name="Auth_Login"><value>Login</value></data>
+  <data name="Auth_LoggingIn"><value>Logging in...</value></data>
+  <data name="Auth_CreateAccount"><value>Create an account</value></data>
+  <data name="Auth_ForgotPassword"><value>Forgot password?</value></data>
+  <data name="Auth_LoginFailed"><value>Login failed.</value></data>
+  <data name="Auth_Register"><value>Register</value></data>
+  <data name="Auth_Registering"><value>Registering...</value></data>
+  <data name="Auth_AlreadyHaveAccount"><value>Already have an account? Login</value></data>
+  <data name="Auth_RegisterSuccess"><value>Registration successful! Please check your email to confirm your account, then login.</value></data>
+  <data name="Auth_ForgotPasswordTitle"><value>Forgot Password</value></data>
+  <data name="Auth_ForgotPasswordHint"><value>Enter your email address and we'll send you a reset code.</value></data>
+  <data name="Auth_SendResetCode"><value>Send Reset Link</value></data>
+  <data name="Auth_Sending"><value>Sending...</value></data>
+  <data name="Auth_ResetCodeSent"><value>If an account with that email exists, a reset link has been sent.</value></data>
+  <data name="Auth_ResetLinkSent"><value>If an account with that email exists, a password reset link has been sent. Please check your inbox.</value></data>
+  <data name="Auth_ResetForEmail"><value>Resetting password for</value></data>
+  <data name="Auth_BackToLogin"><value>Back to Login</value></data>
+  <data name="Auth_ResetPassword"><value>Reset Password</value></data>
+  <data name="Auth_ResetCode"><value>Reset Code</value></data>
+  <data name="Auth_NewPassword"><value>New Password</value></data>
+  <data name="Auth_Resetting"><value>Resetting...</value></data>
+  <data name="Auth_ResetSuccess"><value>Password reset successfully! You can now login with your new password.</value></data>
+  <data name="Auth_ConfirmPassword"><value>Confirm Password</value></data>
+
+  <!-- ═══ QuickTrack ═══ -->
+  <data name="QuickTrack_When"><value>When?</value></data>
+  <data name="QuickTrack_Notes"><value>Notes</value></data>
+  <data name="QuickTrack_NotesPlaceholder"><value>Any notes about this entry...</value></data>
+
+  <!-- ═══ Tracked Actions ═══ -->
+  <data name="TrackedActions_Title"><value>Tracked Actions</value></data>
+  <data name="TrackedActions_Subtitle"><value>Manage your tracked actions and monitor progress</value></data>
+  <data name="TrackedActions_New"><value>New Action</value></data>
+  <data name="TrackedActions_Empty"><value>No tracked actions yet. Create one to get started!</value></data>
+  <data name="TrackedActions_Analytics"><value>Analytics</value></data>
+  <data name="TrackedActions_ViewEntries"><value>View Entries</value></data>
+  <data name="TrackedActions_NewEntry"><value>New Entry</value></data>
+  <data name="TrackedActions_EditAction"><value>Edit Action</value></data>
+
+  <!-- ═══ Tracked Action Create ═══ -->
+  <data name="ActionCreate_Title"><value>Create Tracked Action</value></data>
+  <data name="ActionCreate_Subtitle"><value>Set up a new action with fields and tags</value></data>
+  <data name="ActionCreate_Next"><value>Next</value></data>
+  <data name="ActionCreate_Previous"><value>Back</value></data>
+  <data name="ActionCreate_CreateNow"><value>Create Action</value></data>
+
+  <!-- ═══ Tracked Action Edit ═══ -->
+  <data name="ActionEdit_Title"><value>Edit Tracked Action</value></data>
+  <data name="ActionEdit_Editing"><value>Editing</value></data>
+
+  <!-- ═══ Dashboard ═══ -->
+  <data name="Dashboard_Title"><value>Dashboard</value></data>
+  <data name="Dashboard_Subtitle"><value>Overview of your tracking activity</value></data>
+  <data name="Dashboard_TotalActions"><value>Total Actions</value></data>
+  <data name="Dashboard_TotalEntries"><value>Total Entries</value></data>
+  <data name="Dashboard_Today"><value>Today</value></data>
+  <data name="Dashboard_ThisWeek"><value>This Week</value></data>
+  <data name="Dashboard_ThisMonth"><value>This Month</value></data>
+  <data name="Dashboard_Streak"><value>Streak</value></data>
+  <data name="Dashboard_GlobalFrequency"><value>Global Entry Frequency</value></data>
+  <data name="Dashboard_Period"><value>Period</value></data>
+  <data name="Dashboard_LastNDays"><value>Last N Days</value></data>
+  <data name="Dashboard_LastNMonths"><value>Last N Months</value></data>
+  <data name="Dashboard_LastNYears"><value>Last N Years</value></data>
+  <data name="Dashboard_CustomRange"><value>Custom Range</value></data>
+  <data name="Dashboard_Days"><value>Days</value></data>
+  <data name="Dashboard_Months"><value>Months</value></data>
+  <data name="Dashboard_Years"><value>Years</value></data>
+  <data name="Dashboard_From"><value>From</value></data>
+  <data name="Dashboard_To"><value>To</value></data>
+  <data name="Dashboard_PerActionStats"><value>Per-Action Statistics</value></data>
+  <data name="Dashboard_NoActionsMatch"><value>No actions match the selected filter.</value></data>
+  <data name="Dashboard_WeeklyActivity"><value>Weekly Activity (last 3 months)</value></data>
+  <data name="Dashboard_FullAnalytics"><value>Full Analytics</value></data>
+  <data name="Dashboard_FieldAnalytics"><value>Field Analytics</value></data>
+  <data name="Dashboard_FieldTrends"><value>Field Trends</value></data>
+  <data name="Dashboard_FieldSummary"><value>Field Summary</value></data>
+  <data name="Dashboard_NoEntriesYet"><value>No entries yet for this action.</value></data>
+  <data name="Dashboard_AddEntry"><value>Add Entry</value></data>
+  <data name="Dashboard_TotalEntries_Label"><value>Total Entries</value></data>
+  <data name="Dashboard_LastEntry"><value>Last Entry</value></data>
+  <data name="Dashboard_AvgGap"><value>Avg. Gap</value></data>
+  <data name="Dashboard_DayStreak"><value>Day Streak</value></data>
+  <data name="Dashboard_Tag"><value>Tag</value></data>
+  <data name="Dashboard_All"><value>All</value></data>
+  <data name="Dashboard_AllActions"><value>All Actions</value></data>
+
+  <!-- ═══ Action Analytics ═══ -->
+  <data name="Analytics_Title"><value>Action Analytics</value></data>
+  <data name="Analytics_DeepDive"><value>Deep dive into</value></data>
+  <data name="Analytics_BackToDashboard"><value>Back to Dashboard</value></data>
+  <data name="Analytics_EntryFrequency"><value>Entry Frequency</value></data>
+  <data name="Analytics_ActionNotFound"><value>Action not found.</value></data>
+  <data name="Analytics_ValuesRecorded"><value>values recorded</value></data>
+
+  <!-- ═══ Entries ═══ -->
+  <data name="Entries_Title"><value>Entries</value></data>
+  <data name="Entries_Subtitle"><value>Browse and manage all your logged entries</value></data>
+  <data name="Entries_NewEntry"><value>New Entry</value></data>
+
+  <!-- ═══ Tags ═══ -->
+  <data name="Tags_Title"><value>Tags</value></data>
+  <data name="Tags_Subtitle"><value>Organize your tracked actions with color-coded tags</value></data>
+  <data name="Tags_New"><value>New Tag</value></data>
+  <data name="Tags_Empty"><value>No tags yet. Create one to get started!</value></data>
+  <data name="Tags_Color"><value>Color</value></data>
+
+  <!-- ═══ Custom Fields ═══ -->
+  <data name="Fields_Title"><value>Custom Fields</value></data>
+  <data name="Fields_Subtitle"><value>Define reusable field templates that can be assigned to tracked actions</value></data>
+  <data name="Fields_New"><value>New Custom Field</value></data>
+  <data name="Fields_Empty"><value>No field definitions yet. Create one to get started!</value></data>
+  <data name="Fields_Unit"><value>Unit</value></data>
+  <data name="Fields_UnitHint"><value>The measurement unit for this field (defaults to UN).</value></data>
+  <data name="Fields_UnitPlaceholder"><value>e.g., €, kg, km, min</value></data>
+  <data name="Fields_MinValue"><value>Min Value</value></data>
+  <data name="Fields_MaxValue"><value>Max Value</value></data>
+  <data name="Fields_MinDate"><value>Min Date</value></data>
+  <data name="Fields_MaxDate"><value>Max Date</value></data>
+  <data name="Fields_DefaultValue"><value>Default Value</value></data>
+  <data name="Fields_RequiredByDefault"><value>Required by default</value></data>
+  <data name="Fields_DropdownValues"><value>Dropdown Values</value></data>
+  <data name="Fields_DropdownHint"><value>Enter comma-separated values for the dropdown options.</value></data>
+  <data name="Fields_DropdownPlaceholder"><value>Comma-separated values, e.g.: Low, Medium, High</value></data>
+  <data name="Fields_CheckedByDefault"><value>Checked by default</value></data>
+  <data name="Fields_CreateField"><value>Create Field</value></data>
+  <data name="Fields_SelectDefault"><value>— Select a default —</value></data>
+  <data name="Fields_DefineDropdownFirst"><value>Define dropdown values above first.</value></data>
+
+  <!-- ═══ ActionField Editor ═══ -->
+  <data name="FieldEditor_AnalyticsConfig"><value>Analytics Configuration</value></data>
+  <data name="FieldEditor_SummaryMetrics"><value>Summary Metrics</value></data>
+  <data name="FieldEditor_TrendAggregation"><value>Trend Aggregation</value></data>
+  <data name="FieldEditor_AllPoints"><value>All Points</value></data>
+  <data name="FieldEditor_DailyAverage"><value>Daily Average</value></data>
+  <data name="FieldEditor_DailyMin"><value>Daily Min</value></data>
+  <data name="FieldEditor_DailyMax"><value>Daily Max</value></data>
+  <data name="FieldEditor_DailySum"><value>Daily Sum</value></data>
+  <data name="FieldEditor_ChartType"><value>Chart Type</value></data>
+  <data name="FieldEditor_Line"><value>Line</value></data>
+  <data name="FieldEditor_Bar"><value>Bar</value></data>
+  <data name="FieldEditor_Area"><value>Area</value></data>
+  <data name="FieldEditor_TargetValue"><value>Target Value</value></data>
+
+  <!-- ═══ Settings ═══ -->
+  <data name="Settings_Title"><value>Settings</value></data>
+  <data name="Settings_Subtitle"><value>Manage your account and preferences</value></data>
+  <data name="Settings_Preferences"><value>Preferences</value></data>
+  <data name="Settings_Security"><value>Security</value></data>
+  <data name="Settings_Account"><value>Account</value></data>
+  <data name="Settings_Appearance"><value>Appearance</value></data>
+  <data name="Settings_Theme"><value>Theme</value></data>
+  <data name="Settings_ThemeSystem"><value>System</value></data>
+  <data name="Settings_ThemeLight"><value>Light</value></data>
+  <data name="Settings_ThemeDark"><value>Dark</value></data>
+  <data name="Settings_ThemeSystemHint"><value>Follows your operating system preference.</value></data>
+  <data name="Settings_ThemeLightHint"><value>Always use light mode.</value></data>
+  <data name="Settings_ThemeDarkHint"><value>Always use dark mode.</value></data>
+  <data name="Settings_Language"><value>Language</value></data>
+  <data name="Settings_DisplayLanguage"><value>Display Language</value></data>
+  <data name="Settings_LanguageHint"><value>Select your preferred language. The app will reload to apply.</value></data>
+  <data name="Settings_ChangePassword"><value>Change Password</value></data>
+  <data name="Settings_CurrentPassword"><value>Current Password</value></data>
+  <data name="Settings_NewPassword"><value>New Password</value></data>
+  <data name="Settings_ConfirmNewPassword"><value>Confirm New Password</value></data>
+  <data name="Settings_PasswordChanged"><value>Password changed successfully.</value></data>
+  <data name="Settings_PasswordFillAll"><value>Please fill in all password fields.</value></data>
+  <data name="Settings_PasswordNoMatch"><value>New password and confirmation do not match.</value></data>
+  <data name="Settings_PasswordTooShort"><value>New password must be at least 6 characters.</value></data>
+  <data name="Settings_AccountInfo"><value>Account Information</value></data>
+  <data name="Settings_DangerZone"><value>Danger Zone</value></data>
+  <data name="Settings_DeleteAccountWarning"><value>Permanently delete your account and all associated data. This action cannot be undone.</value></data>
+  <data name="Settings_DeleteMyAccount"><value>Delete My Account</value></data>
+  <data name="Settings_DeleteConfirmation"><value>Are you sure? This will permanently delete your account and all your tracked actions, entries, field definitions, and tags.</value></data>
+  <data name="Settings_TypeDelete"><value>Type DELETE to confirm</value></data>
+  <data name="Settings_PermanentlyDelete"><value>Permanently Delete</value></data>
+
+  <!-- ═══ DataGrid ═══ -->
+  <data name="DataGrid_NoResults"><value>No results found.</value></data>
+  <data name="DataGrid_Showing"><value>Showing</value></data>
+  <data name="DataGrid_Of"><value>of</value></data>
+
+  <!-- ═══ Metrics ═══ -->
+  <data name="Metric_Min"><value>Min</value></data>
+  <data name="Metric_Max"><value>Max</value></data>
+  <data name="Metric_Avg"><value>Avg</value></data>
+  <data name="Metric_Sum"><value>Sum</value></data>
+  <data name="Metric_Count"><value>Count</value></data>
+  <data name="Metric_Latest"><value>Latest</value></data>
+  <data name="Metric_Target"><value>Target</value></data>
+
+  <!-- ═══ Entry Edit ═══ -->
+  <data name="Entry_NewTitle"><value>New Entry</value></data>
+  <data name="Entry_EditTitle"><value>Edit Entry</value></data>
+  <data name="Entry_NewSubtitle"><value>Record a new entry for</value></data>
+  <data name="Entry_EditSubtitle"><value>Update this entry for</value></data>
+  <data name="Entry_SaveEntry"><value>Save Entry</value></data>
+  <data name="Entry_Select"><value>— Select —</value></data>
+
+  <!-- ═══ Action Edit Tabs ═══ -->
+  <data name="ActionEdit_BasicInfo"><value>Basic Info</value></data>
+  <data name="ActionEdit_FieldsHint"><value>Manage the data fields captured for each entry. Click a field to edit its settings.</value></data>
+  <data name="ActionEdit_AddFields"><value>Add Fields</value></data>
+  <data name="ActionEdit_NoFields"><value>No fields assigned yet.</value></data>
+  <data name="ActionEdit_SelectFields"><value>Select Fields</value></data>
+  <data name="ActionEdit_TagsHint"><value>Manage which tags are assigned to this action.</value></data>
+  <data name="ActionEdit_AddTags"><value>Add Tags</value></data>
+  <data name="ActionEdit_NoTags"><value>No tags assigned yet.</value></data>
+  <data name="ActionEdit_SelectTags"><value>Select Tags</value></data>
+  <data name="ActionEdit_SavingOrder"><value>Saving order...</value></data>
+  <data name="ActionEdit_NotFound"><value>Tracked action not found.</value></data>
+
+  <!-- ═══ ModalSelector ═══ -->
+  <data name="ModalSelector_SelectAll"><value>Select All</value></data>
+  <data name="ModalSelector_DeselectAll"><value>Deselect All</value></data>
+  <data name="ModalSelector_Selected"><value>selected</value></data>
+  <data name="ModalSelector_Confirm"><value>Confirm Selection</value></data>
+  <data name="ModalSelector_CreateNew"><value>Create New</value></data>
+
+  <!-- ═══ EntryDataGrid ═══ -->
+  <data name="EntryGrid_Action"><value>Action</value></data>
+  <data name="EntryGrid_Date"><value>Date</value></data>
+  <data name="EntryGrid_Notes"><value>Notes</value></data>
+  <data name="EntryGrid_AllActions"><value>All Actions</value></data>
+  <data name="EntryGrid_Empty"><value>No entries yet. Start tracking!</value></data>
+
+  <!-- ═══ NotFound ═══ -->
+  <data name="NotFound_Title"><value>Page Not Found</value></data>
+  <data name="NotFound_Message"><value>Sorry, there's nothing at this address.</value></data>
+
+  <!-- ═══ Edit Page (extra) ═══ -->
+  <data name="Edit_UpdateFailed"><value>Failed to update tracked action.</value></data>
+  <data name="Edit_BasicInfo"><value>Basic Info</value></data>
+  <data name="Edit_NotFound"><value>Tracked action not found.</value></data>
+  <data name="Edit_FieldsHint"><value>Manage the data fields captured for each entry. Click a field to edit its settings.</value></data>
+  <data name="Edit_AddFields"><value>Add Fields</value></data>
+  <data name="Edit_NoFieldsYet"><value>No fields assigned yet.</value></data>
+  <data name="Edit_SelectFields"><value>Select Fields</value></data>
+  <data name="Edit_SavingOrder"><value>Saving order...</value></data>
+  <data name="Edit_TagsHint"><value>Manage which tags are assigned to this action.</value></data>
+  <data name="Edit_AddTags"><value>Add Tags</value></data>
+  <data name="Edit_NoTagsYet"><value>No tags assigned yet.</value></data>
+  <data name="Edit_SelectTags"><value>Select Tags</value></data>
+
+  <!-- ═══ Modals ═══ -->
+  <data name="Modal_SelectTags"><value>Select Tags</value></data>
+  <data name="Modal_SelectFields"><value>Select Field Definitions</value></data>
+  <data name="Modal_SearchTags"><value>Search tags...</value></data>
+  <data name="Modal_SearchFields"><value>Search field definitions...</value></data>
+  <data name="Modal_NoTagsAvailable"><value>No tags available. Create one below.</value></data>
+  <data name="Modal_NoFieldsAvailable"><value>No field definitions available. Create one below.</value></data>
+
+  <!-- ═══ Tag Edit ═══ -->
+  <data name="TagEdit_Title"><value>Edit Tag</value></data>
+  <data name="TagEdit_Subtitle"><value>Update your tag details</value></data>
+  <data name="TagEdit_BackToTags"><value>Back to Tags</value></data>
+
+  <!-- ═══ Field Edit ═══ -->
+  <data name="FieldEdit_EditTitle"><value>Edit Custom Field</value></data>
+  <data name="FieldEdit_CreateTitle"><value>Create Custom Field</value></data>
+  <data name="FieldEdit_EditSubtitle"><value>Update your custom field details</value></data>
+  <data name="FieldEdit_CreateSubtitle"><value>Define a new reusable field template</value></data>
+  <data name="FieldEdit_BackToFields"><value>Back to Custom Fields</value></data>
+
+  <!-- ═══ Filter / Placeholders ═══ -->
+  <data name="Filter_ByNameOrDesc"><value>Filter by name or description...</value></data>
+  <data name="Filter_ByName"><value>Filter by name...</value></data>
+  <data name="Filter_ByNotes"><value>Filter by notes...</value></data>
+  <data name="Filter_DateField"><value>Date field</value></data>
+  <data name="Filter_Occurred"><value>Occurred</value></data>
+  <data name="Filter_TagName"><value>Tag name</value></data>
+  <data name="Filter_WhatTracking"><value>What are you tracking?</value></data>
+  <data name="Filter_NamePlaceholder"><value>e.g., Daily Exercise</value></data>
+  <data name="Filter_AnyNotes"><value>Any notes...</value></data>
+
+  <!-- ═══ Tags Edit ═══ -->
+  <data name="TagEdit_NotFound"><value>Tag not found.</value></data>
+  <data name="TagEdit_UpdateFailed"><value>Failed to update tag.</value></data>
+
+  <!-- ═══ FieldDefinition Edit ═══ -->
+  <data name="FieldEdit_NotFound"><value>Custom field not found.</value></data>
+  <data name="FieldEdit_UpdateFailed"><value>Failed to update custom field.</value></data>
+
+  <!-- ═══ Create Wizard ═══ -->
+  <data name="Wizard_BasicInfo"><value>Basic Info</value></data>
+  <data name="Wizard_Review"><value>Review</value></data>
+  <data name="Wizard_NameRequired"><value>Name is required.</value></data>
+  <data name="Wizard_ActionNotFound"><value>Action created but could not be found.</value></data>
+  <data name="Wizard_NoTagsHint"><value>No tags selected. Tags help you organize and filter your tracked actions.</value></data>
+  <data name="Wizard_NoFieldsHint"><value>No fields selected. Fields define what data you capture per entry.</value></data>
+  <data name="Wizard_NoDropdownValues"><value>No dropdown values defined.</value></data>
+  <data name="Wizard_NoTagsSelected"><value>No tags selected</value></data>
+  <data name="Wizard_NoFieldsSelected"><value>No fields selected</value></data>
+  <data name="Wizard_NoEntriesAdded"><value>No entries added</value></data>
+  <data name="Wizard_HasCustomFields"><value>This action has custom fields</value></data>
+  <data name="Wizard_CustomFieldsHint"><value>Since you've defined fields, entries need to be created after the action is set up — so all field values can be properly filled in.</value></data>
+  <data name="Wizard_RedirectToEntry"><value>Take me to add the first entry after creation</value></data>
+  <data name="Wizard_WillRedirect"><value>You'll be redirected to add the first entry after creation</value></data>
+  <data name="Wizard_EntriesAfterCreation"><value>Entries can be added after creation (custom fields need to be filled in)</value></data>
+  <data name="Wizard_NoEntriesHint"><value>No entries added yet. You can add entries now or do it later from the home page.</value></data>
+  <data name="Wizard_AddEntry"><value>Add Entry</value></data>
+
+  <!-- ═══ Dashboard (extra) ═══ -->
+  <data name="Dashboard_NoDataHint"><value>Create some tracked actions and log entries to see your dashboard.</value></data>
+  <data name="Dashboard_CreateAction"><value>Create Tracked Action</value></data>
+  <data name="Dashboard_Entries"><value>entries</value></data>
+  <data name="Dashboard_Day"><value>day</value></data>
+  <data name="Dashboard_DayPlural"><value>days</value></data>
+  <data name="Dashboard_EditAction"><value>Edit Action</value></data>
+  <data name="Dashboard_ViewEntries"><value>View Entries</value></data>
+  <data name="Dashboard_NewEntry"><value>New Entry</value></data>
+  <data name="Dashboard_Refresh"><value>Refresh</value></data>
+  <data name="Dashboard_AvgVsMax"><value>Avg vs configured max ({0})</value></data>
+  <data name="Dashboard_StatsSubtitle"><value>Statistics and insights about your tracked actions</value></data>
+  <data name="Dashboard_True"><value>True</value></data>
+  <data name="Dashboard_False"><value>False</value></data>
+  <data name="Dashboard_Responses"><value>responses</value></data>
+
+  <!-- ═══ DataGrid (extra) ═══ -->
+  <data name="DataGrid_Filter"><value>Filter</value></data>
+  <data name="DataGrid_Clear"><value>Clear</value></data>
+  <data name="DataGrid_FirstPage"><value>First page</value></data>
+  <data name="DataGrid_LastPage"><value>Last page</value></data>
+  <data name="DataGrid_PerPage"><value>/ page</value></data>
+
+  <!-- ═══ Analytics (extra) ═══ -->
+  <data name="Analytics_Distribution"><value>Distribution</value></data>
+  <data name="Dashboard_LoadFailed"><value>Failed to load dashboard: {0}</value></data>
+  <data name="Analytics_LoadFailed"><value>Failed to load: {0}</value></data>
+
+  <!-- ═══ Common (extra) ═══ -->
+  <data name="Common_ErrorOccurred"><value>An error occurred.</value></data>
+
+  <!-- ═══ Time Formatting ═══ -->
+  <data name="Time_JustNow"><value>just now</value></data>
+  <data name="Time_MinAgo"><value>{0}m ago</value></data>
+  <data name="Time_HAgo"><value>{0}h ago</value></data>
+  <data name="Time_Yesterday"><value>yesterday</value></data>
+  <data name="Time_DAgo"><value>{0}d ago</value></data>
+  <data name="Time_Now"><value>now</value></data>
+  <data name="Time_YDay"><value>yday</value></data>
+  <data name="Gap_Hours"><value>{0}h</value></data>
+  <data name="Gap_About1Day"><value>~1 day</value></data>
+  <data name="Gap_Days"><value>{0} days</value></data>
+  <data name="Gap_About1Week"><value>~1 week</value></data>
+  <data name="Gap_Weeks"><value>{0} weeks</value></data>
+  <data name="Gap_About1D"><value>~1d</value></data>
+  <data name="Gap_DShort"><value>{0}d</value></data>
+  <data name="Gap_WShort"><value>{0}w</value></data>
+
+  <!-- ═══ ItemSelector / ListActions ═══ -->
+  <data name="Common_Available"><value>Available</value></data>
+  <data name="Common_Assigned"><value>Assigned</value></data>
+  <data name="Common_NoItemsAvailable"><value>No items available</value></data>
+  <data name="Common_NoItemsAssigned"><value>No items assigned</value></data>
+  <data name="Common_MoreActions"><value>More actions</value></data>
+  <data name="Common_NoItemsFound"><value>No items found.</value></data>
+
+  <!-- ═══ Validation ═══ -->
+  <data name="Validation_NameRequired"><value>Name is required.</value></data>
+  <data name="Validation_MinGreaterThanMax"><value>Min value cannot be greater than max value.</value></data>
+  <data name="Validation_DefaultLessThanMin"><value>Default value cannot be less than min value ({0}).</value></data>
+  <data name="Validation_DefaultGreaterThanMax"><value>Default value cannot be greater than max value ({0}).</value></data>
+  <data name="Validation_MinDateAfterMax"><value>Min date cannot be later than max date.</value></data>
+  <data name="Validation_DefaultDateBeforeMin"><value>Default date cannot be earlier than min date ({0}).</value></data>
+  <data name="Validation_DefaultDateAfterMax"><value>Default date cannot be later than max date ({0}).</value></data>
+  <data name="Validation_FieldRequired"><value>'{0}' is required.</value></data>
+  <data name="Validation_FieldMinValue"><value>'{0}' must be at least {1}.</value></data>
+  <data name="Validation_FieldMaxValue"><value>'{0}' must be at most {1}.</value></data>
+  <data name="Validation_PasswordsNoMatch"><value>Passwords do not match.</value></data>
+
+  <!-- ═══ Auth Errors ═══ -->
+  <data name="Auth_RequestFailed"><value>Request failed.</value></data>
+  <data name="Auth_RegisterFailed"><value>Registration failed.</value></data>
+  <data name="Auth_ResetFailed"><value>Password reset failed.</value></data>
+
+  <!-- ═══ Field Form ═══ -->
+  <data name="Fields_CreatedNotRetrieved"><value>Field created but could not be retrieved.</value></data>
+  <data name="Fields_AssignmentNotFound"><value>Field assignment not found.</value></data>
+
+  <!-- ═══ TrackedAction Fields Page ═══ -->
+  <data name="Fields_ManageTitle"><value>Manage Fields</value></data>
+  <data name="Fields_ManageSubtitle"><value>Assign or remove fields for</value></data>
+  <data name="Fields_BackToActions"><value>Back to Actions</value></data>
+  <data name="Fields_AllAssigned"><value>All custom fields are assigned</value></data>
+  <data name="Fields_NoneAssigned"><value>No fields assigned yet</value></data>
+
+  <!-- ═══ TrackedAction Tags Page ═══ -->
+  <data name="Tags_ManageTitle"><value>Manage Tags</value></data>
+  <data name="Tags_ManageSubtitle"><value>Assign or remove tags for</value></data>
+  <data name="Tags_BackToActions"><value>Back to Actions</value></data>
+  <data name="Tags_AllAssigned"><value>All tags are assigned</value></data>
+  <data name="Tags_NoneAssigned"><value>No tags assigned yet</value></data>
+
+  <!-- ═══ Email Confirmation ═══ -->
+  <data name="Auth_ConfirmEmail"><value>Confirm Email</value></data>
+  <data name="Auth_EmailConfirmed"><value>Your email has been confirmed! You can now</value></data>
+  <data name="Auth_ConfirmEmailFailed"><value>Email confirmation failed. The link may have expired.</value></data>
+  <data name="Auth_ConfirmEmailInvalidLink"><value>Invalid confirmation link.</value></data>
+  <data name="Auth_EmailNotConfirmed"><value>Your email is not confirmed. Please check your inbox or</value></data>
+  <data name="Auth_ResendConfirmation"><value>resend the confirmation email</value></data>
+  <data name="Auth_ConfirmationResent"><value>Confirmation email resent! Please check your inbox.</value></data>
+
+  <!-- ═══ Social Login ═══ -->
+  <data name="Auth_SignInWith"><value>Sign in with</value></data>
+  <data name="Auth_SignUpWith"><value>Sign up with</value></data>
+  <data name="Auth_OrWithEmail"><value>or with email</value></data>
+  <data name="Auth_ExternalLoginFailed"><value>External login failed. Please try again.</value></data>
+  <data name="Auth_CompletingLogin"><value>Completing login...</value></data>
+
+  <!-- ═══ Activity / Audit ═══ -->
+  <data name="Settings_Activity"><value>Activity</value></data>
+  <data name="Settings_ActivityLog"><value>Activity Log</value></data>
+  <data name="Settings_ActionFilter"><value>Action</value></data>
+  <data name="Settings_SearchPlaceholder"><value>IP, browser, details...</value></data>
+  <data name="Settings_NoActivity"><value>No activity found.</value></data>
+  <data name="Settings_When"><value>When</value></data>
+  <data name="Settings_ActionCol"><value>Action</value></data>
+  <data name="Settings_Details"><value>Details</value></data>
+  <data name="Settings_IpAddress"><value>IP Address</value></data>
+  <data name="Audit_Register"><value>Registered</value></data>
+  <data name="Audit_Login"><value>Login</value></data>
+  <data name="Audit_LoginExternal"><value>External Login</value></data>
+  <data name="Audit_EmailConfirmed"><value>Email Confirmed</value></data>
+  <data name="Audit_PasswordChanged"><value>Password Changed</value></data>
+  <data name="Audit_PasswordResetRequested"><value>Reset Requested</value></data>
+  <data name="Audit_PasswordReset"><value>Password Reset</value></data>
+  <data name="Audit_PreferencesUpdated"><value>Preferences Updated</value></data>
+  <data name="Audit_ExternalLoginAdded"><value>External Login Added</value></data>
+  <data name="Audit_AccountDeleted"><value>Account Deleted</value></data>
+  <data name="Audit_TokenRefreshed"><value>Token Refreshed</value></data>
+  <data name="Audit_DataExported"><value>Data Exported</value></data>
+  <data name="Audit_DataImported"><value>Data Imported</value></data>
+
+  <!-- ═══ Data Export/Import ═══ -->
+  <data name="Settings_Data"><value>Data</value></data>
+  <data name="Settings_ExportData"><value>Export Your Data</value></data>
+  <data name="Settings_ExportHint"><value>Download all your data (actions, entries, fields, tags) as a JSON file. Useful for backups or transferring to another account.</value></data>
+  <data name="Settings_DownloadExport"><value>Download Export</value></data>
+  <data name="Settings_ExportFailed"><value>Failed to export data.</value></data>
+  <data name="Settings_ImportData"><value>Import Data</value></data>
+  <data name="Settings_ImportHint"><value>Upload a previously exported Traceon JSON file to restore your data.</value></data>
+  <data name="Settings_ImportWarning"><value>Importing will create new items, not overwrite existing ones. Duplicate data may result if you import the same file twice.</value></data>
+  <data name="Settings_StartImport"><value>Start Import</value></data>
+  <data name="Settings_ImportSuccess"><value>Import completed successfully!</value></data>
+  <data name="Settings_ImportFailed"><value>Failed to import data. Check file format.</value></data>
+  <data name="Settings_Imported"><value>Imported</value></data>
+  <data name="Settings_Skipped"><value>Skipped</value></data>
+  <data name="Settings_SkippedRenamed"><value>Skipped / Renamed</value></data>
+  <data name="Settings_RenamedHint"><value>Actions renamed to avoid duplicates</value></data>
+
+  <!-- ═══ Feedback ═══ -->
+  <data name="Nav_Feedback"><value>Feedback</value></data>
+  <data name="Feedback_Title"><value>Send Feedback</value></data>
+  <data name="Feedback_Subtitle"><value>Help us improve Traceon by reporting bugs or suggesting features.</value></data>
+  <data name="Feedback_Category"><value>Category</value></data>
+  <data name="Feedback_Bug"><value>Bug Report</value></data>
+  <data name="Feedback_Feature"><value>Feature Request</value></data>
+  <data name="Feedback_General"><value>General Feedback</value></data>
+  <data name="Feedback_Message"><value>Your message</value></data>
+  <data name="Feedback_Placeholder"><value>Describe the issue, suggestion, or feedback...</value></data>
+  <data name="Feedback_Send"><value>Send Feedback</value></data>
+  <data name="Feedback_Success"><value>Thank you! Your feedback has been sent.</value></data>
+  <data name="Feedback_SendAnother"><value>Send another</value></data>
+  <data name="Feedback_Failed"><value>Failed to send feedback. Please try again.</value></data>
+  <data name="Audit_FeedbackSent"><value>Feedback Sent</value></data>
+
+  <!-- ═══ Onboarding ═══ -->
+  <data name="Onboard_Welcome"><value>Welcome to Traceon!</value></data>
+  <data name="Onboard_Hint"><value>Get started quickly by choosing a template pack, or create your own actions from scratch.</value></data>
+  <data name="Onboard_ChooseTemplate"><value>Choose a starter template</value></data>
+  <data name="Onboard_Or"><value>or</value></data>
+  <data name="Onboard_StartFromScratch"><value>Start from scratch</value></data>
+  <data name="Onboard_Installing"><value>Setting up your actions...</value></data>
+  <data name="Onboard_Installed"><value>Template installed! Loading your actions...</value></data>
+
+  <!-- ═══ Template Packs ═══ -->
+  <data name="Template_Health_Name"><value>Health &amp; Vitals</value></data>
+  <data name="Template_Health_Desc"><value>Track blood pressure, weight, glucose and more.</value></data>
+  <data name="Template_Health_BloodPressure"><value>Blood Pressure</value></data>
+  <data name="Template_Health_BloodPressure_Desc"><value>Track systolic, diastolic and pulse.</value></data>
+  <data name="Template_Health_Weight"><value>Weight</value></data>
+  <data name="Template_Health_Weight_Desc"><value>Track your body weight over time.</value></data>
+  <data name="Template_Health_BloodGlucose"><value>Blood Glucose</value></data>
+  <data name="Template_Health_BloodGlucose_Desc"><value>Monitor blood sugar levels.</value></data>
+  <data name="Template_Fitness_Name"><value>Fitness &amp; Exercise</value></data>
+  <data name="Template_Fitness_Desc"><value>Log workouts, running, steps and more.</value></data>
+  <data name="Template_Fitness_Workout"><value>Workout</value></data>
+  <data name="Template_Fitness_Workout_Desc"><value>Track exercise type, duration and calories.</value></data>
+  <data name="Template_Fitness_Running"><value>Running</value></data>
+  <data name="Template_Fitness_Running_Desc"><value>Log distance and time.</value></data>
+  <data name="Template_Fitness_Steps"><value>Steps</value></data>
+  <data name="Template_Fitness_Steps_Desc"><value>Count your daily steps.</value></data>
+  <data name="Template_Habits_Name"><value>Daily Habits</value></data>
+  <data name="Template_Habits_Desc"><value>Build healthy routines: sleep, water, reading.</value></data>
+  <data name="Template_Habits_Sleep"><value>Sleep</value></data>
+  <data name="Template_Habits_Sleep_Desc"><value>Track hours and quality of sleep.</value></data>
+  <data name="Template_Habits_Water"><value>Water Intake</value></data>
+  <data name="Template_Habits_Water_Desc"><value>Count glasses of water per day.</value></data>
+  <data name="Template_Habits_Reading"><value>Reading</value></data>
+  <data name="Template_Habits_Reading_Desc"><value>Log pages or minutes read.</value></data>
+  <data name="Template_Habits_Meditation"><value>Meditation</value></data>
+  <data name="Template_Habits_Meditation_Desc"><value>Track meditation sessions.</value></data>
+  <data name="Template_Finance_Name"><value>Finance</value></data>
+  <data name="Template_Finance_Desc"><value>Track expenses and income.</value></data>
+  <data name="Template_Finance_Expense"><value>Expense</value></data>
+  <data name="Template_Finance_Expense_Desc"><value>Log spending with categories.</value></data>
+  <data name="Template_Finance_Income"><value>Income</value></data>
+  <data name="Template_Finance_Income_Desc"><value>Record income from various sources.</value></data>
+  <data name="Template_Field_Systolic"><value>Systolic</value></data>
+  <data name="Template_Field_Diastolic"><value>Diastolic</value></data>
+  <data name="Template_Field_Pulse"><value>Pulse</value></data>
+  <data name="Template_Field_Weight"><value>Weight</value></data>
+  <data name="Template_Field_Glucose"><value>Glucose</value></data>
+  <data name="Template_Field_Meal"><value>Meal</value></data>
+  <data name="Template_Field_WorkoutType"><value>Workout Type</value></data>
+  <data name="Template_Field_Duration"><value>Duration</value></data>
+  <data name="Template_Field_Calories"><value>Calories</value></data>
+  <data name="Template_Field_Distance"><value>Distance</value></data>
+  <data name="Template_Field_Steps"><value>Steps</value></data>
+  <data name="Template_Field_Hours"><value>Hours</value></data>
+  <data name="Template_Field_Quality"><value>Quality</value></data>
+  <data name="Template_Field_Glasses"><value>Glasses</value></data>
+  <data name="Template_Field_Pages"><value>Pages</value></data>
+  <data name="Template_Field_Amount"><value>Amount</value></data>
+  <data name="Template_Field_Category"><value>Category</value></data>
+  <data name="Template_Field_Source"><value>Source</value></data>
+
+  <!-- ═══ Templates Page ═══ -->
+  <data name="Nav_Templates"><value>Templates</value></data>
+  <data name="Templates_Title"><value>Action Templates</value></data>
+  <data name="Templates_Subtitle"><value>Browse and install pre-built action packs to get started quickly.</value></data>
+  <data name="Templates_Install"><value>Install</value></data>
+  <data name="Templates_InstallSuccess"><value>{0} installed — {1} actions, {2} fields, {3} tags created.</value></data>
+  <data name="Templates_InstallFailed"><value>Failed to install template. Please try again.</value></data>
+
+  <!-- ═══ Linked Logins ═══ -->
+  <data name="Settings_LinkedAccounts"><value>Linked Accounts</value></data>
+  <data name="Settings_LinkedAccountsHint"><value>External providers linked to your account for sign-in.</value></data>
+  <data name="Settings_NoLinkedAccounts"><value>No external providers linked.</value></data>
+  <data name="Settings_RemoveLoginConfirm"><value>Are you sure you want to unlink {0}?</value></data>
+  <data name="Settings_RemoveLoginNoPassword"><value>This is your only login method and you have no password set. Please set a password before removing this provider.</value></data>
+  <data name="Settings_LoginRemoved"><value>{0} has been unlinked from your account.</value></data>
+  <data name="Common_Remove"><value>Remove</value></data>
+  <data name="Audit_ExternalLoginRemoved"><value>External Login Removed</value></data>
+</root>

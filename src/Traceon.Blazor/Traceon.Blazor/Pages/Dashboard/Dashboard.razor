@@ -1,0 +1,798 @@
+@page "/dashboard"
+@page "/dashboard/action/{ActionIdParam:guid}"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Dashboard_Title"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-bar-chart-line me-2"></i>
+            @L["Dashboard_Title"]
+        </h3>
+        <p class="text-muted mb-0">@L["Dashboard_StatsSubtitle"]</p>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="ReloadAsync" disabled="@_loading">
+        <i class="bi bi-arrow-clockwise me-1"></i>@L["Dashboard_Refresh"]
+    </button>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">@L["Common_Loading"]</span>
+        </div>
+    </div>
+}
+else if (_data is not null)
+{
+    @if (_data.TotalActions == 0)
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-bar-chart-line display-4 text-muted mb-3 d-block"></i>
+                <h5>@L["Common_NoDataYet"]</h5>
+                <p class="text-muted">@L["Dashboard_NoDataHint"]</p>
+                <a href="/tracked-actions/create" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>@L["Dashboard_CreateAction"]
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Summary Cards -->
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 summary-card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-list-check fs-3 text-primary d-block mb-1"></i>
+                        <div class="fs-2 fw-bold">@_data.TotalActions</div>
+                        <small class="text-muted">@L["Dashboard_TotalActions"]</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 summary-card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-journal-text fs-3 text-success d-block mb-1"></i>
+                        <div class="fs-2 fw-bold">@_data.TotalEntries</div>
+                        <small class="text-muted">@L["Dashboard_TotalEntries"]</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 summary-card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-day fs-3 text-info d-block mb-1"></i>
+                        <div class="fs-2 fw-bold">@_data.EntriesToday</div>
+                        <small class="text-muted">@L["Dashboard_Today"]</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 summary-card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-week fs-3 text-warning d-block mb-1"></i>
+                        <div class="fs-2 fw-bold">@_data.EntriesThisWeek</div>
+                        <small class="text-muted">@L["Dashboard_ThisWeek"]</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 summary-card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-fire fs-3 @(_data.OverallStreak > 0 ? "text-danger" : "text-muted") d-block mb-1"></i>
+                        <div class="fs-2 fw-bold">@_data.OverallStreak</div>
+                        <small class="text-muted">@L["Dashboard_DayStreak"]</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Entry Frequency -->
+        @if (_data.GlobalDailyEntries.Count > 0)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-activity me-2"></i>@L["Dashboard_GlobalFrequency"]</h6>
+                </div>
+                <div class="card-body">
+                    <ApexChart TItem="DailyCount"
+                               Options="_globalFreqOptions"
+                               Height="250">
+                        <ApexPointSeries TItem="DailyCount"
+                                        Items="_data.GlobalDailyEntries"
+                                        SeriesType="SeriesType.Area"
+                                        Name="@L["Common_Entries"]"
+                                        XValue="d => d.Date"
+                                        YValue="d => d.Count"
+                                        OrderBy="d => d.X" />
+                    </ApexChart>
+                </div>
+            </div>
+        }
+
+        <!-- Period Filter -->
+        <div class="row g-2 mb-4">
+            <div class="col-12 col-md-3">
+                <label class="form-label form-label-sm mb-1">
+                    <i class="bi bi-calendar-range me-1"></i>@L["Dashboard_Period"]
+                </label>
+                <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeChanged">
+                    <option value="all">@L["Common_AllTime"]</option>
+                    <option value="days">@L["Dashboard_LastNDays"]</option>
+                    <option value="months">@L["Dashboard_LastNMonths"]</option>
+                    <option value="years">@L["Dashboard_LastNYears"]</option>
+                    <option value="custom">@L["Dashboard_CustomRange"]</option>
+                </select>
+            </div>
+
+            @if (_periodMode is "days" or "months" or "years")
+            {
+                <div class="col-6 col-md-2">
+                    <label class="form-label form-label-sm mb-1">
+                        @(_periodMode switch { "days" => L["Dashboard_Days"], "months" => L["Dashboard_Months"], _ => L["Dashboard_Years"] })
+                    </label>
+                    <input type="number"
+                           class="form-control form-control-sm"
+                           min="1"
+                           value="@_periodValue"
+                           @onchange="OnPeriodValueChanged" />
+                </div>
+            }
+            else if (_periodMode == "custom")
+            {
+                <div class="col-6 col-md-2">
+                    <label class="form-label form-label-sm mb-1">@L["Dashboard_From"]</label>
+                    <input type="date"
+                           class="form-control form-control-sm"
+                           value="@_customFrom?.ToString("yyyy-MM-dd")"
+                           @onchange="OnCustomFromChanged" />
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
+                    <input type="date"
+                           class="form-control form-control-sm"
+                           value="@_customTo?.ToString("yyyy-MM-dd")"
+                           @onchange="OnCustomToChanged" />
+                </div>
+            }
+        </div>
+
+        <!-- Tag Filter -->
+        @if (_allTags.Count > 0)
+        {
+            <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                <small class="text-muted me-1"><i class="bi bi-funnel me-1"></i>@L["Dashboard_Tag"]:</small>
+                <button class="btn btn-sm @(_selectedTag is null ? "btn-primary" : "btn-outline-secondary")"
+                        @onclick="() => _selectedTag = null">
+                    @L["Dashboard_All"]
+                </button>
+                @foreach (var tag in _allTags)
+                {
+                    <button class="btn btn-sm @(_selectedTag == tag.Name ? "" : "btn-outline-secondary")"
+                            style="@(_selectedTag == tag.Name ? $"background-color: {tag.Color}; border-color: {tag.Color}; color: white;" : "")"
+                            @onclick="() => _selectedTag = _selectedTag == tag.Name ? null : tag.Name">
+                        @tag.Name
+                    </button>
+                }
+            </div>
+        }
+
+        <!-- Action Filter -->
+        @if (_data.Actions.Count > 1)
+        {
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-funnel"></i></span>
+                        <select class="form-select form-select-sm" value="@_selectedActionId" @onchange="OnActionFilterChanged">
+                            <option value="">@L["Dashboard_AllActions"]</option>
+                            @foreach (var action in _data.Actions.OrderBy(a => a.Name))
+                            {
+                                <option value="@action.ActionId">@action.Name</option>
+                            }
+                        </select>
+                        @if (!string.IsNullOrEmpty(_selectedActionId))
+                        {
+                            <button class="btn btn-outline-secondary" @onclick="() => { _selectedActionId = string.Empty; }">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Per-Action Stats -->
+        <h5 class="mb-3"><i class="bi bi-graph-up me-2"></i>@L["Dashboard_PerActionStats"]</h5>
+
+        @if (FilteredActions.Count == 0)
+        {
+            <div class="card mb-4">
+                <div class="card-body text-center py-4 text-muted">
+                    <i class="bi bi-funnel fs-3 d-block mb-2"></i>
+                    @L["Dashboard_NoActionsMatch"]
+                </div>
+            </div>
+        }
+
+        @foreach (var action in FilteredActions)
+        {
+            <div class="card mb-3 action-stats-card">
+                <div class="card-header d-flex justify-content-between align-items-center"
+                     style="cursor: pointer;"
+                     @onclick="() => ToggleAction(action.ActionId)">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden">
+                        <i class="bi bi-@(_expandedActions.Contains(action.ActionId) ? "chevron-down" : "chevron-right") text-muted"></i>
+                        <strong class="text-truncate">@action.Name</strong>
+                        @if (action.Tags.Count > 0)
+                        {
+                            @foreach (var tag in action.Tags)
+                            {
+                                <span class="badge rounded-pill" style="background-color: @tag.Color; font-size: 0.7rem;">@tag.Name</span>
+                            }
+                        }
+                    </div>
+                    <div class="d-flex align-items-center gap-3 flex-shrink-0">
+                        <span class="badge bg-primary rounded-pill">@action.EntryCount @L["Dashboard_Entries"]</span>
+                        @if (action.Streak > 0)
+                        {
+                            <span class="badge bg-danger rounded-pill">
+                                <i class="bi bi-fire me-1"></i>@action.Streak @(action.Streak != 1 ? L["Dashboard_DayPlural"] : L["Dashboard_Day"])
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                @if (_expandedActions.Contains(action.ActionId))
+                {
+                    <div class="card-body">
+                        <!-- Navigation links -->
+                        <div class="d-flex gap-2 mb-3">
+                            <a href="/tracked-actions/@action.ActionId/edit" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-pencil-square me-1"></i>@L["Dashboard_EditAction"]
+                            </a>
+                            <a href="/entries/action/@action.ActionId" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-journal-text me-1"></i>@L["Dashboard_ViewEntries"]
+                            </a>
+                            <a href="/tracked-actions/@action.ActionId/entries/new?returnUrl=%2Fdashboard"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i>@L["Dashboard_NewEntry"]
+                            </a>
+                        </div>
+
+                        @if (action.EntryCount == 0)
+                        {
+                            <div class="text-center text-muted py-3">
+                                <p class="mb-2">@L["Dashboard_NoEntriesYet"]</p>
+                                <a href="/tracked-actions/@action.ActionId/entries/new?returnUrl=%2Fdashboard"
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i>@L["Dashboard_AddEntry"]
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Key Metrics Row -->
+                            <div class="row row-cols-2 row-cols-md-4 g-2 mb-3">
+                                <div class="col">
+                                    <div class="border rounded p-2 text-center bg-light">
+                                        <div class="fw-bold">@action.EntryCount</div>
+                                        <small class="text-muted">@L["Dashboard_TotalEntries_Label"]</small>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="border rounded p-2 text-center bg-light">
+                                        <div class="fw-bold">@FormatRelativeDate(action.LastEntryUtc)</div>
+                                        <small class="text-muted">@L["Dashboard_LastEntry"]</small>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="border rounded p-2 text-center bg-light">
+                                        <div class="fw-bold">
+                                            @if (action.AverageGapDays.HasValue)
+                                            {
+                                                @FormatGap(action.AverageGapDays.Value)
+                                            }
+                                            else
+                                            {
+                                                <span>—</span>
+                                            }
+                                        </div>
+                                        <small class="text-muted">@L["Dashboard_AvgGap"]</small>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="border rounded p-2 text-center bg-light">
+                                        <div class="fw-bold">
+                                            <i class="bi bi-fire @(action.Streak > 0 ? "text-danger" : "text-muted") me-1"></i>@action.Streak
+                                        </div>
+                                        <small class="text-muted">@L["Dashboard_DayStreak"]</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Weekly Activity -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="text-muted mb-0"><i class="bi bi-bar-chart me-1"></i>@L["Dashboard_WeeklyActivity"]</h6>
+                                    <a href="/dashboard/action/@action.ActionId/detail" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-graph-up-arrow me-1"></i>@L["Dashboard_FullAnalytics"]
+                                    </a>
+                                </div>
+                                <ApexChart TItem="WeekBucket"
+                                           Options="BuildWeeklyOptions()"
+                                           Height="180">
+                                    <ApexPointSeries TItem="WeekBucket"
+                                                    Items="action.WeeklyActivity"
+                                                    SeriesType="SeriesType.Bar"
+                                                    Name="@L["Common_Entries"]"
+                                                    XValue="@(w => w.WeekStart.ToString("MMM d"))"
+                                                    YValue="w => w.Count"
+                                                    OrderBy="w => w.X" />
+                                </ApexChart>
+                            </div>
+
+                            <!-- Field Statistics -->
+                            @if (action.FieldStats.Count > 0)
+                            {
+                                <h6 class="text-muted mb-2"><i class="bi bi-sliders me-1"></i>@L["Dashboard_FieldAnalytics"]</h6>
+                                <div class="row g-2">
+                                    @foreach (var field in action.FieldStats)
+                                    {
+                                        <div class="col-12 col-md-6">
+                                            @RenderFieldCard(field)
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                            <!-- Numeric Field Trend Charts -->
+                            @if (action.NumericSeries.Count > 0)
+                            {
+                                <h6 class="text-muted mb-2 mt-3"><i class="bi bi-graph-up me-1"></i>@L["Dashboard_FieldTrends"]</h6>
+                                <div class="row g-2">
+                                    @foreach (var series in action.NumericSeries)
+                                    {
+                                        <div class="col-12 col-md-6">
+                                            <div class="card border h-100">
+                                                <div class="card-header py-1 px-2 d-flex justify-content-between align-items-center">
+                                                    <small class="fw-bold text-truncate">@series.Name</small>
+                                                    <div class="d-flex gap-1">
+                                                        @if (series.TargetValue.HasValue)
+                                                        {
+                                                            <span class="badge bg-warning" style="font-size: 0.55rem;">T: @FormatNumericValue(series.TargetValue, series.IsInteger)</span>
+                                                        }
+                                                        @if (series.Unit != "UN")
+                                                        {
+                                                            <span class="badge bg-info" style="font-size: 0.6rem;">@series.Unit</span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div class="card-body p-2">
+                                                    <ApexChart TItem="NumericDataPoint"
+                                                               Options="BuildMiniChartOptions(series)"
+                                                               Height="130">
+                                                        <ApexPointSeries TItem="NumericDataPoint"
+                                                                        Items="series.Points"
+                                                                        SeriesType="MapChartType(series.ChartType)"
+                                                                        Name="@series.Name"
+                                                                        XValue="p => p.Date"
+                                                                        YValue="p => p.Value"
+                                                                        OrderBy="p => p.X" />
+                                                    </ApexChart>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter] public Guid? ActionIdParam { get; set; }
+    [Inject] private DashboardService DashService { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private bool _loading = true;
+    private IReadOnlyList<string> _errors = [];
+    private DashboardData? _data;
+    private HashSet<Guid> _expandedActions = [];
+    private string? _selectedTag;
+    private string _selectedActionId = string.Empty;
+
+    // Period filter
+    private string _periodMode = "all";
+    private int _periodValue = 30;
+    private DateTime? _customFrom;
+    private DateTime? _customTo;
+
+    private List<(string Name, string Color)> _allTags = [];
+
+    private ApexChartOptions<DailyCount> _globalFreqOptions = new();
+
+    private static ApexChartOptions<WeekBucket> BuildWeeklyOptions() => new()
+    {
+        Chart = new Chart { Toolbar = new Toolbar { Show = false } },
+        Yaxis = [new YAxis { Min = 0 }],
+        Colors = ["#0d6efd"],
+        PlotOptions = new PlotOptions
+        {
+            Bar = new PlotOptionsBar { ColumnWidth = "60%", BorderRadius = 3 }
+        },
+        DataLabels = new DataLabels { Enabled = false }
+    };
+
+    private ApexChartOptions<NumericDataPoint> BuildMiniChartOptions(NumericFieldSeries series)
+    {
+        var options = new ApexChartOptions<NumericDataPoint>
+        {
+            Chart = new Chart { Toolbar = new Toolbar { Show = false } },
+            Xaxis = new XAxis { Type = XAxisType.Datetime, Labels = new XAxisLabels { Show = false } },
+            Yaxis = [new YAxis { DecimalsInFloat = series.IsInteger ? 0 : 2 }],
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Colors = ["#198754"],
+            Markers = new Markers { Size = 3 },
+            DataLabels = new DataLabels { Enabled = false },
+            Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+        };
+
+        if (series.ChartType == TrendChartType.Area)
+        {
+            options.Fill = new Fill { Opacity = new Opacity(0.3) };
+        }
+
+        if (series.TargetValue.HasValue)
+        {
+            options.Annotations = new Annotations
+            {
+                Yaxis =
+                [
+                    new AnnotationsYAxis
+                    {
+                        Y = series.TargetValue.Value,
+                        BorderColor = "#ff9800",
+                        StrokeDashArray = 4,
+                        Label = new Label
+                        {
+                            Text = $"{L["Metric_Target"]}: {FormatNumericValue(series.TargetValue, series.IsInteger)}",
+                            Style = new Style { Background = "#ff9800", Color = "#fff" }
+                        }
+                    }
+                ]
+            };
+        }
+
+        return options;
+    }
+
+    private static SeriesType MapChartType(TrendChartType chartType) => chartType switch
+    {
+        TrendChartType.Bar => SeriesType.Bar,
+        TrendChartType.Area => SeriesType.Area,
+        _ => SeriesType.Line
+    };
+
+    private static string FormatNumericValue(decimal? value, bool isInteger)
+    {
+        if (value is null) return "—";
+        if (isInteger) return ((int)Math.Round(value.Value)).ToString();
+        return value == Math.Truncate(value.Value)
+            ? value.Value.ToString("F0")
+            : value.Value.ToString("F2");
+    }
+
+    private List<ActionStats> FilteredActions => _data?.Actions
+        .Where(a => _selectedTag is null || a.Tags.Any(t => t.Name == _selectedTag))
+        .Where(a => string.IsNullOrEmpty(_selectedActionId) || a.ActionId.ToString() == _selectedActionId)
+        .ToList() ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _globalFreqOptions = new()
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = true },
+                Zoom = new Zoom { Enabled = true }
+            },
+            Xaxis = new XAxis { Type = XAxisType.Datetime },
+            Yaxis = [new YAxis { Title = new AxisTitle { Text = L["Common_Entries"].Value }, Min = 0 }],
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Fill = new Fill { Opacity = new Opacity(0.3) },
+            Colors = ["#198754"],
+            Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+        };
+
+        if (ActionIdParam.HasValue)
+        {
+            _selectedActionId = ActionIdParam.Value.ToString();
+            _expandedActions.Add(ActionIdParam.Value);
+        }
+
+        await ReloadAsync();
+    }
+
+    private void OnActionFilterChanged(ChangeEventArgs e)
+    {
+        _selectedActionId = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private (DateTime? From, DateTime? To) ResolveDateRange()
+    {
+        return _periodMode switch
+        {
+            "days" => (DateTime.UtcNow.AddDays(-_periodValue), null),
+            "months" => (DateTime.UtcNow.AddMonths(-_periodValue), null),
+            "years" => (DateTime.UtcNow.AddYears(-_periodValue), null),
+            "custom" => (_customFrom, _customTo?.AddDays(1)),
+            _ => (null, null)
+        };
+    }
+
+    private async Task OnPeriodModeChanged(ChangeEventArgs e)
+    {
+        _periodMode = e.Value?.ToString() ?? "all";
+        _periodValue = _periodMode switch
+        {
+            "days" => 30,
+            "months" => 1,
+            "years" => 1,
+            _ => _periodValue
+        };
+        if (_periodMode == "custom")
+        {
+            _customFrom = DateTime.Today.AddMonths(-1);
+            _customTo = DateTime.Today;
+        }
+        await ReloadAsync();
+    }
+
+    private async Task OnPeriodValueChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var val) && val > 0)
+        {
+            _periodValue = val;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OnCustomFromChanged(ChangeEventArgs e)
+    {
+        _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await ReloadAsync();
+    }
+
+    private async Task OnCustomToChanged(ChangeEventArgs e)
+    {
+        _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _loading = true;
+        _errors = [];
+
+        try
+        {
+            var (from, to) = ResolveDateRange();
+            _data = await DashService.LoadAsync(from, to);
+
+            _allTags = _data.Actions
+                .SelectMany(a => a.Tags)
+                .DistinctBy(t => t.Name)
+                .Select(t => (t.Name, t.Color))
+                .OrderBy(t => t.Name)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _errors = [L["Dashboard_LoadFailed", ex.Message]];
+        }
+
+        _loading = false;
+    }
+
+    private void ToggleAction(Guid actionId)
+    {
+        if (!_expandedActions.Remove(actionId))
+            _expandedActions.Add(actionId);
+    }
+
+    private string FormatRelativeDate(DateTime? utc)
+    {
+        if (utc is null) return "—";
+        var local = utc.Value.ToLocalTime();
+        var diff = DateTime.Now - local;
+
+        return diff.TotalMinutes switch
+        {
+            < 1 => L["Time_JustNow"],
+            < 60 => L["Time_MinAgo", (int)diff.TotalMinutes],
+            < 1440 => L["Time_HAgo", (int)diff.TotalHours],
+            < 2880 => L["Time_Yesterday"],
+            _ => L["Time_DAgo", (int)diff.TotalDays]
+        };
+    }
+
+    private string FormatGap(double days)
+    {
+        return days switch
+        {
+            < 1 => L["Gap_Hours", (int)(days * 24)],
+            < 2 => L["Gap_About1Day"],
+            < 7 => L["Gap_Days", days.ToString("F1")],
+            < 14 => L["Gap_About1Week"],
+            _ => L["Gap_Weeks", (days / 7).ToString("F1")]
+        };
+    }
+
+    private RenderFragment RenderFieldCard(FieldStats field) => __builder =>
+    {
+        <div class="card border h-100">
+            <div class="card-body p-2">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong class="text-truncate">@field.Name</strong>
+                    <div class="d-flex gap-1">
+                        @if (field.Type is FieldType.Integer or FieldType.Decimal && field.Unit != "UN")
+                        {
+                            <span class="badge bg-info">@field.Unit</span>
+                        }
+                        <span class="badge bg-secondary">@field.Type</span>
+                    </div>
+                </div>
+
+                @if (field.TotalValues == 0)
+                {
+                    <small class="text-muted">@L["Common_NoDataYet"]</small>
+                }
+                else
+                {
+                    @switch (field.Type)
+                    {
+                        case FieldType.Integer:
+                        case FieldType.Decimal:
+                            @RenderNumericStats(field)
+                            break;
+                        case FieldType.Boolean:
+                            @RenderBooleanStats(field)
+                            break;
+                        case FieldType.Dropdown:
+                            @RenderDropdownStats(field)
+                            break;
+                        default:
+                            <small class="text-muted">@field.TextFilledCount @L["Analytics_ValuesRecorded"]</small>
+                            break;
+                    }
+                }
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderNumericStats(FieldStats field) => __builder =>
+    {
+        var u = field.Unit != "UN" ? $" {field.Unit}" : "";
+        var m = field.EnabledMetrics;
+        var cols = new List<(string Label, string Color, string Display)>();
+        if (m.HasFlag(SummaryMetrics.Min)) cols.Add((L["Metric_Min"], "text-primary", $"{FormatNumeric(field.NumericMin, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Avg)) cols.Add((L["Metric_Avg"], "text-success", $"{FormatNumeric(field.NumericAvg, false)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Max)) cols.Add((L["Metric_Max"], "text-danger", $"{FormatNumeric(field.NumericMax, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Sum)) cols.Add((L["Metric_Sum"], "text-warning", $"{FormatNumeric(field.NumericSum, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Count)) cols.Add((L["Metric_Count"], "text-info", $"{field.NumericCount}"));
+        if (m.HasFlag(SummaryMetrics.Latest) && field.NumericLatest.HasValue) cols.Add((L["Metric_Latest"], "text-dark", $"{FormatNumeric(field.NumericLatest, field.IsInteger)}{u}"));
+
+        @if (cols.Count > 0)
+        {
+            <div class="row g-1 text-center mb-2">
+                @foreach (var col in cols)
+                {
+                    <div class="col">
+                        <div class="small fw-bold @col.Color">@col.Display</div>
+                        <div class="small text-muted" style="font-size: 0.65rem;">@col.Label</div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <small class="text-muted">@field.NumericCount @L["Analytics_ValuesRecorded"]</small>
+        }
+
+        @if (field.ConfiguredMax.HasValue && field.NumericAvg.HasValue)
+        {
+            var pct = Math.Min((double)(field.NumericAvg.Value / field.ConfiguredMax.Value * 100), 100);
+            <div class="progress" style="height: 6px;" title="@L["Dashboard_AvgVsMax", field.ConfiguredMax]">
+                <div class="progress-bar bg-success" style="width: @pct%"></div>
+            </div>
+        }
+    };
+
+    private RenderFragment RenderBooleanStats(FieldStats field) => __builder =>
+    {
+        var total = field.BoolTrueCount + field.BoolFalseCount;
+        var truePct = field.BoolTruePercent;
+        var falsePct = 100 - truePct;
+
+        <div class="d-flex justify-content-between mb-1">
+            <small><i class="bi bi-check-circle text-success me-1"></i>@L["Dashboard_True"]: @field.BoolTrueCount</small>
+            <small><i class="bi bi-x-circle text-danger me-1"></i>@L["Dashboard_False"]: @field.BoolFalseCount</small>
+        </div>
+
+        <div class="progress" style="height: 20px;">
+            <div class="progress-bar bg-success" style="width: @truePct%"
+                 title="@L["Dashboard_True"]: @field.BoolTrueCount (@truePct%)">
+                @if (truePct >= 15)
+                {
+                    <small>@truePct%</small>
+                }
+            </div>
+            <div class="progress-bar bg-danger" style="width: @falsePct%"
+                 title="@L["Dashboard_False"]: @field.BoolFalseCount (@falsePct%)">
+                @if (falsePct >= 15)
+                {
+                    <small>@(100 - truePct)%</small>
+                }
+            </div>
+        </div>
+
+        <small class="text-muted d-block mt-1">@total @L["Dashboard_Responses"]</small>
+    };
+
+    private RenderFragment RenderDropdownStats(FieldStats field) => __builder =>
+    {
+        var maxVal = field.DropdownDistribution.Values.DefaultIfEmpty(1).Max();
+
+        @foreach (var (value, count) in field.DropdownDistribution)
+        {
+            var widthPct = (int)(count * 100.0 / maxVal);
+
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="text-truncate" style="min-width: 60px; font-size: 0.8rem;">@value</span>
+                <div class="flex-grow-1">
+                    <div class="progress" style="height: 16px;">
+                        <div class="progress-bar bg-info" style="width: @widthPct%">
+                            @if (widthPct > 20)
+                            {
+                                <small>@count</small>
+                            }
+                        </div>
+                    </div>
+                </div>
+                @if (widthPct <= 20)
+                {
+                    <small class="text-muted flex-shrink-0">@count</small>
+                }
+            </div>
+        }
+    };
+
+    private static string FormatDecimal(decimal? value)
+    {
+        if (value is null) return "—";
+        return value == Math.Truncate(value.Value)
+            ? value.Value.ToString("F0")
+            : value.Value.ToString("F2");
+    }
+
+    private static string FormatNumeric(decimal? value, bool isInteger)
+    {
+        if (value is null) return "—";
+        if (isInteger) return ((int)Math.Round(value.Value)).ToString();
+        return value == Math.Truncate(value.Value)
+            ? value.Value.ToString("F0")
+            : value.Value.ToString("F2");
+    }
+}

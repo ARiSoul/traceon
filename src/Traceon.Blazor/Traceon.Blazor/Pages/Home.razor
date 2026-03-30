@@ -1,0 +1,277 @@
+﻿@page "/"
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>Traceon</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="mb-1">
+                    <i class="bi bi-bullseye me-2"></i>
+                    Traceon
+                </h3>
+                <p class="text-muted mb-0">@L["Home_Subtitle"]</p>
+            </div>
+        </div>
+
+        <ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+        @if (_loggedActionName is not null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span><strong>@_loggedActionName</strong> @L["Home_TrackedSuccess"]</span>
+                    <button type="button" class="btn-close" @onclick="() => _loggedActionName = null"></button>
+                </div>
+            </div>
+        }
+
+        @if (_loading)
+        {
+            <div class="d-flex justify-content-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">@L["Common_Loading"]</span>
+                </div>
+            </div>
+        }
+        else if (_actions.Count == 0)
+        {
+            <div class="text-center py-4 mb-4">
+                <i class="bi bi-rocket-takeoff display-3 text-primary mb-3 d-block"></i>
+                <h4>@L["Onboard_Welcome"]</h4>
+                <p class="text-muted" style="max-width: 500px; margin: 0 auto;">@L["Onboard_Hint"]</p>
+            </div>
+
+            @if (_installingTemplate is not null)
+            {
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary mb-2"></div>
+                    <p class="text-muted">@L["Onboard_Installing"]</p>
+                </div>
+            }
+            else if (_installSuccess)
+            {
+                <div class="alert alert-success text-center">
+                    <i class="bi bi-check-circle me-1"></i>@L["Onboard_Installed"]
+                </div>
+            }
+            else
+            {
+                @if (_templates.Count > 0)
+                {
+                    <h5 class="mb-3 text-center">
+                        <i class="bi bi-box-seam me-1"></i>@L["Onboard_ChooseTemplate"]
+                    </h5>
+
+                    <div class="row g-3 justify-content-center mb-4">
+                        @foreach (var template in _templates)
+                        {
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <div class="card h-100 border-2 template-card" style="cursor: pointer; border-color: @template.Color;"
+                                     @onclick="() => InstallTemplateAsync(template.Id)">
+                                    <div class="card-body text-center">
+                                        <i class="bi @template.Icon display-5 d-block mb-2" style="color: @template.Color;"></i>
+                                        <h6 class="card-title">@L[template.NameKey]</h6>
+                                        <p class="card-text text-muted small mb-2">@L[template.DescriptionKey]</p>
+                                        <div class="d-flex flex-wrap justify-content-center gap-1">
+                                            @foreach (var action in template.Actions)
+                                            {
+                                                <span class="badge bg-light text-dark border">@L[action.NameKey]</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex align-items-center mb-3" style="max-width: 600px; margin: 0 auto;">
+                        <hr class="flex-grow-1" />
+                        <span class="px-3 text-muted small">@L["Onboard_Or"]</span>
+                        <hr class="flex-grow-1" />
+                    </div>
+                }
+
+                <div class="text-center">
+                    <a href="/tracked-actions/create" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle me-1"></i>@L["Onboard_StartFromScratch"]
+                    </a>
+                </div>
+            }
+        }
+        else
+        {
+            <h5 class="mb-3">
+                <i class="bi bi-lightning-charge me-1"></i>@L["Home_QuickTracking"]
+                @if (_actions.Count > 1)
+                {
+                    <button class="btn btn-sm @(_reordering ? "btn-primary" : "btn-outline-secondary") ms-2"
+                            @onclick="ToggleReorder">
+                        <i class="bi bi-arrows-move me-1"></i>@(_reordering ? L["Home_Done"] : L["Home_Reorder"])
+                    </button>
+                }
+            </h5>
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 mb-4">
+                @foreach (var action in _actions)
+                {
+                    <div class="col"
+                         draggable="@(_reordering ? "true" : "false")"
+                         @ondragstart="() => _dragIndex = _actions.IndexOf(action)"
+                         @ondragover:preventDefault="_reordering"
+                         @ondrop="() => OnDrop(_actions.IndexOf(action))"
+                         style="@(_reordering ? "cursor: grab;" : "")">
+                        @if (_reordering)
+                        {
+                            <div class="card h-100 border-dashed">
+                                <div class="card-body d-flex align-items-center gap-2 py-3">
+                                    <i class="bi bi-grip-vertical text-muted fs-5"></i>
+                                    <span class="badge bg-secondary rounded-pill">@(_actions.IndexOf(action) + 1)</span>
+                                    <strong class="flex-grow-1 text-truncate">@action.Name</strong>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <QuickTrackCard Action="action"
+                                            Highlighted="action.Name == _loggedActionName"
+                                            OnTrack="OpenTrackModal" />
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <QuickTrackModal @ref="_trackModal"
+                         ActionName="@(_selectedAction?.Name ?? "")"
+                         OnConfirm="OnTrackConfirmedAsync" />
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 60vh;">
+            <div class="card" style="max-width: 400px; width: 100%;">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-bullseye display-4 text-primary mb-3 d-block"></i>
+                    <h4>@L["Home_Welcome"]</h4>
+                                         <p class="text-muted">@L["Home_WelcomeHint"]</p>
+                                         <a href="/auth/login" class="btn btn-primary w-100 mb-2">
+                                             <i class="bi bi-box-arrow-in-right me-1"></i>@L["Auth_Login"]
+                                         </a>
+                                         <a href="/auth/register" class="btn btn-outline-secondary w-100">
+                                             <i class="bi bi-person-plus me-1"></i>@L["Home_Register"]
+                                         </a>
+                </div>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Inject] private TrackedActionService ActionService { get; set; } = default!;
+    [Inject] private ActionEntryService EntryService { get; set; } = default!;
+    [Inject] private TemplateService TemplateService { get; set; } = default!;
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    private List<TrackedActionResponse> _actions = [];
+    private IReadOnlyList<string> _errors = [];
+    private bool _loading = true;
+    private string? _loggedActionName;
+    private bool _reordering;
+    private int _dragIndex = -1;
+
+    // Onboarding
+    private IReadOnlyList<TemplatePackResponse> _templates = [];
+    private string? _installingTemplate;
+    private bool _installSuccess;
+
+    private QuickTrackModal _trackModal = default!;
+    private TrackedActionResponse? _selectedAction;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthState;
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            _actions = (await ActionService.GetAllAsync())
+                .OrderBy(a => a.SortOrder)
+                .ThenByDescending(a => a.CreatedAtUtc)
+                .ToList();
+
+            if (_actions.Count == 0)
+            {
+                _templates = await TemplateService.GetTemplatesAsync();
+            }
+        }
+        _loading = false;
+    }
+
+    private async Task InstallTemplateAsync(string templateId)
+    {
+        _installingTemplate = templateId;
+        StateHasChanged();
+
+        var (success, _) = await TemplateService.InstallAsync(templateId);
+
+        if (success)
+        {
+            _installSuccess = true;
+            _installingTemplate = null;
+            StateHasChanged();
+
+            // Brief pause to show success, then reload
+            await Task.Delay(800);
+            _actions = (await ActionService.GetAllAsync())
+                .OrderBy(a => a.SortOrder)
+                .ThenByDescending(a => a.CreatedAtUtc)
+                .ToList();
+            _installSuccess = false;
+        }
+
+        _installingTemplate = null;
+        StateHasChanged();
+    }
+
+    private void OnDrop(int targetIndex)
+    {
+        if (_dragIndex < 0 || _dragIndex == targetIndex) return;
+        var item = _actions[_dragIndex];
+        _actions.RemoveAt(_dragIndex);
+        _actions.Insert(targetIndex, item);
+        _dragIndex = -1;
+    }
+
+    private async Task ToggleReorder()
+    {
+        if (_reordering)
+        {
+            var orderedIds = _actions.Select(a => a.Id).ToList();
+            var (success, errors) = await ActionService.ReorderAsync(orderedIds);
+            if (!success)
+                _errors = errors;
+        }
+        _reordering = !_reordering;
+    }
+
+    private void OpenTrackModal(TrackedActionResponse action)
+    {
+        _selectedAction = action;
+        _loggedActionName = null;
+        _errors = [];
+        _trackModal.Show();
+    }
+
+    private async Task OnTrackConfirmedAsync((DateTime OccurredAtUtc, string? Notes) entry)
+    {
+        if (_selectedAction is null) return;
+
+        var request = new CreateActionEntryRequest(entry.OccurredAtUtc, entry.Notes);
+        var (success, errors) = await EntryService.CreateAsync(_selectedAction.Id, request);
+
+        if (success)
+            _loggedActionName = _selectedAction.Name;
+        else
+            _errors = errors;
+
+        _selectedAction = null;
+    }
+}

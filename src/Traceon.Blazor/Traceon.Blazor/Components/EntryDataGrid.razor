@@ -1,0 +1,349 @@
+@* Reusable entry list with DataGrid, filtering by action, period, sorting, pagination, edit/delete *@
+@inject IStringLocalizer<SharedResource> L
+
+<div class="d-md-none mb-2">
+    <button class="btn btn-outline-secondary btn-sm w-100" @onclick="() => _showFilters = !_showFilters">
+        <i class="bi bi-funnel me-1"></i>
+        @L["DataGrid_Filter"]
+        <i class="bi bi-chevron-@(_showFilters ? "up" : "down") ms-1"></i>
+    </button>
+</div>
+
+<div class="@(_showFilters ? "" : "d-none") d-md-block">
+<div class="row g-2 mb-3">
+    @if (!LockActionFilter)
+    {
+        <div class="col-12 col-md-3">
+            <label class="form-label form-label-sm mb-1">
+                <i class="bi bi-funnel me-1"></i>@L["EntryGrid_Action"]
+            </label>
+            <select class="form-select form-select-sm" value="@_selectedActionId" @onchange="OnActionFilterChanged">
+                <option value="">@L["EntryGrid_AllActions"]</option>
+                @foreach (var action in _availableActions)
+                {
+                    <option value="@action.Id">@action.Name</option>
+                }
+            </select>
+        </div>
+    }
+
+    <div class="col-12 col-md-3">
+        <label class="form-label form-label-sm mb-1">
+            <i class="bi bi-calendar-range me-1"></i>@L["Dashboard_Period"]
+        </label>
+        <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeChanged">
+            <option value="all">@L["Common_AllTime"]</option>
+            <option value="days">@L["Dashboard_LastNDays"]</option>
+            <option value="months">@L["Dashboard_LastNMonths"]</option>
+            <option value="years">@L["Dashboard_LastNYears"]</option>
+            <option value="custom">@L["Dashboard_CustomRange"]</option>
+        </select>
+    </div>
+
+    @if (_periodMode is "days" or "months" or "years")
+    {
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">
+                @(_periodMode switch { "days" => L["Dashboard_Days"], "months" => L["Dashboard_Months"], _ => L["Dashboard_Years"] })
+            </label>
+            <input type="number"
+                   class="form-control form-control-sm"
+                   min="1"
+                   value="@_periodValue"
+                   @onchange="OnPeriodValueChanged" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Filter_DateField"]</label>
+            <select class="form-select form-select-sm" value="@_dateField" @onchange="OnDateFieldChanged">
+                <option value="OccurredAtUtc">@L["Filter_Occurred"]</option>
+                <option value="CreatedAtUtc">@L["Common_Created"]</option>
+            </select>
+        </div>
+    }
+    else if (_periodMode == "custom")
+    {
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Dashboard_From"]</label>
+            <input type="date"
+                   class="form-control form-control-sm"
+                   value="@_customFrom?.ToString("yyyy-MM-dd")"
+                   @onchange="OnCustomFromChanged" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
+            <input type="date"
+                   class="form-control form-control-sm"
+                   value="@_customTo?.ToString("yyyy-MM-dd")"
+                   @onchange="OnCustomToChanged" />
+        </div>
+        <div class="col-12 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Filter_DateField"]</label>
+            <select class="form-select form-select-sm" value="@_dateField" @onchange="OnDateFieldChanged">
+                <option value="OccurredAtUtc">@L["Filter_Occurred"]</option>
+                <option value="CreatedAtUtc">@L["Common_Created"]</option>
+            </select>
+        </div>
+    }
+</div>
+</div>
+
+<DataGrid @ref="_grid"
+          TItem="ActionEntryResponse"
+          LoadData="LoadDataAsync"
+          Columns="_columns"
+          FilterPlaceholder="@L["Filter_ByNotes"]"
+                 EmptyText="@L["EntryGrid_Empty"]">
+          <Toolbar>
+              @if (_createActionId != Guid.Empty)
+              {
+                  <a href="/tracked-actions/@_createActionId/entries/new?returnUrl=@_encodedReturnUrl"
+                     class="btn btn-primary">
+                      <i class="bi bi-plus-circle me-1"></i>@L["Entries_NewEntry"]
+                  </a>
+              }
+    </Toolbar>
+    <RowActions>
+        <ListActionsDropdown PrimaryText="@L["Common_Edit"]"
+                             PrimaryIcon="pencil-square"
+                             PrimaryButtonStyle="primary"
+                             PrimaryAction="() => EditEntry(context)"
+                             Actions="GetActions(context)"
+                             OnAfterAction="StateHasChanged" />
+    </RowActions>
+</DataGrid>
+
+@code {
+    /// <summary>
+    /// Pre-selects this action in the filter. If <see cref="LockActionFilter"/> is false the user can change it.
+    /// </summary>
+    [Parameter]
+    public Guid? TrackedActionId { get; set; }
+
+    /// <summary>
+    /// When true the action filter is hidden and locked to <see cref="TrackedActionId"/>.
+    /// Use this when embedding inside a tracked action edit page.
+    /// </summary>
+    [Parameter]
+    public bool LockActionFilter { get; set; }
+
+    [Inject] private ActionEntryService EntryService { get; set; } = default!;
+    [Inject] private TrackedActionService ActionService { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private DataGrid<ActionEntryResponse> _grid = default!;
+    private List<TrackedActionResponse> _availableActions = [];
+    private string _selectedActionId = "";
+    private string _encodedReturnUrl = "";
+    private bool _showFilters;
+
+    // Period filter state
+    private string _periodMode = "years";
+    private int _periodValue = 1;
+    private string _dateField = "OccurredAtUtc";
+    private DateTime? _customFrom;
+    private DateTime? _customTo;
+
+    private Guid _createActionId => TrackedActionId.HasValue && LockActionFilter
+        ? TrackedActionId.Value
+        : (Guid.TryParse(_selectedActionId, out var id) ? id : Guid.Empty);
+
+    private List<DataGridColumn<ActionEntryResponse>> _columns = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _columns =
+        [
+            new()
+            {
+                Title = L["EntryGrid_Action"],
+                Selector = x => x.ActionName,
+                SortField = "ActionName",
+                IsMobileTitle = true
+            },
+            new()
+            {
+                Title = L["EntryGrid_Date"],
+                Selector = x => x.OccurredAtUtc.ToLocalTime(),
+                SortField = "OccurredAtUtc",
+                Format = "g"
+            },
+            new()
+            {
+                Title = L["EntryGrid_Notes"],
+                Selector = x => x.Notes ?? "",
+                Template = item => builder =>
+                {
+                    if (!string.IsNullOrEmpty(item.Notes))
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "text-truncate d-inline-block");
+                        builder.AddAttribute(2, "style", "max-width: 200px;");
+                        builder.AddAttribute(3, "title", item.Notes);
+                        builder.AddContent(4, item.Notes);
+                        builder.CloseElement();
+                    }
+                    else
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "text-muted");
+                        builder.AddContent(2, "\u2014");
+                        builder.CloseElement();
+                    }
+                }
+            },
+            new()
+            {
+                Title = L["Common_Created"],
+                Selector = x => x.CreatedAtUtc.ToLocalTime(),
+                SortField = "CreatedAtUtc",
+                Format = "g",
+                HideOnMobile = true
+            },
+        ];
+
+        _encodedReturnUrl = Uri.EscapeDataString(Nav.ToBaseRelativePath(Nav.Uri) is { Length: > 0 } rel ? $"/{rel}" : "/");
+
+        if (TrackedActionId.HasValue)
+        {
+            _selectedActionId = TrackedActionId.Value.ToString();
+        }
+
+        if (!LockActionFilter)
+        {
+            _availableActions = await ActionService.GetAllAsync();
+        }
+    }
+
+    private string? BuildFilterString()
+    {
+        var clauses = new List<string>();
+
+        // Action filter
+        if (Guid.TryParse(_selectedActionId, out var actionId) && actionId != Guid.Empty)
+        {
+            clauses.Add($"TrackedActionId eq {actionId}");
+        }
+
+        // Period filter
+        var dateFilter = BuildDateFilter();
+        if (dateFilter is not null)
+        {
+            clauses.Add(dateFilter);
+        }
+
+        return clauses.Count > 0 ? string.Join(" and ", clauses) : null;
+    }
+
+    private string? BuildDateFilter()
+    {
+        DateTime? from = null;
+        DateTime? to = null;
+
+        switch (_periodMode)
+        {
+            case "days":
+                from = DateTime.UtcNow.AddDays(-_periodValue);
+                break;
+            case "months":
+                from = DateTime.UtcNow.AddMonths(-_periodValue);
+                break;
+            case "years":
+                from = DateTime.UtcNow.AddYears(-_periodValue);
+                break;
+            case "custom":
+                from = _customFrom;
+                to = _customTo?.AddDays(1); // inclusive end
+                break;
+            default:
+                return null;
+        }
+
+        var parts = new List<string>();
+
+        if (from.HasValue)
+            parts.Add($"{_dateField} ge {from.Value:yyyy-MM-ddTHH:mm:ssZ}");
+        if (to.HasValue)
+            parts.Add($"{_dateField} le {to.Value:yyyy-MM-ddTHH:mm:ssZ}");
+
+        return parts.Count > 0 ? string.Join(" and ", parts) : null;
+    }
+
+    private async Task<DataGridResult<ActionEntryResponse>> LoadDataAsync(DataGridRequest request)
+    {
+        return await EntryService.QueryAsync(request, ["Notes", "ActionName"], BuildFilterString());
+    }
+
+    private void EditEntry(ActionEntryResponse entry)
+    {
+        Nav.NavigateTo($"/tracked-actions/{entry.TrackedActionId}/entries/{entry.Id}/edit?returnUrl={_encodedReturnUrl}");
+    }
+
+    private List<ListAction> GetActions(ActionEntryResponse entry)
+    {
+        return
+        [
+            ListAction.Button(L["Common_Delete"], () => DeleteAsync(entry), "trash", ListActionStyle.Danger),
+        ];
+    }
+
+    private async Task DeleteAsync(ActionEntryResponse entry)
+    {
+        var (success, _) = await EntryService.DeleteAsync(entry.TrackedActionId, entry.Id);
+        if (success)
+            await _grid.RefreshAsync();
+    }
+
+    private async Task OnActionFilterChanged(ChangeEventArgs e)
+    {
+        _selectedActionId = e.Value?.ToString() ?? "";
+        await _grid.RefreshAsync();
+    }
+
+    private async Task OnPeriodModeChanged(ChangeEventArgs e)
+    {
+        _periodMode = e.Value?.ToString() ?? "all";
+
+        // Set sensible defaults
+        _periodValue = _periodMode switch
+        {
+            "days" => 30,
+            "months" => 1,
+            "years" => 1,
+            _ => _periodValue
+        };
+
+        if (_periodMode == "custom")
+        {
+            _customFrom = DateTime.Today.AddMonths(-1);
+            _customTo = DateTime.Today;
+        }
+
+        await _grid.RefreshAsync();
+    }
+
+    private async Task OnPeriodValueChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var val) && val > 0)
+            _periodValue = val;
+
+        await _grid.RefreshAsync();
+    }
+
+    private async Task OnDateFieldChanged(ChangeEventArgs e)
+    {
+        _dateField = e.Value?.ToString() ?? "OccurredAtUtc";
+        await _grid.RefreshAsync();
+    }
+
+    private async Task OnCustomFromChanged(ChangeEventArgs e)
+    {
+        _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await _grid.RefreshAsync();
+    }
+
+    private async Task OnCustomToChanged(ChangeEventArgs e)
+    {
+        _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await _grid.RefreshAsync();
+    }
+}

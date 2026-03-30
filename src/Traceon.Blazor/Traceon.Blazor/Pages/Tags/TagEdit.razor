@@ -1,0 +1,130 @@
+@page "/tags/{Id:guid}/edit"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["TagEdit_Title"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-pencil-square me-2"></i>
+            @L["TagEdit_Title"]
+        </h3>
+        <p class="text-muted mb-0">@L["TagEdit_Subtitle"]</p>
+    </div>
+    <a href="/tags" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>@L["TagEdit_BackToTags"]
+    </a>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">@L["Common_Loading"]</span>
+        </div>
+    </div>
+}
+else if (_model is null)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-question-circle me-2"></i>
+        @L["TagEdit_NotFound"]
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <EditForm Model="_model" OnValidSubmit="SaveAsync" FormName="EditTagForm">
+                <DataAnnotationsValidator />
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label">@L["Common_Name"] <span class="text-danger">*</span></label>
+                        <InputText @bind-Value="_model.Name" class="form-control" />
+                        <ValidationMessage For="() => _model.Name" />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">@L["Common_Description"]</label>
+                        <InputText @bind-Value="_model.Description" class="form-control" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">@L["Tags_Color"]</label>
+                        <input type="color" class="form-control form-control-color w-100" @bind="_model.Color" />
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-success" disabled="@_saving">
+                        @if (_saving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle me-1"></i>
+                        }
+                        @L["Common_SaveChanges"]
+                    </button>
+                    <a href="/tags" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>@L["Common_Cancel"]
+                    </a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [Inject] private TagService Service { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private EditModel? _model;
+    private IReadOnlyList<string> _errors = [];
+    private bool _loading = true;
+    private bool _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tag = await Service.GetByIdAsync(Id);
+
+        if (tag is not null)
+        {
+            _model = new EditModel
+            {
+                Name = tag.Name,
+                Description = tag.Description,
+                Color = tag.Color
+            };
+        }
+
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_model is null) return;
+
+        _saving = true;
+        _errors = [];
+
+        var (success, errors) = await Service.UpdateAsync(Id, new UpdateTagRequest(_model.Name, _model.Description, _model.Color));
+
+        if (success)
+            Nav.NavigateTo("/tags");
+        else
+            _errors = errors.Count > 0 ? errors : [L["TagEdit_UpdateFailed"]];
+
+        _saving = false;
+    }
+
+    private sealed class EditModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string Color { get; set; } = "#0d6efd";
+    }
+}

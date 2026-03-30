@@ -1,0 +1,13 @@
+.border-dashed {
+    border-style: dashed !important;
+    border-color: var(--bs-primary) !important;
+}
+
+::deep .template-card {
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+::deep .template-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.12);
+}

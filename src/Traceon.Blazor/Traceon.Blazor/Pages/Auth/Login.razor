@@ -1,0 +1,136 @@
+@page "/auth/login"
+@inject IStringLocalizer<SharedResource> L
+
+<h3>@L["Auth_Login"]</h3>
+
+@if (!string.IsNullOrEmpty(_externalError))
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        @L["Auth_ExternalLoginFailed"]
+    </div>
+}
+
+@if (_emailNotConfirmed)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-envelope-exclamation me-1"></i>
+        @L["Auth_EmailNotConfirmed"]
+        <button class="btn btn-link p-0 ms-1" @onclick="ResendConfirmationAsync" disabled="@_resending">
+            @(_resending ? L["Auth_Sending"] : L["Auth_ResendConfirmation"])
+        </button>
+    </div>
+    @if (_resent)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle me-1"></i>
+            @L["Auth_ConfirmationResent"]
+        </div>
+    }
+}
+
+<ErrorAlert Errors="_errors" />
+
+@if (_externalProviders.Count > 0)
+{
+    <div class="d-grid gap-2 mb-3">
+        @foreach (var provider in _externalProviders)
+        {
+            var (icon, btnClass) = provider switch
+            {
+                "Google" => ("google", "btn-outline-danger"),
+                "Microsoft" => ("microsoft", "btn-outline-primary"),
+                _ => ("box-arrow-in-right", "btn-outline-secondary")
+            };
+            <a href="@Auth.GetExternalLoginUrl(provider)" class="btn @btnClass">
+                <i class="bi bi-@icon me-2"></i>@L["Auth_SignInWith"] @provider
+            </a>
+        }
+    </div>
+    <div class="d-flex align-items-center mb-3">
+        <hr class="flex-grow-1" />
+        <span class="px-3 text-muted small">@L["Auth_OrWithEmail"]</span>
+        <hr class="flex-grow-1" />
+    </div>
+}
+
+<EditForm Model="_model" OnValidSubmit="HandleLogin" FormName="LoginForm">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label class="form-label">@L["Common_Email"]</label>
+        <InputText @bind-Value="_model.Email" class="form-control" />
+        <ValidationMessage For="() => _model.Email" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">@L["Common_Password"]</label>
+        <InputText @bind-Value="_model.Password" type="password" class="form-control" />
+        <ValidationMessage For="() => _model.Password" />
+    </div>
+    <button type="submit" class="btn btn-primary" disabled="@_loading">
+        @(_loading ? L["Auth_LoggingIn"] : L["Auth_Login"])
+    </button>
+    <a href="/auth/register" class="btn btn-link">@L["Auth_CreateAccount"]</a>
+    <a href="/auth/forgot-password" class="btn btn-link">@L["Auth_ForgotPassword"]</a>
+</EditForm>
+
+@code {
+    [Inject] private AuthService Auth { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "error")] public string? _externalError { get; set; }
+
+    private LoginModel _model = new();
+    private IReadOnlyList<string> _errors = [];
+    private IReadOnlyList<string> _externalProviders = [];
+    private bool _loading;
+    private bool _emailNotConfirmed;
+    private bool _resending;
+    private bool _resent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _externalProviders = await Auth.GetExternalProvidersAsync();
+    }
+
+    private async Task HandleLogin()
+    {
+        _loading = true;
+        _errors = [];
+        _emailNotConfirmed = false;
+        _resent = false;
+
+        var (success, errors) = await Auth.LoginAsync(new LoginRequest(_model.Email, _model.Password));
+
+        if (success)
+        {
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        else if (errors.Count == 1 && errors[0] == "EmailNotConfirmed")
+        {
+            _emailNotConfirmed = true;
+        }
+        else
+        {
+            _errors = errors.Count > 0 ? errors : [L["Auth_LoginFailed"]];
+        }
+
+        _loading = false;
+    }
+
+    private async Task ResendConfirmationAsync()
+    {
+        _resending = true;
+        await Auth.ResendConfirmationAsync(new ResendConfirmationRequest(_model.Email));
+        _resent = true;
+        _resending = false;
+    }
+
+    private sealed class LoginModel
+    {
+        [Required, EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
+    }
+}

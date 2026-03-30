@@ -1,0 +1,133 @@
+@inject IStringLocalizer<SharedResource> L
+
+@if (_isOpen)
+{
+    <div class="list-actions-backdrop" @onclick="CloseDropdown"></div>
+}
+
+<div class="list-actions-dropdown btn-group btn-group-sm" role="group" @onclick:stopPropagation="true">
+    <button class="btn btn-outline-@PrimaryButtonStyle"
+            @onclick="HandlePrimaryActionAsync"
+            title="@PrimaryTitle"
+            disabled="@PrimaryDisabled">
+        @if (!string.IsNullOrEmpty(PrimaryIcon))
+        {
+            <i class="bi bi-@PrimaryIcon me-1"></i>
+        }
+        @PrimaryText
+    </button>
+
+    @if (Actions.Count > 0)
+    {
+        <button type="button"
+                class="btn btn-outline-@PrimaryButtonStyle dropdown-toggle dropdown-toggle-split"
+                @onclick="ToggleDropdown">
+            <span class="visually-hidden">@L["Common_MoreActions"]</span>
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end @(_isOpen ? "show" : "")">
+            @foreach (var action in Actions)
+            {
+                @if (action.IsSeparator)
+                {
+                    <li><hr class="dropdown-divider"></li>
+                }
+                else if (action.IsDisabled)
+                {
+                    <li>
+                        <span class="dropdown-item disabled text-muted"
+                              title="@action.Tooltip"
+                              style="cursor: not-allowed;">
+                            @if (!string.IsNullOrEmpty(action.Icon))
+                            {
+                                <i class="bi bi-@action.Icon text-muted me-2"></i>
+                            }
+                            @action.Text
+                        </span>
+                    </li>
+                }
+                else if (!string.IsNullOrEmpty(action.Href))
+                {
+                    <li>
+                        <a class="dropdown-item @GetActionTextClass(action)"
+                           href="@action.Href"
+                           title="@action.Tooltip"
+                           @onclick="CloseDropdown">
+                            @if (!string.IsNullOrEmpty(action.Icon))
+                            {
+                                <i class="bi bi-@action.Icon @GetActionIconClass(action) me-2"></i>
+                            }
+                            @action.Text
+                        </a>
+                    </li>
+                }
+                else if (action.OnClick is not null)
+                {
+                    <li>
+                        <button class="dropdown-item @GetActionTextClass(action)"
+                                title="@action.Tooltip"
+                                @onclick="() => HandleActionClickAsync(action)">
+                            @if (!string.IsNullOrEmpty(action.Icon))
+                            {
+                                <i class="bi bi-@action.Icon @GetActionIconClass(action) me-2"></i>
+                            }
+                            @action.Text
+                        </button>
+                    </li>
+                }
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required EventCallback PrimaryAction { get; set; }
+
+    [Parameter, EditorRequired]
+    public required string PrimaryText { get; set; }
+
+    [Parameter] public string PrimaryIcon { get; set; } = string.Empty;
+    [Parameter] public string PrimaryTitle { get; set; } = string.Empty;
+    [Parameter] public string PrimaryButtonStyle { get; set; } = "primary";
+    [Parameter] public bool PrimaryDisabled { get; set; }
+    [Parameter] public List<ListAction> Actions { get; set; } = [];
+    [Parameter] public EventCallback OnAfterAction { get; set; }
+
+    private bool _isOpen;
+
+    private async Task HandlePrimaryActionAsync()
+    {
+        CloseDropdown();
+        await PrimaryAction.InvokeAsync();
+    }
+
+    private void ToggleDropdown() => _isOpen = !_isOpen;
+
+    private void CloseDropdown() => _isOpen = false;
+
+    private async Task HandleActionClickAsync(ListAction action)
+    {
+        CloseDropdown();
+        if (action.OnClick is not null)
+            await action.OnClick.Invoke();
+        await OnAfterAction.InvokeAsync();
+    }
+
+    private static string GetActionTextClass(ListAction action) => action.Style switch
+    {
+        ListActionStyle.Danger => "text-danger",
+        _ => string.Empty
+    };
+
+    private static string GetActionIconClass(ListAction action) => action.Style switch
+    {
+        ListActionStyle.Primary => "text-primary",
+        ListActionStyle.Success => "text-success",
+        ListActionStyle.Warning => "text-warning",
+        ListActionStyle.Danger => string.Empty,
+        ListActionStyle.Info => "text-info",
+        ListActionStyle.Secondary => "text-secondary",
+        _ => string.Empty
+    };
+}

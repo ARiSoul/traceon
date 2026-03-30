@@ -1,0 +1,633 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+
+  <!-- ═══ Navegação ═══ -->
+  <data name="Nav_Home"><value>Início</value></data>
+  <data name="Nav_TrackedActions"><value>Acções</value></data>
+  <data name="Nav_Entries"><value>Registos</value></data>
+  <data name="Nav_Dashboard"><value>Dashboard</value></data>
+  <data name="Nav_Tags"><value>Etiquetas</value></data>
+  <data name="Nav_CustomFields"><value>Campos Personalizados</value></data>
+  <data name="Nav_Settings"><value>Definições</value></data>
+  <data name="Nav_Tracking"><value>REGISTO</value></data>
+  <data name="Nav_Configuration"><value>CONFIGURAÇÃO</value></data>
+  <data name="Nav_Menu"><value>Menu de navegação</value></data>
+
+  <!-- ═══ Layout ═══ -->
+  <data name="Layout_Logout"><value>Sair</value></data>
+  <data name="Layout_Login"><value>Entrar</value></data>
+  <data name="Layout_Theme"><value>Tema</value></data>
+
+  <!-- ═══ Comum ═══ -->
+  <data name="Common_Save"><value>Guardar</value></data>
+  <data name="Common_Cancel"><value>Cancelar</value></data>
+  <data name="Common_Delete"><value>Eliminar</value></data>
+  <data name="Common_Edit"><value>Editar</value></data>
+  <data name="Common_Create"><value>Criar</value></data>
+  <data name="Common_Back"><value>Voltar</value></data>
+  <data name="Common_Loading"><value>A carregar...</value></data>
+  <data name="Common_Yes"><value>Sim</value></data>
+  <data name="Common_No"><value>Não</value></data>
+  <data name="Common_Name"><value>Nome</value></data>
+  <data name="Common_Description"><value>Descrição</value></data>
+  <data name="Common_Type"><value>Tipo</value></data>
+  <data name="Common_Created"><value>Criado</value></data>
+  <data name="Common_Actions"><value>Acções</value></data>
+  <data name="Common_Required"><value>Obrigatório</value></data>
+  <data name="Common_Optional"><value>opcional</value></data>
+  <data name="Common_SaveChanges"><value>Guardar Alterações</value></data>
+  <data name="Common_BackToList"><value>Voltar à Lista</value></data>
+  <data name="Common_Track"><value>Registar</value></data>
+  <data name="Common_Email"><value>Email</value></data>
+  <data name="Common_Password"><value>Palavra-passe</value></data>
+  <data name="Common_Search"><value>Pesquisar</value></data>
+  <data name="Common_Filter"><value>Filtrar</value></data>
+  <data name="Common_AllTime"><value>Todo o Período</value></data>
+  <data name="Common_Entries"><value>Registos</value></data>
+  <data name="Common_Fields"><value>Campos</value></data>
+  <data name="Common_Tags"><value>Etiquetas</value></data>
+  <data name="Common_NoDataYet"><value>Sem dados ainda</value></data>
+  <data name="Common_MoveUp"><value>Mover para cima</value></data>
+  <data name="Common_MoveDown"><value>Mover para baixo</value></data>
+
+  <!-- ═══ Início ═══ -->
+  <data name="Home_AppName"><value>Traceon</value></data>
+  <data name="Home_Subtitle"><value>Registe, meça e melhore as suas acções diárias</value></data>
+  <data name="Home_TrackedSuccess"><value>registado com sucesso!</value></data>
+  <data name="Home_NoActionsYet"><value>Sem acções ainda</value></data>
+  <data name="Home_NoActionsHint"><value>Crie a sua primeira acção para começar a registar.</value></data>
+  <data name="Home_CreateAction"><value>Criar Acção</value></data>
+  <data name="Home_QuickTracking"><value>Registo Rápido</value></data>
+  <data name="Home_Reorder"><value>Reordenar</value></data>
+  <data name="Home_Done"><value>Concluído</value></data>
+  <data name="Home_Welcome"><value>Bem-vindo ao Traceon</value></data>
+  <data name="Home_WelcomeHint"><value>Registe, meça e melhore as suas acções diárias.</value></data>
+  <data name="Home_Register"><value>Registar</value></data>
+
+  <!-- ═══ Autenticação ═══ -->
+  <data name="Auth_Login"><value>Entrar</value></data>
+  <data name="Auth_LoggingIn"><value>A entrar...</value></data>
+  <data name="Auth_CreateAccount"><value>Criar uma conta</value></data>
+  <data name="Auth_ForgotPassword"><value>Esqueceu a palavra-passe?</value></data>
+  <data name="Auth_LoginFailed"><value>Falha no login.</value></data>
+  <data name="Auth_Register"><value>Registar</value></data>
+  <data name="Auth_Registering"><value>A registar...</value></data>
+  <data name="Auth_AlreadyHaveAccount"><value>Já tem uma conta? Entrar</value></data>
+  <data name="Auth_RegisterSuccess"><value>Registo efectuado com sucesso! Verifique o seu email para confirmar a conta e depois entre.</value></data>
+  <data name="Auth_ForgotPasswordTitle"><value>Esqueci a Palavra-passe</value></data>
+  <data name="Auth_ForgotPasswordHint"><value>Introduza o seu email e enviaremos um código de recuperação.</value></data>
+  <data name="Auth_SendResetCode"><value>Enviar Link de Recuperação</value></data>
+  <data name="Auth_Sending"><value>A enviar...</value></data>
+  <data name="Auth_ResetCodeSent"><value>Se existir uma conta com esse email, um link de recuperação foi enviado.</value></data>
+  <data name="Auth_ResetLinkSent"><value>Se existir uma conta com esse email, um link de recuperação de palavra-passe foi enviado. Verifique a sua caixa de entrada.</value></data>
+  <data name="Auth_ResetForEmail"><value>A redefinir palavra-passe para</value></data>
+  <data name="Auth_BackToLogin"><value>Voltar ao Login</value></data>
+  <data name="Auth_ResetPassword"><value>Redefinir Palavra-passe</value></data>
+  <data name="Auth_ResetCode"><value>Código de Recuperação</value></data>
+  <data name="Auth_NewPassword"><value>Nova Palavra-passe</value></data>
+  <data name="Auth_Resetting"><value>A redefinir...</value></data>
+  <data name="Auth_ResetSuccess"><value>Palavra-passe redefinida com sucesso! Pode agora entrar com a nova palavra-passe.</value></data>
+  <data name="Auth_ConfirmPassword"><value>Confirmar Palavra-passe</value></data>
+
+  <!-- ═══ Registo Rápido ═══ -->
+  <data name="QuickTrack_When"><value>Quando?</value></data>
+  <data name="QuickTrack_Notes"><value>Notas</value></data>
+  <data name="QuickTrack_NotesPlaceholder"><value>Notas sobre este registo...</value></data>
+
+  <!-- ═══ Acções ═══ -->
+  <data name="TrackedActions_Title"><value>Acções</value></data>
+  <data name="TrackedActions_Subtitle"><value>Gerir as suas acções e monitorizar o progresso</value></data>
+  <data name="TrackedActions_New"><value>Nova Acção</value></data>
+  <data name="TrackedActions_Empty"><value>Sem acções ainda. Crie uma para começar!</value></data>
+  <data name="TrackedActions_Analytics"><value>Estatísticas</value></data>
+  <data name="TrackedActions_ViewEntries"><value>Ver Registos</value></data>
+  <data name="TrackedActions_NewEntry"><value>Novo Registo</value></data>
+  <data name="TrackedActions_EditAction"><value>Editar Acção</value></data>
+
+  <!-- ═══ Criar Acção ═══ -->
+  <data name="ActionCreate_Title"><value>Criar Acção</value></data>
+  <data name="ActionCreate_Subtitle"><value>Configure uma nova acção com campos e etiquetas</value></data>
+  <data name="ActionCreate_Next"><value>Seguinte</value></data>
+  <data name="ActionCreate_Previous"><value>Anterior</value></data>
+  <data name="ActionCreate_CreateNow"><value>Criar Acção</value></data>
+
+  <!-- ═══ Editar Acção ═══ -->
+  <data name="ActionEdit_Title"><value>Editar Acção</value></data>
+  <data name="ActionEdit_Editing"><value>A editar</value></data>
+
+  <!-- ═══ Dashboard ═══ -->
+  <data name="Dashboard_Title"><value>Dashboard</value></data>
+  <data name="Dashboard_Subtitle"><value>Visão geral da sua actividade</value></data>
+  <data name="Dashboard_TotalActions"><value>Total de Acções</value></data>
+  <data name="Dashboard_TotalEntries"><value>Total de Registos</value></data>
+  <data name="Dashboard_Today"><value>Hoje</value></data>
+  <data name="Dashboard_ThisWeek"><value>Esta Semana</value></data>
+  <data name="Dashboard_ThisMonth"><value>Este Mês</value></data>
+  <data name="Dashboard_Streak"><value>Sequência</value></data>
+  <data name="Dashboard_GlobalFrequency"><value>Frequência Global de Registos</value></data>
+  <data name="Dashboard_Period"><value>Período</value></data>
+  <data name="Dashboard_LastNDays"><value>Últimos N Dias</value></data>
+  <data name="Dashboard_LastNMonths"><value>Últimos N Meses</value></data>
+  <data name="Dashboard_LastNYears"><value>Últimos N Anos</value></data>
+  <data name="Dashboard_CustomRange"><value>Intervalo Personalizado</value></data>
+  <data name="Dashboard_Days"><value>Dias</value></data>
+  <data name="Dashboard_Months"><value>Meses</value></data>
+  <data name="Dashboard_Years"><value>Anos</value></data>
+  <data name="Dashboard_From"><value>De</value></data>
+  <data name="Dashboard_To"><value>Até</value></data>
+  <data name="Dashboard_PerActionStats"><value>Estatísticas por Acção</value></data>
+  <data name="Dashboard_NoActionsMatch"><value>Nenhuma acção corresponde ao filtro seleccionado.</value></data>
+  <data name="Dashboard_WeeklyActivity"><value>Actividade Semanal (últimos 3 meses)</value></data>
+  <data name="Dashboard_FullAnalytics"><value>Estatísticas Completas</value></data>
+  <data name="Dashboard_FieldAnalytics"><value>Estatísticas de Campos</value></data>
+  <data name="Dashboard_FieldTrends"><value>Tendências de Campos</value></data>
+  <data name="Dashboard_FieldSummary"><value>Resumo de Campos</value></data>
+  <data name="Dashboard_NoEntriesYet"><value>Sem registos ainda para esta acção.</value></data>
+  <data name="Dashboard_AddEntry"><value>Adicionar Registo</value></data>
+  <data name="Dashboard_TotalEntries_Label"><value>Total de Registos</value></data>
+  <data name="Dashboard_LastEntry"><value>Último Registo</value></data>
+  <data name="Dashboard_AvgGap"><value>Intervalo Médio</value></data>
+  <data name="Dashboard_DayStreak"><value>Sequência Diária</value></data>
+  <data name="Dashboard_Tag"><value>Etiqueta</value></data>
+  <data name="Dashboard_All"><value>Todos</value></data>
+  <data name="Dashboard_AllActions"><value>Todas as Acções</value></data>
+
+  <!-- ═══ Estatísticas da Acção ═══ -->
+  <data name="Analytics_Title"><value>Estatísticas da Acção</value></data>
+  <data name="Analytics_DeepDive"><value>Análise detalhada de</value></data>
+  <data name="Analytics_BackToDashboard"><value>Voltar ao Dashboard</value></data>
+  <data name="Analytics_EntryFrequency"><value>Frequência de Registos</value></data>
+  <data name="Analytics_ActionNotFound"><value>Acção não encontrada.</value></data>
+  <data name="Analytics_ValuesRecorded"><value>valores registados</value></data>
+
+  <!-- ═══ Registos ═══ -->
+  <data name="Entries_Title"><value>Registos</value></data>
+  <data name="Entries_Subtitle"><value>Consultar e gerir todos os seus registos</value></data>
+  <data name="Entries_NewEntry"><value>Novo Registo</value></data>
+
+  <!-- ═══ Etiquetas ═══ -->
+  <data name="Tags_Title"><value>Etiquetas</value></data>
+  <data name="Tags_Subtitle"><value>Organize as suas acções com etiquetas coloridas</value></data>
+  <data name="Tags_New"><value>Nova Etiqueta</value></data>
+  <data name="Tags_Empty"><value>Sem etiquetas ainda. Crie uma para começar!</value></data>
+  <data name="Tags_Color"><value>Cor</value></data>
+
+  <!-- ═══ Campos Personalizados ═══ -->
+  <data name="Fields_Title"><value>Campos Personalizados</value></data>
+  <data name="Fields_Subtitle"><value>Defina modelos de campos reutilizáveis que podem ser atribuídos a acções</value></data>
+  <data name="Fields_New"><value>Novo Campo Personalizado</value></data>
+  <data name="Fields_Empty"><value>Sem campos personalizados ainda. Crie um para começar!</value></data>
+  <data name="Fields_Unit"><value>Unidade</value></data>
+  <data name="Fields_UnitHint"><value>A unidade de medida para este campo (predefinição: UN).</value></data>
+  <data name="Fields_UnitPlaceholder"><value>ex.: €, kg, km, min</value></data>
+  <data name="Fields_MinValue"><value>Valor Mínimo</value></data>
+  <data name="Fields_MaxValue"><value>Valor Máximo</value></data>
+  <data name="Fields_MinDate"><value>Data Mínima</value></data>
+  <data name="Fields_MaxDate"><value>Data Máxima</value></data>
+  <data name="Fields_DefaultValue"><value>Valor Predefinido</value></data>
+  <data name="Fields_RequiredByDefault"><value>Obrigatório por predefinição</value></data>
+  <data name="Fields_DropdownValues"><value>Valores do Dropdown</value></data>
+  <data name="Fields_DropdownHint"><value>Introduza valores separados por vírgula para as opções do dropdown.</value></data>
+  <data name="Fields_DropdownPlaceholder"><value>Valores separados por vírgula, ex.: Baixo, Médio, Alto</value></data>
+  <data name="Fields_CheckedByDefault"><value>Seleccionado por predefinição</value></data>
+  <data name="Fields_CreateField"><value>Criar Campo</value></data>
+  <data name="Fields_SelectDefault"><value>— Seleccionar predefinição —</value></data>
+  <data name="Fields_DefineDropdownFirst"><value>Defina os valores do dropdown acima primeiro.</value></data>
+
+  <!-- ═══ Editor de Campos ═══ -->
+  <data name="FieldEditor_AnalyticsConfig"><value>Configuração de Estatísticas</value></data>
+  <data name="FieldEditor_SummaryMetrics"><value>Métricas de Resumo</value></data>
+  <data name="FieldEditor_TrendAggregation"><value>Agregação de Tendência</value></data>
+  <data name="FieldEditor_AllPoints"><value>Todos os Pontos</value></data>
+  <data name="FieldEditor_DailyAverage"><value>Média Diária</value></data>
+  <data name="FieldEditor_DailyMin"><value>Mínimo Diário</value></data>
+  <data name="FieldEditor_DailyMax"><value>Máximo Diário</value></data>
+  <data name="FieldEditor_DailySum"><value>Soma Diária</value></data>
+  <data name="FieldEditor_ChartType"><value>Tipo de Gráfico</value></data>
+  <data name="FieldEditor_Line"><value>Linha</value></data>
+  <data name="FieldEditor_Bar"><value>Barra</value></data>
+  <data name="FieldEditor_Area"><value>Área</value></data>
+  <data name="FieldEditor_TargetValue"><value>Valor Objectivo</value></data>
+
+  <!-- ═══ Definições ═══ -->
+  <data name="Settings_Title"><value>Definições</value></data>
+  <data name="Settings_Subtitle"><value>Gerir a sua conta e preferências</value></data>
+  <data name="Settings_Preferences"><value>Preferências</value></data>
+  <data name="Settings_Security"><value>Segurança</value></data>
+  <data name="Settings_Account"><value>Conta</value></data>
+  <data name="Settings_Appearance"><value>Aparência</value></data>
+  <data name="Settings_Theme"><value>Tema</value></data>
+  <data name="Settings_ThemeSystem"><value>Sistema</value></data>
+  <data name="Settings_ThemeLight"><value>Claro</value></data>
+  <data name="Settings_ThemeDark"><value>Escuro</value></data>
+  <data name="Settings_ThemeSystemHint"><value>Segue a preferência do sistema operativo.</value></data>
+  <data name="Settings_ThemeLightHint"><value>Usar sempre o modo claro.</value></data>
+  <data name="Settings_ThemeDarkHint"><value>Usar sempre o modo escuro.</value></data>
+  <data name="Settings_Language"><value>Idioma</value></data>
+  <data name="Settings_DisplayLanguage"><value>Idioma de Apresentação</value></data>
+  <data name="Settings_LanguageHint"><value>Seleccione o seu idioma preferido. A aplicação será recarregada para aplicar.</value></data>
+  <data name="Settings_ChangePassword"><value>Alterar Palavra-passe</value></data>
+  <data name="Settings_CurrentPassword"><value>Palavra-passe Actual</value></data>
+  <data name="Settings_NewPassword"><value>Nova Palavra-passe</value></data>
+  <data name="Settings_ConfirmNewPassword"><value>Confirmar Nova Palavra-passe</value></data>
+  <data name="Settings_PasswordChanged"><value>Palavra-passe alterada com sucesso.</value></data>
+  <data name="Settings_PasswordFillAll"><value>Por favor, preencha todos os campos de palavra-passe.</value></data>
+  <data name="Settings_PasswordNoMatch"><value>A nova palavra-passe e a confirmação não coincidem.</value></data>
+  <data name="Settings_PasswordTooShort"><value>A nova palavra-passe deve ter pelo menos 6 caracteres.</value></data>
+  <data name="Settings_AccountInfo"><value>Informações da Conta</value></data>
+  <data name="Settings_DangerZone"><value>Zona de Perigo</value></data>
+  <data name="Settings_DeleteAccountWarning"><value>Eliminar permanentemente a sua conta e todos os dados associados. Esta acção não pode ser desfeita.</value></data>
+  <data name="Settings_DeleteMyAccount"><value>Eliminar Minha Conta</value></data>
+  <data name="Settings_DeleteConfirmation"><value>Tem a certeza? Isto irá eliminar permanentemente a sua conta e todas as suas acções, registos, campos personalizados e etiquetas.</value></data>
+  <data name="Settings_TypeDelete"><value>Escreva DELETE para confirmar</value></data>
+  <data name="Settings_PermanentlyDelete"><value>Eliminar Permanentemente</value></data>
+
+  <!-- ═══ DataGrid ═══ -->
+  <data name="DataGrid_NoResults"><value>Sem resultados encontrados.</value></data>
+  <data name="DataGrid_Showing"><value>A mostrar</value></data>
+  <data name="DataGrid_Of"><value>de</value></data>
+
+  <!-- ═══ Métricas ═══ -->
+  <data name="Metric_Min"><value>Mín</value></data>
+  <data name="Metric_Max"><value>Máx</value></data>
+  <data name="Metric_Avg"><value>Méd</value></data>
+  <data name="Metric_Sum"><value>Soma</value></data>
+  <data name="Metric_Count"><value>Contagem</value></data>
+  <data name="Metric_Latest"><value>Último</value></data>
+  <data name="Metric_Target"><value>Objectivo</value></data>
+
+  <!-- ═══ Edição de Registo ═══ -->
+  <data name="Entry_NewTitle"><value>Novo Registo</value></data>
+  <data name="Entry_EditTitle"><value>Editar Registo</value></data>
+  <data name="Entry_NewSubtitle"><value>Registar um novo registo para</value></data>
+  <data name="Entry_EditSubtitle"><value>Actualizar este registo para</value></data>
+  <data name="Entry_SaveEntry"><value>Guardar Registo</value></data>
+  <data name="Entry_Select"><value>— Seleccionar —</value></data>
+
+  <!-- ═══ Edição de Acção - Separadores ═══ -->
+  <data name="ActionEdit_BasicInfo"><value>Informações Básicas</value></data>
+  <data name="ActionEdit_FieldsHint"><value>Gerir os campos de dados capturados para cada registo. Clique num campo para editar as suas definições.</value></data>
+  <data name="ActionEdit_AddFields"><value>Adicionar Campos</value></data>
+  <data name="ActionEdit_NoFields"><value>Sem campos atribuídos ainda.</value></data>
+  <data name="ActionEdit_SelectFields"><value>Seleccionar Campos</value></data>
+  <data name="ActionEdit_TagsHint"><value>Gerir quais etiquetas estão atribuídas a esta acção.</value></data>
+  <data name="ActionEdit_AddTags"><value>Adicionar Etiquetas</value></data>
+  <data name="ActionEdit_NoTags"><value>Sem etiquetas atribuídas ainda.</value></data>
+  <data name="ActionEdit_SelectTags"><value>Seleccionar Etiquetas</value></data>
+  <data name="ActionEdit_SavingOrder"><value>A guardar ordem...</value></data>
+  <data name="ActionEdit_NotFound"><value>Acção não encontrada.</value></data>
+
+  <!-- ═══ ModalSelector ═══ -->
+  <data name="ModalSelector_SelectAll"><value>Seleccionar Todos</value></data>
+  <data name="ModalSelector_DeselectAll"><value>Desseleccionar Todos</value></data>
+  <data name="ModalSelector_Selected"><value>seleccionados</value></data>
+  <data name="ModalSelector_Confirm"><value>Confirmar Selecção</value></data>
+  <data name="ModalSelector_CreateNew"><value>Criar Novo</value></data>
+
+  <!-- ═══ EntryDataGrid ═══ -->
+  <data name="EntryGrid_Action"><value>Acção</value></data>
+  <data name="EntryGrid_Date"><value>Data</value></data>
+  <data name="EntryGrid_Notes"><value>Notas</value></data>
+  <data name="EntryGrid_AllActions"><value>Todas as Acções</value></data>
+  <data name="EntryGrid_Empty"><value>Sem registos ainda. Comece a registar!</value></data>
+
+  <!-- ═══ Não Encontrado ═══ -->
+  <data name="NotFound_Title"><value>Página Não Encontrada</value></data>
+  <data name="NotFound_Message"><value>Desculpe, não há nada neste endereço.</value></data>
+
+  <!-- ═══ Página de Edição ═══ -->
+  <data name="Edit_BasicInfo"><value>Informações Básicas</value></data>
+  <data name="Edit_NotFound"><value>Acção não encontrada.</value></data>
+  <data name="Edit_FieldsHint"><value>Gerir os campos de dados capturados para cada registo. Clique num campo para editar as suas definições.</value></data>
+  <data name="Edit_AddFields"><value>Adicionar Campos</value></data>
+  <data name="Edit_NoFieldsYet"><value>Sem campos atribuídos ainda.</value></data>
+  <data name="Edit_SelectFields"><value>Seleccionar Campos</value></data>
+  <data name="Edit_SavingOrder"><value>A guardar ordem...</value></data>
+  <data name="Edit_TagsHint"><value>Gerir quais etiquetas estão atribuídas a esta acção.</value></data>
+  <data name="Edit_AddTags"><value>Adicionar Etiquetas</value></data>
+  <data name="Edit_NoTagsYet"><value>Sem etiquetas atribuídas ainda.</value></data>
+  <data name="Edit_SelectTags"><value>Seleccionar Etiquetas</value></data>
+  <data name="Edit_UpdateFailed"><value>Falha ao actualizar a acção.</value></data>
+
+  <!-- ═══ Modais ═══ -->
+  <data name="Modal_SelectTags"><value>Seleccionar Etiquetas</value></data>
+  <data name="Modal_SelectFields"><value>Seleccionar Campos Personalizados</value></data>
+  <data name="Modal_SearchTags"><value>Pesquisar etiquetas...</value></data>
+  <data name="Modal_SearchFields"><value>Pesquisar campos personalizados...</value></data>
+  <data name="Modal_NoTagsAvailable"><value>Sem etiquetas disponíveis. Crie uma abaixo.</value></data>
+  <data name="Modal_NoFieldsAvailable"><value>Sem campos personalizados disponíveis. Crie um abaixo.</value></data>
+
+  <!-- ═══ Dashboard (extra) ═══ -->
+  <data name="Dashboard_Refresh"><value>Actualizar</value></data>
+  <data name="Dashboard_AvgVsMax"><value>Média vs máximo configurado ({0})</value></data>
+  <data name="Dashboard_StatsSubtitle"><value>Estatísticas e informações sobre as suas acções</value></data>
+
+  <!-- ═══ Editar Etiqueta ═══ -->
+  <data name="TagEdit_Title"><value>Editar Etiqueta</value></data>
+  <data name="TagEdit_Subtitle"><value>Actualizar os detalhes da sua etiqueta</value></data>
+  <data name="TagEdit_BackToTags"><value>Voltar às Etiquetas</value></data>
+
+  <!-- ═══ Editar Campo ═══ -->
+  <data name="FieldEdit_EditTitle"><value>Editar Campo Personalizado</value></data>
+  <data name="FieldEdit_CreateTitle"><value>Criar Campo Personalizado</value></data>
+  <data name="FieldEdit_EditSubtitle"><value>Actualizar os detalhes do seu campo personalizado</value></data>
+  <data name="FieldEdit_CreateSubtitle"><value>Definir um novo modelo de campo reutilizável</value></data>
+  <data name="FieldEdit_BackToFields"><value>Voltar aos Campos Personalizados</value></data>
+
+  <!-- ═══ Filtros / Placeholders ═══ -->
+  <data name="Filter_ByNameOrDesc"><value>Filtrar por nome ou descrição...</value></data>
+  <data name="Filter_ByName"><value>Filtrar por nome...</value></data>
+  <data name="Filter_ByNotes"><value>Filtrar por notas...</value></data>
+  <data name="Filter_DateField"><value>Campo de data</value></data>
+  <data name="Filter_Occurred"><value>Ocorrido</value></data>
+  <data name="Filter_TagName"><value>Nome da etiqueta</value></data>
+  <data name="Filter_WhatTracking"><value>O que está a registar?</value></data>
+  <data name="Filter_NamePlaceholder"><value>ex.: Exercício Diário</value></data>
+  <data name="Filter_AnyNotes"><value>Quaisquer notas...</value></data>
+
+  <!-- ═══ Edição de Etiqueta ═══ -->
+  <data name="TagEdit_NotFound"><value>Etiqueta não encontrada.</value></data>
+  <data name="TagEdit_UpdateFailed"><value>Falha ao actualizar etiqueta.</value></data>
+
+  <!-- ═══ Edição de Campo Personalizado ═══ -->
+  <data name="FieldEdit_NotFound"><value>Campo personalizado não encontrado.</value></data>
+  <data name="FieldEdit_UpdateFailed"><value>Falha ao actualizar campo personalizado.</value></data>
+
+  <!-- ═══ Assistente de Criação ═══ -->
+  <data name="Wizard_BasicInfo"><value>Informação Básica</value></data>
+  <data name="Wizard_Review"><value>Revisão</value></data>
+  <data name="Wizard_NameRequired"><value>O nome é obrigatório.</value></data>
+  <data name="Wizard_ActionNotFound"><value>Acção criada mas não foi possível encontrá-la.</value></data>
+  <data name="Wizard_NoTagsHint"><value>Sem etiquetas seleccionadas. As etiquetas ajudam a organizar e filtrar as suas acções.</value></data>
+  <data name="Wizard_NoFieldsHint"><value>Sem campos seleccionados. Os campos definem que dados captura por registo.</value></data>
+  <data name="Wizard_NoDropdownValues"><value>Sem valores de lista definidos.</value></data>
+  <data name="Wizard_NoTagsSelected"><value>Sem etiquetas seleccionadas</value></data>
+  <data name="Wizard_NoFieldsSelected"><value>Sem campos seleccionados</value></data>
+  <data name="Wizard_NoEntriesAdded"><value>Sem registos adicionados</value></data>
+  <data name="Wizard_HasCustomFields"><value>Esta acção tem campos personalizados</value></data>
+  <data name="Wizard_CustomFieldsHint"><value>Como definiu campos, os registos precisam de ser criados após a configuração — para que todos os valores dos campos possam ser preenchidos.</value></data>
+  <data name="Wizard_RedirectToEntry"><value>Levar-me para adicionar o primeiro registo após criação</value></data>
+  <data name="Wizard_WillRedirect"><value>Será redireccionado para adicionar o primeiro registo após criação</value></data>
+  <data name="Wizard_EntriesAfterCreation"><value>Os registos podem ser adicionados após a criação (os campos personalizados precisam de ser preenchidos)</value></data>
+  <data name="Wizard_NoEntriesHint"><value>Sem registos adicionados ainda. Pode adicionar registos agora ou fazê-lo mais tarde na página inicial.</value></data>
+  <data name="Wizard_AddEntry"><value>Adicionar Registo</value></data>
+
+  <!-- ═══ Dashboard (extra) ═══ -->
+  <data name="Dashboard_NoDataHint"><value>Crie acções e adicione registos para ver o seu dashboard.</value></data>
+  <data name="Dashboard_CreateAction"><value>Criar Acção</value></data>
+  <data name="Dashboard_Entries"><value>registos</value></data>
+  <data name="Dashboard_Day"><value>dia</value></data>
+  <data name="Dashboard_DayPlural"><value>dias</value></data>
+  <data name="Dashboard_EditAction"><value>Editar Acção</value></data>
+  <data name="Dashboard_ViewEntries"><value>Ver Registos</value></data>
+  <data name="Dashboard_NewEntry"><value>Novo Registo</value></data>
+  <data name="Dashboard_True"><value>Verdadeiro</value></data>
+  <data name="Dashboard_False"><value>Falso</value></data>
+  <data name="Dashboard_Responses"><value>respostas</value></data>
+
+  <!-- ═══ DataGrid (extra) ═══ -->
+  <data name="DataGrid_Filter"><value>Filtrar</value></data>
+  <data name="DataGrid_Clear"><value>Limpar</value></data>
+  <data name="DataGrid_FirstPage"><value>Primeira página</value></data>
+  <data name="DataGrid_LastPage"><value>Última página</value></data>
+  <data name="DataGrid_PerPage"><value>/ página</value></data>
+
+  <!-- ═══ Estatísticas (extra) ═══ -->
+  <data name="Analytics_Distribution"><value>Distribuição</value></data>
+  <data name="Dashboard_LoadFailed"><value>Falha ao carregar o dashboard: {0}</value></data>
+  <data name="Analytics_LoadFailed"><value>Falha ao carregar: {0}</value></data>
+
+  <!-- ═══ Comum (extra) ═══ -->
+  <data name="Common_ErrorOccurred"><value>Ocorreu um erro.</value></data>
+
+  <!-- ═══ Formatação de Tempo ═══ -->
+  <data name="Time_JustNow"><value>agora mesmo</value></data>
+  <data name="Time_MinAgo"><value>há {0}m</value></data>
+  <data name="Time_HAgo"><value>há {0}h</value></data>
+  <data name="Time_Yesterday"><value>ontem</value></data>
+  <data name="Time_DAgo"><value>há {0}d</value></data>
+  <data name="Time_Now"><value>agora</value></data>
+  <data name="Time_YDay"><value>ontem</value></data>
+  <data name="Gap_Hours"><value>{0}h</value></data>
+  <data name="Gap_About1Day"><value>~1 dia</value></data>
+  <data name="Gap_Days"><value>{0} dias</value></data>
+  <data name="Gap_About1Week"><value>~1 semana</value></data>
+  <data name="Gap_Weeks"><value>{0} semanas</value></data>
+  <data name="Gap_About1D"><value>~1d</value></data>
+  <data name="Gap_DShort"><value>{0}d</value></data>
+  <data name="Gap_WShort"><value>{0}s</value></data>
+
+  <!-- ═══ ItemSelector / ListActions ═══ -->
+  <data name="Common_Available"><value>Disponíveis</value></data>
+  <data name="Common_Assigned"><value>Atribuídos</value></data>
+  <data name="Common_NoItemsAvailable"><value>Sem itens disponíveis</value></data>
+  <data name="Common_NoItemsAssigned"><value>Sem itens atribuídos</value></data>
+  <data name="Common_MoreActions"><value>Mais acções</value></data>
+  <data name="Common_NoItemsFound"><value>Sem itens encontrados.</value></data>
+
+  <!-- ═══ Validação ═══ -->
+  <data name="Validation_NameRequired"><value>O nome é obrigatório.</value></data>
+  <data name="Validation_MinGreaterThanMax"><value>O valor mínimo não pode ser superior ao valor máximo.</value></data>
+  <data name="Validation_DefaultLessThanMin"><value>O valor predefinido não pode ser inferior ao valor mínimo ({0}).</value></data>
+  <data name="Validation_DefaultGreaterThanMax"><value>O valor predefinido não pode ser superior ao valor máximo ({0}).</value></data>
+  <data name="Validation_MinDateAfterMax"><value>A data mínima não pode ser posterior à data máxima.</value></data>
+  <data name="Validation_DefaultDateBeforeMin"><value>A data predefinida não pode ser anterior à data mínima ({0}).</value></data>
+  <data name="Validation_DefaultDateAfterMax"><value>A data predefinida não pode ser posterior à data máxima ({0}).</value></data>
+  <data name="Validation_FieldRequired"><value>'{0}' é obrigatório.</value></data>
+  <data name="Validation_FieldMinValue"><value>'{0}' deve ser pelo menos {1}.</value></data>
+  <data name="Validation_FieldMaxValue"><value>'{0}' deve ser no máximo {1}.</value></data>
+  <data name="Validation_PasswordsNoMatch"><value>As palavras-passe não coincidem.</value></data>
+
+  <!-- ═══ Erros de Autenticação ═══ -->
+  <data name="Auth_RequestFailed"><value>Pedido falhado.</value></data>
+  <data name="Auth_RegisterFailed"><value>Registo falhado.</value></data>
+  <data name="Auth_ResetFailed"><value>Redefinição de palavra-passe falhada.</value></data>
+
+  <!-- ═══ Formulário de Campo ═══ -->
+  <data name="Fields_CreatedNotRetrieved"><value>Campo criado mas não foi possível recuperá-lo.</value></data>
+  <data name="Fields_AssignmentNotFound"><value>Atribuição de campo não encontrada.</value></data>
+
+  <!-- ═══ Página de Campos de Acção ═══ -->
+  <data name="Fields_ManageTitle"><value>Gerir Campos</value></data>
+  <data name="Fields_ManageSubtitle"><value>Atribuir ou remover campos para</value></data>
+  <data name="Fields_BackToActions"><value>Voltar às Acções</value></data>
+  <data name="Fields_AllAssigned"><value>Todos os campos personalizados estão atribuídos</value></data>
+  <data name="Fields_NoneAssigned"><value>Sem campos atribuídos ainda</value></data>
+
+  <!-- ═══ Página de Etiquetas de Acção ═══ -->
+  <data name="Tags_ManageTitle"><value>Gerir Etiquetas</value></data>
+  <data name="Tags_ManageSubtitle"><value>Atribuir ou remover etiquetas para</value></data>
+  <data name="Tags_BackToActions"><value>Voltar às Acções</value></data>
+  <data name="Tags_AllAssigned"><value>Todas as etiquetas estão atribuídas</value></data>
+  <data name="Tags_NoneAssigned"><value>Sem etiquetas atribuídas ainda</value></data>
+
+  <!-- ═══ Confirmação de Email ═══ -->
+  <data name="Auth_ConfirmEmail"><value>Confirmar Email</value></data>
+  <data name="Auth_EmailConfirmed"><value>O seu email foi confirmado! Pode agora</value></data>
+  <data name="Auth_ConfirmEmailFailed"><value>Falha na confirmação do email. O link pode ter expirado.</value></data>
+  <data name="Auth_ConfirmEmailInvalidLink"><value>Link de confirmação inválido.</value></data>
+  <data name="Auth_EmailNotConfirmed"><value>O seu email não está confirmado. Verifique a sua caixa de entrada ou</value></data>
+  <data name="Auth_ResendConfirmation"><value>reenviar o email de confirmação</value></data>
+  <data name="Auth_ConfirmationResent"><value>Email de confirmação reenviado! Verifique a sua caixa de entrada.</value></data>
+
+  <!-- ═══ Login Social ═══ -->
+  <data name="Auth_SignInWith"><value>Entrar com</value></data>
+  <data name="Auth_SignUpWith"><value>Registar com</value></data>
+  <data name="Auth_OrWithEmail"><value>ou com email</value></data>
+  <data name="Auth_ExternalLoginFailed"><value>Falha no login externo. Por favor, tente novamente.</value></data>
+  <data name="Auth_CompletingLogin"><value>A concluir o login...</value></data>
+
+  <!-- ═══ Atividade / Auditoria ═══ -->
+  <data name="Settings_Activity"><value>Atividade</value></data>
+  <data name="Settings_ActivityLog"><value>Registo de Atividade</value></data>
+  <data name="Settings_ActionFilter"><value>Ação</value></data>
+  <data name="Settings_SearchPlaceholder"><value>IP, browser, detalhes...</value></data>
+  <data name="Settings_NoActivity"><value>Nenhuma atividade encontrada.</value></data>
+  <data name="Settings_When"><value>Quando</value></data>
+  <data name="Settings_ActionCol"><value>Ação</value></data>
+  <data name="Settings_Details"><value>Detalhes</value></data>
+  <data name="Settings_IpAddress"><value>Endereço IP</value></data>
+  <data name="Audit_Register"><value>Registo</value></data>
+  <data name="Audit_Login"><value>Login</value></data>
+  <data name="Audit_LoginExternal"><value>Login Externo</value></data>
+  <data name="Audit_EmailConfirmed"><value>Email Confirmado</value></data>
+  <data name="Audit_PasswordChanged"><value>Palavra-passe Alterada</value></data>
+  <data name="Audit_PasswordResetRequested"><value>Recuperação Pedida</value></data>
+  <data name="Audit_PasswordReset"><value>Palavra-passe Redefinida</value></data>
+  <data name="Audit_PreferencesUpdated"><value>Preferências Atualizadas</value></data>
+  <data name="Audit_ExternalLoginAdded"><value>Login Externo Adicionado</value></data>
+  <data name="Audit_AccountDeleted"><value>Conta Eliminada</value></data>
+  <data name="Audit_TokenRefreshed"><value>Token Atualizado</value></data>
+  <data name="Audit_DataExported"><value>Dados Exportados</value></data>
+  <data name="Audit_DataImported"><value>Dados Importados</value></data>
+
+  <!-- ═══ Exportar/Importar Dados ═══ -->
+  <data name="Settings_Data"><value>Dados</value></data>
+  <data name="Settings_ExportData"><value>Exportar os Seus Dados</value></data>
+  <data name="Settings_ExportHint"><value>Descarregue todos os seus dados (ações, registos, campos, etiquetas) como ficheiro JSON. Útil para cópias de segurança ou transferência para outra conta.</value></data>
+  <data name="Settings_DownloadExport"><value>Descarregar Exportação</value></data>
+  <data name="Settings_ExportFailed"><value>Falha ao exportar dados.</value></data>
+  <data name="Settings_ImportData"><value>Importar Dados</value></data>
+  <data name="Settings_ImportHint"><value>Carregue um ficheiro JSON Traceon exportado anteriormente para restaurar os seus dados.</value></data>
+  <data name="Settings_ImportWarning"><value>A importação criará novos itens, não substitui os existentes. Podem resultar dados duplicados se importar o mesmo ficheiro duas vezes.</value></data>
+  <data name="Settings_StartImport"><value>Iniciar Importação</value></data>
+  <data name="Settings_ImportSuccess"><value>Importação concluída com sucesso!</value></data>
+  <data name="Settings_ImportFailed"><value>Falha ao importar dados. Verifique o formato do ficheiro.</value></data>
+  <data name="Settings_Imported"><value>Importados</value></data>
+  <data name="Settings_Skipped"><value>Ignorados</value></data>
+  <data name="Settings_SkippedRenamed"><value>Ignorados / Renomeados</value></data>
+  <data name="Settings_RenamedHint"><value>Ações renomeadas para evitar duplicados</value></data>
+
+  <!-- ═══ Feedback ═══ -->
+  <data name="Nav_Feedback"><value>Feedback</value></data>
+  <data name="Feedback_Title"><value>Enviar Feedback</value></data>
+  <data name="Feedback_Subtitle"><value>Ajude-nos a melhorar o Traceon reportando erros ou sugerindo funcionalidades.</value></data>
+  <data name="Feedback_Category"><value>Categoria</value></data>
+  <data name="Feedback_Bug"><value>Relatório de Erro</value></data>
+  <data name="Feedback_Feature"><value>Pedido de Funcionalidade</value></data>
+  <data name="Feedback_General"><value>Feedback Geral</value></data>
+  <data name="Feedback_Message"><value>A sua mensagem</value></data>
+  <data name="Feedback_Placeholder"><value>Descreva o problema, sugestão ou feedback...</value></data>
+  <data name="Feedback_Send"><value>Enviar Feedback</value></data>
+  <data name="Feedback_Success"><value>Obrigado! O seu feedback foi enviado.</value></data>
+  <data name="Feedback_SendAnother"><value>Enviar outro</value></data>
+  <data name="Feedback_Failed"><value>Falha ao enviar feedback. Tente novamente.</value></data>
+  <data name="Audit_FeedbackSent"><value>Feedback Enviado</value></data>
+
+  <!-- ═══ Onboarding ═══ -->
+  <data name="Onboard_Welcome"><value>Bem-vindo ao Traceon!</value></data>
+  <data name="Onboard_Hint"><value>Comece rapidamente escolhendo um modelo, ou crie as suas ações do zero.</value></data>
+  <data name="Onboard_ChooseTemplate"><value>Escolha um modelo inicial</value></data>
+  <data name="Onboard_Or"><value>ou</value></data>
+  <data name="Onboard_StartFromScratch"><value>Começar do zero</value></data>
+  <data name="Onboard_Installing"><value>A configurar as suas ações...</value></data>
+  <data name="Onboard_Installed"><value>Modelo instalado! A carregar as ações...</value></data>
+
+  <!-- ═══ Template Packs ═══ -->
+  <data name="Template_Health_Name"><value>Saúde &amp; Sinais Vitais</value></data>
+  <data name="Template_Health_Desc"><value>Registe tensão arterial, peso, glicose e mais.</value></data>
+  <data name="Template_Health_BloodPressure"><value>Tensão Arterial</value></data>
+  <data name="Template_Health_BloodPressure_Desc"><value>Registe sistólica, diastólica e pulso.</value></data>
+  <data name="Template_Health_Weight"><value>Peso</value></data>
+  <data name="Template_Health_Weight_Desc"><value>Acompanhe o seu peso ao longo do tempo.</value></data>
+  <data name="Template_Health_BloodGlucose"><value>Glicemia</value></data>
+  <data name="Template_Health_BloodGlucose_Desc"><value>Monitorize os níveis de açúcar no sangue.</value></data>
+  <data name="Template_Fitness_Name"><value>Fitness &amp; Exercício</value></data>
+  <data name="Template_Fitness_Desc"><value>Registe treinos, corrida, passos e mais.</value></data>
+  <data name="Template_Fitness_Workout"><value>Treino</value></data>
+  <data name="Template_Fitness_Workout_Desc"><value>Registe tipo, duração e calorias.</value></data>
+  <data name="Template_Fitness_Running"><value>Corrida</value></data>
+  <data name="Template_Fitness_Running_Desc"><value>Registe distância e tempo.</value></data>
+  <data name="Template_Fitness_Steps"><value>Passos</value></data>
+  <data name="Template_Fitness_Steps_Desc"><value>Conte os seus passos diários.</value></data>
+  <data name="Template_Habits_Name"><value>Hábitos Diários</value></data>
+  <data name="Template_Habits_Desc"><value>Crie rotinas saudáveis: sono, água, leitura.</value></data>
+  <data name="Template_Habits_Sleep"><value>Sono</value></data>
+  <data name="Template_Habits_Sleep_Desc"><value>Registe horas e qualidade do sono.</value></data>
+  <data name="Template_Habits_Water"><value>Consumo de Água</value></data>
+  <data name="Template_Habits_Water_Desc"><value>Conte copos de água por dia.</value></data>
+  <data name="Template_Habits_Reading"><value>Leitura</value></data>
+  <data name="Template_Habits_Reading_Desc"><value>Registe páginas ou minutos lidos.</value></data>
+  <data name="Template_Habits_Meditation"><value>Meditação</value></data>
+  <data name="Template_Habits_Meditation_Desc"><value>Registe sessões de meditação.</value></data>
+  <data name="Template_Finance_Name"><value>Finanças</value></data>
+  <data name="Template_Finance_Desc"><value>Registe despesas e rendimentos.</value></data>
+  <data name="Template_Finance_Expense"><value>Despesa</value></data>
+  <data name="Template_Finance_Expense_Desc"><value>Registe gastos com categorias.</value></data>
+  <data name="Template_Finance_Income"><value>Rendimento</value></data>
+  <data name="Template_Finance_Income_Desc"><value>Registe rendimentos de várias fontes.</value></data>
+  <data name="Template_Field_Systolic"><value>Sistólica</value></data>
+  <data name="Template_Field_Diastolic"><value>Diastólica</value></data>
+  <data name="Template_Field_Pulse"><value>Pulso</value></data>
+  <data name="Template_Field_Weight"><value>Peso</value></data>
+  <data name="Template_Field_Glucose"><value>Glicose</value></data>
+  <data name="Template_Field_Meal"><value>Refeição</value></data>
+  <data name="Template_Field_WorkoutType"><value>Tipo de Treino</value></data>
+  <data name="Template_Field_Duration"><value>Duração</value></data>
+  <data name="Template_Field_Calories"><value>Calorias</value></data>
+  <data name="Template_Field_Distance"><value>Distância</value></data>
+  <data name="Template_Field_Steps"><value>Passos</value></data>
+  <data name="Template_Field_Hours"><value>Horas</value></data>
+  <data name="Template_Field_Quality"><value>Qualidade</value></data>
+  <data name="Template_Field_Glasses"><value>Copos</value></data>
+  <data name="Template_Field_Pages"><value>Páginas</value></data>
+  <data name="Template_Field_Amount"><value>Montante</value></data>
+  <data name="Template_Field_Category"><value>Categoria</value></data>
+  <data name="Template_Field_Source"><value>Fonte</value></data>
+
+  <!-- ═══ Página de Modelos ═══ -->
+  <data name="Nav_Templates"><value>Modelos</value></data>
+  <data name="Templates_Title"><value>Modelos de Ações</value></data>
+  <data name="Templates_Subtitle"><value>Explore e instale pacotes de ações pré-configurados para começar rapidamente.</value></data>
+  <data name="Templates_Install"><value>Instalar</value></data>
+  <data name="Templates_InstallSuccess"><value>{0} instalado — {1} ações, {2} campos, {3} etiquetas criados.</value></data>
+  <data name="Templates_InstallFailed"><value>Falha ao instalar modelo. Tente novamente.</value></data>
+
+  <!-- ═══ Contas Ligadas ═══ -->
+  <data name="Settings_LinkedAccounts"><value>Contas Ligadas</value></data>
+  <data name="Settings_LinkedAccountsHint"><value>Fornecedores externos ligados à sua conta para início de sessão.</value></data>
+  <data name="Settings_NoLinkedAccounts"><value>Nenhum fornecedor externo ligado.</value></data>
+  <data name="Settings_RemoveLoginConfirm"><value>Tem certeza que deseja desligar {0}?</value></data>
+  <data name="Settings_RemoveLoginNoPassword"><value>Este é o seu único método de login e não tem palavra-passe definida. Defina uma palavra-passe antes de remover este fornecedor.</value></data>
+  <data name="Settings_LoginRemoved"><value>{0} foi desligado da sua conta.</value></data>
+  <data name="Common_Remove"><value>Remover</value></data>
+  <data name="Audit_ExternalLoginRemoved"><value>Login Externo Removido</value></data>
+</root>

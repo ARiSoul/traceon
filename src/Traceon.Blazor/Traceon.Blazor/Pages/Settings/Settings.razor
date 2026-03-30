@@ -1,0 +1,870 @@
+@page "/settings"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Settings_Title"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-gear me-2"></i>@L["Settings_Title"]
+        </h3>
+        <p class="text-muted mb-0">@L["Settings_Subtitle"]</p>
+    </div>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+@if (!string.IsNullOrEmpty(_successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>@_successMessage
+        <button type="button" class="btn-close" @onclick="() => _successMessage = null"></button>
+    </div>
+}
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <button class="nav-link @TabClass("preferences")"
+                @onclick="@(() => _activeTab = "preferences")">
+            <i class="bi bi-palette me-1"></i>@L["Settings_Preferences"]
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @TabClass("security")"
+                @onclick="@(() => _activeTab = "security")">
+            <i class="bi bi-shield-lock me-1"></i>@L["Settings_Security"]
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @TabClass("account")"
+                @onclick="@(() => _activeTab = "account")">
+            <i class="bi bi-person me-1"></i>@L["Settings_Account"]
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @TabClass("activity")"
+                @onclick="@(() => { _activeTab = "activity"; _ = LoadAuditLogsAsync(); })">
+            <i class="bi bi-clock-history me-1"></i>@L["Settings_Activity"]
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @TabClass("data")"
+                @onclick="@(() => _activeTab = "data")">
+            <i class="bi bi-database me-1"></i>@L["Settings_Data"]
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+@switch (_activeTab)
+{
+    case "preferences":
+        @RenderPreferences()
+        break;
+    case "security":
+        @RenderSecurity()
+        break;
+    case "account":
+        @RenderAccount()
+        break;
+    case "activity":
+        @RenderActivity()
+        break;
+    case "data":
+        @RenderData()
+        break;
+}
+
+@* ── Preferences Tab ── *@
+@{ RenderFragment RenderPreferences() => __builder =>
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-palette me-2"></i>@L["Settings_Appearance"]</h5>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">@L["Settings_Theme"]</label>
+                <div class="d-flex gap-2">
+                    @foreach (var (value, labelKey, icon) in new[] {
+                        ("system", "Settings_ThemeSystem", "circle-half"),
+                        ("light", "Settings_ThemeLight", "sun-fill"),
+                        ("dark", "Settings_ThemeDark", "moon-fill") })
+                    {
+                        <button class="btn @(ThemeService.CurrentTheme == value ? "btn-primary" : "btn-outline-secondary")"
+                                @onclick="() => SetThemeAsync(value)">
+                            <i class="bi bi-@icon me-1"></i>@L[labelKey]
+                        </button>
+                    }
+                </div>
+                <div class="form-text mt-1">
+                    @(ThemeService.CurrentTheme switch
+                    {
+                        "light" => L["Settings_ThemeLightHint"],
+                        "dark" => L["Settings_ThemeDarkHint"],
+                        _ => L["Settings_ThemeSystemHint"]
+                    })
+                </div>
+            </div>
+
+            <h5 class="card-title mb-3 mt-4"><i class="bi bi-translate me-2"></i>@L["Settings_Language"]</h5>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">@L["Settings_DisplayLanguage"]</label>
+                <select class="form-select" style="max-width: 300px;"
+                        value="@LocalizationService.CurrentLanguage"
+                        @onchange="OnLanguageChanged">
+                    @foreach (var lang in Services.LocalizationService.SupportedLanguages)
+                    {
+                        <option value="@lang.Code">@lang.Name</option>
+                    }
+                </select>
+                <div class="form-text">
+                    <i class="bi bi-info-circle me-1"></i>@L["Settings_LanguageHint"]
+                </div>
+            </div>
+        </div>
+    </div>
+}; }
+
+@* ── Security Tab ── *@
+@{ RenderFragment RenderSecurity() => __builder =>
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-key me-2"></i>@L["Settings_ChangePassword"]</h5>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">@L["Settings_CurrentPassword"]</label>
+                        <input type="password" class="form-control" @bind="_currentPassword" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">@L["Settings_NewPassword"]</label>
+                        <input type="password" class="form-control" @bind="_newPassword" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">@L["Settings_ConfirmNewPassword"]</label>
+                        <input type="password" class="form-control" @bind="_confirmPassword" />
+                    </div>
+                    <button class="btn btn-primary" @onclick="ChangePasswordAsync" disabled="@_changingPassword">
+                        @if (_changingPassword)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle me-1"></i>
+                        }
+                        @L["Settings_ChangePassword"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}; }
+
+@* ── Account Tab ── *@
+@{ RenderFragment RenderAccount() => __builder =>
+{
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-person me-2"></i>@L["Settings_AccountInfo"]</h5>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">@L["Common_Email"]</label>
+                        <div class="form-control-plaintext">@_email</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-link-45deg me-2"></i>@L["Settings_LinkedAccounts"]</h5>
+            <p class="text-muted mb-3">@L["Settings_LinkedAccountsHint"]</p>
+
+            @if (_linkedLogins is null)
+            {
+                <div class="spinner-border spinner-border-sm text-primary"></div>
+            }
+            else
+            {
+                @if (_linkedLogins.Logins.Count > 0)
+                {
+                    <ul class="list-group mb-3">
+                        @foreach (var login in _linkedLogins.Logins)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi @ProviderIcon(login.Provider) fs-5" style="color: @ProviderColor(login.Provider);"></i>
+                                    <span class="fw-semibold">@login.DisplayName</span>
+                                </div>
+                                @if (_removingProvider == login.Provider)
+                                {
+                                    <span class="spinner-border spinner-border-sm text-danger"></span>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            disabled="@(_removingProvider is not null)"
+                                            @onclick="() => ConfirmRemoveLogin(login.Provider)">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted small mb-3">@L["Settings_NoLinkedAccounts"]</p>
+                }
+
+                @if (_showRemoveConfirmation is not null)
+                {
+                    <div class="alert @(_linkedLogins.Logins.Count <= 1 && !_linkedLogins.HasPassword ? "alert-danger" : "alert-warning")">
+                        @if (_linkedLogins.Logins.Count <= 1 && !_linkedLogins.HasPassword)
+                        {
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            <strong>@L["Settings_RemoveLoginNoPassword"]</strong>
+                        }
+                        else
+                        {
+                            <i class="bi bi-question-circle me-1"></i>
+                            @string.Format(L["Settings_RemoveLoginConfirm"], _showRemoveConfirmation)
+                        }
+                        <div class="mt-2 d-flex gap-2">
+                            @if (_linkedLogins.Logins.Count <= 1 && !_linkedLogins.HasPassword)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => _showRemoveConfirmation = null">
+                                    @L["Common_Cancel"]
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-danger" @onclick="() => RemoveLoginAsync(_showRemoveConfirmation!)">
+                                    <i class="bi bi-trash me-1"></i>@L["Common_Remove"]
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => _showRemoveConfirmation = null">
+                                    @L["Common_Cancel"]
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="card border-danger">
+        <div class="card-body">
+            <h5 class="card-title text-danger mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>@L["Settings_DangerZone"]
+            </h5>
+            <p class="text-muted mb-3">@L["Settings_DeleteAccountWarning"]</p>
+
+            @if (!_showDeleteConfirmation)
+            {
+                <button class="btn btn-outline-danger" @onclick="() => _showDeleteConfirmation = true">
+                    <i class="bi bi-trash me-1"></i>@L["Settings_DeleteMyAccount"]
+                </button>
+            }
+            else
+            {
+                <div class="alert alert-danger">
+                    <strong>@L["Settings_DeleteConfirmation"]</strong>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">@L["Settings_TypeDelete"]</label>
+                    <input type="text" class="form-control" style="max-width: 200px;" @bind="_deleteConfirmText" />
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-danger"
+                            disabled="@(_deleteConfirmText != "DELETE" || _deletingAccount)"
+                            @onclick="DeleteAccountAsync">
+                        @if (_deletingAccount)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-trash me-1"></i>
+                        }
+                        @L["Settings_PermanentlyDelete"]
+                    </button>
+                    <button class="btn btn-outline-secondary"
+                            @onclick="() => { _showDeleteConfirmation = false; _deleteConfirmText = string.Empty; }">
+                        @L["Common_Cancel"]
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}; }
+
+@* ── Activity Tab ── *@
+@{ RenderFragment RenderActivity() => __builder =>
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-clock-history me-2"></i>@L["Settings_ActivityLog"]</h5>
+
+            <div class="row g-2 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label small">@L["Dashboard_From"]</label>
+                    <input type="date" class="form-control form-control-sm" @bind="_auditFrom" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">@L["Dashboard_To"]</label>
+                    <input type="date" class="form-control form-control-sm" @bind="_auditTo" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">@L["Settings_ActionFilter"]</label>
+                    <select class="form-select form-select-sm" @bind="_auditAction">
+                        <option value="">@L["Dashboard_All"]</option>
+                        @foreach (var a in _auditActionOptions)
+                        {
+                            <option value="@a">@FormatAction(a)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">@L["Common_Search"]</label>
+                    <input type="text" class="form-control form-control-sm" placeholder="@L["Settings_SearchPlaceholder"]"
+                           @bind="_auditSearch" @bind:event="oninput" />
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-3">
+                <button class="btn btn-sm btn-primary" @onclick="() => { _auditSkip = 0; _ = LoadAuditLogsAsync(); }" disabled="@_auditLoading">
+                    <i class="bi bi-search me-1"></i>@L["Common_Filter"]
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="ClearAuditFilters" disabled="@_auditLoading">
+                    <i class="bi bi-x-circle me-1"></i>@L["DataGrid_Clear"]
+                </button>
+            </div>
+
+            @if (_auditLoading)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                </div>
+            }
+            else if (_auditLogs.Count == 0)
+            {
+                <p class="text-muted text-center py-3">@L["Settings_NoActivity"]</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 160px;">@L["Settings_When"]</th>
+                                <th style="width: 160px;">@L["Settings_ActionCol"]</th>
+                                <th>@L["Settings_Details"]</th>
+                                <th style="width: 130px;">@L["Settings_IpAddress"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in _auditLogs)
+                            {
+                                <tr>
+                                    <td class="text-nowrap small">
+                                        <i class="bi bi-clock me-1 text-muted"></i>
+                                        @log.OccurredAtUtc.ToLocalTime().ToString("g")
+                                    </td>
+                                    <td>
+                                        <span class="badge @ActionBadgeClass(log.Action)">
+                                            <i class="bi @ActionIcon(log.Action) me-1"></i>@FormatAction(log.Action)
+                                        </span>
+                                    </td>
+                                    <td class="small text-muted text-truncate" style="max-width: 300px;">
+                                        @(log.Details ?? "—")
+                                    </td>
+                                    <td class="small text-muted font-monospace">@(log.IpAddress ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (_auditTotalCount > _auditPageSize)
+                {
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted">
+                            @L["DataGrid_Showing"] @(_auditSkip + 1)–@(Math.Min(_auditSkip + _auditPageSize, _auditTotalCount))
+                            @L["DataGrid_Of"] @_auditTotalCount
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary" disabled="@(_auditSkip == 0)"
+                                    @onclick="() => { _auditSkip = Math.Max(0, _auditSkip - _auditPageSize); _ = LoadAuditLogsAsync(); }">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" disabled="@(_auditSkip + _auditPageSize >= _auditTotalCount)"
+                                    @onclick="() => { _auditSkip += _auditPageSize; _ = LoadAuditLogsAsync(); }">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}; }
+
+@* ── Data Tab ── *@
+@{ RenderFragment RenderData() => __builder =>
+{
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-download me-2"></i>@L["Settings_ExportData"]</h5>
+            <p class="text-muted mb-3">@L["Settings_ExportHint"]</p>
+            <button class="btn btn-primary" @onclick="ExportDataAsync" disabled="@_exporting">
+                @if (_exporting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                else
+                {
+                    <i class="bi bi-file-earmark-arrow-down me-1"></i>
+                }
+                @L["Settings_DownloadExport"]
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-upload me-2"></i>@L["Settings_ImportData"]</h5>
+            <p class="text-muted mb-3">@L["Settings_ImportHint"]</p>
+
+            <div class="alert alert-warning mb-3">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                @L["Settings_ImportWarning"]
+            </div>
+
+            <div class="mb-3">
+                <InputFile OnChange="OnImportFileSelected" accept=".json" class="form-control" style="max-width: 400px;" />
+            </div>
+
+            @if (_importFile is not null)
+            {
+                <button class="btn btn-warning" @onclick="ImportDataAsync" disabled="@_importing">
+                    @if (_importing)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-file-earmark-arrow-up me-1"></i>
+                    }
+                    @L["Settings_StartImport"]
+                </button>
+            }
+
+            @if (_importResult is not null)
+            {
+                <div class="alert alert-success mt-3">
+                    <i class="bi bi-check-circle me-1"></i>
+                    @L["Settings_ImportSuccess"]
+                    <table class="table table-sm table-borderless mt-2 mb-0" style="max-width: 350px;">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th class="text-end text-success">@L["Settings_Imported"]</th>
+                                <th class="text-end text-muted">@L["Settings_SkippedRenamed"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>@L["Common_Tags"]</td>
+                                <td class="text-end text-success">@_importResult.TagsImported</td>
+                                <td class="text-end text-muted">@_importResult.TagsSkipped</td>
+                            </tr>
+                            <tr>
+                                <td>@L["Common_Fields"]</td>
+                                <td class="text-end text-success">@_importResult.FieldDefinitionsImported</td>
+                                <td class="text-end text-muted">@_importResult.FieldDefinitionsSkipped</td>
+                            </tr>
+                            <tr>
+                                <td>@L["Nav_TrackedActions"]</td>
+                                <td class="text-end text-success">@_importResult.ActionsImported</td>
+                                <td class="text-end text-muted">
+                                    @if (_importResult.ActionsRenamed > 0)
+                                    {
+                                        <span title="@L["Settings_RenamedHint"]">@_importResult.ActionsRenamed <i class="bi bi-pencil-square"></i></span>
+                                    }
+                                    else
+                                    {
+                                        <text>—</text>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["Common_Entries"]</td>
+                                <td class="text-end text-success">@_importResult.EntriesImported</td>
+                                <td class="text-end text-muted">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(_importError))
+            {
+                <div class="alert alert-danger mt-3">
+                    <i class="bi bi-exclamation-triangle me-1"></i>@_importError
+                </div>
+            }
+        </div>
+    </div>
+}; }
+
+@code {
+    [Inject] private AuthService Auth { get; set; } = default!;
+    [Inject] private ThemeService ThemeService { get; set; } = default!;
+    [Inject] private LocalizationService LocalizationService { get; set; } = default!;
+    [Inject] private UserPreferenceService PreferenceService { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+    [Inject] private TokenStore TokenStore { get; set; } = default!;
+    [Inject] private AuditLogService AuditLogService { get; set; } = default!;
+
+    private string _activeTab = "preferences";
+    private IReadOnlyList<string> _errors = [];
+    private string? _successMessage;
+
+    private string TabClass(string tab) => _activeTab == tab ? "active" : "";
+
+    // Account
+    private string? _email;
+
+    // Linked logins
+    private LinkedLoginsResponse? _linkedLogins;
+    private string? _removingProvider;
+    private string? _showRemoveConfirmation;
+
+    // Change password
+    private string _currentPassword = string.Empty;
+    private string _newPassword = string.Empty;
+    private string _confirmPassword = string.Empty;
+    private bool _changingPassword;
+
+    // Delete account
+    private bool _showDeleteConfirmation;
+    private string _deleteConfirmText = string.Empty;
+    private bool _deletingAccount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _email = await TokenStore.GetPersistedEmailAsync();
+        _ = LoadLinkedLoginsAsync();
+    }
+
+    private async Task LoadLinkedLoginsAsync()
+    {
+        _linkedLogins = await Auth.GetLinkedLoginsAsync();
+        StateHasChanged();
+    }
+
+    private async Task SetThemeAsync(string theme)
+    {
+        await ThemeService.SetThemeAsync(theme);
+        await PreferenceService.SaveAsync(theme, LocalizationService.CurrentLanguage);
+    }
+
+    private async Task OnLanguageChanged(ChangeEventArgs e)
+    {
+        var lang = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(lang))
+        {
+            await PreferenceService.SaveAsync(ThemeService.CurrentTheme, lang);
+            await LocalizationService.SetLanguageAsync(lang);
+        }
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        _errors = [];
+        _successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_currentPassword) || string.IsNullOrWhiteSpace(_newPassword))
+        {
+            _errors = [L["Settings_PasswordFillAll"]];
+            return;
+        }
+
+        if (_newPassword != _confirmPassword)
+        {
+            _errors = [L["Settings_PasswordNoMatch"]];
+            return;
+        }
+
+        if (_newPassword.Length < 6)
+        {
+            _errors = [L["Settings_PasswordTooShort"]];
+            return;
+        }
+
+        _changingPassword = true;
+
+        var (success, errors) = await Auth.ChangePasswordAsync(_currentPassword, _newPassword);
+
+        if (success)
+        {
+            _successMessage = L["Settings_PasswordChanged"];
+            _currentPassword = string.Empty;
+            _newPassword = string.Empty;
+            _confirmPassword = string.Empty;
+        }
+        else
+        {
+            _errors = errors;
+        }
+
+        _changingPassword = false;
+    }
+
+    private async Task DeleteAccountAsync()
+    {
+        _errors = [];
+        _deletingAccount = true;
+
+        var (success, errors) = await Auth.DeleteAccountAsync();
+
+        if (success)
+        {
+            await Auth.LogoutAsync();
+            Nav.NavigateTo("/auth/login", forceLoad: true);
+        }
+        else
+        {
+            _errors = errors;
+            _deletingAccount = false;
+        }
+    }
+
+    // ── Linked Logins ──
+
+    private void ConfirmRemoveLogin(string provider)
+    {
+        _showRemoveConfirmation = provider;
+        _errors = [];
+    }
+
+    private async Task RemoveLoginAsync(string provider)
+    {
+        _showRemoveConfirmation = null;
+        _removingProvider = provider;
+        _errors = [];
+
+        var (success, errors) = await Auth.RemoveLinkedLoginAsync(provider);
+
+        if (success)
+        {
+            _successMessage = string.Format(L["Settings_LoginRemoved"], provider);
+            await LoadLinkedLoginsAsync();
+        }
+        else
+        {
+            _errors = errors;
+        }
+
+        _removingProvider = null;
+    }
+
+    private static string ProviderIcon(string provider) => provider switch
+    {
+        "Google" => "bi-google",
+        "Microsoft" => "bi-microsoft",
+        _ => "bi-globe"
+    };
+
+    private static string ProviderColor(string provider) => provider switch
+    {
+        "Google" => "#4285F4",
+        "Microsoft" => "#00a4ef",
+        _ => "#6c757d"
+    };
+
+    // ── Activity / Audit ──
+
+    private IReadOnlyList<AuditLogResponse> _auditLogs = [];
+    private int _auditTotalCount;
+    private bool _auditLoading;
+    private DateTime? _auditFrom;
+    private DateTime? _auditTo;
+    private string _auditAction = string.Empty;
+    private string _auditSearch = string.Empty;
+    private int _auditSkip;
+    private const int _auditPageSize = 15;
+
+    private static readonly string[] _auditActionOptions =
+    [
+        "Register", "Login", "LoginExternal", "EmailConfirmed",
+        "PasswordChanged", "PasswordResetRequested", "PasswordReset",
+        "PreferencesUpdated", "ExternalLoginAdded", "ExternalLoginRemoved", "AccountDeleted",
+        "FeedbackSent"
+    ];
+
+    private async Task LoadAuditLogsAsync()
+    {
+        _auditLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await AuditLogService.GetLogsAsync(
+                _auditFrom, _auditTo,
+                string.IsNullOrEmpty(_auditAction) ? null : _auditAction,
+                string.IsNullOrEmpty(_auditSearch) ? null : _auditSearch,
+                _auditSkip, _auditPageSize);
+
+            _auditLogs = result.Items;
+            _auditTotalCount = result.TotalCount;
+        }
+        catch
+        {
+            _auditLogs = [];
+            _auditTotalCount = 0;
+        }
+
+        _auditLoading = false;
+        StateHasChanged();
+    }
+
+    private void ClearAuditFilters()
+    {
+        _auditFrom = null;
+        _auditTo = null;
+        _auditAction = string.Empty;
+        _auditSearch = string.Empty;
+        _auditSkip = 0;
+        _ = LoadAuditLogsAsync();
+    }
+
+    private string FormatAction(string action) => action switch
+    {
+        "Register" => L["Audit_Register"],
+        "Login" => L["Audit_Login"],
+        "LoginExternal" => L["Audit_LoginExternal"],
+        "EmailConfirmed" => L["Audit_EmailConfirmed"],
+        "PasswordChanged" => L["Audit_PasswordChanged"],
+        "PasswordResetRequested" => L["Audit_PasswordResetRequested"],
+        "PasswordReset" => L["Audit_PasswordReset"],
+        "PreferencesUpdated" => L["Audit_PreferencesUpdated"],
+        "ExternalLoginAdded" => L["Audit_ExternalLoginAdded"],
+        "ExternalLoginRemoved" => L["Audit_ExternalLoginRemoved"],
+        "AccountDeleted" => L["Audit_AccountDeleted"],
+        "TokenRefreshed" => L["Audit_TokenRefreshed"],
+        "DataExported" => L["Audit_DataExported"],
+        "DataImported" => L["Audit_DataImported"],
+        "FeedbackSent" => L["Audit_FeedbackSent"],
+        _ => action
+    };
+
+    private static string ActionIcon(string action) => action switch
+    {
+        "Register" => "bi-person-plus",
+        "Login" or "LoginExternal" => "bi-box-arrow-in-right",
+        "EmailConfirmed" => "bi-envelope-check",
+        "PasswordChanged" or "PasswordReset" => "bi-key",
+        "PasswordResetRequested" => "bi-envelope",
+        "PreferencesUpdated" => "bi-palette",
+        "ExternalLoginAdded" => "bi-link-45deg",
+        "ExternalLoginRemoved" => "bi-link",
+        "AccountDeleted" => "bi-trash",
+        "TokenRefreshed" => "bi-arrow-repeat",
+        "FeedbackSent" => "bi-chat-dots",
+        _ => "bi-activity"
+    };
+
+    private static string ActionBadgeClass(string action) => action switch
+    {
+        "AccountDeleted" => "bg-danger",
+        "PasswordChanged" or "PasswordReset" or "PasswordResetRequested" => "bg-warning text-dark",
+        "Login" or "LoginExternal" or "Register" => "bg-success",
+        "EmailConfirmed" => "bg-info text-dark",
+        "FeedbackSent" => "bg-info text-dark",
+        _ => "bg-secondary"
+    };
+
+    // ── Export / Import ──
+
+    [Inject] private DataPortabilityService DataPortability { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private bool _exporting;
+    private bool _importing;
+    private IBrowserFile? _importFile;
+    private ImportResult? _importResult;
+    private string? _importError;
+
+    private async Task ExportDataAsync()
+    {
+        _exporting = true;
+        _errors = [];
+
+        try
+        {
+            using var stream = await DataPortability.ExportAsync();
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            var fileName = $"traceon-export-{DateTime.Now:yyyyMMdd-HHmmss}.json";
+            using var streamRef = new DotNetStreamReference(memoryStream);
+            await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        }
+        catch
+        {
+            _errors = [L["Settings_ExportFailed"]];
+        }
+
+        _exporting = false;
+    }
+
+    private void OnImportFileSelected(InputFileChangeEventArgs e)
+    {
+        _importFile = e.File;
+        _importResult = null;
+        _importError = null;
+    }
+
+    private async Task ImportDataAsync()
+    {
+        if (_importFile is null) return;
+
+        _importing = true;
+        _importResult = null;
+        _importError = null;
+
+        try
+        {
+            using var stream = _importFile.OpenReadStream(50 * 1024 * 1024);
+            var (success, result, error) = await DataPortability.ImportAsync(stream, _importFile.Name);
+
+            if (success)
+            {
+                _importResult = result;
+                _importFile = null;
+            }
+            else
+            {
+                _importError = error ?? L["Settings_ImportFailed"];
+            }
+        }
+        catch
+        {
+            _importError = L["Settings_ImportFailed"];
+        }
+
+        _importing = false;
+    }
+}

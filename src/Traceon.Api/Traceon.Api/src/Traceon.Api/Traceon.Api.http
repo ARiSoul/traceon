@@ -1,0 +1,72 @@
+@Traceon.Api_HostAddress = http://localhost:5285
+@accessToken = {{login.response.body.accessToken}}
+
+### Register a new user
+POST {{Traceon.Api_HostAddress}}/api/identity/register
+Content-Type: application/json
+
+{
+  "email": "testuser@traceon.dev",
+  "password": "Test1234!"
+}
+
+### Login (save the accessToken)
+# @name login
+POST {{Traceon.Api_HostAddress}}/api/identity/login
+Content-Type: application/json
+
+{
+  "email": "testuser@traceon.dev",
+  "password": "Test1234!"
+}
+
+### Get all tracked actions
+GET {{Traceon.Api_HostAddress}}/api/tracked-actions
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Create a tracked action
+POST {{Traceon.Api_HostAddress}}/api/tracked-actions
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Gym Visit",
+  "description": "Track gym sessions"
+}
+
+### Get all tags
+GET {{Traceon.Api_HostAddress}}/api/tags
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Create a tag
+POST {{Traceon.Api_HostAddress}}/api/tags
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Health",
+  "description": "Health related actions",
+  "color": "#22C55E"
+}
+
+### Get all field definitions
+GET {{Traceon.Api_HostAddress}}/api/field-definitions
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Create a field definition
+POST {{Traceon.Api_HostAddress}}/api/field-definitions
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "defaultName": "Duration (minutes)",
+  "type": "Integer",
+  "defaultIsRequired": true
+}
+
+###
+###
+

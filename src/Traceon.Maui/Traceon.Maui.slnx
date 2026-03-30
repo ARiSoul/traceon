@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Shared/">
+    <Project Path="../Traceon.Shared/Traceon.Localization/Traceon.Localization/Traceon.Localization.csproj" />
+  </Folder>
+  <Project Path="Traceon.App/Traceon.App.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
+  <Project Path="Traceon.Core/Traceon.Maui.Core.csproj" />
+  <Project Path="Traceon.Maui.Infrastructure/Traceon.Maui.Infrastructure.csproj" />
+</Solution>

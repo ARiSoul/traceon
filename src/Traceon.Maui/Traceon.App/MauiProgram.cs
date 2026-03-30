@@ -1,6 +1,5 @@
 ﻿using Arisoul.Core.Maui;
 using Arisoul.Traceon.App.ViewModels;
-using Arisoul.Traceon.Maui.Core;
 using Arisoul.Traceon.Maui.Core.Interfaces;
 using Arisoul.Traceon.Maui.Infrastructure.Data;
 using Arisoul.Traceon.Maui.Infrastructure.Repositories;

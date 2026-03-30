@@ -1,0 +1,387 @@
+@page "/tracked-actions/{TrackedActionId:guid}/entries/new"
+@page "/tracked-actions/{TrackedActionId:guid}/entries/{EntryId:guid}/edit"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@(_isEdit ? L["Entry_EditTitle"] : L["Entry_NewTitle"]) - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-@(_isEdit ? "pencil-square" : "plus-square") me-2"></i>
+            @(_isEdit ? L["Entry_EditTitle"] : L["Entry_NewTitle"])
+        </h3>
+        <p class="text-muted mb-0">
+            @(_isEdit ? L["Entry_EditSubtitle"] : L["Entry_NewSubtitle"])
+            <strong>@(_actionName ?? "...")</strong>
+        </p>
+    </div>
+    <a href="@_returnUrl" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>@L["Common_Back"]
+    </a>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">@L["Common_Loading"]</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <!-- Occurrence & Notes -->
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="bi bi-calendar-event me-1"></i>@L["QuickTrack_When"] <span class="text-danger">*</span>
+                    </label>
+                    <input type="datetime-local"
+                           class="form-control"
+                           step="60"
+                           value="@_occurredLocal.ToString("yyyy-MM-ddTHH:mm")"
+                           @onchange="OnDateTimeChanged" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="bi bi-chat-text me-1"></i>@L["QuickTrack_Notes"] <span class="text-muted fw-normal">(@L["Common_Optional"])</span>
+                    </label>
+                    <textarea class="form-control"
+                              rows="2"
+                              placeholder="@L["QuickTrack_NotesPlaceholder"]"
+                              data-select-on-focus
+                              @bind="_notes"></textarea>
+                </div>
+            </div>
+
+            <!-- Fields -->
+            @if (_fieldModels.Count > 0)
+            {
+                <hr />
+                <h6 class="mb-3">
+                    <i class="bi bi-sliders me-1"></i>@L["Common_Fields"]
+                </h6>
+
+                <div class="row g-3">
+                    @foreach (var model in _fieldModels)
+                    {
+                        <div class="@FieldColumnClass(model.Field.FieldType)">
+                            <label class="form-label">
+                                @model.Field.Name
+                                @if (model.Field.IsRequired)
+                                {
+                                    <span class="text-danger">*</span>
+                                }
+                                <span class="badge bg-secondary ms-1" style="font-size: 0.65rem;">@model.Field.FieldType</span>
+                            </label>
+
+                            @if (!string.IsNullOrEmpty(model.Field.Description))
+                            {
+                                <div class="form-text mt-0 mb-1">@model.Field.Description</div>
+                            }
+
+                            @switch (model.Field.FieldType)
+                            {
+                                case FieldType.Text:
+                                    <input type="text"
+                                           class="form-control"
+                                           placeholder="@model.Field.Name"
+                                           data-select-on-focus
+                                           @bind="model.TextValue" />
+                                    break;
+
+                                case FieldType.Integer:
+                                    <div class="input-group">
+                                        <input type="number"
+                                               step="1"
+                                               class="form-control"
+                                               min="@model.Field.MinValue"
+                                               max="@model.Field.MaxValue"
+                                               placeholder="@model.Field.Name"
+                                               data-select-on-focus
+                                               @bind="model.IntValue" />
+                                        @if (model.Field.Unit != "UN")
+                                        {
+                                            <span class="input-group-text">@model.Field.Unit</span>
+                                        }
+                                    </div>
+                                    break;
+
+                                case FieldType.Decimal:
+                                    <div class="input-group">
+                                        <input type="number"
+                                               step="any"
+                                               class="form-control"
+                                               min="@model.Field.MinValue"
+                                               max="@model.Field.MaxValue"
+                                               placeholder="@model.Field.Name"
+                                               data-select-on-focus
+                                               @bind="model.DecimalValue" />
+                                        @if (model.Field.Unit != "UN")
+                                        {
+                                            <span class="input-group-text">@model.Field.Unit</span>
+                                        }
+                                    </div>
+                                    break;
+
+                                case FieldType.Date:
+                                    <input type="date"
+                                           class="form-control"
+                                           @bind="model.DateValue" />
+                                    break;
+
+                                case FieldType.Boolean:
+                                    <div class="form-check form-switch mt-1">
+                                        <input type="checkbox"
+                                               class="form-check-input"
+                                               id="@($"field-{model.Field.Id}")"
+                                               @bind="model.BoolValue" />
+                                        <label class="form-check-label" for="@($"field-{model.Field.Id}")">
+                                            @(model.BoolValue ? L["Common_Yes"] : L["Common_No"])
+                                        </label>
+                                    </div>
+                                    break;
+
+                                case FieldType.Dropdown:
+                                    <select class="form-select" @bind="model.TextValue">
+                                        <option value="">@L["Entry_Select"]</option>
+                                        @foreach (var opt in model.DropdownOptions)
+                                        {
+                                            <option value="@opt">@opt</option>
+                                        }
+                                    </select>
+                                    break;
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <div class="card-footer bg-light">
+            <div class="d-flex justify-content-between">
+                <a href="@_returnUrl" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>@L["Common_Cancel"]
+                </a>
+                <button class="btn btn-success" @onclick="SaveAsync" disabled="@_saving">
+                    @if (_saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-check-circle me-1"></i>
+                    }
+                    @(_isEdit ? L["Common_SaveChanges"] : L["Entry_SaveEntry"])
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid TrackedActionId { get; set; }
+    [Parameter] public Guid? EntryId { get; set; }
+
+    [Inject] private TrackedActionService ActionService { get; set; } = default!;
+    [Inject] private ActionFieldService FieldService { get; set; } = default!;
+    [Inject] private ActionEntryService EntryService { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    private bool _isEdit => EntryId.HasValue;
+    private bool _loading = true;
+    private bool _saving;
+    private IReadOnlyList<string> _errors = [];
+    private string? _actionName;
+
+    private string _returnUrl = "/";
+    private DateTime _occurredLocal;
+    private string? _notes;
+    private List<EntryFieldModel> _fieldModels = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _returnUrl = ReturnUrl ?? "/";
+
+        var action = await ActionService.GetByIdAsync(TrackedActionId);
+        _actionName = action?.Name;
+
+        var fields = await FieldService.GetByTrackedActionAsync(TrackedActionId);
+
+        if (_isEdit)
+        {
+            var entry = await EntryService.GetByIdAsync(TrackedActionId, EntryId!.Value);
+            if (entry is not null)
+            {
+                _occurredLocal = entry.OccurredAtUtc.ToLocalTime();
+                _notes = entry.Notes;
+                _fieldModels = fields.Select(f =>
+                {
+                    var existing = entry.FieldValues.FirstOrDefault(v => v.ActionFieldId == f.Id);
+                    var model = new EntryFieldModel { Field = f };
+                    model.LoadValue(existing?.Value);
+                    return model;
+                }).ToList();
+            }
+        }
+        else
+        {
+            _occurredLocal = DateTime.Now;
+            _fieldModels = fields.Select(f =>
+            {
+                var model = new EntryFieldModel { Field = f };
+                model.LoadValue(f.DefaultValue);
+                return model;
+            }).ToList();
+        }
+
+        _loading = false;
+    }
+
+    private void OnDateTimeChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var parsed))
+            _occurredLocal = parsed;
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _errors = [];
+
+        // Client-side validation
+        var validationErrors = Validate();
+        if (validationErrors.Count > 0)
+        {
+            _errors = validationErrors;
+            _saving = false;
+            return;
+        }
+
+        var occurredUtc = _occurredLocal.ToUniversalTime();
+        var fieldValues = _fieldModels.Count > 0
+            ? _fieldModels.Select(m => new ActionEntryFieldValue(m.Field.Id, m.ResolveValue())).ToList()
+            : null;
+
+        bool success;
+        IReadOnlyList<string> errors;
+
+        if (_isEdit)
+        {
+            var request = new UpdateActionEntryRequest(occurredUtc, _notes, fieldValues);
+            (success, errors) = await EntryService.UpdateAsync(TrackedActionId, EntryId!.Value, request);
+        }
+        else
+        {
+            var request = new CreateActionEntryRequest(occurredUtc, _notes, fieldValues);
+            (success, errors) = await EntryService.CreateAsync(TrackedActionId, request);
+        }
+
+        if (success)
+        {
+            Nav.NavigateTo(_returnUrl);
+            return;
+        }
+
+        _errors = errors.Count > 0 ? errors : [L["Common_ErrorOccurred"]];
+        _saving = false;
+    }
+
+    private List<string> Validate()
+    {
+        var errors = new List<string>();
+
+        foreach (var model in _fieldModels.Where(m => m.Field.IsRequired))
+        {
+            var value = model.ResolveValue();
+            if (string.IsNullOrWhiteSpace(value))
+                errors.Add(L["Validation_FieldRequired", model.Field.Name]);
+        }
+
+        foreach (var model in _fieldModels)
+        {
+            if (model.Field.FieldType is FieldType.Integer or FieldType.Decimal)
+            {
+                var value = model.ResolveValue();
+                if (string.IsNullOrWhiteSpace(value)) continue;
+
+                if (decimal.TryParse(value, out var numericValue))
+                {
+                    if (model.Field.MinValue.HasValue && numericValue < model.Field.MinValue)
+                        errors.Add(L["Validation_FieldMinValue", model.Field.Name, model.Field.MinValue]);
+                    if (model.Field.MaxValue.HasValue && numericValue > model.Field.MaxValue)
+                        errors.Add(L["Validation_FieldMaxValue", model.Field.Name, model.Field.MaxValue]);
+                }
+            }
+        }
+
+        return errors;
+    }
+
+    private static string FieldColumnClass(FieldType type) => type switch
+    {
+        FieldType.Boolean => "col-6 col-md-4",
+        FieldType.Date => "col-12 col-md-6",
+        _ => "col-12 col-md-6"
+    };
+
+    private sealed class EntryFieldModel
+    {
+        public required ActionFieldResponse Field { get; init; }
+        public string? TextValue { get; set; }
+        public int? IntValue { get; set; }
+        public decimal? DecimalValue { get; set; }
+        public DateTime? DateValue { get; set; }
+        public bool BoolValue { get; set; }
+
+        public string[] DropdownOptions =>
+            string.IsNullOrWhiteSpace(Field.DropdownValues)
+                ? []
+                : Field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        public void LoadValue(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                if (Field.FieldType == FieldType.Boolean)
+                    BoolValue = false;
+                return;
+            }
+
+            switch (Field.FieldType)
+            {
+                case FieldType.Boolean:
+                    BoolValue = value.Equals("true", StringComparison.OrdinalIgnoreCase);
+                    break;
+                case FieldType.Integer when int.TryParse(value, out var i):
+                    IntValue = i;
+                    break;
+                case FieldType.Decimal when decimal.TryParse(value, out var d):
+                    DecimalValue = d;
+                    break;
+                case FieldType.Date when DateTime.TryParse(value, out var dt):
+                    DateValue = dt;
+                    break;
+                default:
+                    TextValue = value;
+                    break;
+            }
+        }
+
+        public string? ResolveValue() => Field.FieldType switch
+        {
+            FieldType.Boolean => BoolValue.ToString().ToLowerInvariant(),
+            FieldType.Integer => IntValue?.ToString(),
+            FieldType.Decimal => DecimalValue?.ToString(),
+            FieldType.Date => DateValue?.ToString("yyyy-MM-dd"),
+            _ => TextValue
+        };
+    }
+}

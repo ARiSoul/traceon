@@ -1,0 +1,525 @@
+@page "/dashboard/action/{ActionId:guid}/detail"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Analytics_Title"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-graph-up-arrow me-2"></i>
+            @L["Analytics_Title"]
+        </h3>
+        <p class="text-muted mb-0">
+            @L["Analytics_DeepDive"] <strong>@(_data?.Stats.Name ?? "...")</strong>
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/dashboard" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>@L["Analytics_BackToDashboard"]
+        </a>
+    </div>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+<!-- Period Filter -->
+<div class="row g-2 mb-4">
+    <div class="col-12 col-md-3">
+        <label class="form-label form-label-sm mb-1">
+            <i class="bi bi-calendar-range me-1"></i>@L["Dashboard_Period"]
+        </label>
+        <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeChanged">
+            <option value="all">@L["Common_AllTime"]</option>
+            <option value="days">@L["Dashboard_LastNDays"]</option>
+            <option value="months">@L["Dashboard_LastNMonths"]</option>
+            <option value="custom">@L["Dashboard_CustomRange"]</option>
+        </select>
+    </div>
+    @if (_periodMode is "days" or "months")
+    {
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">
+                @(_periodMode == "days" ? L["Dashboard_Days"] : L["Dashboard_Months"])
+            </label>
+            <input type="number" class="form-control form-control-sm" min="1"
+                   value="@_periodValue" @onchange="OnPeriodValueChanged" />
+        </div>
+    }
+    else if (_periodMode == "custom")
+    {
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Dashboard_From"]</label>
+            <input type="date" class="form-control form-control-sm"
+                   value="@_customFrom?.ToString("yyyy-MM-dd")" @onchange="OnCustomFromChanged" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
+            <input type="date" class="form-control form-control-sm"
+                   value="@_customTo?.ToString("yyyy-MM-dd")" @onchange="OnCustomToChanged" />
+        </div>
+    }
+</div>
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">@L["Common_Loading"]</span>
+        </div>
+    </div>
+}
+else if (_data is null)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-question-circle me-2"></i>@L["Analytics_ActionNotFound"]
+    </div>
+}
+else
+{
+    <!-- Key Metrics -->
+    <div class="row row-cols-2 row-cols-md-5 g-3 mb-4">
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center py-2">
+                    <div class="fs-4 fw-bold text-primary">@_data.Stats.EntryCount</div>
+                    <small class="text-muted">@L["Common_Entries"]</small>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center py-2">
+                    <div class="fs-4 fw-bold text-success">@_data.Stats.FieldCount</div>
+                    <small class="text-muted">@L["Common_Fields"]</small>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center py-2">
+                    <div class="fs-4 fw-bold text-info">@FormatGap(_data.Stats.AverageGapDays)</div>
+                    <small class="text-muted">@L["Dashboard_AvgGap"]</small>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center py-2">
+                    <div class="fs-4 fw-bold text-danger">
+                        <i class="bi bi-fire me-1"></i>@_data.Stats.Streak
+                    </div>
+                    <small class="text-muted">@L["Dashboard_Streak"]</small>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center py-2">
+                    <div class="fs-4 fw-bold text-warning">@FormatRelative(_data.Stats.LastEntryUtc)</div>
+                    <small class="text-muted">@L["Dashboard_LastEntry"]</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entry Frequency Chart -->
+    @if (_data.DailyEntries.Count > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>@L["Analytics_EntryFrequency"]</h6>
+            </div>
+            <div class="card-body">
+                <ApexChart TItem="DailyCount"
+                           Options="_frequencyOptions"
+                           Height="250"
+                           @ref="_frequencyChart">
+                    <ApexPointSeries TItem="DailyCount"
+                                    Items="_data.DailyEntries"
+                                    SeriesType="SeriesType.Area"
+                                    Name="@L["Common_Entries"]"
+                                    XValue="d => d.Date"
+                                    YValue="d => d.Count"
+                                    OrderBy="d => d.X" />
+                </ApexChart>
+            </div>
+        </div>
+    }
+
+    <!-- Numeric Field Trend Charts -->
+    @foreach (var series in _data.NumericSeries)
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>@series.Name
+                    @if (series.Unit != "UN")
+                    {
+                        <span class="badge bg-info ms-1">@series.Unit</span>
+                    }
+                    @if (series.TargetValue.HasValue)
+                    {
+                        <span class="badge bg-warning ms-1">@L["Metric_Target"]: @FormatNumeric(series.TargetValue, series.IsInteger)</span>
+                    }
+                </h6>
+            </div>
+            <div class="card-body">
+                <ApexChart TItem="NumericDataPoint"
+                           Options="BuildNumericOptions(series)"
+                           Height="250">
+                    <ApexPointSeries TItem="NumericDataPoint"
+                                    Items="series.Points"
+                                    SeriesType="MapChartType(series.ChartType)"
+                                    Name="@series.Name"
+                                    XValue="p => p.Date"
+                                    YValue="p => p.Value"
+                                    OrderBy="p => p.X" />
+                </ApexChart>
+            </div>
+        </div>
+    }
+
+    <!-- Boolean Field Charts -->
+    @foreach (var series in _data.BooleanSeries)
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-toggles me-2"></i>@series.Name</h6>
+            </div>
+            <div class="card-body">
+                <ApexChart TItem="BooleanDataPoint"
+                           Options="BuildBooleanOptions(series)"
+                           Height="250">
+                     <ApexPointSeries TItem="BooleanDataPoint"
+                                    Items="series.Points"
+                                    SeriesType="SeriesType.Bar"
+                                    Name="@L["Dashboard_True"]"
+                                    XValue="p => p.Date"
+                                    YValue="p => (decimal)p.TrueCount"
+                                    OrderBy="p => p.X" />
+                    <ApexPointSeries TItem="BooleanDataPoint"
+                                    Items="series.Points"
+                                    SeriesType="SeriesType.Bar"
+                                    Name="@L["Dashboard_False"]"
+                                    XValue="p => p.Date"
+                                    YValue="p => (decimal)p.FalseCount"
+                                    OrderBy="p => p.X" />
+                </ApexChart>
+            </div>
+        </div>
+    }
+
+    <!-- Dropdown Distribution Charts -->
+    @foreach (var series in _data.DropdownSeries)
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>@series.Name @L["Analytics_Distribution"]</h6>
+            </div>
+            <div class="card-body">
+                <ApexChart TItem="DropdownDataPoint"
+                           Options="BuildDonutOptions(series)"
+                           Height="280">
+                    <ApexPointSeries TItem="DropdownDataPoint"
+                                    Items="series.Distribution"
+                                    SeriesType="SeriesType.Donut"
+                                    Name="@L["Metric_Count"]"
+                                    XValue="p => p.Label"
+                                    YValue="p => p.Count"
+                                    OrderByDescending="p => p.Y" />
+                </ApexChart>
+            </div>
+        </div>
+    }
+
+    <!-- Field Summary Stats (reuse existing pattern) -->
+    @if (_data.Stats.FieldStats.Count > 0)
+    {
+        <h5 class="mb-3"><i class="bi bi-sliders me-2"></i>@L["Dashboard_FieldSummary"]</h5>
+        <div class="row g-3 mb-4">
+            @foreach (var field in _data.Stats.FieldStats)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card border h-100">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>@field.Name</strong>
+                                <div class="d-flex gap-1">
+                                    @if (field.Type is FieldType.Integer or FieldType.Decimal && field.Unit != "UN")
+                                    {
+                                        <span class="badge bg-info">@field.Unit</span>
+                                    }
+                                    <span class="badge bg-secondary">@field.Type</span>
+                                </div>
+                            </div>
+                            @if (field.Type is FieldType.Integer or FieldType.Decimal && field.NumericCount > 0)
+                            {
+                                var u = field.Unit != "UN" ? $" {field.Unit}" : "";
+                                var m = field.EnabledMetrics;
+                                var cols = new List<(string Label, string Color, string Display)>();
+                                if (m.HasFlag(SummaryMetrics.Min)) cols.Add((L["Metric_Min"], "text-primary", $"{FormatNumeric(field.NumericMin, field.IsInteger)}{u}"));
+                                if (m.HasFlag(SummaryMetrics.Avg)) cols.Add((L["Metric_Avg"], "text-success", $"{FormatNumeric(field.NumericAvg, false)}{u}"));
+                                if (m.HasFlag(SummaryMetrics.Max)) cols.Add((L["Metric_Max"], "text-danger", $"{FormatNumeric(field.NumericMax, field.IsInteger)}{u}"));
+                                if (m.HasFlag(SummaryMetrics.Sum)) cols.Add((L["Metric_Sum"], "text-warning", $"{FormatNumeric(field.NumericSum, field.IsInteger)}{u}"));
+                                if (m.HasFlag(SummaryMetrics.Count)) cols.Add((L["Metric_Count"], "text-info", $"{field.NumericCount}"));
+                                if (m.HasFlag(SummaryMetrics.Latest) && field.NumericLatest.HasValue) cols.Add((L["Metric_Latest"], "text-dark", $"{FormatNumeric(field.NumericLatest, field.IsInteger)}{u}"));
+
+                                @if (cols.Count > 0)
+                                {
+                                    <div class="row g-1 text-center">
+                                        @foreach (var col in cols)
+                                        {
+                                            <div class="col">
+                                                <div class="small fw-bold @col.Color">@col.Display</div>
+                                                <div class="text-muted" style="font-size: 0.6rem;">@col.Label</div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">@field.NumericCount @L["Analytics_ValuesRecorded"]</small>
+                                }
+                            }
+                            else
+                            {
+                                <small class="text-muted">@field.TotalValues @L["Analytics_ValuesRecorded"]</small>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid ActionId { get; set; }
+    [Inject] private DashboardService DashService { get; set; } = default!;
+
+    private ActionDetailData? _data;
+    private bool _loading = true;
+    private IReadOnlyList<string> _errors = [];
+    private ApexChart<DailyCount>? _frequencyChart;
+
+    private string _periodMode = "all";
+    private int _periodValue = 90;
+    private DateTime? _customFrom;
+    private DateTime? _customTo;
+
+    private ApexChartOptions<DailyCount> _frequencyOptions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        BuildFrequencyOptions();
+        await LoadAsync();
+    }
+
+    private void BuildFrequencyOptions()
+    {
+        _frequencyOptions = new ApexChartOptions<DailyCount>
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = true },
+                Zoom = new Zoom { Enabled = true }
+            },
+            Xaxis = new XAxis
+            {
+                Type = XAxisType.Datetime
+            },
+            Yaxis = [new YAxis { Title = new AxisTitle { Text = L["Common_Entries"].Value }, Min = 0 }],
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Fill = new Fill { Opacity = new Opacity(0.3) },
+            Colors = ["#0d6efd"],
+            Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+        };
+    }
+
+    private ApexChartOptions<NumericDataPoint> BuildNumericOptions(NumericFieldSeries series)
+    {
+        var yTitle = series.Unit != "UN" ? series.Unit : series.Name;
+        var options = new ApexChartOptions<NumericDataPoint>
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = true },
+                Zoom = new Zoom { Enabled = true }
+            },
+            Xaxis = new XAxis { Type = XAxisType.Datetime },
+            Yaxis = [new YAxis
+            {
+                Title = new AxisTitle { Text = yTitle },
+                DecimalsInFloat = series.IsInteger ? 0 : 2
+            }],
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Colors = ["#198754"],
+            Markers = new Markers { Size = 3 },
+            Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+        };
+
+        if (series.ChartType == TrendChartType.Area)
+        {
+            options.Fill = new Fill { Opacity = new Opacity(0.3) };
+        }
+
+        if (series.TargetValue.HasValue)
+        {
+            var targetLabel = series.IsInteger
+                ? ((int)Math.Round(series.TargetValue.Value)).ToString()
+                : series.TargetValue.Value.ToString("G");
+            options.Annotations = new Annotations
+            {
+                Yaxis =
+                [
+                    new AnnotationsYAxis
+                    {
+                        Y = series.TargetValue.Value,
+                        BorderColor = "#ff9800",
+                        StrokeDashArray = 4,
+                        Label = new Label
+                        {
+                            Text = $"{L["Metric_Target"]}: {targetLabel}",
+                            Style = new Style { Background = "#ff9800", Color = "#fff" }
+                        }
+                    }
+                ]
+            };
+        }
+
+        return options;
+    }
+
+    private static SeriesType MapChartType(TrendChartType chartType) => chartType switch
+    {
+        TrendChartType.Bar => SeriesType.Bar,
+        TrendChartType.Area => SeriesType.Area,
+        _ => SeriesType.Line
+    };
+
+    private ApexChartOptions<BooleanDataPoint> BuildBooleanOptions(BooleanFieldSeries series)
+    {
+        return new ApexChartOptions<BooleanDataPoint>
+        {
+            Chart = new Chart
+            {
+                Stacked = true,
+                Toolbar = new Toolbar { Show = true }
+            },
+            Xaxis = new XAxis { Type = XAxisType.Datetime },
+            Yaxis = [new YAxis { Title = new AxisTitle { Text = L["Metric_Count"].Value }, Min = 0 }],
+            Colors = ["#198754", "#dc3545"],
+            PlotOptions = new PlotOptions
+            {
+                Bar = new PlotOptionsBar { ColumnWidth = "70%" }
+            },
+            Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+        };
+    }
+
+    private ApexChartOptions<DropdownDataPoint> BuildDonutOptions(DropdownFieldSeries series)
+    {
+        return new ApexChartOptions<DropdownDataPoint>
+        {
+            Chart = new Chart { },
+            Legend = new Legend { Position = LegendPosition.Bottom }
+        };
+    }
+
+    private (DateTime? From, DateTime? To) ResolveDateRange() => _periodMode switch
+    {
+        "days" => (DateTime.UtcNow.AddDays(-_periodValue), null),
+        "months" => (DateTime.UtcNow.AddMonths(-_periodValue), null),
+        "custom" => (_customFrom, _customTo?.AddDays(1)),
+        _ => (null, null)
+    };
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _errors = [];
+        try
+        {
+            var (from, to) = ResolveDateRange();
+            _data = await DashService.LoadActionDetailAsync(ActionId, from, to);
+        }
+        catch (Exception ex)
+        {
+            _errors = [L["Analytics_LoadFailed", ex.Message]];
+        }
+        _loading = false;
+    }
+
+    private async Task OnPeriodModeChanged(ChangeEventArgs e)
+    {
+        _periodMode = e.Value?.ToString() ?? "all";
+        if (_periodMode == "custom")
+        {
+            _customFrom = DateTime.Today.AddMonths(-3);
+            _customTo = DateTime.Today;
+        }
+        await LoadAsync();
+    }
+
+    private async Task OnPeriodValueChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var val) && val > 0)
+        {
+            _periodValue = val;
+            await LoadAsync();
+        }
+    }
+
+    private async Task OnCustomFromChanged(ChangeEventArgs e)
+    {
+        _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await LoadAsync();
+    }
+
+    private async Task OnCustomToChanged(ChangeEventArgs e)
+    {
+        _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await LoadAsync();
+    }
+
+    private string FormatGap(double? days)
+    {
+        if (days is null) return "—";
+        return days.Value switch
+        {
+            < 1 => L["Gap_Hours", (int)(days.Value * 24)],
+            < 2 => L["Gap_About1D"],
+            < 7 => L["Gap_DShort", days.Value.ToString("F1")],
+            _ => L["Gap_WShort", (days.Value / 7).ToString("F1")]
+        };
+    }
+
+    private string FormatRelative(DateTime? utc)
+    {
+        if (utc is null) return "—";
+        var diff = DateTime.UtcNow - utc.Value;
+        return diff.TotalHours switch
+        {
+            < 1 => L["Time_Now"],
+            < 24 => L["Gap_Hours", (int)diff.TotalHours],
+            < 48 => L["Time_YDay"],
+            _ => L["Gap_DShort", (int)diff.TotalDays]
+        };
+    }
+
+    private static string FormatDecimal(decimal? value)
+    {
+        if (value is null) return "—";
+        return value == Math.Truncate(value.Value) ? value.Value.ToString("F0") : value.Value.ToString("F2");
+    }
+
+    private static string FormatNumeric(decimal? value, bool isInteger)
+    {
+        if (value is null) return "—";
+        if (isInteger) return ((int)Math.Round(value.Value)).ToString();
+        return value == Math.Truncate(value.Value)
+            ? value.Value.ToString("F0")
+            : value.Value.ToString("F2");
+    }
+}

@@ -4,7 +4,7 @@ namespace Arisoul.Traceon.App.Views;
 
 public partial class FieldDefinitionCreateOrEditPage : ContentPage
 {
-	FieldDefinitionCreateOrEditViewModel _viewModel;
+    readonly FieldDefinitionCreateOrEditViewModel _viewModel;
 
 	public FieldDefinitionCreateOrEditPage(FieldDefinitionCreateOrEditViewModel vm)
 	{

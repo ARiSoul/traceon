@@ -9,10 +9,10 @@ using System.Collections.ObjectModel;
 
 namespace Arisoul.Traceon.App.ViewModels;
 
-public partial class FieldDefinitionsViewModel 
-    : ArisoulMauiBaseViewModel
+public partial class FieldDefinitionsViewModel(IUnitOfWork unitOfWork)
+        : ArisoulMauiBaseViewModel
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private List<FieldDefinition> _allFieldDefinitions = [];
     
     [ObservableProperty] private string _searchQuery = string.Empty;
@@ -20,11 +20,6 @@ public partial class FieldDefinitionsViewModel
     [ObservableProperty] private bool _isSelectionMode;
     [ObservableProperty] private List<Guid> _fieldsToHide = [];
 
-    public FieldDefinitionsViewModel(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
-    
     public ObservableCollection<FieldDefinition> FieldDefinitions { get; private set; } = [];
     
     internal async Task LoadFieldDefinitionsAsync()

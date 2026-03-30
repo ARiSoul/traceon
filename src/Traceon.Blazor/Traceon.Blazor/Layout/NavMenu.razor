@@ -1,0 +1,93 @@
+﻿@inject IStringLocalizer<SharedResource> L
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="">
+            <i class="bi bi-bullseye me-2"></i> Traceon
+        </a>
+        <button title="@L["Nav_Menu"]" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link d-flex align-items-center" href="" Match="NavLinkMatch.All">
+                <i class="bi bi-house-door-fill me-2"></i> <span>@L["Nav_Home"]</span>
+            </NavLink>
+        </div>
+
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3 mt-3">
+                    <span class="text-muted small px-2">@L["Nav_Tracking"]</span>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="tracked-actions">
+                        <i class="bi bi-list-check me-2"></i> <span>@L["Nav_TrackedActions"]</span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="entries">
+                        <i class="bi bi-journal-text me-2"></i> <span>@L["Nav_Entries"]</span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="dashboard">
+                        <i class="bi bi-bar-chart-line me-2"></i> <span>@L["Nav_Dashboard"]</span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3 mt-3">
+                    <span class="text-muted small px-2">@L["Nav_Configuration"]</span>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="tags">
+                        <i class="bi bi-tags me-2"></i> <span>@L["Nav_Tags"]</span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="field-definitions">
+                        <i class="bi bi-sliders me-2"></i> <span>@L["Nav_CustomFields"]</span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="templates">
+                        <i class="bi bi-box-seam me-2"></i> <span>@L["Nav_Templates"]</span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="settings">
+                        <i class="bi bi-gear me-2"></i> <span>@L["Nav_Settings"]</span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="feedback">
+                        <i class="bi bi-chat-dots me-2"></i> <span>@L["Nav_Feedback"]</span>
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

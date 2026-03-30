@@ -1,0 +1,383 @@
+@typeparam TItem
+@inject IStringLocalizer<SharedResource> L
+
+<div class="data-grid">
+    @if (FilterPlaceholder is not null || Toolbar is not null)
+    {
+        <div class="data-grid-toolbar">
+            @if (FilterPlaceholder is not null)
+            {
+                <div class="data-grid-filter">
+                    <input type="text"
+                           class="form-control"
+                           placeholder="@FilterPlaceholder"
+                           @bind="_filterInput"
+                           @bind:event="oninput"
+                           @onkeydown="OnFilterKeyDownAsync" />
+                    <button class="btn btn-outline-primary" @onclick="ApplyFilterAsync" disabled="@_loading">
+                        <i class="bi bi-funnel me-1"></i>@L["DataGrid_Filter"]
+                    </button>
+                    @if (!string.IsNullOrWhiteSpace(_appliedFilter))
+                    {
+                        <button class="btn btn-outline-secondary" @onclick="ClearFilterAsync" disabled="@_loading">
+                             <i class="bi bi-x-circle me-1"></i>@L["DataGrid_Clear"]
+                        </button>
+                    }
+                </div>
+            }
+            @if (Toolbar is not null)
+            {
+                <div class="data-grid-toolbar-actions">
+                    @Toolbar
+                </div>
+            }
+        </div>
+    }
+
+    @if (_loading)
+    {
+        <div class="data-grid-loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">@L["Common_Loading"]</span>
+            </div>
+        </div>
+    }
+    else if (_items.Count == 0)
+    {
+        <div class="data-grid-empty">
+            <p class="text-muted mb-0">@(EmptyText ?? L["Common_NoItemsFound"])</p>
+        </div>
+    }
+    else
+    {
+        @* ── Desktop table ── *@
+        <div class="data-grid-table d-none d-md-block">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            @foreach (var col in Columns)
+                            {
+                                <th @onclick="() => SortByAsync(col)"
+                                    class="@(col.SortField is not null ? "sortable" : "")"
+                                    role="@(col.SortField is not null ? "button" : null)">
+                                    <span class="d-inline-flex align-items-center gap-1">
+                                        @col.Title
+                                        @if (col.SortField is not null && _sortField == col.SortField)
+                                        {
+                                            <i class="bi bi-@(_sortDescending ? "sort-down" : "sort-up") sort-indicator"></i>
+                                        }
+                                    </span>
+                                </th>
+                            }
+                            @if (RowActions is not null)
+                            {
+                                <th class="text-end"></th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in _items)
+                        {
+                            <tr>
+                                @foreach (var col in Columns)
+                                {
+                                    <td>
+                                        @if (col.Template is not null)
+                                        {
+                                            @col.Template(item)
+                                        }
+                                        else
+                                        {
+                                            @FormatValue(col, item)
+                                        }
+                                    </td>
+                                }
+                                @if (RowActions is not null)
+                                {
+                                    <td class="text-end text-nowrap">@RowActions(item)</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @* ── Mobile cards ── *@
+        <div class="data-grid-cards d-md-none">
+            @foreach (var item in _items)
+            {
+                <div class="card mb-2">
+                    <div class="card-body py-2 px-3">
+                        @{ var titleCol = Columns.FirstOrDefault(c => c.IsMobileTitle); }
+                        @if (titleCol is not null)
+                        {
+                            <div class="fw-semibold mb-1">
+                                @if (titleCol.Template is not null)
+                                {
+                                    @titleCol.Template(item)
+                                }
+                                else
+                                {
+                                    @FormatValue(titleCol, item)
+                                }
+                            </div>
+                        }
+                        @foreach (var col in Columns.Where(c => !c.HideOnMobile && !c.IsMobileTitle))
+                        {
+                            <div class="d-flex justify-content-between align-items-start py-1 mobile-field">
+                                <span class="text-muted small me-2">@col.Title</span>
+                                <span class="text-end">
+                                    @if (col.Template is not null)
+                                    {
+                                        @col.Template(item)
+                                    }
+                                    else
+                                    {
+                                        @FormatValue(col, item)
+                                    }
+                                </span>
+                            </div>
+                        }
+                        @if (RowActions is not null)
+                        {
+                            <div class="d-flex justify-content-end pt-1 mt-1 border-top">
+                                @RowActions(item)
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <div class="data-grid-footer">
+                <div class="data-grid-info">
+                    <span class="text-muted small">
+                        @L["DataGrid_Showing"] <strong>@(_firstRecord)–@(_lastRecord)</strong> @L["DataGrid_Of"] <strong>@_totalCount</strong>
+                    </span>
+                </div>
+
+                <nav class="data-grid-pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(_page <= 1 ? "disabled" : "")">
+                            <button class="page-link" @onclick="GoToFirstPageAsync" disabled="@(_page <= 1)" title="@L["DataGrid_FirstPage"]">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </button>
+                        </li>
+                        <li class="page-item @(_page <= 1 ? "disabled" : "")">
+                            <button class="page-link" @onclick="PreviousPageAsync" disabled="@(_page <= 1)">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                        </li>
+
+                        @foreach (var p in GetPageNumbers())
+                        {
+                            <li class="page-item @(p == _page ? "active" : "")">
+                                <button class="page-link" @onclick="() => GoToPageAsync(p)">@p</button>
+                            </li>
+                        }
+
+                        <li class="page-item @(_page >= _totalPages ? "disabled" : "")">
+                            <button class="page-link" @onclick="NextPageAsync" disabled="@(_page >= _totalPages)">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </li>
+                        <li class="page-item @(_page >= _totalPages ? "disabled" : "")">
+                            <button class="page-link" @onclick="GoToLastPageAsync" disabled="@(_page >= _totalPages)" title="@L["DataGrid_LastPage"]">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="data-grid-page-size">
+                    <select class="form-select form-select-sm" value="@_pageSize" @onchange="OnPageSizeChangedAsync">
+                        @foreach (var size in PageSizeOptions)
+                        {
+                            <option value="@size">@size @L["DataGrid_PerPage"]</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required Func<DataGridRequest, Task<DataGridResult<TItem>>> LoadData { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<DataGridColumn<TItem>> Columns { get; set; }
+
+    [Parameter] public RenderFragment? Toolbar { get; set; }
+    [Parameter] public RenderFragment<TItem>? RowActions { get; set; }
+    [Parameter] public string? FilterPlaceholder { get; set; }
+    [Parameter] public string? EmptyText { get; set; }
+    [Parameter] public int PageSize { get; set; } = 10;
+    [Parameter] public int[] PageSizeOptions { get; set; } = [10, 25, 50, 100];
+    [Parameter] public string? DefaultSortField { get; set; }
+    [Parameter] public bool DefaultSortDescending { get; set; }
+
+    private IReadOnlyList<TItem> _items = [];
+    private bool _loading = true;
+    private int _totalCount;
+    private int _totalPages;
+    private int _page = 1;
+    private int _pageSize;
+    private string? _sortField;
+    private bool _sortDescending;
+    private string? _filterInput;
+    private string? _appliedFilter;
+
+    private int _firstRecord => (_page - 1) * _pageSize + 1;
+    private int _lastRecord => Math.Min(_page * _pageSize, _totalCount);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _pageSize = PageSize;
+        _sortField = DefaultSortField;
+        _sortDescending = DefaultSortDescending;
+        await LoadDataInternalAsync();
+    }
+
+    public async Task RefreshAsync()
+    {
+        await LoadDataInternalAsync();
+    }
+
+    private async Task LoadDataInternalAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var request = new DataGridRequest(_page, _pageSize, _sortField, _sortDescending, _appliedFilter);
+        var result = await LoadData(request);
+
+        _items = result.Items;
+        _totalCount = result.TotalCount;
+        _totalPages = Math.Max(1, (int)Math.Ceiling((double)_totalCount / _pageSize));
+
+        if (_page > _totalPages)
+            _page = _totalPages;
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task SortByAsync(DataGridColumn<TItem> column)
+    {
+        if (column.SortField is null) return;
+
+        if (_sortField == column.SortField)
+            _sortDescending = !_sortDescending;
+        else
+        {
+            _sortField = column.SortField;
+            _sortDescending = false;
+        }
+
+        _page = 1;
+        await LoadDataInternalAsync();
+    }
+
+    private async Task ApplyFilterAsync()
+    {
+        _appliedFilter = string.IsNullOrWhiteSpace(_filterInput) ? null : _filterInput;
+        _page = 1;
+        await LoadDataInternalAsync();
+    }
+
+    private async Task ClearFilterAsync()
+    {
+        _filterInput = null;
+        _appliedFilter = null;
+        _page = 1;
+        await LoadDataInternalAsync();
+    }
+
+    private async Task OnFilterKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await ApplyFilterAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_page < _totalPages)
+        {
+            _page++;
+            await LoadDataInternalAsync();
+        }
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (_page > 1)
+        {
+            _page--;
+            await LoadDataInternalAsync();
+        }
+    }
+
+    private async Task GoToPageAsync(int page)
+    {
+        if (page != _page && page >= 1 && page <= _totalPages)
+        {
+            _page = page;
+            await LoadDataInternalAsync();
+        }
+    }
+
+    private async Task GoToFirstPageAsync()
+    {
+        if (_page > 1)
+        {
+            _page = 1;
+            await LoadDataInternalAsync();
+        }
+    }
+
+    private async Task GoToLastPageAsync()
+    {
+        if (_page < _totalPages)
+        {
+            _page = _totalPages;
+            await LoadDataInternalAsync();
+        }
+    }
+
+    private async Task OnPageSizeChangedAsync(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var newSize) && newSize != _pageSize)
+        {
+            _pageSize = newSize;
+            _page = 1;
+            await LoadDataInternalAsync();
+        }
+    }
+
+    private IEnumerable<int> GetPageNumbers()
+    {
+        const int maxVisible = 5;
+        var half = maxVisible / 2;
+        var start = Math.Max(1, _page - half);
+        var end = Math.Min(_totalPages, start + maxVisible - 1);
+        start = Math.Max(1, end - maxVisible + 1);
+
+        for (var i = start; i <= end; i++)
+            yield return i;
+    }
+
+    private static string FormatValue(DataGridColumn<TItem> column, TItem item)
+    {
+        var value = column.Selector(item);
+        if (value is null) return "";
+        if (column.Format is not null && value is IFormattable formattable)
+            return formattable.ToString(column.Format, null);
+        return value.ToString() ?? "";
+    }
+}

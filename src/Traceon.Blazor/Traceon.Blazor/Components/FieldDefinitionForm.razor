@@ -1,0 +1,232 @@
+@using Traceon.Contracts.FieldDefinitions
+@inject FieldDefinitionService FieldDefinitionService
+@inject IStringLocalizer<SharedResource> L
+
+<div>
+    <EditForm Model="_model" OnValidSubmit="SaveAsync" Class="mb-2">
+        <DataAnnotationsValidator />
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">@L["Common_Name"] <span class="text-danger">*</span></label>
+                <InputText @bind-Value="_model!.DefaultName" class="form-control form-control-sm" />
+                <ValidationMessage For="() => _model!.DefaultName" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@L["Common_Type"] <span class="text-danger">*</span></label>
+                <InputSelect @bind-Value="_model!.Type" class="form-select form-select-sm">
+                    @foreach (var type in Enum.GetValues<FieldType>())
+                    {
+                        <option value="@type">@type</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@L["Fields_RequiredByDefault"]</label>
+                <div class="form-check mt-2">
+                    <InputCheckbox @bind-Value="_model!.DefaultIsRequired" class="form-check-input" id="isRequiredInline" />
+                    <label class="form-check-label" for="isRequiredInline">@L["Common_Yes"]</label>
+                </div>
+            </div>
+        </div>
+
+        @if (_model!.Type is FieldType.Integer or FieldType.Decimal)
+        {
+            <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                    <label class="form-label form-label-sm mb-1">@L["Fields_Unit"]</label>
+                    <input type="text" class="form-control form-control-sm" @bind="_model.Unit" placeholder="@L["Fields_UnitPlaceholder"]" />
+                    <div class="form-text">@L["Fields_UnitHint"]</div>
+                </div>
+            </div>
+        }
+
+        <div class="row g-3 mt-2">
+            <div class="col-12">
+                <label class="form-label">@L["Common_Description"]</label>
+                <InputText @bind-Value="_model!.DefaultDescription" class="form-control form-control-sm" />
+            </div>
+        </div>
+
+        @if (_model!.Type is FieldType.Integer or FieldType.Decimal or FieldType.Date)
+        {
+            <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                    <label class="form-label">@(_model.Type == FieldType.Date ? L["Fields_MinDate"] : L["Fields_MinValue"])</label>
+                    @switch (_model.Type)
+                    {
+                        case FieldType.Integer:
+                            <InputNumber @bind-Value="_model.IntMinValue" class="form-control form-control-sm" />
+                            break;
+                        case FieldType.Decimal:
+                            <InputNumber @bind-Value="_model.DecimalMinValue" class="form-control form-control-sm" />
+                            break;
+                        case FieldType.Date:
+                            <InputDate @bind-Value="_model.MinDateValue" class="form-control form-control-sm" />
+                            break;
+                    }
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">@(_model.Type == FieldType.Date ? L["Fields_MaxDate"] : L["Fields_MaxValue"])</label>
+                    @switch (_model.Type)
+                    {
+                        case FieldType.Integer:
+                            <InputNumber @bind-Value="_model.IntMaxValue" class="form-control form-control-sm" />
+                            break;
+                        case FieldType.Decimal:
+                            <InputNumber @bind-Value="_model.DecimalMaxValue" class="form-control form-control-sm" />
+                            break;
+                        case FieldType.Date:
+                            <InputDate @bind-Value="_model.MaxDateValue" class="form-control form-control-sm" />
+                            break;
+                    }
+                </div>
+            </div>
+        }
+
+        @if (_model.Type == FieldType.Dropdown)
+        {
+            <div class="row g-3 mt-2">
+                <div class="col-12">
+                    <label class="form-label">@L["Fields_DropdownValues"] <span class="text-danger">*</span></label>
+                    <InputText @bind-Value="_model.DropdownValues" class="form-control form-control-sm"
+                               placeholder="@L["Fields_DropdownPlaceholder"]" />
+                    <div class="form-text">@L["Fields_DropdownHint"]</div>
+                </div>
+            </div>
+        }
+
+        <div class="row g-3 mt-2">
+            <div class="col-12">
+                <label class="form-label">@L["Fields_DefaultValue"]</label>
+
+                @switch (_model.Type)
+                {
+                    case FieldType.Boolean:
+                        <div class="form-check mt-2">
+                            <InputCheckbox @bind-Value="_model.DefaultBoolValue" class="form-check-input" id="defaultBoolInline" />
+                            <label class="form-check-label" for="defaultBoolInline">@L["Fields_CheckedByDefault"]</label>
+                        </div>
+                        break;
+
+                    case FieldType.Integer:
+                        <InputNumber @bind-Value="_model.DefaultIntValue" class="form-control form-control-sm" />
+                        break;
+
+                    case FieldType.Decimal:
+                        <InputNumber @bind-Value="_model.DefaultDecimalValue" class="form-control form-control-sm" />
+                        break;
+
+                    case FieldType.Date:
+                        <InputDate @bind-Value="_model.DefaultDateValue" class="form-control form-control-sm" />
+                        break;
+
+                    case FieldType.Dropdown:
+                        @if (_model.ParsedDropdownValues.Length > 0)
+                        {
+                            <InputSelect @bind-Value="_model.DefaultValue" class="form-select form-select-sm">
+                                <option value="">@L["Fields_SelectDefault"]</option>
+                                @foreach (var val in _model.ParsedDropdownValues)
+                                {
+                                    <option value="@val">@val</option>
+                                }
+                            </InputSelect>
+                        }
+                        else
+                        {
+                            <InputText @bind-Value="_model.DefaultValue" class="form-control form-control-sm" disabled />
+                            <div class="form-text text-warning">
+                                <i class="bi bi-info-circle me-1"></i>@L["Fields_DefineDropdownFirst"]
+                            </div>
+                        }
+                        break;
+
+                    default:
+                        <InputText @bind-Value="_model.DefaultValue" class="form-control form-control-sm" />
+                        break;
+                }
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-success btn-sm" disabled="@_saving">
+                @if (_saving)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                else
+                {
+                    <i class="bi bi-check-circle me-1"></i>
+                }
+                @L["Fields_CreateField"]
+            </button>
+        </div>
+
+        @if (_errors.Count > 0)
+        {
+            <div class="text-danger small mt-2">@string.Join(", ", _errors)</div>
+        }
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public EventCallback<FieldDefinitionResponse> OnCreated { get; set; }
+
+    private FieldDefinitionModel? _model = new FieldDefinitionModel();
+    private IReadOnlyList<string> _errors = [];
+    private bool _saving;
+
+    private async Task SaveAsync()
+    {
+        if (_model is null) return;
+
+        _saving = true;
+        _errors = [];
+
+        var validationErrors = _model.ValidateMinMax(L);
+        if (validationErrors.Count > 0)
+        {
+            _errors = validationErrors;
+            _saving = false;
+            return;
+        }
+
+        var defaultValue = _model.ResolveDefaultValue();
+        var (minValue, maxValue) = _model.ResolveMinMax();
+
+        var (success, errors) = await FieldDefinitionService.CreateAsync(new CreateFieldDefinitionRequest(
+            _model.DefaultName,
+            _model.Type,
+            _model.DefaultDescription,
+            _model.Type == FieldType.Dropdown ? _model.DropdownValues : null,
+            maxValue,
+            minValue,
+            _model.DefaultIsRequired,
+            defaultValue,
+            _model.Unit));
+
+        if (!success)
+        {
+            _errors = errors;
+            _saving = false;
+            return;
+        }
+
+        var all = await FieldDefinitionService.GetAllAsync();
+        var created = all.FirstOrDefault(f => f.DefaultName == _model.DefaultName && f.Type == _model.Type);
+
+        if (created is not null)
+        {
+            await OnCreated.InvokeAsync(created);
+            _model = new FieldDefinitionModel();
+        }
+        else
+        {
+            _errors = new[] { L["Fields_CreatedNotRetrieved"].Value };
+        }
+
+        _saving = false;
+    }
+
+
+}

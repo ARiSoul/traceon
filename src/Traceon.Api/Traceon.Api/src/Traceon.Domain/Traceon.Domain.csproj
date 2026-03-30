@@ -1,0 +1,6 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Traceon.Contracts\Traceon.Contracts.csproj" />
+  </ItemGroup>
+</Project>
+

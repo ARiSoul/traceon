@@ -1,0 +1,9 @@
+.item-selector-list {
+    max-height: 20rem;
+    overflow-y: auto;
+}
+
+.item-selector-list .list-group-item {
+    font-size: 0.875rem;
+    transition: background-color 0.15s;
+}

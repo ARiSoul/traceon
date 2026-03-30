@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../Traceon.Api/Traceon.Api/src/Traceon.Contracts/Traceon.Contracts.csproj" />
+  <Project Path="Traceon.Blazor/Traceon.Blazor.csproj" />
+</Solution>

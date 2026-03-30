@@ -1,0 +1,470 @@
+@page "/tracked-actions/{Id:guid}/edit"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["ActionEdit_Title"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-pencil-square me-2"></i>
+            @L["ActionEdit_Title"]
+        </h3>
+        <p class="text-muted mb-0">
+            @L["ActionEdit_Editing"]: <strong>@(_model?.Name ?? "...")</strong>
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/tracked-actions" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>@L["Common_BackToList"]
+        </a>
+        <a href="/dashboard/action/@Id/detail" class="btn btn-outline-info">
+            <i class="bi bi-graph-up-arrow me-1"></i>@L["TrackedActions_Analytics"]
+        </a>
+        <button class="btn btn-success" @onclick="SaveBasicInfoAsync" disabled="@_saving">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            else
+            {
+                <i class="bi bi-check-circle me-1"></i>
+            }
+            @L["Common_SaveChanges"]
+        </button>
+    </div>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">@L["Common_Loading"]</span>
+        </div>
+    </div>
+}
+else if (_model is null)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-question-circle me-2"></i>
+        @L["Edit_NotFound"]
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-header p-0">
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "basic" ? "active" : "")" @onclick='() => _activeTab = "basic"'>
+                        <i class="bi bi-info-circle me-1"></i>@L["Edit_BasicInfo"]
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "fields" ? "active" : "")" @onclick='() => _activeTab = "fields"'>
+                        <i class="bi bi-sliders me-1"></i>@L["Common_Fields"]
+                        @if (_fields.Count > 0)
+                        {
+                            <span class="badge bg-primary ms-1">@_fields.Count</span>
+                        }
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "tags" ? "active" : "")" @onclick='() => _activeTab = "tags"'>
+                        <i class="bi bi-tags me-1"></i>@L["Common_Tags"]
+                        @if (_tags.Count > 0)
+                        {
+                            <span class="badge bg-primary ms-1">@_tags.Count</span>
+                        }
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "entries" ? "active" : "")" @onclick='() => _activeTab = "entries"'>
+                        <i class="bi bi-journal-text me-1"></i>@L["Common_Entries"]
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body">
+            @if (_activeTab == "basic")
+            {
+                <EditForm Model="_model" FormName="EditActionForm">
+                    <DataAnnotationsValidator />
+                    <div class="mb-3">
+                        <label class="form-label">@L["Common_Name"] <span class="text-danger">*</span></label>
+                        <InputText @bind-Value="_model.Name" class="form-control" />
+                        <ValidationMessage For="() => _model.Name" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">@L["Common_Description"]</label>
+                        <InputText @bind-Value="_model.Description" class="form-control" />
+                    </div>
+                </EditForm>
+            }
+            else if (_activeTab == "fields")
+            {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="text-muted mb-0">@L["Edit_FieldsHint"]</p>
+                    <button class="btn btn-outline-primary btn-sm" @onclick="() => _showFieldSelector = true">
+                        <i class="bi bi-plus-circle me-1"></i>@L["Edit_AddFields"]
+                    </button>
+                </div>
+
+                @if (_fields.Count == 0)
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-sliders fs-3 d-block mb-2"></i>
+                        <p>@L["Edit_NoFieldsYet"]</p>
+                        <button class="btn btn-primary" @onclick="() => _showFieldSelector = true">
+                            <i class="bi bi-plus-circle me-1"></i>@L["Edit_SelectFields"]
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="list-group">
+                        @for (var i = 0; i < _fields.Count; i++)
+                        {
+                            var index = i;
+                            var field = _fields[i];
+                            <ActionFieldEditor Field="field"
+                                               TrackedActionId="Id"
+                                               OnRemove="RemoveFieldAsync"
+                                               OnSaved="ReloadFieldsAsync"
+                                               IsFirst="index == 0"
+                                               IsLast="index == _fields.Count - 1"
+                                               OnMoveUp="() => MoveFieldAsync(index, -1)"
+                                               OnMoveDown="() => MoveFieldAsync(index, 1)" />
+                        }
+                    </div>
+                    @if (_savingOrder)
+                    {
+                        <div class="text-center mt-2">
+                            <span class="spinner-border spinner-border-sm text-primary me-1"></span>
+                            <small class="text-muted">@L["Edit_SavingOrder"]</small>
+                        </div>
+                    }
+                }
+            }
+            else if (_activeTab == "tags")
+            {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="text-muted mb-0">@L["Edit_TagsHint"]</p>
+                    <button class="btn btn-outline-primary btn-sm" @onclick="() => _showTagSelector = true">
+                        <i class="bi bi-plus-circle me-1"></i>@L["Edit_AddTags"]
+                    </button>
+                </div>
+
+                @if (_tags.Count == 0)
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-tags fs-3 d-block mb-2"></i>
+                        <p>@L["Edit_NoTagsYet"]</p>
+                        <button class="btn btn-primary" @onclick="() => _showTagSelector = true">
+                            <i class="bi bi-plus-circle me-1"></i>@L["Edit_SelectTags"]
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var tag in _tags)
+                        {
+                            <span class="badge rounded-pill fs-6 d-inline-flex align-items-center gap-1 py-2 px-3"
+                                  style="background-color: @tag.Color">
+                                @tag.Name
+                                <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;"
+                                        @onclick="() => RemoveTagAsync(tag)"></button>
+                            </span>
+                        }
+                    </div>
+                }
+            }
+            else if (_activeTab == "entries")
+            {
+                <EntryDataGrid TrackedActionId="Id" LockActionFilter="true" />
+            }
+        </div>
+    </div>
+}
+
+<!-- Tag Selector Modal -->
+<ModalSelector TItem="TagResponse"
+               @bind-IsVisible="_showTagSelector"
+               Title="@L["Modal_SelectTags"]"
+               Icon="tags"
+               LoadItems="() => TagService.GetAllAsync()"
+               KeySelector="t => t.Id"
+               SearchSelector="@(t => $"{t.Name} {t.Description}")"
+               SearchPlaceholder="@L["Modal_SearchTags"]"
+               EmptyText="@L["Modal_NoTagsAvailable"]"
+               ExcludedKeys="_tagExcludedKeys"
+               OnConfirm="OnTagsSelectedAsync">
+    <CreateTemplate>
+        <div class="row g-2 align-items-end">
+            <div class="col">
+                <label class="form-label form-label-sm mb-1">@L["Common_Name"] <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" @bind="_newTagName" placeholder="@L["Common_Name"]" />
+            </div>
+            <div class="col-auto">
+                <label class="form-label form-label-sm mb-1">@L["Tags_Color"]</label>
+                <input type="color" class="form-control form-control-sm form-control-color" @bind="_newTagColor" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-success btn-sm" @onclick="() => CreateTagInlineAsync(context)" disabled="@_creatingTag">
+                    @if (_creatingTag)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    <i class="bi bi-plus-circle me-1"></i>@L["Common_Create"]
+                </button>
+            </div>
+        </div>
+        @if (_tagCreateErrors.Count > 0)
+        {
+            <div class="text-danger small mt-1">@string.Join(", ", _tagCreateErrors)</div>
+        }
+    </CreateTemplate>
+    <ItemTemplate>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge rounded-pill" style="background-color: @context.Color">&nbsp;&nbsp;</span>
+            <span>@context.Name</span>
+        </div>
+    </ItemTemplate>
+</ModalSelector>
+
+<!-- Field Selector Modal -->
+<ModalSelector TItem="FieldDefinitionResponse"
+               @bind-IsVisible="_showFieldSelector"
+               Title="@L["Modal_SelectFields"]"
+               Icon="sliders"
+               LoadItems="() => FieldDefinitionService.GetAllAsync()"
+               KeySelector="f => f.Id"
+               SearchSelector="@(f => $"{f.DefaultName} {f.Type}")"
+               SearchPlaceholder="@L["Modal_SearchFields"]"
+               EmptyText="@L["Modal_NoFieldsAvailable"]"
+               ExcludedKeys="_fieldExcludedKeys"
+               OnConfirm="OnFieldsSelectedAsync">
+    <ItemTemplate>
+        <div class="d-flex align-items-center gap-2 w-100">
+            <span>@context.DefaultName</span>
+            <span class="badge bg-secondary ms-auto">@context.Type</span>
+        </div>
+    </ItemTemplate>
+    <CreateTemplate>
+        <FieldDefinitionForm OnCreated="async fd => await OnFieldCreatedInlineAsync(fd, context)" />
+    </CreateTemplate>
+</ModalSelector>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [Inject] private TrackedActionService Service { get; set; } = default!;
+    [Inject] private TagService TagService { get; set; } = default!;
+    [Inject] private FieldDefinitionService FieldDefinitionService { get; set; } = default!;
+    [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private EditModel? _model;
+    private IReadOnlyList<string> _errors = [];
+    private bool _loading = true;
+    private bool _saving;
+    private string _activeTab = "basic";
+
+    // Tags
+    private List<TagResponse> _tags = [];
+    private List<Guid> _tagExcludedKeys => _tags.Select(t => t.Id).ToList();
+    private bool _showTagSelector;
+    private string _newTagName = string.Empty;
+    private string _newTagColor = "#0d6efd";
+    private bool _creatingTag;
+    private IReadOnlyList<string> _tagCreateErrors = [];
+
+    // Fields
+    private List<ActionFieldResponse> _fields = [];
+    private List<Guid> _fieldExcludedKeys => _fields.Select(f => f.FieldDefinitionId).ToList();
+    private bool _showFieldSelector;
+
+    // Drag-and-drop reorder state
+    private bool _savingOrder;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var action = await Service.GetByIdAsync(Id);
+
+        if (action is not null)
+        {
+            _model = new EditModel
+            {
+                Name = action.Name,
+                Description = action.Description
+            };
+
+            var tagsTask = Service.GetTagsAsync(Id);
+            var fieldsTask = ActionFieldService.GetByTrackedActionAsync(Id);
+            await Task.WhenAll(tagsTask, fieldsTask);
+
+            _tags = tagsTask.Result;
+            _fields = fieldsTask.Result;
+        }
+
+        _loading = false;
+    }
+
+    private async Task SaveBasicInfoAsync()
+    {
+        if (_model is null) return;
+
+        _saving = true;
+        _errors = [];
+
+        var (success, errors) = await Service.UpdateAsync(Id, new UpdateTrackedActionRequest(_model.Name, _model.Description));
+
+        if (success)
+            Nav.NavigateTo("/tracked-actions");
+        else
+            _errors = errors.Count > 0 ? errors : [L["Edit_UpdateFailed"]];
+
+        _saving = false;
+    }
+
+    // Tags
+    private async Task OnTagsSelectedAsync(List<TagResponse> tags)
+    {
+        _errors = [];
+        foreach (var tag in tags)
+        {
+            var (ok, errs) = await Service.AddTagAsync(Id, tag.Id);
+            if (ok)
+                _tags.Add(tag);
+            else
+            {
+                _errors = errs;
+                return;
+            }
+        }
+    }
+
+    private async Task RemoveTagAsync(TagResponse tag)
+    {
+        _errors = [];
+        var (ok, errs) = await Service.RemoveTagAsync(Id, tag.Id);
+        if (ok)
+            _tags.Remove(tag);
+        else
+            _errors = errs;
+    }
+
+    private async Task CreateTagInlineAsync(EventCallback onCreated)
+    {
+        if (string.IsNullOrWhiteSpace(_newTagName)) return;
+        _creatingTag = true;
+        _tagCreateErrors = [];
+
+        var (success, errors) = await TagService.CreateAsync(
+            new CreateTagRequest(_newTagName.Trim(), null, _newTagColor));
+
+        if (success)
+        {
+            _newTagName = string.Empty;
+            _newTagColor = "#0d6efd";
+            await onCreated.InvokeAsync();
+        }
+        else
+        {
+            _tagCreateErrors = errors;
+        }
+        _creatingTag = false;
+    }
+
+    // Fields
+    private async Task OnFieldsSelectedAsync(List<FieldDefinitionResponse> definitions)
+    {
+        _errors = [];
+        var nextOrder = _fields.Count > 0 ? _fields.Max(f => f.Order) + 1 : 0;
+
+        foreach (var def in definitions)
+        {
+            var request = new CreateActionFieldRequest(def.Id, def.DefaultName,
+                def.DefaultDescription, def.DefaultMaxValue, def.DefaultMinValue,
+                def.DefaultIsRequired, def.DefaultValue, def.Unit, nextOrder++);
+
+            var (ok, errs) = await ActionFieldService.CreateAsync(Id, request);
+            if (!ok)
+            {
+                _errors = errs;
+                return;
+            }
+        }
+
+        // Reload fields to get the server-assigned IDs
+        _fields = await ActionFieldService.GetByTrackedActionAsync(Id);
+    }
+
+    private async Task RemoveFieldAsync(ActionFieldResponse field)
+    {
+        _errors = [];
+        var (ok, errs) = await ActionFieldService.DeleteAsync(Id, field.Id);
+        if (ok)
+            _fields.Remove(field);
+        else
+            _errors = errs;
+    }
+
+    private async Task ReloadFieldsAsync()
+    {
+        _fields = await ActionFieldService.GetByTrackedActionAsync(Id);
+    }
+
+    private async Task OnFieldCreatedInlineAsync(FieldDefinitionResponse def, EventCallback onCreated)
+    {
+        await OnFieldsSelectedAsync([def]);
+        await onCreated.InvokeAsync();
+    }
+
+    // Reorder handlers
+    private async Task MoveFieldAsync(int index, int direction)
+    {
+        var targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= _fields.Count) return;
+
+        (_fields[index], _fields[targetIndex]) = (_fields[targetIndex], _fields[index]);
+        await SaveFieldOrderAsync();
+    }
+
+    private async Task SaveFieldOrderAsync()
+    {
+        _savingOrder = true;
+        _errors = [];
+
+        for (var i = 0; i < _fields.Count; i++)
+        {
+            var field = _fields[i];
+            if (field.Order == i) continue;
+
+            var request = new UpdateActionFieldRequest(
+                field.Name, field.Description, field.MaxValue, field.MinValue,
+                field.IsRequired, field.DefaultValue, field.Unit, i,
+                field.SummaryMetrics, field.TrendAggregation, field.TrendChartType, field.TargetValue);
+
+            var (ok, errs) = await ActionFieldService.UpdateAsync(Id, field.Id, request);
+            if (!ok)
+            {
+                _errors = errs;
+                break;
+            }
+        }
+
+        _fields = await ActionFieldService.GetByTrackedActionAsync(Id);
+        _savingOrder = false;
+    }
+
+    private sealed class EditModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+    }
+}
