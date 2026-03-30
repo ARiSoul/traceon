@@ -488,9 +488,9 @@ else
         if (days is null) return "—";
         return days.Value switch
         {
-            < 1 => L["Gap_Hours", (int)(days.Value * 24)],
-            < 2 => L["Gap_About1D"],
-            < 7 => L["Gap_DShort", days.Value.ToString("F1")],
+            (< 1) => L["Gap_Hours", (int)(days.Value * 24)],
+            (< 2) => L["Gap_About1D"],
+            (< 7) => L["Gap_DShort", days.Value.ToString("F1")],
             _ => L["Gap_WShort", (days.Value / 7).ToString("F1")]
         };
     }
@@ -501,9 +501,9 @@ else
         var diff = DateTime.UtcNow - utc.Value;
         return diff.TotalHours switch
         {
-            < 1 => L["Time_Now"],
-            < 24 => L["Gap_Hours", (int)diff.TotalHours],
-            < 48 => L["Time_YDay"],
+            (< 1) => L["Time_Now"],
+            (< 24) => L["Gap_Hours", (int)diff.TotalHours],
+            (< 48) => L["Time_YDay"],
             _ => L["Gap_DShort", (int)diff.TotalDays]
         };
     }

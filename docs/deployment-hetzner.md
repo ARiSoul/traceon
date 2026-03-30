@@ -191,6 +191,7 @@ docker compose version
 ## 6. Clone the repository
 
 ```bash
+sudo chown deploy:deploy /home/deploy
 cd ~
 git clone https://github.com/ARiSoul/traceon.git
 cd traceon
@@ -205,6 +206,7 @@ cd traceon
 ### 7.1 — Create the `.env` file
 
 ```bash
+cd ~/traceon
 cp .env.example .env
 nano .env
 ```

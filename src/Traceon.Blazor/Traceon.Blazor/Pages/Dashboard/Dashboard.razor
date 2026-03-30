@@ -620,10 +620,10 @@ else if (_data is not null)
 
         return diff.TotalMinutes switch
         {
-            < 1 => L["Time_JustNow"],
-            < 60 => L["Time_MinAgo", (int)diff.TotalMinutes],
-            < 1440 => L["Time_HAgo", (int)diff.TotalHours],
-            < 2880 => L["Time_Yesterday"],
+            (< 1) => L["Time_JustNow"],
+            (< 60) => L["Time_MinAgo", (int)diff.TotalMinutes],
+            (< 1440) => L["Time_HAgo", (int)diff.TotalHours],
+            (< 2880) => L["Time_Yesterday"],
             _ => L["Time_DAgo", (int)diff.TotalDays]
         };
     }
@@ -632,10 +632,10 @@ else if (_data is not null)
     {
         return days switch
         {
-            < 1 => L["Gap_Hours", (int)(days * 24)],
-            < 2 => L["Gap_About1Day"],
-            < 7 => L["Gap_Days", days.ToString("F1")],
-            < 14 => L["Gap_About1Week"],
+            (< 1) => L["Gap_Hours", (int)(days * 24)],
+            (< 2) => L["Gap_About1Day"],
+            (< 7) => L["Gap_Days", days.ToString("F1")],
+            (< 14) => L["Gap_About1Week"],
             _ => L["Gap_Weeks", (days / 7).ToString("F1")]
         };
     }
