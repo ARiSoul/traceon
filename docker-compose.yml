@@ -1,0 +1,78 @@
+services:
+
+  # ── SQL Server ──────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: traceon-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${DB_SA_PASSWORD}"   # set in .env
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools*/bin/sqlcmd -S localhost -U sa -P "$${MSSQL_SA_PASSWORD}" -Q "SELECT 1" -b -o /dev/null
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ── API ─────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: src/Traceon.Api/Traceon.Api/Dockerfile
+    container_name: traceon-api
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__TraceonDb: "Server=sqlserver;Database=TraceonDb;User Id=sa;Password=${DB_SA_PASSWORD};TrustServerCertificate=True"
+      Jwt__Key: "${JWT_KEY}"
+      Email__SmtpPassword: "${SMTP_PASSWORD}"
+      Email__ClientBaseUrl: "https://${BLAZOR_DOMAIN}"
+      ExternalAuth__Google__ClientSecret: "${GOOGLE_CLIENT_SECRET}"
+      ExternalAuth__Microsoft__ClientSecret: "${MICROSOFT_CLIENT_SECRET}"
+      AllowedOrigins__0: "https://${BLAZOR_DOMAIN}"
+    ports:
+      - "8080:8080"
+    volumes:
+      - api-logs:/app/logs
+    restart: unless-stopped
+
+  # ── Blazor WASM ─────────────────────────────────────────────
+  blazor:
+    build:
+      context: .
+      dockerfile: src/Traceon.Blazor/Dockerfile
+    container_name: traceon-blazor
+    depends_on:
+      - api
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
+  # ── Caddy (reverse proxy + automatic HTTPS) ────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: traceon-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+      - blazor
+    restart: unless-stopped
+
+volumes:
+  sqldata:
+  api-logs:
+  caddy-data:
+  caddy-config:

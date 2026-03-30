@@ -1,0 +1,12 @@
+# ─────────────────────────────────────────────────────────────
+# Caddyfile — automatic HTTPS reverse proxy
+# Replace api.traceon.example.com / traceon.example.com with your real domains.
+# ─────────────────────────────────────────────────────────────
+
+{$API_DOMAIN:api.traceon.example.com} {
+    reverse_proxy api:8080
+}
+
+{$BLAZOR_DOMAIN:traceon.example.com} {
+    reverse_proxy blazor:80
+}
