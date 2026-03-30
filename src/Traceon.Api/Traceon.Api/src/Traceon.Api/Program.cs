@@ -42,7 +42,9 @@ var forwardedHeadersOptions = new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
 };
 // Trust the Docker network proxy (Caddy) — required because Caddy's IP is not 127.0.0.1
-forwardedHeadersOptions.KnownIPNetworks.Clear();
+#pragma warning disable ASPDEPR005
+forwardedHeadersOptions.KnownNetworks.Clear();
+#pragma warning restore ASPDEPR005
 forwardedHeadersOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeadersOptions);
 

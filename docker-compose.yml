@@ -59,6 +59,9 @@ services:
   caddy:
     image: caddy:2-alpine
     container_name: traceon-caddy
+    environment:
+      API_DOMAIN: "${API_DOMAIN}"
+      BLAZOR_DOMAIN: "${BLAZOR_DOMAIN}"
     ports:
       - "80:80"
       - "443:443"
