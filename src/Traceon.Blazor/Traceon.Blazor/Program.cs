@@ -40,6 +40,7 @@ builder.Services.AddScoped<FieldDefinitionService>();
 builder.Services.AddScoped<ActionFieldService>();
 builder.Services.AddScoped<ActionEntryService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<FieldAnalyticsRuleService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<DataPortabilityService>();
 builder.Services.AddScoped<FeedbackService>();

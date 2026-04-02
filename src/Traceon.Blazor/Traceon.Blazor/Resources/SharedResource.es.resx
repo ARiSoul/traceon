@@ -630,4 +630,33 @@
   <data name="Settings_LoginRemoved"><value>{0} ha sido desvinculado de tu cuenta.</value></data>
   <data name="Common_Remove"><value>Eliminar</value></data>
   <data name="Audit_ExternalLoginRemoved"><value>Login Externo Eliminado</value></data>
+
+  <!-- ═══ Cross-Field Analytics ═══ -->
+  <data name="Analytics_CrossField"><value>Análisis Cruzado de Campos</value></data>
+  <data name="Analytics_CrossFieldHint"><value>Agregaciones de un campo agrupadas por otro</value></data>
+  <data name="Analytics_GroupBy"><value>por</value></data>
+  <data name="Analytics_FilteredBy"><value>Filtrado por</value></data>
+  <data name="Analytics_Total"><value>Total</value></data>
+  <data name="Analytics_NoCrossFieldRules"><value>No hay reglas de análisis configuradas para esta acción.</value></data>
+  <data name="Aggregation_Sum"><value>Suma</value></data>
+  <data name="Aggregation_Avg"><value>Promedio</value></data>
+  <data name="Aggregation_Min"><value>Mínimo</value></data>
+  <data name="Aggregation_Max"><value>Máximo</value></data>
+  <data name="Aggregation_Count"><value>Conteo</value></data>
+  <data name="Analytics_RulesHint"><value>Define cómo los campos se relacionan entre sí para insights en el panel.</value></data>
+  <data name="Analytics_AddRule"><value>Agregar Regla</value></data>
+  <data name="Analytics_NewRule"><value>Nueva Regla de Análisis</value></data>
+  <data name="Analytics_EditRule"><value>Editar Regla de Análisis</value></data>
+  <data name="Analytics_MeasureField"><value>Campo de Medida</value></data>
+  <data name="Analytics_GroupByField"><value>Agrupar Por</value></data>
+  <data name="Analytics_Aggregation"><value>Agregación</value></data>
+  <data name="Analytics_DisplayAs"><value>Mostrar Como</value></data>
+  <data name="Analytics_Label"><value>Etiqueta</value></data>
+  <data name="Analytics_LabelPlaceholder"><value>ej: Total por persona</value></data>
+  <data name="Analytics_FilterField"><value>Campo de Filtro</value></data>
+  <data name="Analytics_FilterValue"><value>Valor del Filtro</value></data>
+  <data name="Analytics_SelectBothFields"><value>Selecciona un campo de medida y un campo de agrupación.</value></data>
+  <data name="Analytics_NeedTwoFields"><value>Necesitas al menos dos campos (uno numérico) para crear reglas. Agrega campos en la pestaña Campos primero.</value></data>
+  <data name="Common_Select"><value>Seleccionar</value></data>
+  <data name="Common_None"><value>Ninguno</value></data>
 </root>

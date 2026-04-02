@@ -12,6 +12,9 @@ public sealed class TrackedAction : OwnedEntity
     private readonly List<TrackedActionTag> _tags = [];
     public IReadOnlyCollection<TrackedActionTag> Tags => _tags.AsReadOnly();
 
+    private readonly List<FieldAnalyticsRule> _analyticsRules = [];
+    public IReadOnlyCollection<FieldAnalyticsRule> AnalyticsRules => _analyticsRules.AsReadOnly();
+
     private TrackedAction(string name, string? description, int sortOrder)
     {
         Name = name;

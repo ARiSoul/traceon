@@ -71,6 +71,7 @@ app.MapGroup("/api/identity")
 app.MapTrackedActionEndpoints().RequireAuthorization();
 app.MapFieldDefinitionEndpoints().RequireAuthorization();
 app.MapActionFieldEndpoints().RequireAuthorization();
+app.MapFieldAnalyticsRuleEndpoints().RequireAuthorization();
 app.MapActionEntryEndpoints().RequireAuthorization();
 app.MapEntryEndpoints().RequireAuthorization();
 app.MapTagEndpoints().RequireAuthorization();

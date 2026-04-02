@@ -15,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<IActionFieldService, ActionFieldService>();
         services.AddScoped<IActionEntryService, ActionEntryService>();
         services.AddScoped<ITagService, TagService>();
+        services.AddScoped<IFieldAnalyticsRuleService, FieldAnalyticsRuleService>();
 
         return services;
     }

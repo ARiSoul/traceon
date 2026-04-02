@@ -233,6 +233,115 @@ else
         </div>
     }
 
+    <!-- Cross-Field Analytics -->
+    @if (_data.CrossFieldResults.Count > 0)
+    {
+        <h5 class="mb-3">
+            <i class="bi bi-diagram-3 me-2"></i>@L["Analytics_CrossField"]
+        </h5>
+        <p class="text-muted small mb-3">@L["Analytics_CrossFieldHint"]</p>
+
+        <div class="row g-4 mb-4">
+            @foreach (var result in _data.CrossFieldResults)
+            {
+                <div class="col-12 col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                @if (result.DisplayType is AnalyticsDisplayType.PieChart)
+                                {
+                                    <i class="bi bi-pie-chart me-2"></i>
+                                }
+                                else if (result.DisplayType is AnalyticsDisplayType.BarChart or AnalyticsDisplayType.StackedBar)
+                                {
+                                    <i class="bi bi-bar-chart me-2"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-table me-2"></i>
+                                }
+                                @result.Label
+                                @if (result.Unit is not null && result.Unit != "UN")
+                                {
+                                    <span class="badge bg-info ms-1">@result.Unit</span>
+                                }
+                            </h6>
+                            @if (result.FilterDescription is not null)
+                            {
+                                <small class="text-muted">
+                                    <i class="bi bi-funnel me-1"></i>@L["Analytics_FilteredBy"]: @result.FilterDescription
+                                </small>
+                            }
+                        </div>
+                        <div class="card-body">
+                            @if (result.DisplayType is AnalyticsDisplayType.BarChart or AnalyticsDisplayType.StackedBar)
+                            {
+                                <ApexChart TItem="CrossFieldGroup"
+                                           Options="BuildCrossFieldBarOptions(result)"
+                                           Height="250">
+                                    <ApexPointSeries TItem="CrossFieldGroup"
+                                                    Items="result.Groups"
+                                                    SeriesType="SeriesType.Bar"
+                                                    Name="@result.Label"
+                                                    XValue="g => g.Key"
+                                                    YValue="g => g.Value"
+                                                    OrderByDescending="g => g.Y" />
+                                </ApexChart>
+                            }
+                            else if (result.DisplayType == AnalyticsDisplayType.PieChart)
+                            {
+                                <ApexChart TItem="CrossFieldGroup"
+                                           Options="BuildCrossFieldPieOptions(result)"
+                                           Height="280">
+                                    <ApexPointSeries TItem="CrossFieldGroup"
+                                                    Items="result.Groups"
+                                                    SeriesType="SeriesType.Donut"
+                                                    Name="@result.Label"
+                                                    XValue="g => g.Key"
+                                                    YValue="g => g.Value"
+                                                    OrderByDescending="g => g.Y" />
+                                </ApexChart>
+                            }
+                            else
+                            {
+                                <!-- Table display -->
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>@result.GroupByFieldName</th>
+                                                <th class="text-end">@FormatAggregationLabel(result.Aggregation)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var grp in result.Groups.OrderByDescending(g => g.Value))
+                                            {
+                                                <tr>
+                                                    <td>@grp.Key</td>
+                                                    <td class="text-end fw-bold">
+                                                        @FormatCrossFieldValue(grp.Value, result)
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-light">
+                                                <td class="fw-bold">@L["Analytics_Total"]</td>
+                                                <td class="text-end fw-bold">
+                                                    @FormatCrossFieldValue(result.Total, result)
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
     <!-- Field Summary Stats (reuse existing pattern) -->
     @if (_data.Stats.FieldStats.Count > 0)
     {
@@ -425,6 +534,60 @@ else
             Chart = new Chart { },
             Legend = new Legend { Position = LegendPosition.Bottom }
         };
+    }
+
+    private ApexChartOptions<CrossFieldGroup> BuildCrossFieldBarOptions(CrossFieldResult result)
+    {
+        var yTitle = result.Unit is not null && result.Unit != "UN"
+            ? result.Unit
+            : FormatAggregationLabel(result.Aggregation);
+
+        return new ApexChartOptions<CrossFieldGroup>
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = true }
+            },
+            Yaxis = [new YAxis
+            {
+                Title = new AxisTitle { Text = yTitle },
+                DecimalsInFloat = result.Aggregation == AnalyticsAggregation.Count ? 0 : 2
+            }],
+            Colors = ["#6f42c1"],
+            PlotOptions = new PlotOptions
+            {
+                Bar = new PlotOptionsBar { ColumnWidth = "60%", Distributed = true }
+            }
+        };
+    }
+
+    private static ApexChartOptions<CrossFieldGroup> BuildCrossFieldPieOptions(CrossFieldResult result)
+    {
+        return new ApexChartOptions<CrossFieldGroup>
+        {
+            Chart = new Chart { },
+            Legend = new Legend { Position = LegendPosition.Bottom }
+        };
+    }
+
+    private string FormatAggregationLabel(AnalyticsAggregation agg) => agg switch
+    {
+        AnalyticsAggregation.Sum => L["Aggregation_Sum"],
+        AnalyticsAggregation.Avg => L["Aggregation_Avg"],
+        AnalyticsAggregation.Min => L["Aggregation_Min"],
+        AnalyticsAggregation.Max => L["Aggregation_Max"],
+        AnalyticsAggregation.Count => L["Aggregation_Count"],
+        _ => agg.ToString()
+    };
+
+    private static string FormatCrossFieldValue(decimal value, CrossFieldResult result)
+    {
+        var unit = result.Unit is not null && result.Unit != "UN" ? $" {result.Unit}" : "";
+        if (result.Aggregation == AnalyticsAggregation.Count)
+            return ((int)value).ToString();
+        return value == Math.Truncate(value)
+            ? $"{value:F0}{unit}"
+            : $"{value:F2}{unit}";
     }
 
     private (DateTime? From, DateTime? To) ResolveDateRange() => _periodMode switch

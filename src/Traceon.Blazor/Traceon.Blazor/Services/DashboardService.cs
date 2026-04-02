@@ -2,6 +2,7 @@ using Traceon.Blazor.Components;
 using Traceon.Contracts.ActionEntries;
 using Traceon.Contracts.ActionFields;
 using Traceon.Contracts.Enums;
+using Traceon.Contracts.FieldAnalyticsRules;
 using Traceon.Contracts.TrackedActions;
 
 namespace Traceon.Blazor.Services;
@@ -9,7 +10,8 @@ namespace Traceon.Blazor.Services;
 public sealed class DashboardService(
     TrackedActionService actionService,
     ActionEntryService entryService,
-    ActionFieldService fieldService)
+    ActionFieldService fieldService,
+    FieldAnalyticsRuleService analyticsRuleService)
 {
     public async Task<DashboardData> LoadAsync(DateTime? fromUtc = null, DateTime? toUtc = null)
     {
@@ -161,7 +163,130 @@ public sealed class DashboardService(
             }
         }
 
+        // Build cross-field analytics from configured rules
+        try
+        {
+            var rules = await analyticsRuleService.GetByTrackedActionAsync(actionId);
+            if (rules.Count > 0)
+            {
+                var fieldMap = fields.ToDictionary(f => f.Id);
+                detail.CrossFieldResults = BuildCrossFieldResults(rules, entries, fieldMap);
+            }
+        }
+        catch
+        {
+            // Analytics rules are optional; don't fail the whole detail load
+        }
+
         return detail;
+    }
+
+    private static List<CrossFieldResult> BuildCrossFieldResults(
+        List<FieldAnalyticsRuleResponse> rules,
+        List<ActionEntryResponse> entries,
+        Dictionary<Guid, ActionFieldResponse> fieldMap)
+    {
+        var results = new List<CrossFieldResult>();
+
+        foreach (var rule in rules)
+        {
+            if (!fieldMap.TryGetValue(rule.MeasureFieldId, out var measureField) ||
+                !fieldMap.TryGetValue(rule.GroupByFieldId, out var groupByField))
+                continue;
+
+            // Optionally filter entries by the filter field
+            var filteredEntries = entries;
+            if (rule.FilterFieldId.HasValue && rule.FilterValue is not null)
+            {
+                filteredEntries = entries
+                    .Where(e => e.FieldValues.Any(fv =>
+                        fv.ActionFieldId == rule.FilterFieldId.Value &&
+                        string.Equals(fv.Value, rule.FilterValue, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+
+            // Extract (groupKey, measureValue) pairs from each entry
+            var pairs = filteredEntries
+                .Select(e =>
+                {
+                    var groupVal = e.FieldValues
+                        .FirstOrDefault(fv => fv.ActionFieldId == rule.GroupByFieldId)?.Value;
+                    var measureVal = e.FieldValues
+                        .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
+                    return (GroupKey: groupVal, MeasureValue: measureVal);
+                })
+                .Where(p => !string.IsNullOrWhiteSpace(p.GroupKey))
+                .ToList();
+
+            if (pairs.Count == 0)
+                continue;
+
+            var isNumericMeasure = measureField.FieldType is FieldType.Integer or FieldType.Decimal;
+            var groups = new List<CrossFieldGroup>();
+
+            foreach (var grp in pairs.GroupBy(p => p.GroupKey!).OrderBy(g => g.Key))
+            {
+                decimal aggregatedValue;
+
+                if (rule.Aggregation == AnalyticsAggregation.Count)
+                {
+                    aggregatedValue = grp.Count();
+                }
+                else if (isNumericMeasure)
+                {
+                    var nums = grp
+                        .Where(p => decimal.TryParse(p.MeasureValue, out _))
+                        .Select(p => decimal.Parse(p.MeasureValue!))
+                        .ToList();
+
+                    if (nums.Count == 0) continue;
+
+                    aggregatedValue = rule.Aggregation switch
+                    {
+                        AnalyticsAggregation.Sum => nums.Sum(),
+                        AnalyticsAggregation.Avg => nums.Average(),
+                        AnalyticsAggregation.Min => nums.Min(),
+                        AnalyticsAggregation.Max => nums.Max(),
+                        _ => nums.Sum()
+                    };
+                }
+                else
+                {
+                    // Non-numeric measure with a non-Count aggregation: fall back to count
+                    aggregatedValue = grp.Count();
+                }
+
+                groups.Add(new CrossFieldGroup(grp.Key!, aggregatedValue));
+            }
+
+            if (groups.Count == 0) continue;
+
+            var label = rule.Label
+                ?? $"{rule.Aggregation} of {measureField.Name} by {groupByField.Name}";
+
+            var unit = isNumericMeasure && rule.Aggregation != AnalyticsAggregation.Count
+                ? measureField.Unit
+                : null;
+
+            var filterDescription = rule.FilterFieldId.HasValue
+                ? $"{rule.FilterFieldName} = {rule.FilterValue}"
+                : null;
+
+            results.Add(new CrossFieldResult
+            {
+                RuleId = rule.Id,
+                Label = label,
+                MeasureFieldName = measureField.Name,
+                GroupByFieldName = groupByField.Name,
+                Aggregation = rule.Aggregation,
+                DisplayType = rule.DisplayType,
+                Unit = unit,
+                FilterDescription = filterDescription,
+                Groups = groups
+            });
+        }
+
+        return results;
     }
 
     private static List<NumericDataPoint> AggregateTrendPoints(
@@ -483,6 +608,7 @@ public sealed class ActionDetailData
     public List<NumericFieldSeries> NumericSeries { get; init; } = [];
     public List<BooleanFieldSeries> BooleanSeries { get; init; } = [];
     public List<DropdownFieldSeries> DropdownSeries { get; init; } = [];
+    public List<CrossFieldResult> CrossFieldResults { get; set; } = [];
 }
 
 public sealed record DailyCount(DateTime Date, int Count);
@@ -518,3 +644,22 @@ public sealed class DropdownDataPoint(string Label, int Count)
     public string Label { get; } = Label;
     public int Count { get; } = Count;
 }
+
+// ── Cross-field analytics models ──
+
+public sealed class CrossFieldResult
+{
+    public required Guid RuleId { get; init; }
+    public required string Label { get; init; }
+    public required string MeasureFieldName { get; init; }
+    public required string GroupByFieldName { get; init; }
+    public required AnalyticsAggregation Aggregation { get; init; }
+    public required AnalyticsDisplayType DisplayType { get; init; }
+    public string? Unit { get; init; }
+    public string? FilterDescription { get; init; }
+    public List<CrossFieldGroup> Groups { get; init; } = [];
+
+    public decimal Total => Groups.Sum(g => g.Value);
+}
+
+public sealed record CrossFieldGroup(string Key, decimal Value);

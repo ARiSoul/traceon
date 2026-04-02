@@ -85,6 +85,15 @@ else
                         <i class="bi bi-journal-text me-1"></i>@L["Common_Entries"]
                     </button>
                 </li>
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "analytics" ? "active" : "")" @onclick="ActivateAnalyticsTabAsync">
+                        <i class="bi bi-diagram-3 me-1"></i>@L["Analytics_CrossField"]
+                        @if (_analyticsRules.Count > 0)
+                        {
+                            <span class="badge bg-primary ms-1">@_analyticsRules.Count</span>
+                        }
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -187,6 +196,294 @@ else
             {
                 <EntryDataGrid TrackedActionId="Id" LockActionFilter="true" />
             }
+            else if (_activeTab == "analytics")
+            {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="text-muted mb-0">@L["Analytics_RulesHint"]</p>
+                    @if (_fields.Count >= 2)
+                    {
+                        <button class="btn btn-outline-primary btn-sm" @onclick="() => _showRuleForm = true" disabled="@_showRuleForm">
+                            <i class="bi bi-plus-circle me-1"></i>@L["Analytics_AddRule"]
+                        </button>
+                    }
+                </div>
+
+                @if (_fields.Count < 2)
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>@L["Analytics_NeedTwoFields"]
+                    </div>
+                }
+                else
+                {
+                    @if (_showRuleForm)
+                    {
+                        <div class="card border-primary mb-3">
+                            <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>@L["Analytics_NewRule"]</h6>
+                                <button class="btn-close" @onclick="ResetRuleForm"></button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label">@L["Analytics_MeasureField"] <span class="text-danger">*</span></label>
+                                        <select class="form-select" @bind="_newRule.MeasureFieldId">
+                                            <option value="@Guid.Empty">— @L["Common_Select"] —</option>
+                                            @foreach (var f in _fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal))
+                                            {
+                                                <option value="@f.Id">@f.Name (@f.FieldType)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label">@L["Analytics_GroupByField"] <span class="text-danger">*</span></label>
+                                        <select class="form-select" @bind="_newRule.GroupByFieldId">
+                                            <option value="@Guid.Empty">— @L["Common_Select"] —</option>
+                                            @foreach (var f in _fields.Where(f => f.Id != _newRule.MeasureFieldId))
+                                            {
+                                                <option value="@f.Id">@f.Name (@f.FieldType)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label">@L["Analytics_Aggregation"]</label>
+                                        <select class="form-select" @bind="_newRule.Aggregation">
+                                            @foreach (var agg in Enum.GetValues<AnalyticsAggregation>())
+                                            {
+                                                <option value="@agg">@agg</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label">@L["Analytics_DisplayAs"]</label>
+                                        <select class="form-select" @bind="_newRule.DisplayType">
+                                            @foreach (var dt in Enum.GetValues<AnalyticsDisplayType>())
+                                            {
+                                                <option value="@dt">@dt</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label">@L["Analytics_Label"]</label>
+                                        <input type="text" class="form-control" @bind="_newRule.Label" placeholder="@L["Analytics_LabelPlaceholder"]" />
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label">@L["Analytics_FilterField"]</label>
+                                        <select class="form-select" @bind="_newRule.FilterFieldId">
+                                            <option value="">— @L["Common_None"] —</option>
+                                            @foreach (var f in _fields.Where(f => f.Id != _newRule.MeasureFieldId && f.Id != _newRule.GroupByFieldId))
+                                            {
+                                                <option value="@f.Id">@f.Name (@f.FieldType)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    @if (_newRule.FilterFieldId != Guid.Empty)
+                                    {
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label">@L["Analytics_FilterValue"]</label>
+                                            @{
+                                                var filterField = _fields.FirstOrDefault(f => f.Id == _newRule.FilterFieldId);
+                                            }
+                                            @if (filterField?.FieldType == FieldType.Boolean)
+                                            {
+                                                <select class="form-select" @bind="_newRule.FilterValue">
+                                                    <option value="true">True</option>
+                                                    <option value="false">False</option>
+                                                </select>
+                                            }
+                                            else if (filterField?.FieldType == FieldType.Dropdown && filterField.DropdownValues is not null)
+                                            {
+                                                <select class="form-select" @bind="_newRule.FilterValue">
+                                                    <option value="">—</option>
+                                                    @foreach (var opt in filterField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                                    {
+                                                        <option value="@opt">@opt</option>
+                                                    }
+                                                </select>
+                                            }
+                                            else
+                                            {
+                                                <input type="text" class="form-control" @bind="_newRule.FilterValue" />
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                                <ErrorAlert Errors="_ruleErrors" OnDismiss="() => _ruleErrors = []" />
+                                <div class="d-flex justify-content-end gap-2 mt-3">
+                                    <button class="btn btn-outline-secondary btn-sm" @onclick="ResetRuleForm">
+                                        @L["Common_Cancel"]
+                                    </button>
+                                    <button class="btn btn-primary btn-sm" @onclick="SaveRuleAsync" disabled="@_savingRule">
+                                        @if (_savingRule)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1"></span>
+                                        }
+                                        <i class="bi bi-check-circle me-1"></i>@L["Common_Save"]
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (_analyticsRules.Count == 0 && !_showRuleForm)
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-diagram-3 fs-3 d-block mb-2"></i>
+                            <p>@L["Analytics_NoCrossFieldRules"]</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="list-group">
+                            @foreach (var rule in _analyticsRules)
+                            {
+                                @if (_editingRuleId == rule.Id)
+                                {
+                                    <div class="list-group-item p-0">
+                                        <div class="card border-warning mb-0">
+                                            <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
+                                                <h6 class="mb-0"><i class="bi bi-pencil-square me-2"></i>@L["Analytics_EditRule"]</h6>
+                                                <button class="btn-close" @onclick="CancelEditRule"></button>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row g-3">
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label">@L["Analytics_MeasureField"]</label>
+                                                        <input type="text" class="form-control" value="@rule.MeasureFieldName" disabled />
+                                                    </div>
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label">@L["Analytics_GroupByField"]</label>
+                                                        <input type="text" class="form-control" value="@rule.GroupByFieldName" disabled />
+                                                    </div>
+                                                    <div class="col-12 col-md-4">
+                                                        <label class="form-label">@L["Analytics_Aggregation"]</label>
+                                                        <select class="form-select" @bind="_editRule.Aggregation">
+                                                            @foreach (var agg in Enum.GetValues<AnalyticsAggregation>())
+                                                            {
+                                                                <option value="@agg">@agg</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 col-md-4">
+                                                        <label class="form-label">@L["Analytics_DisplayAs"]</label>
+                                                        <select class="form-select" @bind="_editRule.DisplayType">
+                                                            @foreach (var dt in Enum.GetValues<AnalyticsDisplayType>())
+                                                            {
+                                                                <option value="@dt">@dt</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 col-md-4">
+                                                        <label class="form-label">@L["Analytics_Label"]</label>
+                                                        <input type="text" class="form-control" @bind="_editRule.Label" placeholder="@L["Analytics_LabelPlaceholder"]" />
+                                                    </div>
+                                                    <div class="col-12 col-md-4">
+                                                        <label class="form-label">@L["Analytics_FilterField"]</label>
+                                                        <select class="form-select" @bind="_editRule.FilterFieldId">
+                                                            <option value="">— @L["Common_None"] —</option>
+                                                            @foreach (var f in _fields.Where(f => f.Id != rule.MeasureFieldId && f.Id != rule.GroupByFieldId))
+                                                            {
+                                                                <option value="@f.Id">@f.Name (@f.FieldType)</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                    @if (_editRule.FilterFieldId != Guid.Empty)
+                                                    {
+                                                        <div class="col-12 col-md-4">
+                                                            <label class="form-label">@L["Analytics_FilterValue"]</label>
+                                                            @{
+                                                                var editFilterField = _fields.FirstOrDefault(f => f.Id == _editRule.FilterFieldId);
+                                                            }
+                                                            @if (editFilterField?.FieldType == FieldType.Boolean)
+                                                            {
+                                                                <select class="form-select" @bind="_editRule.FilterValue">
+                                                                    <option value="true">True</option>
+                                                                    <option value="false">False</option>
+                                                                </select>
+                                                            }
+                                                            else if (editFilterField?.FieldType == FieldType.Dropdown && editFilterField.DropdownValues is not null)
+                                                            {
+                                                                <select class="form-select" @bind="_editRule.FilterValue">
+                                                                    <option value="">—</option>
+                                                                    @foreach (var opt in editFilterField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                                                    {
+                                                                        <option value="@opt">@opt</option>
+                                                                    }
+                                                                </select>
+                                                            }
+                                                            else
+                                                            {
+                                                                <input type="text" class="form-control" @bind="_editRule.FilterValue" />
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <ErrorAlert Errors="_ruleErrors" OnDismiss="() => _ruleErrors = []" />
+                                                <div class="d-flex justify-content-end gap-2 mt-3">
+                                                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEditRule">
+                                                        @L["Common_Cancel"]
+                                                    </button>
+                                                    <button class="btn btn-warning btn-sm" @onclick="UpdateRuleAsync" disabled="@_savingRule">
+                                                        @if (_savingRule)
+                                                        {
+                                                            <span class="spinner-border spinner-border-sm me-1"></span>
+                                                        }
+                                                        <i class="bi bi-check-circle me-1"></i>@L["Common_SaveChanges"]
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="list-group-item list-group-item-action" style="cursor: pointer;" @onclick="() => StartEditRule(rule)">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    @if (rule.DisplayType is AnalyticsDisplayType.PieChart)
+                                                    {
+                                                        <i class="bi bi-pie-chart me-1 text-primary"></i>
+                                                    }
+                                                    else if (rule.DisplayType is AnalyticsDisplayType.BarChart or AnalyticsDisplayType.StackedBar)
+                                                    {
+                                                        <i class="bi bi-bar-chart me-1 text-primary"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-table me-1 text-primary"></i>
+                                                    }
+                                                    @(rule.Label ?? $"{rule.Aggregation} of {rule.MeasureFieldName} by {rule.GroupByFieldName}")
+                                                </h6>
+                                                <small class="text-muted">
+                                                    <span class="badge bg-info">@rule.Aggregation</span>
+                                                    @rule.MeasureFieldName
+                                                    <i class="bi bi-arrow-right mx-1"></i>
+                                                    @L["Analytics_GroupBy"] @rule.GroupByFieldName
+                                                    @if (rule.FilterFieldName is not null)
+                                                    {
+                                                        <span class="ms-2">
+                                                            <i class="bi bi-funnel me-1"></i>@rule.FilterFieldName = @rule.FilterValue
+                                                        </span>
+                                                    }
+                                                </small>
+                                            </div>
+                                            <div class="d-flex gap-1" @onclick:stopPropagation="true">
+                                                <button class="btn btn-outline-secondary btn-sm" @onclick="() => StartEditRule(rule)" title="@L["Common_Edit"]">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteRuleAsync(rule)" title="@L["Common_Delete"]">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                }
+            }
         </div>
     </div>
 }
@@ -265,6 +562,7 @@ else
     [Inject] private TagService TagService { get; set; } = default!;
     [Inject] private FieldDefinitionService FieldDefinitionService { get; set; } = default!;
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
+    [Inject] private FieldAnalyticsRuleService AnalyticsRuleService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private EditModel? _model;
@@ -289,6 +587,15 @@ else
 
     // Drag-and-drop reorder state
     private bool _savingOrder;
+
+    // Analytics rules
+    private List<FieldAnalyticsRuleResponse> _analyticsRules = [];
+    private bool _showRuleForm;
+    private bool _savingRule;
+    private IReadOnlyList<string> _ruleErrors = [];
+    private NewRuleModel _newRule = new();
+    private Guid? _editingRuleId;
+    private EditRuleModel _editRule = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -461,10 +768,155 @@ else
         _savingOrder = false;
     }
 
+    // Analytics rules
+    private async Task ActivateAnalyticsTabAsync()
+    {
+        _activeTab = "analytics";
+        if (_analyticsRules.Count == 0)
+            await LoadAnalyticsRulesAsync();
+    }
+
+    private async Task LoadAnalyticsRulesAsync()
+    {
+        try
+        {
+            _analyticsRules = await AnalyticsRuleService.GetByTrackedActionAsync(Id);
+        }
+        catch
+        {
+            _analyticsRules = [];
+        }
+    }
+
+    private async Task SaveRuleAsync()
+    {
+        _ruleErrors = [];
+
+        if (_newRule.MeasureFieldId == Guid.Empty || _newRule.GroupByFieldId == Guid.Empty)
+        {
+            _ruleErrors = [L["Analytics_SelectBothFields"]];
+            return;
+        }
+
+        _savingRule = true;
+
+        var request = new CreateFieldAnalyticsRuleRequest(
+            _newRule.MeasureFieldId,
+            _newRule.GroupByFieldId,
+            _newRule.Aggregation,
+            _newRule.DisplayType,
+            _newRule.FilterFieldId != Guid.Empty ? _newRule.FilterFieldId : null,
+            string.IsNullOrWhiteSpace(_newRule.FilterValue) ? null : _newRule.FilterValue,
+            string.IsNullOrWhiteSpace(_newRule.Label) ? null : _newRule.Label,
+            _analyticsRules.Count);
+
+        var (ok, errs) = await AnalyticsRuleService.CreateAsync(Id, request);
+
+        if (ok)
+        {
+            ResetRuleForm();
+            await LoadAnalyticsRulesAsync();
+        }
+        else
+        {
+            _ruleErrors = errs;
+        }
+
+        _savingRule = false;
+    }
+
+    private async Task DeleteRuleAsync(FieldAnalyticsRuleResponse rule)
+    {
+        _errors = [];
+        var (ok, errs) = await AnalyticsRuleService.DeleteAsync(Id, rule.Id);
+        if (ok)
+            _analyticsRules.Remove(rule);
+        else
+            _errors = errs;
+    }
+
+    private void ResetRuleForm()
+    {
+        _showRuleForm = false;
+        _newRule = new();
+        _ruleErrors = [];
+    }
+
+    private void StartEditRule(FieldAnalyticsRuleResponse rule)
+    {
+        _editingRuleId = rule.Id;
+        _editRule = new EditRuleModel
+        {
+            Aggregation = rule.Aggregation,
+            DisplayType = rule.DisplayType,
+            Label = rule.Label,
+            FilterFieldId = rule.FilterFieldId ?? Guid.Empty,
+            FilterValue = rule.FilterValue
+        };
+        _ruleErrors = [];
+        _showRuleForm = false;
+    }
+
+    private void CancelEditRule()
+    {
+        _editingRuleId = null;
+        _editRule = new();
+        _ruleErrors = [];
+    }
+
+    private async Task UpdateRuleAsync()
+    {
+        if (_editingRuleId is null) return;
+
+        _savingRule = true;
+        _ruleErrors = [];
+
+        var request = new UpdateFieldAnalyticsRuleRequest(
+            _editRule.Aggregation,
+            _editRule.DisplayType,
+            _editRule.FilterFieldId != Guid.Empty ? _editRule.FilterFieldId : null,
+            string.IsNullOrWhiteSpace(_editRule.FilterValue) ? null : _editRule.FilterValue,
+            string.IsNullOrWhiteSpace(_editRule.Label) ? null : _editRule.Label);
+
+        var (ok, errs) = await AnalyticsRuleService.UpdateAsync(Id, _editingRuleId.Value, request);
+
+        if (ok)
+        {
+            CancelEditRule();
+            await LoadAnalyticsRulesAsync();
+        }
+        else
+        {
+            _ruleErrors = errs;
+        }
+
+        _savingRule = false;
+    }
+
     private sealed class EditModel
     {
         [Required]
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+    }
+
+    private sealed class NewRuleModel
+    {
+        public Guid MeasureFieldId { get; set; }
+        public Guid GroupByFieldId { get; set; }
+        public AnalyticsAggregation Aggregation { get; set; } = AnalyticsAggregation.Sum;
+        public AnalyticsDisplayType DisplayType { get; set; } = AnalyticsDisplayType.BarChart;
+        public Guid FilterFieldId { get; set; }
+        public string? FilterValue { get; set; }
+        public string? Label { get; set; }
+    }
+
+    private sealed class EditRuleModel
+    {
+        public AnalyticsAggregation Aggregation { get; set; } = AnalyticsAggregation.Sum;
+        public AnalyticsDisplayType DisplayType { get; set; } = AnalyticsDisplayType.BarChart;
+        public Guid FilterFieldId { get; set; }
+        public string? FilterValue { get; set; }
+        public string? Label { get; set; }
     }
 }

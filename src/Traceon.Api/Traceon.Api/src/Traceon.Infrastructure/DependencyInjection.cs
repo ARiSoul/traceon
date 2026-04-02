@@ -88,6 +88,7 @@ public static class DependencyInjection
         services.AddScoped<IActionFieldRepository, ActionFieldRepository>();
         services.AddScoped<IActionEntryRepository, ActionEntryRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
+        services.AddScoped<IFieldAnalyticsRuleRepository, FieldAnalyticsRuleRepository>();
         services.AddScoped<AuditService>();
         services.AddScoped<DataPortabilityService>();
         services.AddScoped<TemplateInstallService>();

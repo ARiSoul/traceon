@@ -630,4 +630,33 @@
   <data name="Settings_LoginRemoved"><value>{0} foi desligado da sua conta.</value></data>
   <data name="Common_Remove"><value>Remover</value></data>
   <data name="Audit_ExternalLoginRemoved"><value>Login Externo Removido</value></data>
+
+  <!-- ═══ Cross-Field Analytics ═══ -->
+  <data name="Analytics_CrossField"><value>Análise Cruzada de Campos</value></data>
+  <data name="Analytics_CrossFieldHint"><value>Agregações de um campo agrupadas por outro</value></data>
+  <data name="Analytics_GroupBy"><value>por</value></data>
+  <data name="Analytics_FilteredBy"><value>Filtrado por</value></data>
+  <data name="Analytics_Total"><value>Total</value></data>
+  <data name="Analytics_NoCrossFieldRules"><value>Nenhuma regra de análise configurada para esta ação.</value></data>
+  <data name="Aggregation_Sum"><value>Soma</value></data>
+  <data name="Aggregation_Avg"><value>Média</value></data>
+  <data name="Aggregation_Min"><value>Mínimo</value></data>
+  <data name="Aggregation_Max"><value>Máximo</value></data>
+  <data name="Aggregation_Count"><value>Contagem</value></data>
+  <data name="Analytics_RulesHint"><value>Defina como os campos se relacionam entre si para insights no painel.</value></data>
+  <data name="Analytics_AddRule"><value>Adicionar Regra</value></data>
+  <data name="Analytics_NewRule"><value>Nova Regra de Análise</value></data>
+  <data name="Analytics_EditRule"><value>Editar Regra de Análise</value></data>
+  <data name="Analytics_MeasureField"><value>Campo de Medida</value></data>
+  <data name="Analytics_GroupByField"><value>Agrupar Por</value></data>
+  <data name="Analytics_Aggregation"><value>Agregação</value></data>
+  <data name="Analytics_DisplayAs"><value>Exibir Como</value></data>
+  <data name="Analytics_Label"><value>Rótulo</value></data>
+  <data name="Analytics_LabelPlaceholder"><value>ex: Total por pessoa</value></data>
+  <data name="Analytics_FilterField"><value>Campo de Filtro</value></data>
+  <data name="Analytics_FilterValue"><value>Valor do Filtro</value></data>
+  <data name="Analytics_SelectBothFields"><value>Selecione um campo de medida e um campo de agrupamento.</value></data>
+  <data name="Analytics_NeedTwoFields"><value>Precisa de pelo menos dois campos (um numérico) para criar regras. Adicione campos no separador Campos primeiro.</value></data>
+  <data name="Common_Select"><value>Selecionar</value></data>
+  <data name="Common_None"><value>Nenhum</value></data>
 </root>

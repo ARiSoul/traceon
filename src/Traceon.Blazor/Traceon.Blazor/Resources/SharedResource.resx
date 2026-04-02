@@ -627,4 +627,33 @@
   <data name="Settings_LoginRemoved"><value>{0} has been unlinked from your account.</value></data>
   <data name="Common_Remove"><value>Remove</value></data>
   <data name="Audit_ExternalLoginRemoved"><value>External Login Removed</value></data>
+
+  <!-- ═══ Cross-Field Analytics ═══ -->
+  <data name="Analytics_CrossField"><value>Cross-Field Analytics</value></data>
+  <data name="Analytics_CrossFieldHint"><value>Aggregations of one field grouped by another</value></data>
+  <data name="Analytics_GroupBy"><value>by</value></data>
+  <data name="Analytics_FilteredBy"><value>Filtered by</value></data>
+  <data name="Analytics_Total"><value>Total</value></data>
+  <data name="Analytics_NoCrossFieldRules"><value>No analytics rules configured for this action.</value></data>
+  <data name="Aggregation_Sum"><value>Sum</value></data>
+  <data name="Aggregation_Avg"><value>Average</value></data>
+  <data name="Aggregation_Min"><value>Minimum</value></data>
+  <data name="Aggregation_Max"><value>Maximum</value></data>
+  <data name="Aggregation_Count"><value>Count</value></data>
+  <data name="Analytics_RulesHint"><value>Define how fields relate to each other for dashboard insights.</value></data>
+  <data name="Analytics_AddRule"><value>Add Rule</value></data>
+  <data name="Analytics_NewRule"><value>New Analytics Rule</value></data>
+  <data name="Analytics_EditRule"><value>Edit Analytics Rule</value></data>
+  <data name="Analytics_MeasureField"><value>Measure Field</value></data>
+  <data name="Analytics_GroupByField"><value>Group By Field</value></data>
+  <data name="Analytics_Aggregation"><value>Aggregation</value></data>
+  <data name="Analytics_DisplayAs"><value>Display As</value></data>
+  <data name="Analytics_Label"><value>Label</value></data>
+  <data name="Analytics_LabelPlaceholder"><value>e.g., Total per person</value></data>
+  <data name="Analytics_FilterField"><value>Filter Field</value></data>
+  <data name="Analytics_FilterValue"><value>Filter Value</value></data>
+  <data name="Analytics_SelectBothFields"><value>Please select both a measure field and a group-by field.</value></data>
+  <data name="Analytics_NeedTwoFields"><value>You need at least two fields (one numeric) to create analytics rules. Add fields in the Fields tab first.</value></data>
+  <data name="Common_Select"><value>Select</value></data>
+  <data name="Common_None"><value>None</value></data>
 </root>

@@ -74,4 +74,17 @@ internal static partial class LogMessages
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Tag with ID '{Id}' was not found.")]
     public static partial void TagNotFound(this ILogger logger, Guid id);
+
+    // FieldAnalyticsRule
+    [LoggerMessage(Level = LogLevel.Information, Message = "Analytics rule created with ID '{Id}' for tracked action '{TrackedActionId}'.")]
+    public static partial void FieldAnalyticsRuleCreated(this ILogger logger, Guid id, Guid trackedActionId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Analytics rule '{Id}' updated.")]
+    public static partial void FieldAnalyticsRuleUpdated(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Analytics rule '{Id}' deleted.")]
+    public static partial void FieldAnalyticsRuleDeleted(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Analytics rule with ID '{Id}' was not found.")]
+    public static partial void FieldAnalyticsRuleNotFound(this ILogger logger, Guid id);
 }
