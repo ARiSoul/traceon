@@ -13,6 +13,17 @@ internal sealed class ActionEntryRepository(TraceonDbContext context) : IActionE
         return await context.ActionEntries.FindAsync([id], cancellationToken);
     }
 
+    public async Task<IEnumerable<ActionEntryField>> GetActionEntryFieldsAsync(Guid id, bool asNoTracking, CancellationToken cancellationToken = default)
+    {
+        var query = context.ActionEntryFields
+            .Where(f => f.ActionEntryId == id);
+
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.ToListAsync(cancellationToken);
+    }
+
     public async Task<ActionEntry?> GetByIdWithFieldsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await context.ActionEntries
@@ -36,9 +47,33 @@ internal sealed class ActionEntryRepository(TraceonDbContext context) : IActionE
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(ActionEntry entry, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(ActionEntry entry, IReadOnlyList<(Guid ActionFieldId, string? Value)>? fieldValues = null, CancellationToken cancellationToken = default)
     {
-        context.ActionEntries.Update(entry);
+        if (fieldValues is not null)
+        {
+            var existingFields = await context.ActionEntryFields
+                .Where(f => f.ActionEntryId == entry.Id)
+                .ToListAsync(cancellationToken);
+
+            var incomingByFieldId = fieldValues.ToDictionary(f => f.ActionFieldId, f => f.Value);
+
+            foreach (var existing in existingFields)
+            {
+                if (!incomingByFieldId.ContainsKey(existing.ActionFieldId))
+                    context.ActionEntryFields.Remove(existing);
+            }
+
+            foreach (var (actionFieldId, value) in fieldValues)
+            {
+                var existing = existingFields.FirstOrDefault(f => f.ActionFieldId == actionFieldId);
+
+                if (existing is not null)
+                    existing.UpdateValue(value);
+                else
+                    context.ActionEntryFields.Add(ActionEntryField.Create(entry.Id, actionFieldId, value));
+            }
+        }
+
         await context.SaveChangesAsync(cancellationToken);
     }
 

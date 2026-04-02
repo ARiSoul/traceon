@@ -127,15 +127,11 @@ public sealed class ActionEntryService(
 
         entity.Update(request.OccurredAtUtc, request.Notes);
 
-        if (request.FieldValues is not null)
-        {
-            entity.ClearFields();
+        var fieldValues = request.FieldValues?
+            .Select(fv => (fv.ActionFieldId, fv.Value))
+            .ToList();
 
-            foreach (var fv in request.FieldValues)
-                entity.SetFieldValue(fv.ActionFieldId, fv.Value);
-        }
-
-        await entryRepository.UpdateAsync(entity, cancellationToken);
+        await entryRepository.UpdateAsync(entity, fieldValues, cancellationToken);
 
         var fieldNames = await GetFieldNameMapAsync(entity.TrackedActionId, cancellationToken);
         var actionName = await GetActionNameAsync(entity.TrackedActionId, cancellationToken);
