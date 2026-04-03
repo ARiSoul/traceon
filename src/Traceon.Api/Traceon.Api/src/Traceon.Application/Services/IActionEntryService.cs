@@ -12,4 +12,5 @@ public interface IActionEntryService
     Task<Result<ActionEntryResponse>> CreateAsync(Guid trackedActionId, CreateActionEntryRequest request, CancellationToken cancellationToken = default);
     Task<Result<ActionEntryResponse>> UpdateAsync(Guid id, UpdateActionEntryRequest request, CancellationToken cancellationToken = default);
     Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result> RestoreAsync(Guid id, CancellationToken cancellationToken = default);
 }

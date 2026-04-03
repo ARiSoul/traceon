@@ -30,6 +30,12 @@ public sealed class ActionFieldService(HttpClient http)
         return await ToResultAsync(response);
     }
 
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> RestoreAsync(Guid trackedActionId, Guid fieldId)
+    {
+        var response = await http.PostAsync($"/api/tracked-actions/{trackedActionId}/fields/{fieldId}/restore", null);
+        return await ToResultAsync(response);
+    }
+
     private static async Task<(bool Success, IReadOnlyList<string> Errors)> ToResultAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)

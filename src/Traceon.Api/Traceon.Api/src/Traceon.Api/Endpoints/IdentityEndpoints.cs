@@ -220,8 +220,8 @@ internal static class IdentityEndpoints
     private sealed record ResetPasswordRequest(string Email, string ResetCode, string NewPassword);
     private sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
     private sealed record AccessTokenResponse(string TokenType, string AccessToken, int ExpiresIn, string RefreshToken);
-    private sealed record UserPreferencesResponse(string? Theme, string? Language);
-    private sealed record UpdatePreferencesRequest(string? Theme, string? Language);
+    private sealed record UserPreferencesResponse(string? Theme, string? Language, int DataRetentionDays);
+    private sealed record UpdatePreferencesRequest(string? Theme, string? Language, int? DataRetentionDays);
     private sealed record AuditLogResponse(Guid Id, string Action, string? Details, string? IpAddress, string? UserAgent, DateTime OccurredAtUtc);
     private sealed record AuditLogPageResponse(IReadOnlyList<AuditLogResponse> Items, int TotalCount);
     private sealed record LinkedLoginInfo(string Provider, string DisplayName);
@@ -237,7 +237,7 @@ internal static class IdentityEndpoints
         var user = await userManager.FindByIdAsync(userId);
         if (user is null) return TypedResults.Unauthorized();
 
-        return TypedResults.Ok(new UserPreferencesResponse(user.PreferredTheme, user.PreferredLanguage));
+        return TypedResults.Ok(new UserPreferencesResponse(user.PreferredTheme, user.PreferredLanguage, user.DataRetentionDays));
     }
 
     private static async Task<IResult> UpdatePreferencesAsync(
@@ -256,11 +256,13 @@ internal static class IdentityEndpoints
             user.PreferredTheme = request.Theme;
         if (request.Language is not null)
             user.PreferredLanguage = request.Language;
+        if (request.DataRetentionDays.HasValue && request.DataRetentionDays.Value >= 30)
+            user.DataRetentionDays = request.DataRetentionDays.Value;
         await userManager.UpdateAsync(user);
 
-        await audit.LogAsync(userId, user.Email!, AuditActions.PreferencesUpdated, new { request.Theme, request.Language });
+        await audit.LogAsync(userId, user.Email!, AuditActions.PreferencesUpdated, new { request.Theme, request.Language, request.DataRetentionDays });
 
-        return TypedResults.Ok(new UserPreferencesResponse(user.PreferredTheme, user.PreferredLanguage));
+        return TypedResults.Ok(new UserPreferencesResponse(user.PreferredTheme, user.PreferredLanguage, user.DataRetentionDays));
     }
 
     private static async Task<IResult> ChangePasswordAsync(

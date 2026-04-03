@@ -11,4 +11,6 @@ public interface IActionEntryRepository
     Task AddAsync(ActionEntry entry, CancellationToken cancellationToken = default);
     Task UpdateAsync(ActionEntry entry, IReadOnlyList<(Guid ActionFieldId, string? Value)>? fieldValues = null, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<ActionEntry?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task RestoreAsync(Guid id, CancellationToken cancellationToken = default);
 }

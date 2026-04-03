@@ -18,6 +18,7 @@ internal static class ActionEntryEndpoints
         group.MapPost("/", CreateAsync).AddEndpointFilter<ValidationFilter<CreateActionEntryRequest>>();
         group.MapPut("/{id:guid}", UpdateAsync).AddEndpointFilter<ValidationFilter<UpdateActionEntryRequest>>();
         group.MapDelete("/{id:guid}", DeleteAsync);
+        group.MapPost("/{id:guid}/restore", RestoreAsync);
 
         return group;
     }
@@ -66,4 +67,11 @@ internal static class ActionEntryEndpoints
         IActionEntryService service,
         CancellationToken cancellationToken)
         => (await service.DeleteAsync(id, cancellationToken)).ToHttpResult();
+
+    private static async Task<IResult> RestoreAsync(
+        Guid trackedActionId,
+        Guid id,
+        IActionEntryService service,
+        CancellationToken cancellationToken)
+        => (await service.RestoreAsync(id, cancellationToken)).ToHttpResult();
 }

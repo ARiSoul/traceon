@@ -656,4 +656,21 @@
   <data name="Analytics_NeedTwoFields"><value>You need at least two fields (one numeric) to create analytics rules. Add fields in the Fields tab first.</value></data>
   <data name="Common_Select"><value>Select</value></data>
   <data name="Common_None"><value>None</value></data>
+  <data name="Nav_Trash"><value>Trash</value></data>
+  <data name="Trash_Title"><value>Trash</value></data>
+  <data name="Trash_Subtitle"><value>Deleted items are kept for your configured retention period before permanent removal.</value></data>
+  <data name="Trash_Empty"><value>Trash is empty.</value></data>
+  <data name="Trash_TrackedActions"><value>Tracked Actions</value></data>
+  <data name="Trash_FieldDefinitions"><value>Field Definitions</value></data>
+  <data name="Trash_Tags"><value>Tags</value></data>
+  <data name="Common_Restore"><value>Restore</value></data>
+  <data name="Common_RestoreSuccess"><value>Item restored successfully.</value></data>
+  <data name="Trash_DeletedAt"><value>Deleted</value></data>
+  <data name="Settings_DataRetention"><value>Data Retention</value></data>
+  <data name="Settings_DataRetentionHint"><value>Choose how long deleted items are kept before being permanently removed.</value></data>
+  <data name="Settings_RetentionDays"><value>Retention Period</value></data>
+  <data name="Settings_Days"><value>days</value></data>
+  <data name="Settings_DataRetentionInfo"><value>Deleted items older than this period will be permanently removed by the background cleanup job.</value></data>
+  <data name="Common_Save"><value>Save</value></data>
+  <data name="Common_SavedSuccessfully"><value>Settings saved successfully.</value></data>
 </root>

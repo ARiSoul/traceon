@@ -659,4 +659,21 @@
   <data name="Analytics_NeedTwoFields"><value>Precisa de pelo menos dois campos (um numérico) para criar regras. Adicione campos no separador Campos primeiro.</value></data>
   <data name="Common_Select"><value>Selecionar</value></data>
   <data name="Common_None"><value>Nenhum</value></data>
+  <data name="Nav_Trash"><value>Lixeira</value></data>
+  <data name="Trash_Title"><value>Lixeira</value></data>
+  <data name="Trash_Subtitle"><value>Itens eliminados são mantidos durante o período de retenção configurado antes da remoção permanente.</value></data>
+  <data name="Trash_Empty"><value>A lixeira está vazia.</value></data>
+  <data name="Trash_TrackedActions"><value>Ações Monitorizadas</value></data>
+  <data name="Trash_FieldDefinitions"><value>Definições de Campo</value></data>
+  <data name="Trash_Tags"><value>Etiquetas</value></data>
+  <data name="Common_Restore"><value>Restaurar</value></data>
+  <data name="Common_RestoreSuccess"><value>Item restaurado com sucesso.</value></data>
+  <data name="Trash_DeletedAt"><value>Eliminado</value></data>
+  <data name="Settings_DataRetention"><value>Retenção de Dados</value></data>
+  <data name="Settings_DataRetentionHint"><value>Escolha quanto tempo os itens eliminados são mantidos antes de serem removidos permanentemente.</value></data>
+  <data name="Settings_RetentionDays"><value>Período de Retenção</value></data>
+  <data name="Settings_Days"><value>dias</value></data>
+  <data name="Settings_DataRetentionInfo"><value>Itens eliminados mais antigos que este período serão removidos permanentemente pelo processo de limpeza.</value></data>
+  <data name="Common_Save"><value>Guardar</value></data>
+  <data name="Common_SavedSuccessfully"><value>Definições guardadas com sucesso.</value></data>
 </root>

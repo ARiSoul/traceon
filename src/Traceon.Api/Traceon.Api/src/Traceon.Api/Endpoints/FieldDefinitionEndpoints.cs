@@ -18,6 +18,7 @@ internal static class FieldDefinitionEndpoints
         group.MapPost("/", CreateAsync).AddEndpointFilter<ValidationFilter<CreateFieldDefinitionRequest>>();
         group.MapPut("/{id:guid}", UpdateAsync).AddEndpointFilter<ValidationFilter<UpdateFieldDefinitionRequest>>();
         group.MapDelete("/{id:guid}", DeleteAsync);
+        group.MapPost("/{id:guid}/restore", RestoreAsync);
 
         return group;
     }
@@ -58,4 +59,10 @@ internal static class FieldDefinitionEndpoints
         IFieldDefinitionService service,
         CancellationToken cancellationToken)
         => (await service.DeleteAsync(id, cancellationToken)).ToHttpResult();
+
+    private static async Task<IResult> RestoreAsync(
+        Guid id,
+        IFieldDefinitionService service,
+        CancellationToken cancellationToken)
+        => (await service.RestoreAsync(id, cancellationToken)).ToHttpResult();
 }

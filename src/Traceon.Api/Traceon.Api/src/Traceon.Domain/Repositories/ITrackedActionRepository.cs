@@ -13,4 +13,6 @@ public interface ITrackedActionRepository
     Task AddAsync(TrackedAction trackedAction, CancellationToken cancellationToken = default);
     Task UpdateAsync(TrackedAction trackedAction, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<TrackedAction?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task RestoreAsync(Guid id, CancellationToken cancellationToken = default);
 }

@@ -155,6 +155,30 @@ public sealed class ActionEntryService(
         return Result.Success();
     }
 
+    public async Task<Result> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await entryRepository.GetDeletedByIdAsync(id, cancellationToken);
+
+        if (entity is null)
+        {
+            logger.ActionEntryNotFound(id);
+            return Result.Failure($"Deleted action entry with ID '{id}' was not found.");
+        }
+
+        var action = await actionRepository.GetByIdAsync(entity.TrackedActionId, cancellationToken);
+
+        if (action is null || action.UserId != currentUser.UserId)
+        {
+            logger.ActionEntryNotFound(id);
+            return Result.Failure($"Deleted action entry with ID '{id}' was not found.");
+        }
+
+        await entryRepository.RestoreAsync(id, cancellationToken);
+
+        logger.ActionEntryRestored(id);
+        return Result.Success();
+    }
+
     private async Task<IReadOnlyDictionary<Guid, string>> GetFieldNameMapAsync(Guid trackedActionId, CancellationToken cancellationToken)
     {
         var fields = await fieldRepository.GetByTrackedActionIdAsync(trackedActionId, cancellationToken);

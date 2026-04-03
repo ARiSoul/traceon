@@ -55,6 +55,14 @@ public sealed class ActionEntryService(HttpClient http)
         return await ToResultAsync(response);
     }
 
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> RestoreAsync(
+        Guid trackedActionId, Guid entryId)
+    {
+        var response = await http.PostAsync(
+            $"/api/tracked-actions/{trackedActionId}/entries/{entryId}/restore", null);
+        return await ToResultAsync(response);
+    }
+
     private static async Task<(bool Success, IReadOnlyList<string> Errors)> ToResultAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)

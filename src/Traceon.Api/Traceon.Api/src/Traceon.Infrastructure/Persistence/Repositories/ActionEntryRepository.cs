@@ -81,6 +81,25 @@ internal sealed class ActionEntryRepository(TraceonDbContext context) : IActionE
     {
         await context.ActionEntries
             .Where(e => e.Id == id)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(e => e.IsDeleted, true)
+                .SetProperty(e => e.DeletedAtUtc, DateTime.UtcNow), cancellationToken);
+    }
+
+    public async Task<ActionEntry?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await context.ActionEntries
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(e => e.Id == id && e.IsDeleted, cancellationToken);
+    }
+
+    public async Task RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await context.ActionEntries
+            .IgnoreQueryFilters()
+            .Where(e => e.Id == id && e.IsDeleted)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(e => e.IsDeleted, false)
+                .SetProperty(e => e.DeletedAtUtc, (DateTime?)null), cancellationToken);
     }
 }

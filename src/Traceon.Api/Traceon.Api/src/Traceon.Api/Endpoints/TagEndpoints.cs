@@ -18,6 +18,7 @@ internal static class TagEndpoints
         group.MapPost("/", CreateAsync).AddEndpointFilter<ValidationFilter<CreateTagRequest>>();
         group.MapPut("/{id:guid}", UpdateAsync).AddEndpointFilter<ValidationFilter<UpdateTagRequest>>();
         group.MapDelete("/{id:guid}", DeleteAsync);
+        group.MapPost("/{id:guid}/restore", RestoreAsync);
 
         return group;
     }
@@ -58,4 +59,10 @@ internal static class TagEndpoints
         ITagService service,
         CancellationToken cancellationToken)
         => (await service.DeleteAsync(id, cancellationToken)).ToHttpResult();
+
+    private static async Task<IResult> RestoreAsync(
+        Guid id,
+        ITagService service,
+        CancellationToken cancellationToken)
+        => (await service.RestoreAsync(id, cancellationToken)).ToHttpResult();
 }

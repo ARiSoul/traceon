@@ -1,0 +1,148 @@
+@page "/trash"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Trash_Title"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-trash me-2"></i>
+            @L["Trash_Title"]
+        </h3>
+        <p class="text-muted mb-0">@L["Trash_Subtitle"]</p>
+    </div>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+@if (!string.IsNullOrEmpty(_successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>@_successMessage
+        <button type="button" class="btn-close" @onclick="() => _successMessage = null"></button>
+    </div>
+}
+
+@if (_loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else if (_items.Count == 0)
+{
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-trash display-4 d-block mb-2"></i>
+        @L["Trash_Empty"]
+    </div>
+}
+else
+{
+    @foreach (var group in _items.GroupBy(i => i.Type).OrderBy(g => g.Key))
+    {
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center">
+                <i class="bi @GetTypeIcon(group.Key) me-2"></i>
+                <strong>@GetTypeLabel(group.Key)</strong>
+                <span class="badge bg-secondary ms-2">@group.Count()</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                @foreach (var item in group.OrderByDescending(i => i.DeletedAtUtc))
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-semibold">@item.Name</span>
+                            <small class="text-muted ms-2">
+                                @L["Trash_DeletedAt"]: @item.DeletedAtUtc.ToLocalTime().ToString("g")
+                            </small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-success"
+                                disabled="@_restoring"
+                                @onclick="() => RestoreAsync(item)">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>@L["Common_Restore"]
+                        </button>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+}
+
+@code {
+    [Inject] private TrashService TrashSvc { get; set; } = default!;
+    [Inject] private TrackedActionService ActionSvc { get; set; } = default!;
+    [Inject] private FieldDefinitionService FieldDefSvc { get; set; } = default!;
+    [Inject] private TagService TagSvc { get; set; } = default!;
+
+    private List<DeletedItemResponse> _items = [];
+    private IReadOnlyList<string> _errors = [];
+    private string? _successMessage;
+    private bool _loading = true;
+    private bool _restoring;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _items = await TrashSvc.GetDeletedItemsAsync();
+        }
+        catch
+        {
+            _errors = ["Failed to load deleted items."];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task RestoreAsync(DeletedItemResponse item)
+    {
+        _errors = [];
+        _successMessage = null;
+        _restoring = true;
+
+        var (success, errors) = item.Type switch
+        {
+            "TrackedAction" => await ActionSvc.RestoreAsync(item.Id),
+            "FieldDefinition" => await FieldDefSvc.RestoreAsync(item.Id),
+            "Tag" => await TagSvc.RestoreAsync(item.Id),
+            _ => (false, (IReadOnlyList<string>)[$"Unknown type: {item.Type}"])
+        };
+
+        if (success)
+        {
+            _successMessage = L["Common_RestoreSuccess"];
+            _items.Remove(item);
+        }
+        else
+        {
+            _errors = errors;
+        }
+
+        _restoring = false;
+    }
+
+    private string GetTypeIcon(string type) => type switch
+    {
+        "TrackedAction" => "bi-list-check",
+        "FieldDefinition" => "bi-sliders",
+        "Tag" => "bi-tags",
+        _ => "bi-file-earmark"
+    };
+
+    private string GetTypeLabel(string type) => type switch
+    {
+        "TrackedAction" => L["Trash_TrackedActions"],
+        "FieldDefinition" => L["Trash_FieldDefinitions"],
+        "Tag" => L["Trash_Tags"],
+        _ => type
+    };
+}

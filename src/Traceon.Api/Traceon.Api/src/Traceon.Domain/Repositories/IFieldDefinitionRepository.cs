@@ -10,4 +10,6 @@ public interface IFieldDefinitionRepository
     Task AddAsync(FieldDefinition fieldDefinition, CancellationToken cancellationToken = default);
     Task UpdateAsync(FieldDefinition fieldDefinition, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<FieldDefinition?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task RestoreAsync(Guid id, CancellationToken cancellationToken = default);
 }

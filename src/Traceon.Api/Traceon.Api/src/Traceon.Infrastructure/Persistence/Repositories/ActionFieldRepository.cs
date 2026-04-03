@@ -45,33 +45,25 @@ internal sealed class ActionFieldRepository(TraceonDbContext context) : IActionF
     {
         await context.ActionFields
             .Where(af => af.Id == id)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(af => af.IsDeleted, true)
+                .SetProperty(af => af.DeletedAtUtc, DateTime.UtcNow), cancellationToken);
     }
 
-    public async Task DeleteWithDependenciesAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ActionField?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        return await context.ActionFields
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(af => af.Id == id && af.IsDeleted, cancellationToken);
+    }
 
-        try
-        {
-            await context.FieldAnalyticsRules
-                .Where(r => r.MeasureFieldId == id || r.GroupByFieldId == id || r.FilterFieldId == id)
-                .ExecuteDeleteAsync(cancellationToken);
-
-            await context.ActionEntryFields
-                .Where(ef => ef.ActionFieldId == id)
-                .ExecuteDeleteAsync(cancellationToken);
-
-            await context.ActionFields
-                .Where(af => af.Id == id)
-                .ExecuteDeleteAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
+    public async Task RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await context.ActionFields
+            .IgnoreQueryFilters()
+            .Where(af => af.Id == id && af.IsDeleted)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(af => af.IsDeleted, false)
+                .SetProperty(af => af.DeletedAtUtc, (DateTime?)null), cancellationToken);
     }
 }

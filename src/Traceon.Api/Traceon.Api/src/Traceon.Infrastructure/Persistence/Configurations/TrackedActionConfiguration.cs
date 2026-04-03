@@ -27,7 +27,8 @@ internal sealed class TrackedActionConfiguration : IEntityTypeConfiguration<Trac
             .HasDefaultValue(0);
 
         builder.HasIndex(e => new { e.UserId, e.Name })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
 
         builder.HasMany(e => e.Fields)
             .WithOne()

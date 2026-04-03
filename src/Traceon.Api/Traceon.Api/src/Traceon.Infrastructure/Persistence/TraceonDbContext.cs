@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Traceon.Domain.Entities;
@@ -25,6 +26,17 @@ public sealed class TraceonDbContext(DbContextOptions<TraceonDbContext> options)
 
         modelBuilder.HasDefaultSchema(Schema);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TraceonDbContext).Assembly);
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!typeof(Entity).IsAssignableFrom(entityType.ClrType))
+                continue;
+
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+            var property = Expression.Property(parameter, nameof(Entity.IsDeleted));
+            var filter = Expression.Lambda(Expression.Not(property), parameter);
+            entityType.SetQueryFilter(filter);
+        }
     }
 
 #pragma warning disable IDE1006 // Naming Styles

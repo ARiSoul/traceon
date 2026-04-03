@@ -36,6 +36,8 @@ internal sealed class FieldAnalyticsRuleRepository(TraceonDbContext context) : I
     {
         await context.FieldAnalyticsRules
             .Where(r => r.Id == id)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(r => r.IsDeleted, true)
+                .SetProperty(r => r.DeletedAtUtc, DateTime.UtcNow), cancellationToken);
     }
 }

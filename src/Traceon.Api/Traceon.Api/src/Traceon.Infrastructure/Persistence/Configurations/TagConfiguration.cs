@@ -28,6 +28,7 @@ internal sealed class TagConfiguration : IEntityTypeConfiguration<Tag>
             .HasMaxLength(7);
 
         builder.HasIndex(e => new { e.UserId, e.Name })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
     }
 }

@@ -48,6 +48,7 @@ builder.Services.AddScoped<TemplateService>();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<LocalizationService>();
 builder.Services.AddScoped<UserPreferenceService>();
+builder.Services.AddScoped<TrashService>();
 
 var host = builder.Build();
 

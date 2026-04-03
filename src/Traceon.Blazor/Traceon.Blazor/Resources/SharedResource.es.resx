@@ -659,4 +659,21 @@
   <data name="Analytics_NeedTwoFields"><value>Necesitas al menos dos campos (uno numérico) para crear reglas. Agrega campos en la pestaña Campos primero.</value></data>
   <data name="Common_Select"><value>Seleccionar</value></data>
   <data name="Common_None"><value>Ninguno</value></data>
+  <data name="Nav_Trash"><value>Papelera</value></data>
+  <data name="Trash_Title"><value>Papelera</value></data>
+  <data name="Trash_Subtitle"><value>Los elementos eliminados se conservan durante el período de retención configurado antes de su eliminación permanente.</value></data>
+  <data name="Trash_Empty"><value>La papelera está vacía.</value></data>
+  <data name="Trash_TrackedActions"><value>Acciones Rastreadas</value></data>
+  <data name="Trash_FieldDefinitions"><value>Definiciones de Campo</value></data>
+  <data name="Trash_Tags"><value>Etiquetas</value></data>
+  <data name="Common_Restore"><value>Restaurar</value></data>
+  <data name="Common_RestoreSuccess"><value>Elemento restaurado correctamente.</value></data>
+  <data name="Trash_DeletedAt"><value>Eliminado</value></data>
+  <data name="Settings_DataRetention"><value>Retención de Datos</value></data>
+  <data name="Settings_DataRetentionHint"><value>Elige cuánto tiempo se conservan los elementos eliminados antes de ser eliminados permanentemente.</value></data>
+  <data name="Settings_RetentionDays"><value>Período de Retención</value></data>
+  <data name="Settings_Days"><value>días</value></data>
+  <data name="Settings_DataRetentionInfo"><value>Los elementos eliminados más antiguos que este período serán eliminados permanentemente por el proceso de limpieza.</value></data>
+  <data name="Common_Save"><value>Guardar</value></data>
+  <data name="Common_SavedSuccessfully"><value>Configuración guardada correctamente.</value></data>
 </root>

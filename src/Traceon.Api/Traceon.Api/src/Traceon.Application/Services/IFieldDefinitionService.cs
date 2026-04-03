@@ -11,4 +11,5 @@ public interface IFieldDefinitionService
     Task<Result<FieldDefinitionResponse>> CreateAsync(CreateFieldDefinitionRequest request, CancellationToken cancellationToken = default);
     Task<Result<FieldDefinitionResponse>> UpdateAsync(Guid id, UpdateFieldDefinitionRequest request, CancellationToken cancellationToken = default);
     Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result> RestoreAsync(Guid id, CancellationToken cancellationToken = default);
 }

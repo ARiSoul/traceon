@@ -110,6 +110,22 @@ public sealed class TrackedActionService(
         return Result.Success();
     }
 
+    public async Task<Result> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await repository.GetDeletedByIdAsync(id, cancellationToken);
+
+        if (entity is null || entity.UserId != currentUser.UserId)
+        {
+            logger.TrackedActionNotFound(id);
+            return Result.Failure($"Deleted tracked action with ID '{id}' was not found.");
+        }
+
+        await repository.RestoreAsync(id, cancellationToken);
+
+        logger.TrackedActionRestored(id);
+        return Result.Success();
+    }
+
     public async Task<Result<IReadOnlyList<TagResponse>>> GetTagsAsync(Guid trackedActionId, CancellationToken cancellationToken = default)
     {
         var action = await repository.GetByIdWithTagsAsync(trackedActionId, cancellationToken);

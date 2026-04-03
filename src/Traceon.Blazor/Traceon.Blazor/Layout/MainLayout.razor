@@ -64,7 +64,7 @@
     {
         try
         {
-            var (theme, language) = await PreferenceService.GetAsync();
+            var (theme, language, _) = await PreferenceService.GetAsync();
 
             // If server returned nothing, user is anonymous or has no prefs yet
             if (theme is null && language is null)

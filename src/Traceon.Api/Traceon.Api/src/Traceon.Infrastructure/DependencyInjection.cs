@@ -92,6 +92,10 @@ public static class DependencyInjection
         services.AddScoped<AuditService>();
         services.AddScoped<DataPortabilityService>();
         services.AddScoped<TemplateInstallService>();
+        services.AddScoped<TrashService>();
+
+        services.Configure<PurgeSettings>(configuration.GetSection("Purge"));
+        services.AddHostedService<PurgeDeletedDataService>();
 
         return services;
     }

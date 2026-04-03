@@ -190,9 +190,33 @@ public sealed class ActionFieldService(
             return Result.Failure($"Action field with ID '{id}' was not found.");
         }
 
-        await repository.DeleteWithDependenciesAsync(id, cancellationToken);
+        await repository.DeleteAsync(id, cancellationToken);
 
         logger.ActionFieldDeleted(id);
+        return Result.Success();
+    }
+
+    public async Task<Result> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await repository.GetDeletedByIdAsync(id, cancellationToken);
+
+        if (entity is null)
+        {
+            logger.ActionFieldNotFound(id);
+            return Result.Failure($"Deleted action field with ID '{id}' was not found.");
+        }
+
+        var action = await actionRepository.GetByIdAsync(entity.TrackedActionId, cancellationToken);
+
+        if (action is null || action.UserId != currentUser.UserId)
+        {
+            logger.ActionFieldNotFound(id);
+            return Result.Failure($"Deleted action field with ID '{id}' was not found.");
+        }
+
+        await repository.RestoreAsync(id, cancellationToken);
+
+        logger.ActionFieldRestored(id);
         return Result.Success();
     }
 }

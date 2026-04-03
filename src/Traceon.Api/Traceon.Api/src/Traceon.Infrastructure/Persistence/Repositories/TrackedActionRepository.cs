@@ -59,6 +59,25 @@ internal sealed class TrackedActionRepository(TraceonDbContext context) : ITrack
     {
         await context.TrackedActions
             .Where(a => a.Id == id)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(a => a.IsDeleted, true)
+                .SetProperty(a => a.DeletedAtUtc, DateTime.UtcNow), cancellationToken);
+    }
+
+    public async Task<TrackedAction?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await context.TrackedActions
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(a => a.Id == id && a.IsDeleted, cancellationToken);
+    }
+
+    public async Task RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await context.TrackedActions
+            .IgnoreQueryFilters()
+            .Where(a => a.Id == id && a.IsDeleted)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(a => a.IsDeleted, false)
+                .SetProperty(a => a.DeletedAtUtc, (DateTime?)null), cancellationToken);
     }
 }

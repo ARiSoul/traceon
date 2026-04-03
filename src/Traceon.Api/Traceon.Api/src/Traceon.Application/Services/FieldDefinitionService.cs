@@ -125,4 +125,20 @@ public sealed class FieldDefinitionService(
         logger.FieldDefinitionDeleted(id);
         return Result.Success();
     }
+
+    public async Task<Result> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await repository.GetDeletedByIdAsync(id, cancellationToken);
+
+        if (entity is null || entity.UserId != currentUser.UserId)
+        {
+            logger.FieldDefinitionNotFound(id);
+            return Result.Failure($"Deleted field definition with ID '{id}' was not found.");
+        }
+
+        await repository.RestoreAsync(id, cancellationToken);
+
+        logger.FieldDefinitionRestored(id);
+        return Result.Success();
+    }
 }

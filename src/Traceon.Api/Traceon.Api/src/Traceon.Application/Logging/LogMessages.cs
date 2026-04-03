@@ -14,6 +14,9 @@ internal static partial class LogMessages
     [LoggerMessage(Level = LogLevel.Information, Message = "Tracked action '{Id}' deleted.")]
     public static partial void TrackedActionDeleted(this ILogger logger, Guid id);
 
+    [LoggerMessage(Level = LogLevel.Information, Message = "Tracked action '{Id}' restored.")]
+    public static partial void TrackedActionRestored(this ILogger logger, Guid id);
+
     [LoggerMessage(Level = LogLevel.Warning, Message = "Tracked action with ID '{Id}' was not found.")]
     public static partial void TrackedActionNotFound(this ILogger logger, Guid id);
 
@@ -29,6 +32,9 @@ internal static partial class LogMessages
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Field definition '{Id}' deleted.")]
     public static partial void FieldDefinitionDeleted(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Field definition '{Id}' restored.")]
+    public static partial void FieldDefinitionRestored(this ILogger logger, Guid id);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Field definition with ID '{Id}' was not found.")]
     public static partial void FieldDefinitionNotFound(this ILogger logger, Guid id);
@@ -46,6 +52,9 @@ internal static partial class LogMessages
     [LoggerMessage(Level = LogLevel.Information, Message = "Action field '{Id}' deleted.")]
     public static partial void ActionFieldDeleted(this ILogger logger, Guid id);
 
+    [LoggerMessage(Level = LogLevel.Information, Message = "Action field '{Id}' restored.")]
+    public static partial void ActionFieldRestored(this ILogger logger, Guid id);
+
     [LoggerMessage(Level = LogLevel.Warning, Message = "Action field with ID '{Id}' was not found.")]
     public static partial void ActionFieldNotFound(this ILogger logger, Guid id);
 
@@ -59,6 +68,9 @@ internal static partial class LogMessages
     [LoggerMessage(Level = LogLevel.Information, Message = "Action entry '{Id}' deleted.")]
     public static partial void ActionEntryDeleted(this ILogger logger, Guid id);
 
+    [LoggerMessage(Level = LogLevel.Information, Message = "Action entry '{Id}' restored.")]
+    public static partial void ActionEntryRestored(this ILogger logger, Guid id);
+
     [LoggerMessage(Level = LogLevel.Warning, Message = "Action entry with ID '{Id}' was not found.")]
     public static partial void ActionEntryNotFound(this ILogger logger, Guid id);
 
@@ -71,6 +83,9 @@ internal static partial class LogMessages
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Tag '{Id}' deleted.")]
     public static partial void TagDeleted(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Tag '{Id}' restored.")]
+    public static partial void TagRestored(this ILogger logger, Guid id);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Tag with ID '{Id}' was not found.")]
     public static partial void TagNotFound(this ILogger logger, Guid id);

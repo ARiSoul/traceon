@@ -5,6 +5,8 @@ public abstract class Entity
     public Guid Id { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? UpdatedAtUtc { get; private set; }
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAtUtc { get; private set; }
 
     protected Entity()
     {
@@ -13,6 +15,18 @@ public abstract class Entity
     }
 
     public void MarkUpdated() => UpdatedAtUtc = DateTime.UtcNow;
+
+    public void MarkDeleted()
+    {
+        IsDeleted = true;
+        DeletedAtUtc = DateTime.UtcNow;
+    }
+
+    public void Restore()
+    {
+        IsDeleted = false;
+        DeletedAtUtc = null;
+    }
 }
 
 public abstract class OwnedEntity : Entity

@@ -53,6 +53,25 @@ internal sealed class TagRepository(TraceonDbContext context) : ITagRepository
     {
         await context.Tags
             .Where(t => t.Id == id)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(t => t.IsDeleted, true)
+                .SetProperty(t => t.DeletedAtUtc, DateTime.UtcNow), cancellationToken);
+    }
+
+    public async Task<Tag?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await context.Tags
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.Id == id && t.IsDeleted, cancellationToken);
+    }
+
+    public async Task RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await context.Tags
+            .IgnoreQueryFilters()
+            .Where(t => t.Id == id && t.IsDeleted)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(t => t.IsDeleted, false)
+                .SetProperty(t => t.DeletedAtUtc, (DateTime?)null), cancellationToken);
     }
 }

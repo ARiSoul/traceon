@@ -47,6 +47,12 @@ public sealed class TrackedActionService(HttpClient http)
         return await ToResultAsync(response);
     }
 
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> RestoreAsync(Guid id)
+    {
+        var response = await http.PostAsync($"/api/tracked-actions/{id}/restore", null);
+        return await ToResultAsync(response);
+    }
+
     public async Task<(bool Success, IReadOnlyList<string> Errors)> AddTagAsync(Guid trackedActionId, Guid tagId)
     {
         var response = await http.PostAsync($"/api/tracked-actions/{trackedActionId}/tags/{tagId}", null);

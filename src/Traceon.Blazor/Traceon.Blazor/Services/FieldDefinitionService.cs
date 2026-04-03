@@ -46,6 +46,12 @@ public sealed class FieldDefinitionService(HttpClient http)
         return await ToResultAsync(response);
     }
 
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> RestoreAsync(Guid id)
+    {
+        var response = await http.PostAsync($"/api/field-definitions/{id}/restore", null);
+        return await ToResultAsync(response);
+    }
+
     private static async Task<(bool Success, IReadOnlyList<string> Errors)> ToResultAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)

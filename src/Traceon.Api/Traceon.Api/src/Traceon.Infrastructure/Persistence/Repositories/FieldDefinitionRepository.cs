@@ -38,6 +38,25 @@ internal sealed class FieldDefinitionRepository(TraceonDbContext context) : IFie
     {
         await context.FieldDefinitions
             .Where(fd => fd.Id == id)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(fd => fd.IsDeleted, true)
+                .SetProperty(fd => fd.DeletedAtUtc, DateTime.UtcNow), cancellationToken);
+    }
+
+    public async Task<FieldDefinition?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await context.FieldDefinitions
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(fd => fd.Id == id && fd.IsDeleted, cancellationToken);
+    }
+
+    public async Task RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await context.FieldDefinitions
+            .IgnoreQueryFilters()
+            .Where(fd => fd.Id == id && fd.IsDeleted)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(fd => fd.IsDeleted, false)
+                .SetProperty(fd => fd.DeletedAtUtc, (DateTime?)null), cancellationToken);
     }
 }

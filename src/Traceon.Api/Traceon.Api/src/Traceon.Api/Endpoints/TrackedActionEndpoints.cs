@@ -18,6 +18,7 @@ internal static class TrackedActionEndpoints
         group.MapPost("/", CreateAsync).AddEndpointFilter<ValidationFilter<CreateTrackedActionRequest>>();
         group.MapPut("/{id:guid}", UpdateAsync).AddEndpointFilter<ValidationFilter<UpdateTrackedActionRequest>>();
         group.MapDelete("/{id:guid}", DeleteAsync);
+        group.MapPost("/{id:guid}/restore", RestoreAsync);
         group.MapGet("/{id:guid}/tags", GetTagsAsync);
         group.MapPost("/{id:guid}/tags/{tagId:guid}", AddTagAsync);
         group.MapDelete("/{id:guid}/tags/{tagId:guid}", RemoveTagAsync);
@@ -62,6 +63,12 @@ internal static class TrackedActionEndpoints
         ITrackedActionService service,
         CancellationToken cancellationToken)
         => (await service.DeleteAsync(id, cancellationToken)).ToHttpResult();
+
+    private static async Task<IResult> RestoreAsync(
+        Guid id,
+        ITrackedActionService service,
+        CancellationToken cancellationToken)
+        => (await service.RestoreAsync(id, cancellationToken)).ToHttpResult();
 
     private static async Task<IResult> GetTagsAsync(
         Guid id,

@@ -12,4 +12,6 @@ public interface ITagRepository
     Task AddAsync(Tag tag, CancellationToken cancellationToken = default);
     Task UpdateAsync(Tag tag, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Tag?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task RestoreAsync(Guid id, CancellationToken cancellationToken = default);
 }
