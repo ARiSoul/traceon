@@ -10,5 +10,6 @@ public interface IActionFieldRepository
     Task AddAsync(ActionField actionField, CancellationToken cancellationToken = default);
     Task UpdateAsync(ActionField actionField, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task DeleteWithDependenciesAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ExistsByFieldDefinitionIdAsync(Guid fieldDefinitionId, CancellationToken cancellationToken = default);
 }

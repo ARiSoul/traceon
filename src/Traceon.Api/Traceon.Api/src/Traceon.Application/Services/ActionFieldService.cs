@@ -190,7 +190,7 @@ public sealed class ActionFieldService(
             return Result.Failure($"Action field with ID '{id}' was not found.");
         }
 
-        await repository.DeleteAsync(id, cancellationToken);
+        await repository.DeleteWithDependenciesAsync(id, cancellationToken);
 
         logger.ActionFieldDeleted(id);
         return Result.Success();

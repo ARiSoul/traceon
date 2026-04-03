@@ -47,4 +47,31 @@ internal sealed class ActionFieldRepository(TraceonDbContext context) : IActionF
             .Where(af => af.Id == id)
             .ExecuteDeleteAsync(cancellationToken);
     }
+
+    public async Task DeleteWithDependenciesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            await context.FieldAnalyticsRules
+                .Where(r => r.MeasureFieldId == id || r.GroupByFieldId == id || r.FilterFieldId == id)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await context.ActionEntryFields
+                .Where(ef => ef.ActionFieldId == id)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await context.ActionFields
+                .Where(af => af.Id == id)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
 }
