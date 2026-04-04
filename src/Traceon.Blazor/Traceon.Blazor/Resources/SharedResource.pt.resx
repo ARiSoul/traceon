@@ -148,9 +148,11 @@
   <data name="Dashboard_LastNMonths"><value>Últimos N Meses</value></data>
   <data name="Dashboard_LastNYears"><value>Últimos N Anos</value></data>
   <data name="Dashboard_CustomRange"><value>Intervalo Personalizado</value></data>
+  <data name="Dashboard_SpecificMonth"><value>Mês Específico</value></data>
   <data name="Dashboard_Days"><value>Dias</value></data>
   <data name="Dashboard_Months"><value>Meses</value></data>
   <data name="Dashboard_Years"><value>Anos</value></data>
+  <data name="Dashboard_Month"><value>Mês</value></data>
   <data name="Dashboard_From"><value>De</value></data>
   <data name="Dashboard_To"><value>Até</value></data>
   <data name="Dashboard_PerActionStats"><value>Estatísticas por Acção</value></data>
@@ -281,6 +283,8 @@
   <data name="Entry_EditSubtitle"><value>Actualizar este registo para</value></data>
   <data name="Entry_SaveEntry"><value>Guardar Registo</value></data>
   <data name="Entry_Select"><value>— Seleccionar —</value></data>
+  <data name="Dropdown_AddNew"><value>Adicionar novo valor</value></data>
+  <data name="Dropdown_NewValue"><value>Novo valor…</value></data>
 
   <!-- ═══ Edição de Acção - Separadores ═══ -->
   <data name="ActionEdit_BasicInfo"><value>Informações Básicas</value></data>
@@ -339,6 +343,8 @@
 
   <!-- ═══ Dashboard (extra) ═══ -->
   <data name="Dashboard_Refresh"><value>Actualizar</value></data>
+  <data name="Dashboard_ApplyFilters"><value>Aplicar Filtros</value></data>
+  <data name="Dashboard_ResetFilters"><value>Repor Filtros</value></data>
   <data name="Dashboard_AvgVsMax"><value>Média vs máximo configurado ({0})</value></data>
   <data name="Dashboard_StatsSubtitle"><value>Estatísticas e informações sobre as suas acções</value></data>
 
@@ -517,6 +523,7 @@
   <data name="Settings_ActionCol"><value>Ação</value></data>
   <data name="Settings_Details"><value>Detalhes</value></data>
   <data name="Settings_IpAddress"><value>Endereço IP</value></data>
+  <data name="Settings_UserAgent"><value>Agente do Utilizador</value></data>
   <data name="Audit_Register"><value>Registo</value></data>
   <data name="Audit_Login"><value>Login</value></data>
   <data name="Audit_LoginExternal"><value>Login Externo</value></data>
@@ -602,6 +609,8 @@
   <data name="Template_Habits_Meditation_Desc"><value>Registe sessões de meditação.</value></data>
   <data name="Template_Finance_Name"><value>Finanças</value></data>
   <data name="Template_Finance_Desc"><value>Registe despesas e rendimentos.</value></data>
+  <data name="Template_Finance_Transaction"><value>Transação</value></data>
+  <data name="Template_Finance_Transaction_Desc"><value>Registe receitas e despesas com saldo acumulado.</value></data>
   <data name="Template_Finance_Expense"><value>Despesa</value></data>
   <data name="Template_Finance_Expense_Desc"><value>Registe gastos com categorias.</value></data>
   <data name="Template_Finance_Income"><value>Rendimento</value></data>
@@ -624,6 +633,7 @@
   <data name="Template_Field_Amount"><value>Montante</value></data>
   <data name="Template_Field_Category"><value>Categoria</value></data>
   <data name="Template_Field_Source"><value>Fonte</value></data>
+  <data name="Template_Field_TransactionType"><value>Tipo</value></data>
 
   <!-- ═══ Página de Modelos ═══ -->
   <data name="Nav_Templates"><value>Modelos</value></data>
@@ -650,6 +660,7 @@
   <data name="Analytics_FilteredBy"><value>Filtrado por</value></data>
   <data name="Analytics_Total"><value>Total</value></data>
   <data name="Analytics_NoCrossFieldRules"><value>Nenhuma regra de análise configurada para esta ação.</value></data>
+  <data name="Analytics_Balance"><value>Saldo</value></data>
   <data name="Aggregation_Sum"><value>Soma</value></data>
   <data name="Aggregation_Avg"><value>Média</value></data>
   <data name="Aggregation_Min"><value>Mínimo</value></data>

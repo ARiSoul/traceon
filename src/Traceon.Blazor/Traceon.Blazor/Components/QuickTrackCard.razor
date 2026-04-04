@@ -22,6 +22,19 @@
             }
         </div>
 
+        @if (Balances.Count > 0)
+        {
+            <div class="d-flex flex-wrap gap-1 mb-2">
+                @foreach (var bal in Balances)
+                {
+                    <span class="badge @(bal.CurrentBalance >= 0 ? "bg-success" : "bg-danger") rounded-pill"
+                          title="@bal.Label">
+                        <i class="bi bi-wallet2 me-1"></i>@FormatBalance(bal.CurrentBalance) @bal.Unit
+                    </span>
+                }
+            </div>
+        }
+
         <div class="mt-auto pt-2">
             <button class="btn btn-success btn-sm w-100 mb-2"
                     @onclick="HandleTrack">
@@ -56,6 +69,9 @@
     public bool Highlighted { get; set; }
 
     [Parameter]
+    public List<BalanceSummary> Balances { get; set; } = [];
+
+    [Parameter]
     public EventCallback<TrackedActionResponse> OnTrack { get; set; }
 
     private async Task HandleTrack()
@@ -69,5 +85,13 @@
         {
             await OnTrack.InvokeAsync(Action);
         }
+    }
+
+    private static string FormatBalance(decimal value)
+    {
+        var prefix = value >= 0 ? "+" : "";
+        return value == Math.Truncate(value)
+            ? $"{prefix}{value:F0}"
+            : $"{prefix}{value:F2}";
     }
 }

@@ -268,7 +268,8 @@
     private string[] ParsedDropdownValues =>
         string.IsNullOrWhiteSpace(Field.DropdownValues)
             ? []
-            : Field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            : Field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
 
     private void ToggleExpand()
     {

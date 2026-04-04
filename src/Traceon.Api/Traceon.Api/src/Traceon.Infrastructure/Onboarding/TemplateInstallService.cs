@@ -6,9 +6,10 @@ namespace Traceon.Infrastructure.Onboarding;
 
 public sealed class TemplateInstallService(TraceonDbContext db)
 {
-    public async Task<TemplateInstallResult> InstallAsync(string userId, TemplatePack pack)
+    public async Task<TemplateInstallResult> InstallAsync(string userId, TemplatePack pack, string? language = null)
     {
         var result = new TemplateInstallResult();
+        string L(string? key, string fallback) => TemplateLocalization.Resolve(key, fallback, language);
 
         // Reuse existing tags by name (same pattern as import)
         var existingTags = await db.Tags
@@ -18,16 +19,17 @@ public sealed class TemplateInstallService(TraceonDbContext db)
         var tagIds = new List<Guid>();
         foreach (var tagTemplate in pack.Tags)
         {
-            if (existingTags.TryGetValue(tagTemplate.Name, out var existing))
+            var tagName = L(tagTemplate.NameKey, tagTemplate.Name);
+            if (existingTags.TryGetValue(tagName, out var existing))
             {
                 tagIds.Add(existing.Id);
             }
             else
             {
-                var tag = Tag.Create(userId, tagTemplate.Name, color: tagTemplate.Color);
+                var tag = Tag.Create(userId, tagName, color: tagTemplate.Color);
                 db.Tags.Add(tag);
                 tagIds.Add(tag.Id);
-                existingTags[tagTemplate.Name] = tag;
+                existingTags[tagName] = tag;
                 result.TagsCreated++;
             }
         }
@@ -50,7 +52,7 @@ public sealed class TemplateInstallService(TraceonDbContext db)
 
         foreach (var actionTemplate in pack.Actions)
         {
-            var actionName = actionTemplate.Name;
+            var actionName = L(actionTemplate.NameKey, actionTemplate.Name);
             if (existingActionNames.Contains(actionName))
             {
                 var suffix = 2;
@@ -61,7 +63,8 @@ public sealed class TemplateInstallService(TraceonDbContext db)
             }
             existingActionNames.Add(actionName);
 
-            var action = TrackedAction.Create(userId, actionName, actionTemplate.Description, sortOrder++);
+            var actionDescription = L(actionTemplate.DescriptionKey, actionTemplate.Description ?? "");
+            var action = TrackedAction.Create(userId, actionName, actionDescription, sortOrder++);
             db.TrackedActions.Add(action);
             await db.SaveChangesAsync();
 
@@ -72,32 +75,37 @@ public sealed class TemplateInstallService(TraceonDbContext db)
             }
 
             // Create fields
+            var fieldIdsByName = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
             foreach (var fieldTemplate in actionTemplate.Fields)
             {
+                var fieldName = L(fieldTemplate.NameKey, fieldTemplate.Name);
+                var dropdownValues = L(fieldTemplate.DropdownValuesKey, fieldTemplate.DropdownValues ?? "");
+                var resolvedDropdown = string.IsNullOrWhiteSpace(dropdownValues) ? fieldTemplate.DropdownValues : dropdownValues;
+
                 // Reuse or create field definition
                 Guid fieldDefId;
-                if (existingFieldDefs.TryGetValue(fieldTemplate.Name, out var existingDef))
+                if (existingFieldDefs.TryGetValue(fieldName, out var existingDef))
                 {
                     fieldDefId = existingDef.Id;
                 }
                 else
                 {
                     var fd = FieldDefinition.Create(
-                        userId, fieldTemplate.Name, fieldTemplate.Type,
+                        userId, fieldName, fieldTemplate.Type,
                         unit: fieldTemplate.Unit,
                         defaultMaxValue: fieldTemplate.MaxValue,
                         defaultMinValue: fieldTemplate.MinValue,
                         defaultIsRequired: fieldTemplate.IsRequired,
                         defaultValue: fieldTemplate.DefaultValue,
-                        dropdownValues: fieldTemplate.DropdownValues);
+                        dropdownValues: resolvedDropdown);
                     db.FieldDefinitions.Add(fd);
-                    existingFieldDefs[fieldTemplate.Name] = fd;
+                    existingFieldDefs[fieldName] = fd;
                     fieldDefId = fd.Id;
                     result.FieldDefinitionsCreated++;
                 }
 
                 var field = ActionField.Create(
-                    action.Id, fieldDefId, fieldTemplate.Name,
+                    action.Id, fieldDefId, fieldName,
                     maxValue: fieldTemplate.MaxValue,
                     minValue: fieldTemplate.MinValue,
                     isRequired: fieldTemplate.IsRequired,
@@ -106,6 +114,55 @@ public sealed class TemplateInstallService(TraceonDbContext db)
                     order: fieldTemplate.Order,
                     targetValue: fieldTemplate.TargetValue);
                 db.ActionFields.Add(field);
+                fieldIdsByName[fieldTemplate.Name] = field.Id;
+            }
+
+            await db.SaveChangesAsync();
+
+            // Create analytics rules
+            foreach (var ruleTemplate in actionTemplate.AnalyticsRules)
+            {
+                if (!fieldIdsByName.TryGetValue(ruleTemplate.MeasureFieldName, out var measureFieldId))
+                    continue;
+                if (!fieldIdsByName.TryGetValue(ruleTemplate.GroupByFieldName, out var groupByFieldId))
+                    continue;
+
+                Guid? signFieldId = null;
+                if (ruleTemplate.SignFieldName is not null &&
+                    fieldIdsByName.TryGetValue(ruleTemplate.SignFieldName, out var signId))
+                {
+                    signFieldId = signId;
+                }
+
+                Guid? filterFieldId = null;
+                if (ruleTemplate.FilterFieldName is not null &&
+                    fieldIdsByName.TryGetValue(ruleTemplate.FilterFieldName, out var filterId))
+                {
+                    filterFieldId = filterId;
+                }
+
+                // Resolve localized dropdown-based values
+                var negativeValues = LocalizeDropdownValue(
+                    ruleTemplate.NegativeValues, ruleTemplate.SignFieldName, actionTemplate.Fields, L, language);
+                var filterValue = LocalizeDropdownValue(
+                    ruleTemplate.FilterValue, ruleTemplate.FilterFieldName, actionTemplate.Fields, L, language);
+
+                var label = L(ruleTemplate.LabelKey, ruleTemplate.Label ?? "");
+
+                var rule = FieldAnalyticsRule.Create(
+                    action.Id,
+                    measureFieldId,
+                    groupByFieldId,
+                    aggregation: ruleTemplate.Aggregation,
+                    displayType: ruleTemplate.DisplayType,
+                    filterFieldId: filterFieldId,
+                    filterValue: filterValue,
+                    label: string.IsNullOrWhiteSpace(label) ? ruleTemplate.Label : label,
+                    sortOrder: ruleTemplate.SortOrder,
+                    signFieldId: signFieldId,
+                    negativeValues: negativeValues);
+                db.FieldAnalyticsRules.Add(rule);
+                result.AnalyticsRulesCreated++;
             }
 
             await db.SaveChangesAsync();
@@ -114,6 +171,36 @@ public sealed class TemplateInstallService(TraceonDbContext db)
 
         return result;
     }
+
+    /// <summary>
+    /// Localizes a comma-separated value string (e.g. "Expense") by mapping each part
+    /// through the referenced field's dropdown localization.
+    /// </summary>
+    private static string? LocalizeDropdownValue(
+        string? value, string? fieldName, List<FieldTemplate> fields,
+        Func<string?, string, string> L, string? language)
+    {
+        if (value is null || language is null || fieldName is null)
+            return value;
+
+        var field = fields.FirstOrDefault(f => f.Name == fieldName);
+        if (field?.DropdownValuesKey is null)
+            return value;
+
+        var localizedDropdown = L(field.DropdownValuesKey, field.DropdownValues ?? "");
+        var originalValues = (field.DropdownValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var localizedValues = localizedDropdown.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (originalValues.Length != localizedValues.Length)
+            return value;
+
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < originalValues.Length; i++)
+            map[originalValues[i]] = localizedValues[i];
+
+        var parts = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return string.Join(",", parts.Select(p => map.GetValueOrDefault(p, p)));
+    }
 }
 
 public sealed class TemplateInstallResult
@@ -121,4 +208,5 @@ public sealed class TemplateInstallResult
     public int TagsCreated { get; set; }
     public int FieldDefinitionsCreated { get; set; }
     public int ActionsCreated { get; set; }
+    public int AnalyticsRulesCreated { get; set; }
 }

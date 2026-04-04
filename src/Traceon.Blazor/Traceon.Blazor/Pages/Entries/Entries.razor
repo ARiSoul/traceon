@@ -15,8 +15,19 @@
     </div>
 </div>
 
-<EntryDataGrid TrackedActionId="ActionId" StorageKey="entries" />
+<EntryDataGrid TrackedActionId="ActionId" StorageKey="entries" InitialFrom="_from" InitialTo="_to" />
 
 @code {
     [Parameter] public Guid? ActionId { get; set; }
+    [SupplyParameterFromQuery(Name = "from")] public string? FromParam { get; set; }
+    [SupplyParameterFromQuery(Name = "to")] public string? ToParam { get; set; }
+
+    private DateTime? _from;
+    private DateTime? _to;
+
+    protected override void OnInitialized()
+    {
+        _from = DateTime.TryParse(FromParam, out var f) ? f : null;
+        _to = DateTime.TryParse(ToParam, out var t) ? t : null;
+    }
 }

@@ -38,6 +38,7 @@
             <option value="days">@L["Dashboard_LastNDays"]</option>
             <option value="months">@L["Dashboard_LastNMonths"]</option>
             <option value="years">@L["Dashboard_LastNYears"]</option>
+            <option value="month">@L["Dashboard_SpecificMonth"]</option>
             <option value="custom">@L["Dashboard_CustomRange"]</option>
         </select>
     </div>
@@ -53,6 +54,23 @@
                    min="1"
                    value="@_periodValue"
                    @onchange="OnPeriodValueChanged" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Filter_DateField"]</label>
+            <select class="form-select form-select-sm" value="@_dateField" @onchange="OnDateFieldChanged">
+                <option value="OccurredAtUtc">@L["Filter_Occurred"]</option>
+                <option value="CreatedAtUtc">@L["Common_Created"]</option>
+            </select>
+        </div>
+    }
+    else if (_periodMode == "month")
+    {
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Dashboard_Month"]</label>
+            <input type="month"
+                   class="form-control form-control-sm"
+                   value="@_selectedMonth?.ToString("yyyy-MM")"
+                   @onchange="OnMonthChanged" />
         </div>
         <div class="col-6 col-md-2">
             <label class="form-label form-label-sm mb-1">@L["Filter_DateField"]</label>
@@ -107,7 +125,7 @@
                             value="@GetFieldFilter(fieldId)"
                             @onchange="e => OnFieldFilterChangedAsync(fieldId, e)">
                         <option value="">@L["EntryGrid_AllValues"]</option>
-                        @foreach (var opt in field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        @foreach (var opt in field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
                         {
                             <option value="@opt">@opt</option>
                         }
@@ -211,6 +229,18 @@ else
     [Parameter]
     public string? StorageKey { get; set; }
 
+    /// <summary>
+    /// When set, overrides the initial "from" date (e.g. from dashboard navigation).
+    /// </summary>
+    [Parameter]
+    public DateTime? InitialFrom { get; set; }
+
+    /// <summary>
+    /// When set, overrides the initial "to" date (e.g. from dashboard navigation).
+    /// </summary>
+    [Parameter]
+    public DateTime? InitialTo { get; set; }
+
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
@@ -230,6 +260,7 @@ else
     private string _dateField = "OccurredAtUtc";
     private DateTime? _customFrom;
     private DateTime? _customTo;
+    private DateTime? _selectedMonth;
 
     private Guid _createActionId => TrackedActionId.HasValue && LockActionFilter
         ? TrackedActionId.Value
@@ -255,6 +286,14 @@ else
         }
 
         await RestoreEntryFiltersAsync();
+
+        // Override with dates passed from dashboard navigation
+        if (InitialFrom.HasValue || InitialTo.HasValue)
+        {
+            _periodMode = "custom";
+            _customFrom = InitialFrom;
+            _customTo = InitialTo;
+        }
 
         // Use externally-provided fields, or load them for the pre-selected action
         if (ActionFields is { Count: > 0 })
@@ -282,6 +321,7 @@ else
         || _dateField != "OccurredAtUtc"
         || _customFrom.HasValue
         || _customTo.HasValue
+        || _selectedMonth.HasValue
         || _fieldFilters.Count > 0
         || (!LockActionFilter && !string.IsNullOrEmpty(_selectedActionId) && _selectedActionId != (TrackedActionId?.ToString() ?? ""));
 
@@ -303,6 +343,7 @@ else
             if (state.DateField is not null) _dateField = state.DateField;
             _customFrom = state.CustomFrom;
             _customTo = state.CustomTo;
+            _selectedMonth = state.SelectedMonth;
             if (state.FieldFilters is not null)
                 _fieldFilters = state.FieldFilters
                     .Where(kv => Guid.TryParse(kv.Key, out _))
@@ -317,7 +358,7 @@ else
 
         try
         {
-            var state = new EntryFilterState
+             var state = new EntryFilterState
             {
                 SelectedActionId = LockActionFilter ? null : _selectedActionId,
                 PeriodMode = _periodMode,
@@ -325,6 +366,7 @@ else
                 DateField = _dateField,
                 CustomFrom = _customFrom,
                 CustomTo = _customTo,
+                SelectedMonth = _selectedMonth,
                 FieldFilters = _fieldFilters.Count > 0
                     ? _fieldFilters.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value)
                     : null
@@ -343,6 +385,7 @@ else
         _dateField = "OccurredAtUtc";
         _customFrom = null;
         _customTo = null;
+        _selectedMonth = null;
         _fieldFilters.Clear();
 
         if (ActionFields is { Count: > 0 })
@@ -368,6 +411,7 @@ else
         public string? DateField { get; set; }
         public DateTime? CustomFrom { get; set; }
         public DateTime? CustomTo { get; set; }
+        public DateTime? SelectedMonth { get; set; }
         public Dictionary<string, string>? FieldFilters { get; set; }
     }
 
@@ -464,7 +508,7 @@ else
                         builder.CloseElement();
                     }
                 },
-                HideOnMobile = true
+                HideOnMobile = false
             });
         }
 
@@ -537,6 +581,10 @@ else
                 break;
             case "years":
                 from = DateTime.UtcNow.AddYears(-_periodValue);
+                break;
+            case "month" when _selectedMonth.HasValue:
+                from = _selectedMonth.Value;
+                to = _selectedMonth.Value.AddMonths(1);
                 break;
             case "custom":
                 from = _customFrom;
@@ -623,6 +671,11 @@ else
             _customTo = DateTime.Today;
         }
 
+        if (_periodMode == "month" && !_selectedMonth.HasValue)
+        {
+            _selectedMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        }
+
         await _grid.RefreshAsync();
         await SaveEntryFiltersAsync();
     }
@@ -653,6 +706,13 @@ else
     private async Task OnCustomToChanged(ChangeEventArgs e)
     {
         _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await _grid.RefreshAsync();
+        await SaveEntryFiltersAsync();
+    }
+
+    private async Task OnMonthChanged(ChangeEventArgs e)
+    {
+        _selectedMonth = DateTime.TryParse(e.Value?.ToString() + "-01", out var d) ? d : null;
         await _grid.RefreshAsync();
         await SaveEntryFiltersAsync();
     }

@@ -147,9 +147,11 @@
   <data name="Dashboard_LastNMonths"><value>Last N Months</value></data>
   <data name="Dashboard_LastNYears"><value>Last N Years</value></data>
   <data name="Dashboard_CustomRange"><value>Custom Range</value></data>
+  <data name="Dashboard_SpecificMonth"><value>Specific Month</value></data>
   <data name="Dashboard_Days"><value>Days</value></data>
   <data name="Dashboard_Months"><value>Months</value></data>
   <data name="Dashboard_Years"><value>Years</value></data>
+  <data name="Dashboard_Month"><value>Month</value></data>
   <data name="Dashboard_From"><value>From</value></data>
   <data name="Dashboard_To"><value>To</value></data>
   <data name="Dashboard_PerActionStats"><value>Per-Action Statistics</value></data>
@@ -280,6 +282,8 @@
   <data name="Entry_EditSubtitle"><value>Update this entry for</value></data>
   <data name="Entry_SaveEntry"><value>Save Entry</value></data>
   <data name="Entry_Select"><value>— Select —</value></data>
+  <data name="Dropdown_AddNew"><value>Add new value</value></data>
+  <data name="Dropdown_NewValue"><value>New value…</value></data>
 
   <!-- ═══ Action Edit Tabs ═══ -->
   <data name="ActionEdit_BasicInfo"><value>Basic Info</value></data>
@@ -396,6 +400,8 @@
   <data name="Dashboard_ViewEntries"><value>View Entries</value></data>
   <data name="Dashboard_NewEntry"><value>New Entry</value></data>
   <data name="Dashboard_Refresh"><value>Refresh</value></data>
+  <data name="Dashboard_ApplyFilters"><value>Apply Filters</value></data>
+  <data name="Dashboard_ResetFilters"><value>Reset Filters</value></data>
   <data name="Dashboard_AvgVsMax"><value>Avg vs configured max ({0})</value></data>
   <data name="Dashboard_StatsSubtitle"><value>Statistics and insights about your tracked actions</value></data>
   <data name="Dashboard_True"><value>True</value></data>
@@ -514,6 +520,7 @@
   <data name="Settings_ActionCol"><value>Action</value></data>
   <data name="Settings_Details"><value>Details</value></data>
   <data name="Settings_IpAddress"><value>IP Address</value></data>
+  <data name="Settings_UserAgent"><value>User Agent</value></data>
   <data name="Audit_Register"><value>Registered</value></data>
   <data name="Audit_Login"><value>Login</value></data>
   <data name="Audit_LoginExternal"><value>External Login</value></data>
@@ -599,6 +606,8 @@
   <data name="Template_Habits_Meditation_Desc"><value>Track meditation sessions.</value></data>
   <data name="Template_Finance_Name"><value>Finance</value></data>
   <data name="Template_Finance_Desc"><value>Track expenses and income.</value></data>
+  <data name="Template_Finance_Transaction"><value>Transaction</value></data>
+  <data name="Template_Finance_Transaction_Desc"><value>Track income and expenses with a running balance.</value></data>
   <data name="Template_Finance_Expense"><value>Expense</value></data>
   <data name="Template_Finance_Expense_Desc"><value>Log spending with categories.</value></data>
   <data name="Template_Finance_Income"><value>Income</value></data>
@@ -621,6 +630,7 @@
   <data name="Template_Field_Amount"><value>Amount</value></data>
   <data name="Template_Field_Category"><value>Category</value></data>
   <data name="Template_Field_Source"><value>Source</value></data>
+  <data name="Template_Field_TransactionType"><value>Type</value></data>
 
   <!-- ═══ Templates Page ═══ -->
   <data name="Nav_Templates"><value>Templates</value></data>
@@ -647,6 +657,7 @@
   <data name="Analytics_FilteredBy"><value>Filtered by</value></data>
   <data name="Analytics_Total"><value>Total</value></data>
   <data name="Analytics_NoCrossFieldRules"><value>No analytics rules configured for this action.</value></data>
+  <data name="Analytics_Balance"><value>Balance</value></data>
   <data name="Aggregation_Sum"><value>Sum</value></data>
   <data name="Aggregation_Avg"><value>Average</value></data>
   <data name="Aggregation_Min"><value>Minimum</value></data>

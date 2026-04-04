@@ -30,6 +30,13 @@
 }
 else if (_data is not null)
 {
+    @if (_applying)
+    {
+        <div class="text-center mb-3">
+            <span class="spinner-border spinner-border-sm text-primary me-1"></span>
+            <small class="text-muted">@L["Common_Loading"]</small>
+        </div>
+    }
     @if (_data.TotalActions == 0)
     {
         <div class="card">
@@ -97,7 +104,7 @@ else if (_data is not null)
         <!-- Global Entry Frequency -->
         @if (_data.GlobalDailyEntries.Count > 0)
         {
-            <div class="card mb-4">
+            <div class="card mb-4" @key="@($"freq-{_loadKey}")">
                 <div class="card-header">
                     <h6 class="mb-0"><i class="bi bi-activity me-2"></i>@L["Dashboard_GlobalFrequency"]</h6>
                 </div>
@@ -118,16 +125,17 @@ else if (_data is not null)
         }
 
         <!-- Period Filter -->
-        <div class="row g-2 mb-4">
+        <div class="row g-2 mb-4 align-items-end">
             <div class="col-12 col-md-3">
                 <label class="form-label form-label-sm mb-1">
                     <i class="bi bi-calendar-range me-1"></i>@L["Dashboard_Period"]
                 </label>
-                <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeChanged">
+                <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeInput">
                     <option value="all">@L["Common_AllTime"]</option>
                     <option value="days">@L["Dashboard_LastNDays"]</option>
                     <option value="months">@L["Dashboard_LastNMonths"]</option>
                     <option value="years">@L["Dashboard_LastNYears"]</option>
+                    <option value="month">@L["Dashboard_SpecificMonth"]</option>
                     <option value="custom">@L["Dashboard_CustomRange"]</option>
                 </select>
             </div>
@@ -142,7 +150,17 @@ else if (_data is not null)
                            class="form-control form-control-sm"
                            min="1"
                            value="@_periodValue"
-                           @onchange="OnPeriodValueChanged" />
+                           @onchange="e => { if (int.TryParse(e.Value?.ToString(), out var v) && v > 0) _periodValue = v; }" />
+                </div>
+            }
+            else if (_periodMode == "month")
+            {
+                <div class="col-6 col-md-2">
+                    <label class="form-label form-label-sm mb-1">@L["Dashboard_Month"]</label>
+                    <input type="month"
+                           class="form-control form-control-sm"
+                           value="@_selectedMonth?.ToString("yyyy-MM")"
+                           @onchange="OnMonthInput" />
                 </div>
             }
             else if (_periodMode == "custom")
@@ -152,14 +170,44 @@ else if (_data is not null)
                     <input type="date"
                            class="form-control form-control-sm"
                            value="@_customFrom?.ToString("yyyy-MM-dd")"
-                           @onchange="OnCustomFromChanged" />
+                           @onchange="e => _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null" />
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
                     <input type="date"
                            class="form-control form-control-sm"
                            value="@_customTo?.ToString("yyyy-MM-dd")"
-                           @onchange="OnCustomToChanged" />
+                           @onchange="e => _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null" />
+                </div>
+            }
+
+            <div class="col-auto">
+                <button class="btn btn-primary btn-sm" @onclick="ApplyFiltersAsync" disabled="@(_loading || _applying)">
+                    @if (_applying)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-funnel me-1"></i>
+                    }
+                    @L["Dashboard_ApplyFilters"]
+                </button>
+            </div>
+            @if (_hasActiveFilters)
+            {
+                <div class="col-auto">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="ResetFiltersAsync" disabled="@(_loading || _applying)">
+                        @if (_applying)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                        }
+                        @L["Dashboard_ResetFilters"]
+                    </button>
                 </div>
             }
         </div>
@@ -210,6 +258,7 @@ else if (_data is not null)
         }
 
         <!-- Per-Action Stats -->
+        <div @key="@($"actions-{_loadKey}")">
         <h5 class="mb-3"><i class="bi bi-graph-up me-2"></i>@L["Dashboard_PerActionStats"]</h5>
 
         @if (FilteredActions.Count == 0)
@@ -247,6 +296,13 @@ else if (_data is not null)
                                 <i class="bi bi-fire me-1"></i>@action.Streak @(action.Streak != 1 ? L["Dashboard_DayPlural"] : L["Dashboard_Day"])
                             </span>
                         }
+                        @foreach (var bal in action.Balances)
+                        {
+                            <span class="badge @(bal.CurrentBalance >= 0 ? "bg-success" : "bg-danger") rounded-pill"
+                                  title="@bal.Label">
+                                <i class="bi bi-wallet2 me-1"></i>@FormatBalance(bal.CurrentBalance) @bal.Unit
+                            </span>
+                        }
                     </div>
                 </div>
 
@@ -258,7 +314,7 @@ else if (_data is not null)
                             <a href="/tracked-actions/@action.ActionId/edit" class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-pencil-square me-1"></i>@L["Dashboard_EditAction"]
                             </a>
-                            <a href="/entries/action/@action.ActionId" class="btn btn-outline-secondary btn-sm">
+                            <a href="@BuildEntriesUrl(action.ActionId)" class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-journal-text me-1"></i>@L["Dashboard_ViewEntries"]
                             </a>
                             <a href="/tracked-actions/@action.ActionId/entries/new?returnUrl=%2Fdashboard"
@@ -398,6 +454,7 @@ else if (_data is not null)
                 }
             </div>
         }
+        </div>
     }
 }
 
@@ -405,8 +462,12 @@ else if (_data is not null)
     [Parameter] public Guid? ActionIdParam { get; set; }
     [Inject] private DashboardService DashService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
+    @using Blazored.LocalStorage
+    [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
 
     private bool _loading = true;
+    private bool _applying;
+    private int _loadKey;
     private IReadOnlyList<string> _errors = [];
     private DashboardData? _data;
     private HashSet<Guid> _expandedActions = [];
@@ -418,10 +479,15 @@ else if (_data is not null)
     private int _periodValue = 30;
     private DateTime? _customFrom;
     private DateTime? _customTo;
+    private DateTime? _selectedMonth;
+
+    private bool _hasActiveFilters => _periodMode != "all";
 
     private List<(string Name, string Color)> _allTags = [];
 
     private ApexChartOptions<DailyCount> _globalFreqOptions = new();
+
+    private const string DashboardStorageKey = "traceon_dashboard_filters";
 
     private static ApexChartOptions<WeekBucket> BuildWeeklyOptions() => new()
     {
@@ -494,6 +560,14 @@ else if (_data is not null)
             : value.Value.ToString("F2");
     }
 
+    private static string FormatBalance(decimal value)
+    {
+        var prefix = value >= 0 ? "+" : "";
+        return value == Math.Truncate(value)
+            ? $"{prefix}{value:F0}"
+            : $"{prefix}{value:F2}";
+    }
+
     private List<ActionStats> FilteredActions => _data?.Actions
         .Where(a => _selectedTag is null || a.Tags.Any(t => t.Name == _selectedTag))
         .Where(a => string.IsNullOrEmpty(_selectedActionId) || a.ActionId.ToString() == _selectedActionId)
@@ -522,12 +596,23 @@ else if (_data is not null)
             _expandedActions.Add(ActionIdParam.Value);
         }
 
+        await RestoreFiltersAsync();
         await ReloadAsync();
     }
 
     private void OnActionFilterChanged(ChangeEventArgs e)
     {
         _selectedActionId = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void OnPeriodModeInput(ChangeEventArgs e)
+    {
+        _periodMode = e.Value?.ToString() ?? "all";
+    }
+
+    private void OnMonthInput(ChangeEventArgs e)
+    {
+        _selectedMonth = DateTime.TryParse(e.Value?.ToString() + "-01", out var d) ? d : null;
     }
 
     private (DateTime? From, DateTime? To) ResolveDateRange()
@@ -537,48 +622,83 @@ else if (_data is not null)
             "days" => (DateTime.UtcNow.AddDays(-_periodValue), null),
             "months" => (DateTime.UtcNow.AddMonths(-_periodValue), null),
             "years" => (DateTime.UtcNow.AddYears(-_periodValue), null),
+            "month" when _selectedMonth.HasValue => (_selectedMonth.Value, _selectedMonth.Value.AddMonths(1)),
             "custom" => (_customFrom, _customTo?.AddDays(1)),
             _ => (null, null)
         };
     }
 
-    private async Task OnPeriodModeChanged(ChangeEventArgs e)
+    private async Task ApplyFiltersAsync()
     {
-        _periodMode = e.Value?.ToString() ?? "all";
-        _periodValue = _periodMode switch
+        _applying = true;
+        await SaveFiltersAsync();
+        await ReloadDataAsync();
+        _applying = false;
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _applying = true;
+        _periodMode = "all";
+        _periodValue = 30;
+        _customFrom = null;
+        _customTo = null;
+        _selectedMonth = null;
+        try { await LocalStorage.RemoveItemAsync(DashboardStorageKey); } catch { }
+        await ReloadDataAsync();
+        _applying = false;
+    }
+
+    // ── Filter persistence ──
+
+    private async Task RestoreFiltersAsync()
+    {
+        try
         {
-            "days" => 30,
-            "months" => 1,
-            "years" => 1,
-            _ => _periodValue
-        };
-        if (_periodMode == "custom")
-        {
-            _customFrom = DateTime.Today.AddMonths(-1);
-            _customTo = DateTime.Today;
+            var state = await LocalStorage.GetItemAsync<DashboardFilterState>(DashboardStorageKey);
+            if (state is null) return;
+            if (state.PeriodMode is not null) _periodMode = state.PeriodMode;
+            if (state.PeriodValue.HasValue) _periodValue = state.PeriodValue.Value;
+            _customFrom = state.CustomFrom;
+            _customTo = state.CustomTo;
+            _selectedMonth = state.SelectedMonth;
         }
-        await ReloadAsync();
+        catch { /* best effort */ }
     }
 
-    private async Task OnPeriodValueChanged(ChangeEventArgs e)
+    private async Task SaveFiltersAsync()
     {
-        if (int.TryParse(e.Value?.ToString(), out var val) && val > 0)
+        try
         {
-            _periodValue = val;
-            await ReloadAsync();
+            await LocalStorage.SetItemAsync(DashboardStorageKey, new DashboardFilterState
+            {
+                PeriodMode = _periodMode,
+                PeriodValue = _periodValue,
+                CustomFrom = _customFrom,
+                CustomTo = _customTo,
+                SelectedMonth = _selectedMonth
+            });
         }
+        catch { /* best effort */ }
     }
 
-    private async Task OnCustomFromChanged(ChangeEventArgs e)
+    private sealed class DashboardFilterState
     {
-        _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
-        await ReloadAsync();
+        public string? PeriodMode { get; set; }
+        public int? PeriodValue { get; set; }
+        public DateTime? CustomFrom { get; set; }
+        public DateTime? CustomTo { get; set; }
+        public DateTime? SelectedMonth { get; set; }
     }
 
-    private async Task OnCustomToChanged(ChangeEventArgs e)
+    private string BuildEntriesUrl(Guid actionId)
     {
-        _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
-        await ReloadAsync();
+        var (from, to) = ResolveDateRange();
+        var url = $"/entries/action/{actionId}";
+        var queryParams = new List<string>();
+        if (from.HasValue) queryParams.Add($"from={from.Value:yyyy-MM-dd}");
+        if (to.HasValue) queryParams.Add($"to={to.Value:yyyy-MM-dd}");
+        return queryParams.Count > 0 ? $"{url}?{string.Join("&", queryParams)}" : url;
     }
 
     private async Task ReloadAsync()
@@ -586,10 +706,24 @@ else if (_data is not null)
         _loading = true;
         _errors = [];
 
+        await LoadDataCoreAsync();
+
+        _loading = false;
+    }
+
+    private async Task ReloadDataAsync()
+    {
+        _errors = [];
+        await LoadDataCoreAsync();
+    }
+
+    private async Task LoadDataCoreAsync()
+    {
         try
         {
             var (from, to) = ResolveDateRange();
             _data = await DashService.LoadAsync(from, to);
+            _loadKey++;
 
             _allTags = _data.Actions
                 .SelectMany(a => a.Tags)
@@ -602,8 +736,6 @@ else if (_data is not null)
         {
             _errors = [L["Dashboard_LoadFailed", ex.Message]];
         }
-
-        _loading = false;
     }
 
     private void ToggleAction(Guid actionId)

@@ -17,11 +17,15 @@ public sealed class TemplateService(HttpClient http)
         }
     }
 
-    public async Task<(bool Success, TemplateInstallResult? Result)> InstallAsync(string templateId)
+    public async Task<(bool Success, TemplateInstallResult? Result)> InstallAsync(string templateId, string? language = null)
     {
         try
         {
-            var response = await http.PostAsync($"/api/templates/{Uri.EscapeDataString(templateId)}/install", null);
+            var url = $"/api/templates/{Uri.EscapeDataString(templateId)}/install";
+            if (!string.IsNullOrEmpty(language))
+                url += $"?lang={Uri.EscapeDataString(language)}";
+
+            var response = await http.PostAsync(url, null);
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<TemplateInstallResult>();

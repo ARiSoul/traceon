@@ -77,6 +77,7 @@ else
 
 @code {
     [Inject] private TemplateService TemplateService { get; set; } = default!;
+    [Inject] private LocalizationService LocalizationService { get; set; } = default!;
 
     private IReadOnlyList<TemplatePackResponse> _templates = [];
     private IReadOnlyList<string> _errors = [];
@@ -97,7 +98,7 @@ else
         _successMessage = null;
         StateHasChanged();
 
-        var (success, result) = await TemplateService.InstallAsync(templateId);
+        var (success, result) = await TemplateService.InstallAsync(templateId, LocalizationService.CurrentLanguage);
 
         if (success && result is not null)
         {

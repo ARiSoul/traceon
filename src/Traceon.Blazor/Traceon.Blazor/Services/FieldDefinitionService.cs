@@ -52,6 +52,27 @@ public sealed class FieldDefinitionService(HttpClient http)
         return await ToResultAsync(response);
     }
 
+    public async Task<(bool Success, string? UpdatedValues)> AppendDropdownValueAsync(Guid fieldDefinitionId, string value)
+    {
+        try
+        {
+            var response = await http.PostAsJsonAsync(
+                $"/api/field-definitions/{fieldDefinitionId}/dropdown-values",
+                new { Value = value });
+
+            if (response.IsSuccessStatusCode)
+            {
+                var updated = await response.Content.ReadFromJsonAsync<string>();
+                return (true, updated);
+            }
+            return (false, null);
+        }
+        catch
+        {
+            return (false, null);
+        }
+    }
+
     private static async Task<(bool Success, IReadOnlyList<string> Errors)> ToResultAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)

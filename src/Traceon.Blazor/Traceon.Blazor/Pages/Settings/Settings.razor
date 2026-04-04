@@ -368,8 +368,9 @@
                             <tr>
                                 <th style="width: 160px;">@L["Settings_When"]</th>
                                 <th style="width: 160px;">@L["Settings_ActionCol"]</th>
-                                <th>@L["Settings_Details"]</th>
+                                <th style="width: 300px;">@L["Settings_Details"]</th>
                                 <th style="width: 130px;">@L["Settings_IpAddress"]</th>
+                                <th>@L["Settings_UserAgent"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -389,6 +390,7 @@
                                         @(log.Details ?? "—")
                                     </td>
                                     <td class="small text-muted font-monospace">@(log.IpAddress ?? "—")</td>
+                                    <td class="small text-muted text-truncate" style="max-width: 200px;" title="@log.UserAgent">@(log.UserAgent ?? "—")</td>
                                 </tr>
                             }
                         </tbody>

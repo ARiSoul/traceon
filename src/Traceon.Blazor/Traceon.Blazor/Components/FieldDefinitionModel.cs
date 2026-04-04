@@ -37,7 +37,8 @@ public sealed class FieldDefinitionModel
     public string[] ParsedDropdownValues =>
         string.IsNullOrWhiteSpace(DropdownValues)
             ? Array.Empty<string>()
-            : DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            : DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
 
     public void LoadTypedDefaults(decimal? apiMin, decimal? apiMax)
     {

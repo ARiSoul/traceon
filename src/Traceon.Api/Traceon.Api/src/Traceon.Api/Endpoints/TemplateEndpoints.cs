@@ -29,6 +29,7 @@ internal static class TemplateEndpoints
 
     private static async Task<IResult> InstallTemplateAsync(
         string id,
+        string? lang,
         IHttpContextAccessor httpContextAccessor,
         TemplateInstallService installService)
     {
@@ -38,7 +39,7 @@ internal static class TemplateEndpoints
         var pack = TemplatePackCatalog.GetById(id);
         if (pack is null) return TypedResults.NotFound();
 
-        var result = await installService.InstallAsync(userId, pack);
+        var result = await installService.InstallAsync(userId, pack, lang);
         return TypedResults.Ok(result);
     }
 

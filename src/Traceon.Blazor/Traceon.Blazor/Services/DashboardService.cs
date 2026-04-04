@@ -49,7 +49,25 @@ public sealed class DashboardService(
             var entries = allEntries.Where(e => e.TrackedActionId == action.Id).ToList();
             fieldsByAction.TryGetValue(action.Id, out var fields);
 
-            actionStats.Add(BuildActionStats(action, entries, fields ?? []));
+            var stats = BuildActionStats(action, entries, fields ?? []);
+
+            // Compute running balances from SignedSum analytics rules
+            if (fields is { Count: > 0 } && entries.Count > 0)
+            {
+                try
+                {
+                    var rules = await analyticsRuleService.GetByTrackedActionAsync(action.Id);
+                    var signedSumRules = rules.Where(r => r.Aggregation == AnalyticsAggregation.SignedSum).ToList();
+                    if (signedSumRules.Count > 0)
+                    {
+                        var fieldMap = fields.ToDictionary(f => f.Id);
+                        stats.Balances = BuildBalanceSummaries(signedSumRules, entries, fieldMap);
+                    }
+                }
+                catch { /* analytics are optional */ }
+            }
+
+            actionStats.Add(stats);
         }
 
         return new DashboardData
@@ -171,6 +189,7 @@ public sealed class DashboardService(
             {
                 var fieldMap = fields.ToDictionary(f => f.Id);
                 detail.CrossFieldResults = BuildCrossFieldResults(rules, entries, fieldMap);
+                detail.RunningBalances = BuildRunningBalances(rules, entries, fieldMap);
             }
         }
         catch
@@ -316,6 +335,133 @@ public sealed class DashboardService(
         }
 
         return results;
+    }
+
+    private static List<RunningBalanceSeries> BuildRunningBalances(
+        List<FieldAnalyticsRuleResponse> rules,
+        List<ActionEntryResponse> entries,
+        Dictionary<Guid, ActionFieldResponse> fieldMap)
+    {
+        var balances = new List<RunningBalanceSeries>();
+
+        // Only process SignedSum rules
+        foreach (var rule in rules.Where(r => r.Aggregation == AnalyticsAggregation.SignedSum))
+        {
+            if (!fieldMap.TryGetValue(rule.MeasureFieldId, out var measureField))
+                continue;
+
+            var isNumeric = measureField.FieldType is FieldType.Integer or FieldType.Decimal;
+            if (!isNumeric) continue;
+
+            HashSet<string>? negativeValueSet = null;
+            if (rule.NegativeValues is not null)
+            {
+                negativeValueSet = rule.NegativeValues
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
+
+            // Build signed values per entry, ordered chronologically
+            var signedEntries = entries
+                .OrderBy(e => e.OccurredAtUtc)
+                .Select(e =>
+                {
+                    var measureVal = e.FieldValues
+                        .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
+                    var signVal = rule.SignFieldId.HasValue
+                        ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.SignFieldId.Value)?.Value
+                        : null;
+                    return (Date: e.OccurredAtUtc, MeasureValue: measureVal, SignValue: signVal);
+                })
+                .Where(x => decimal.TryParse(x.MeasureValue, out _))
+                .ToList();
+
+            if (signedEntries.Count == 0) continue;
+
+            var points = new List<NumericDataPoint>();
+            decimal runningTotal = 0;
+
+            foreach (var entry in signedEntries)
+            {
+                var val = decimal.Parse(entry.MeasureValue!);
+                if (negativeValueSet is not null && entry.SignValue is not null &&
+                    negativeValueSet.Contains(entry.SignValue))
+                {
+                    val = -val;
+                }
+                runningTotal += val;
+                points.Add(new NumericDataPoint(entry.Date, runningTotal));
+            }
+
+            var unit = measureField.Unit is not null && measureField.Unit != "UN"
+                ? measureField.Unit : "";
+
+            var label = rule.Label ?? measureField.Name;
+
+            balances.Add(new RunningBalanceSeries
+            {
+                Label = label,
+                Unit = unit,
+                CurrentBalance = runningTotal,
+                Points = points
+            });
+        }
+
+        return balances;
+    }
+
+    private static List<BalanceSummary> BuildBalanceSummaries(
+        List<FieldAnalyticsRuleResponse> signedSumRules,
+        List<ActionEntryResponse> entries,
+        Dictionary<Guid, ActionFieldResponse> fieldMap)
+    {
+        var summaries = new List<BalanceSummary>();
+
+        foreach (var rule in signedSumRules)
+        {
+            if (!fieldMap.TryGetValue(rule.MeasureFieldId, out var measureField))
+                continue;
+            if (measureField.FieldType is not (FieldType.Integer or FieldType.Decimal))
+                continue;
+
+            HashSet<string>? negativeValueSet = null;
+            if (rule.NegativeValues is not null)
+            {
+                negativeValueSet = rule.NegativeValues
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
+
+            decimal total = 0;
+            foreach (var e in entries)
+            {
+                var measureVal = e.FieldValues
+                    .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
+                if (!decimal.TryParse(measureVal, out var val)) continue;
+
+                var signVal = rule.SignFieldId.HasValue
+                    ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.SignFieldId.Value)?.Value
+                    : null;
+
+                if (negativeValueSet is not null && signVal is not null &&
+                    negativeValueSet.Contains(signVal))
+                    val = -val;
+
+                total += val;
+            }
+
+            var unit = measureField.Unit is not null && measureField.Unit != "UN"
+                ? measureField.Unit : "";
+
+            summaries.Add(new BalanceSummary
+            {
+                Label = rule.Label ?? measureField.Name,
+                Unit = unit,
+                CurrentBalance = total
+            });
+        }
+
+        return summaries;
     }
 
     private static List<NumericDataPoint> AggregateTrendPoints(
@@ -590,6 +736,14 @@ public sealed class ActionStats
     public List<WeekBucket> WeeklyActivity { get; init; } = [];
     public List<FieldStats> FieldStats { get; init; } = [];
     public List<NumericFieldSeries> NumericSeries { get; init; } = [];
+    public List<BalanceSummary> Balances { get; set; } = [];
+}
+
+public sealed class BalanceSummary
+{
+    public required string Label { get; init; }
+    public required string Unit { get; init; }
+    public required decimal CurrentBalance { get; init; }
 }
 
 public sealed record WeekBucket(DateTime WeekStart, int Count);
@@ -638,6 +792,15 @@ public sealed class ActionDetailData
     public List<BooleanFieldSeries> BooleanSeries { get; init; } = [];
     public List<DropdownFieldSeries> DropdownSeries { get; init; } = [];
     public List<CrossFieldResult> CrossFieldResults { get; set; } = [];
+    public List<RunningBalanceSeries> RunningBalances { get; set; } = [];
+}
+
+public sealed class RunningBalanceSeries
+{
+    public required string Label { get; init; }
+    public required string Unit { get; init; }
+    public decimal CurrentBalance { get; init; }
+    public List<NumericDataPoint> Points { get; init; } = [];
 }
 
 public sealed record DailyCount(DateTime Date, int Count);

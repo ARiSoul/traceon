@@ -19,6 +19,7 @@ internal static class FieldDefinitionEndpoints
         group.MapPut("/{id:guid}", UpdateAsync).AddEndpointFilter<ValidationFilter<UpdateFieldDefinitionRequest>>();
         group.MapDelete("/{id:guid}", DeleteAsync);
         group.MapPost("/{id:guid}/restore", RestoreAsync);
+        group.MapPost("/{id:guid}/dropdown-values", AppendDropdownValueAsync);
 
         return group;
     }
@@ -65,4 +66,11 @@ internal static class FieldDefinitionEndpoints
         IFieldDefinitionService service,
         CancellationToken cancellationToken)
         => (await service.RestoreAsync(id, cancellationToken)).ToHttpResult();
+
+    private static async Task<IResult> AppendDropdownValueAsync(
+        Guid id,
+        AppendDropdownValueRequest request,
+        IFieldDefinitionService service,
+        CancellationToken cancellationToken)
+        => (await service.AppendDropdownValueAsync(id, request.Value, cancellationToken)).ToHttpResult();
 }

@@ -148,13 +148,44 @@ else
                                     break;
 
                                 case FieldType.Dropdown:
-                                    <select class="form-select" @bind="model.TextValue">
-                                        <option value="">@L["Entry_Select"]</option>
-                                        @foreach (var opt in model.DropdownOptions)
-                                        {
-                                            <option value="@opt">@opt</option>
-                                        }
-                                    </select>
+                                    <div class="input-group">
+                                        <select class="form-select" @bind="model.TextValue">
+                                            <option value="">@L["Entry_Select"]</option>
+                                            @foreach (var opt in model.DropdownOptions)
+                                            {
+                                                <option value="@opt">@opt</option>
+                                            }
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button"
+                                                title="@L["Dropdown_AddNew"]"
+                                                @onclick="() => ToggleQuickAdd(model.Field.Id)">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                    </div>
+                                    @if (_quickAddFieldId == model.Field.Id)
+                                    {
+                                        <div class="input-group input-group-sm mt-1">
+                                            <input type="text" class="form-control" placeholder="@L["Dropdown_NewValue"]"
+                                                   @bind="_quickAddValue" @bind:event="oninput"
+                                                   @onkeydown="@(e => OnQuickAddKeyDown(e, model))" />
+                                            <button class="btn btn-success" type="button"
+                                                    disabled="@(string.IsNullOrWhiteSpace(_quickAddValue) || _quickAddSaving)"
+                                                    @onclick="() => QuickAddDropdownValueAsync(model)">
+                                                @if (_quickAddSaving)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm"></span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-check-lg"></i>
+                                                }
+                                            </button>
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                    @onclick="() => _quickAddFieldId = null">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                    }
                                     break;
                             }
                         </div>
@@ -190,6 +221,7 @@ else
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
     [Inject] private ActionFieldService FieldService { get; set; } = default!;
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
+    [Inject] private FieldDefinitionService FieldDefService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     [SupplyParameterFromQuery(Name = "returnUrl")]
@@ -200,6 +232,11 @@ else
     private bool _saving;
     private IReadOnlyList<string> _errors = [];
     private string? _actionName;
+
+    // Quick-add dropdown
+    private Guid? _quickAddFieldId;
+    private string _quickAddValue = string.Empty;
+    private bool _quickAddSaving;
 
     private string _returnUrl = "/";
     private DateTime _occurredLocal;
@@ -341,10 +378,21 @@ else
         public DateTime? DateValue { get; set; }
         public bool BoolValue { get; set; }
 
-        public string[] DropdownOptions =>
-            string.IsNullOrWhiteSpace(Field.DropdownValues)
+        private string[]? _dropdownOverride;
+
+        public string[] DropdownOptions => _dropdownOverride
+            ?? (string.IsNullOrWhiteSpace(Field.DropdownValues)
                 ? []
-                : Field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                : Field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray());
+
+        public void SetDropdownValues(string csv)
+        {
+            _dropdownOverride = string.IsNullOrWhiteSpace(csv)
+                ? []
+                : csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
+        }
 
         public void LoadValue(string? value)
         {
@@ -383,5 +431,43 @@ else
             FieldType.Date => DateValue?.ToString("yyyy-MM-dd"),
             _ => TextValue
         };
+    }
+
+    private void ToggleQuickAdd(Guid fieldId)
+    {
+        if (_quickAddFieldId == fieldId)
+        {
+            _quickAddFieldId = null;
+        }
+        else
+        {
+            _quickAddFieldId = fieldId;
+            _quickAddValue = string.Empty;
+        }
+    }
+
+    private async Task QuickAddDropdownValueAsync(EntryFieldModel model)
+    {
+        if (string.IsNullOrWhiteSpace(_quickAddValue)) return;
+
+        _quickAddSaving = true;
+        var (success, updatedCsv) = await FieldDefService.AppendDropdownValueAsync(
+            model.Field.FieldDefinitionId, _quickAddValue.Trim());
+
+        if (success && updatedCsv is not null)
+        {
+            model.SetDropdownValues(updatedCsv);
+            model.TextValue = _quickAddValue.Trim();
+            _quickAddFieldId = null;
+            _quickAddValue = string.Empty;
+        }
+
+        _quickAddSaving = false;
+    }
+
+    private async Task OnQuickAddKeyDown(KeyboardEventArgs e, EntryFieldModel model)
+    {
+        if (e.Key == "Enter")
+            await QuickAddDropdownValueAsync(model);
     }
 }

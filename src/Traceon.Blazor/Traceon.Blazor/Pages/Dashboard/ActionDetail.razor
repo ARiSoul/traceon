@@ -18,21 +18,32 @@
         <a href="/dashboard" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>@L["Analytics_BackToDashboard"]
         </a>
+        <a href="/tracked-actions/@ActionId/edit" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil-square me-1"></i>@L["Dashboard_EditAction"]
+        </a>
+        <a href="@BuildEntriesUrl()" class="btn btn-outline-secondary">
+            <i class="bi bi-journal-text me-1"></i>@L["Dashboard_ViewEntries"]
+        </a>
+        <a href="/tracked-actions/@ActionId/entries/new?returnUrl=%2Fdashboard%2Faction%2F@ActionId%2Fdetail"
+           class="btn btn-outline-primary">
+            <i class="bi bi-plus-circle me-1"></i>@L["Dashboard_NewEntry"]
+        </a>
     </div>
 </div>
 
 <ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
 
 <!-- Period Filter -->
-<div class="row g-2 mb-4">
+<div class="row g-2 mb-4 align-items-end">
     <div class="col-12 col-md-3">
         <label class="form-label form-label-sm mb-1">
             <i class="bi bi-calendar-range me-1"></i>@L["Dashboard_Period"]
         </label>
-        <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeChanged">
+        <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeInput">
             <option value="all">@L["Common_AllTime"]</option>
             <option value="days">@L["Dashboard_LastNDays"]</option>
             <option value="months">@L["Dashboard_LastNMonths"]</option>
+            <option value="month">@L["Dashboard_SpecificMonth"]</option>
             <option value="custom">@L["Dashboard_CustomRange"]</option>
         </select>
     </div>
@@ -43,7 +54,17 @@
                 @(_periodMode == "days" ? L["Dashboard_Days"] : L["Dashboard_Months"])
             </label>
             <input type="number" class="form-control form-control-sm" min="1"
-                   value="@_periodValue" @onchange="OnPeriodValueChanged" />
+                   value="@_periodValue" @onchange="e => { if (int.TryParse(e.Value?.ToString(), out var v) && v > 0) _periodValue = v; }" />
+        </div>
+    }
+    else if (_periodMode == "month")
+    {
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Dashboard_Month"]</label>
+            <input type="month"
+                   class="form-control form-control-sm"
+                   value="@_selectedMonth?.ToString("yyyy-MM")"
+                   @onchange="OnMonthInput" />
         </div>
     }
     else if (_periodMode == "custom")
@@ -51,12 +72,41 @@
         <div class="col-6 col-md-2">
             <label class="form-label form-label-sm mb-1">@L["Dashboard_From"]</label>
             <input type="date" class="form-control form-control-sm"
-                   value="@_customFrom?.ToString("yyyy-MM-dd")" @onchange="OnCustomFromChanged" />
+                   value="@_customFrom?.ToString("yyyy-MM-dd")" @onchange="e => _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null" />
         </div>
         <div class="col-6 col-md-2">
             <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
             <input type="date" class="form-control form-control-sm"
-                   value="@_customTo?.ToString("yyyy-MM-dd")" @onchange="OnCustomToChanged" />
+                   value="@_customTo?.ToString("yyyy-MM-dd")" @onchange="e => _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null" />
+        </div>
+    }
+    <div class="col-auto">
+        <button class="btn btn-primary btn-sm" @onclick="ApplyFiltersAsync" disabled="@(_loading || _applying)">
+            @if (_applying)
+            {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            else
+            {
+                <i class="bi bi-funnel me-1"></i>
+            }
+            @L["Dashboard_ApplyFilters"]
+        </button>
+    </div>
+    @if (_hasActiveFilters)
+    {
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary btn-sm" @onclick="ResetFiltersAsync" disabled="@(_loading || _applying)">
+                @if (_applying)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                else
+                {
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                }
+                @L["Dashboard_ResetFilters"]
+            </button>
         </div>
     }
 </div>
@@ -77,6 +127,13 @@ else if (_data is null)
 }
 else
 {
+    @if (_applying)
+    {
+        <div class="text-center mb-3">
+            <span class="spinner-border spinner-border-sm text-primary me-1"></span>
+            <small class="text-muted">@L["Common_Loading"]</small>
+        </div>
+    }
     <!-- Key Metrics -->
     <div class="row row-cols-2 row-cols-md-5 g-3 mb-4">
         <div class="col">
@@ -126,7 +183,7 @@ else
     <!-- Entry Frequency Chart -->
     @if (_data.DailyEntries.Count > 0)
     {
-        <div class="card mb-4">
+        <div class="card mb-4" @key="@($"freq-{_loadKey}")">
             <div class="card-header">
                 <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>@L["Analytics_EntryFrequency"]</h6>
             </div>
@@ -150,7 +207,7 @@ else
     <!-- Numeric Field Trend Charts -->
     @foreach (var series in _data.NumericSeries)
     {
-        <div class="card mb-4">
+        <div class="card mb-4" @key="@($"num-{series.Name}-{_loadKey}")">
             <div class="card-header">
                 <h6 class="mb-0">
                     <i class="bi bi-graph-up me-2"></i>@series.Name
@@ -183,7 +240,7 @@ else
     <!-- Boolean Field Charts -->
     @foreach (var series in _data.BooleanSeries)
     {
-        <div class="card mb-4">
+        <div class="card mb-4" @key="@($"bool-{series.Name}-{_loadKey}")">
             <div class="card-header">
                 <h6 class="mb-0"><i class="bi bi-toggles me-2"></i>@series.Name</h6>
             </div>
@@ -213,7 +270,7 @@ else
     <!-- Dropdown Distribution Charts -->
     @foreach (var series in _data.DropdownSeries)
     {
-        <div class="card mb-4">
+        <div class="card mb-4" @key="@($"dd-{series.Name}-{_loadKey}")">
             <div class="card-header">
                 <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>@series.Name @L["Analytics_Distribution"]</h6>
             </div>
@@ -241,7 +298,7 @@ else
         </h5>
         <p class="text-muted small mb-3">@L["Analytics_CrossFieldHint"]</p>
 
-        <div class="row g-4 mb-4">
+        <div class="row g-4 mb-4" @key="@($"cross-{_loadKey}")">
             @foreach (var result in _data.CrossFieldResults)
             {
                 <div class="col-12 col-lg-6">
@@ -348,6 +405,38 @@ else
         </div>
     }
 
+    <!-- Running Balance Charts -->
+    @foreach (var balance in _data.RunningBalances)
+    {
+        <div class="card mb-4" @key="@($"bal-{balance.Label}-{_loadKey}")">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up-arrow me-2"></i>@balance.Label — @L["Analytics_Balance"]
+                    @if (!string.IsNullOrEmpty(balance.Unit))
+                    {
+                        <span class="badge bg-info ms-1">@balance.Unit</span>
+                    }
+                </h6>
+                <span class="badge @(balance.CurrentBalance >= 0 ? "bg-success" : "bg-danger") fs-6">
+                    @L["Analytics_Balance"]: @FormatNumeric(balance.CurrentBalance, false) @balance.Unit
+                </span>
+            </div>
+            <div class="card-body">
+                <ApexChart TItem="NumericDataPoint"
+                           Options="BuildBalanceOptions(balance)"
+                           Height="250">
+                    <ApexPointSeries TItem="NumericDataPoint"
+                                    Items="balance.Points"
+                                    SeriesType="SeriesType.Area"
+                                    Name="@L["Analytics_Balance"]"
+                                    XValue="p => p.Date"
+                                    YValue="p => p.Value"
+                                    OrderBy="p => p.X" />
+                </ApexChart>
+            </div>
+        </div>
+    }
+
     <!-- Field Summary Stats (reuse existing pattern) -->
     @if (_data.Stats.FieldStats.Count > 0)
     {
@@ -412,9 +501,13 @@ else
 @code {
     [Parameter] public Guid ActionId { get; set; }
     [Inject] private DashboardService DashService { get; set; } = default!;
+    @using Blazored.LocalStorage
+    [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
 
     private ActionDetailData? _data;
     private bool _loading = true;
+    private bool _applying;
+    private int _loadKey;
     private IReadOnlyList<string> _errors = [];
     private ApexChart<DailyCount>? _frequencyChart;
 
@@ -422,13 +515,29 @@ else
     private int _periodValue = 90;
     private DateTime? _customFrom;
     private DateTime? _customTo;
+    private DateTime? _selectedMonth;
+
+    private bool _hasActiveFilters => _periodMode != "all";
 
     private ApexChartOptions<DailyCount> _frequencyOptions = new();
+
+    private string DetailStorageKey => $"traceon_actiondetail_{ActionId}";
 
     protected override async Task OnInitializedAsync()
     {
         BuildFrequencyOptions();
+        await RestoreFiltersAsync();
         await LoadAsync();
+    }
+
+    private void OnPeriodModeInput(ChangeEventArgs e)
+    {
+        _periodMode = e.Value?.ToString() ?? "all";
+    }
+
+    private void OnMonthInput(ChangeEventArgs e)
+    {
+        _selectedMonth = DateTime.TryParse(e.Value?.ToString() + "-01", out var d) ? d : null;
     }
 
     private void BuildFrequencyOptions()
@@ -542,6 +651,14 @@ else
         };
     }
 
+    private static readonly List<string> CrossFieldPalette = new()
+    {
+        "#008FFB", "#00E396", "#FEB019", "#FF4560", "#775DD0",
+        "#3F51B5", "#03A9F4", "#4CAF50", "#F9CE1D", "#FF6384",
+        "#33B2DF", "#546E7A", "#D4526E", "#13D8AA", "#A5978B",
+        "#4ECDC4", "#C7F464", "#81D4FA", "#FD6A6A", "#2B908F"
+    };
+
     private ApexChartOptions<CrossFieldGroup> BuildCrossFieldBarOptions(CrossFieldResult result)
     {
         var yTitle = result.Unit is not null && result.Unit != "UN"
@@ -559,11 +676,12 @@ else
                 Title = new AxisTitle { Text = yTitle },
                 DecimalsInFloat = result.Aggregation == AnalyticsAggregation.Count ? 0 : 2
             }],
-            Colors = ["#6f42c1"],
+            Colors = CrossFieldPalette,
             PlotOptions = new PlotOptions
             {
                 Bar = new PlotOptionsBar { ColumnWidth = "60%", Distributed = true }
-            }
+            },
+            Legend = new Legend { Show = false }
         };
     }
 
@@ -572,8 +690,34 @@ else
         return new ApexChartOptions<CrossFieldGroup>
         {
             Chart = new Chart { },
+            Colors = CrossFieldPalette,
             Legend = new Legend { Position = LegendPosition.Bottom }
         };
+    }
+
+    private ApexChartOptions<NumericDataPoint> BuildBalanceOptions(RunningBalanceSeries balance)
+    {
+        var yTitle = !string.IsNullOrEmpty(balance.Unit) ? balance.Unit : L["Analytics_Balance"].Value;
+        return new ApexChartOptions<NumericDataPoint>
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = true },
+                Zoom = new Zoom { Enabled = true }
+            },
+            Xaxis = new XAxis { Type = XAxisType.Datetime },
+            Yaxis = [new YAxis { Title = new AxisTitle { Text = yTitle }, DecimalsInFloat = 2 }],
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Fill = new Fill { Opacity = new Opacity(0.25) },
+            Colors = [balance.CurrentBalance >= 0 ? "#198754" : "#dc3545"],
+            Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy HH:mm" } }
+        };
+    }
+
+    private static string FormatNumeric(decimal value, bool isInteger)
+    {
+        if (isInteger) return ((int)value).ToString("N0");
+        return value == Math.Truncate(value) ? $"{value:N0}" : $"{value:N2}";
     }
 
     private string FormatAggregationLabel(AnalyticsAggregation agg) => agg switch
@@ -601,6 +745,7 @@ else
     {
         "days" => (DateTime.UtcNow.AddDays(-_periodValue), null),
         "months" => (DateTime.UtcNow.AddMonths(-_periodValue), null),
+        "month" when _selectedMonth.HasValue => (_selectedMonth.Value, _selectedMonth.Value.AddMonths(1)),
         "custom" => (_customFrom, _customTo?.AddDays(1)),
         _ => (null, null)
     };
@@ -609,48 +754,95 @@ else
     {
         _loading = true;
         _errors = [];
+        await LoadDataCoreAsync();
+        _loading = false;
+    }
+
+    private async Task LoadDataCoreAsync()
+    {
         try
         {
             var (from, to) = ResolveDateRange();
             _data = await DashService.LoadActionDetailAsync(ActionId, from, to);
+            _loadKey++;
         }
         catch (Exception ex)
         {
             _errors = [L["Analytics_LoadFailed", ex.Message]];
         }
-        _loading = false;
     }
 
-    private async Task OnPeriodModeChanged(ChangeEventArgs e)
+    private async Task ApplyFiltersAsync()
     {
-        _periodMode = e.Value?.ToString() ?? "all";
-        if (_periodMode == "custom")
+        _applying = true;
+        await SaveFiltersAsync();
+        await LoadDataCoreAsync();
+        _applying = false;
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _applying = true;
+        _periodMode = "all";
+        _periodValue = 90;
+        _customFrom = null;
+        _customTo = null;
+        _selectedMonth = null;
+        try { await LocalStorage.RemoveItemAsync(DetailStorageKey); } catch { }
+        await LoadDataCoreAsync();
+        _applying = false;
+    }
+
+    // ── Filter persistence ──
+
+    private async Task RestoreFiltersAsync()
+    {
+        try
         {
-            _customFrom = DateTime.Today.AddMonths(-3);
-            _customTo = DateTime.Today;
+            var state = await LocalStorage.GetItemAsync<ActionDetailFilterState>(DetailStorageKey);
+            if (state is null) return;
+            if (state.PeriodMode is not null) _periodMode = state.PeriodMode;
+            if (state.PeriodValue.HasValue) _periodValue = state.PeriodValue.Value;
+            _customFrom = state.CustomFrom;
+            _customTo = state.CustomTo;
+            _selectedMonth = state.SelectedMonth;
         }
-        await LoadAsync();
+        catch { /* best effort */ }
     }
 
-    private async Task OnPeriodValueChanged(ChangeEventArgs e)
+    private async Task SaveFiltersAsync()
     {
-        if (int.TryParse(e.Value?.ToString(), out var val) && val > 0)
+        try
         {
-            _periodValue = val;
-            await LoadAsync();
+            await LocalStorage.SetItemAsync(DetailStorageKey, new ActionDetailFilterState
+            {
+                PeriodMode = _periodMode,
+                PeriodValue = _periodValue,
+                CustomFrom = _customFrom,
+                CustomTo = _customTo,
+                SelectedMonth = _selectedMonth
+            });
         }
+        catch { /* best effort */ }
     }
 
-    private async Task OnCustomFromChanged(ChangeEventArgs e)
+    private sealed class ActionDetailFilterState
     {
-        _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
-        await LoadAsync();
+        public string? PeriodMode { get; set; }
+        public int? PeriodValue { get; set; }
+        public DateTime? CustomFrom { get; set; }
+        public DateTime? CustomTo { get; set; }
+        public DateTime? SelectedMonth { get; set; }
     }
 
-    private async Task OnCustomToChanged(ChangeEventArgs e)
+    private string BuildEntriesUrl()
     {
-        _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
-        await LoadAsync();
+        var (from, to) = ResolveDateRange();
+        var url = $"/entries/action/{ActionId}";
+        var queryParams = new List<string>();
+        if (from.HasValue) queryParams.Add($"from={from.Value:yyyy-MM-dd}");
+        if (to.HasValue) queryParams.Add($"to={to.Value:yyyy-MM-dd}");
+        return queryParams.Count > 0 ? $"{url}?{string.Join("&", queryParams)}" : url;
     }
 
     private string FormatGap(double? days)

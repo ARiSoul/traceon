@@ -141,4 +141,39 @@ public sealed class FieldDefinitionService(
         logger.FieldDefinitionRestored(id);
         return Result.Success();
     }
+
+    public async Task<Result<string>> AppendDropdownValueAsync(Guid id, string value, CancellationToken cancellationToken = default)
+    {
+        var entity = await repository.GetByIdAsync(id, cancellationToken);
+
+        if (entity is null || entity.UserId != currentUser.UserId)
+        {
+            logger.FieldDefinitionNotFound(id);
+            return Result<string>.Failure($"Field definition with ID '{id}' was not found.");
+        }
+
+        var trimmed = value.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+            return Result<string>.Failure("Value cannot be empty.");
+
+        var existing = string.IsNullOrWhiteSpace(entity.DropdownValues)
+            ? []
+            : entity.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (existing.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+            return Result<string>.Success(entity.DropdownValues!);
+
+        var updated = existing.Length > 0
+            ? $"{entity.DropdownValues},{trimmed}"
+            : trimmed;
+
+        entity.Update(
+            entity.DefaultName, entity.Type, entity.DefaultDescription,
+            updated, entity.DefaultMaxValue, entity.DefaultMinValue,
+            entity.DefaultIsRequired, entity.DefaultValue, entity.Unit);
+
+        await repository.UpdateAsync(entity, cancellationToken);
+
+        return Result<string>.Success(updated);
+    }
 }

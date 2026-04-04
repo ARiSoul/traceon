@@ -136,6 +136,7 @@
                         {
                             <QuickTrackCard Action="action"
                                             Highlighted="action.Name == _loggedActionName"
+                                            Balances="@(_balances.GetValueOrDefault(action.Id) ?? [])"
                                             OnTrack="OpenTrackModal" />
                         }
                     </div>
@@ -169,10 +170,13 @@
 @code {
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
+    [Inject] private ActionFieldService FieldService { get; set; } = default!;
+    [Inject] private FieldAnalyticsRuleService AnalyticsRuleService { get; set; } = default!;
     [Inject] private TemplateService TemplateService { get; set; } = default!;
     [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
 
     private List<TrackedActionResponse> _actions = [];
+    private Dictionary<Guid, List<BalanceSummary>> _balances = [];
     private IReadOnlyList<string> _errors = [];
     private bool _loading = true;
     private string? _loggedActionName;
@@ -200,6 +204,10 @@
             if (_actions.Count == 0)
             {
                 _templates = await TemplateService.GetTemplatesAsync();
+            }
+            else
+            {
+                _ = LoadBalancesAsync();
             }
         }
         _loading = false;
@@ -273,5 +281,83 @@
             _errors = errors;
 
         _selectedAction = null;
+    }
+
+    private async Task LoadBalancesAsync()
+    {
+        try
+        {
+            var actionsWithFields = _actions.Where(a => a.FieldCount > 0).ToList();
+            foreach (var action in actionsWithFields)
+            {
+                var rules = await AnalyticsRuleService.GetByTrackedActionAsync(action.Id);
+                var signedSumRules = rules
+                    .Where(r => r.Aggregation == AnalyticsAggregation.SignedSum)
+                    .ToList();
+
+                if (signedSumRules.Count == 0) continue;
+
+                var fields = await FieldService.GetByTrackedActionAsync(action.Id);
+                var fieldMap = fields.ToDictionary(f => f.Id);
+
+                var entryRequest = new DataGridRequest(1, 10_000, "OccurredAtUtc", false, null);
+                var entryResult = await EntryService.QueryAsync(entryRequest, null,
+                    $"TrackedActionId eq {action.Id}");
+                var entries = entryResult.Items.ToList();
+                if (entries.Count == 0) continue;
+
+                var actionBalances = new List<BalanceSummary>();
+                foreach (var rule in signedSumRules)
+                {
+                    if (!fieldMap.TryGetValue(rule.MeasureFieldId, out var measureField))
+                        continue;
+                    if (measureField.FieldType is not (FieldType.Integer or FieldType.Decimal))
+                        continue;
+
+                    HashSet<string>? negativeValueSet = null;
+                    if (rule.NegativeValues is not null)
+                    {
+                        negativeValueSet = rule.NegativeValues
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    }
+
+                    decimal total = 0;
+                    foreach (var e in entries)
+                    {
+                        var measureVal = e.FieldValues
+                            .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
+                        if (!decimal.TryParse(measureVal, out var val)) continue;
+
+                        var signVal = rule.SignFieldId.HasValue
+                            ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.SignFieldId.Value)?.Value
+                            : null;
+
+                        if (negativeValueSet is not null && signVal is not null &&
+                            negativeValueSet.Contains(signVal))
+                            val = -val;
+
+                        total += val;
+                    }
+
+                    var unit = measureField.Unit is not null && measureField.Unit != "UN"
+                        ? measureField.Unit : "";
+
+                    actionBalances.Add(new BalanceSummary
+                    {
+                        Label = rule.Label ?? measureField.Name,
+                        Unit = unit,
+                        CurrentBalance = total
+                    });
+                }
+
+                if (actionBalances.Count > 0)
+                {
+                    _balances[action.Id] = actionBalances;
+                    StateHasChanged();
+                }
+            }
+        }
+        catch { /* balances are optional, don't break the home page */ }
     }
 }
