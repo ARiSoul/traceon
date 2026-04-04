@@ -1,5 +1,7 @@
 @* Reusable entry list with DataGrid, filtering by action, period, sorting, pagination, edit/delete *@
 @inject IStringLocalizer<SharedResource> L
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorage
 
 <div class="d-md-none mb-2">
     <button class="btn btn-outline-secondary btn-sm w-100" @onclick="() => _showFilters = !_showFilters">
@@ -85,15 +87,76 @@
         </div>
     }
 </div>
+
+@if (_activeFields.Count > 0)
+{
+    <div class="row g-2 mb-3">
+        <div class="col-12">
+            <small class="text-muted fw-semibold">
+                <i class="bi bi-sliders me-1"></i>@L["EntryGrid_FieldFilters"]
+            </small>
+        </div>
+        @foreach (var field in _activeFields.OrderBy(f => f.Order))
+        {
+            var fieldId = field.Id;
+            <div class="col-6 col-md-2">
+                <label class="form-label form-label-sm mb-1">@field.Name</label>
+                @if (field.FieldType == FieldType.Dropdown && field.DropdownValues is not null)
+                {
+                    <select class="form-select form-select-sm"
+                            value="@GetFieldFilter(fieldId)"
+                            @onchange="e => OnFieldFilterChangedAsync(fieldId, e)">
+                        <option value="">@L["EntryGrid_AllValues"]</option>
+                        @foreach (var opt in field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        {
+                            <option value="@opt">@opt</option>
+                        }
+                    </select>
+                }
+                else if (field.FieldType == FieldType.Boolean)
+                {
+                    <select class="form-select form-select-sm"
+                            value="@GetFieldFilter(fieldId)"
+                            @onchange="e => OnFieldFilterChangedAsync(fieldId, e)">
+                        <option value="">@L["EntryGrid_AllValues"]</option>
+                        <option value="true">@L["Common_Yes"]</option>
+                        <option value="false">@L["Common_No"]</option>
+                    </select>
+                }
+                else
+                {
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control form-control-sm"
+                               placeholder="@field.Name..."
+                               value="@GetFieldFilter(fieldId)"
+                               @onchange="e => OnFieldFilterChangedAsync(fieldId, e)"
+                               @onkeydown="OnFieldFilterKeyDownAsync" />
+                        @if (!string.IsNullOrEmpty(GetFieldFilter(fieldId)))
+                        {
+                            <button class="btn btn-outline-secondary" @onclick="() => ClearFieldFilterAsync(fieldId)">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
 </div>
 
-<DataGrid @ref="_grid"
-          TItem="ActionEntryResponse"
-          LoadData="LoadDataAsync"
-          Columns="_columns"
-          FilterPlaceholder="@L["Filter_ByNotes"]"
-                 EmptyText="@L["EntryGrid_Empty"]">
-          <Toolbar>
+@if (_ready)
+{
+    <DataGrid @ref="_grid"
+              TItem="ActionEntryResponse"
+              LoadData="LoadDataAsync"
+              Columns="_columns"
+              FilterPlaceholder="@L["Filter_ByNotes"]"
+              EmptyText="@L["EntryGrid_Empty"]"
+              StorageKey="@StorageKey"
+              HasExternalFilters="_hasExternalFilters"
+              OnReset="OnGridResetAsync">
+        <Toolbar>
               @if (_createActionId != Guid.Empty)
               {
                   <a href="/tracked-actions/@_createActionId/entries/new?returnUrl=@_encodedReturnUrl"
@@ -111,6 +174,15 @@
                              OnAfterAction="StateHasChanged" />
     </RowActions>
 </DataGrid>
+}
+else
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">@L["Common_Loading"]</span>
+        </div>
+    </div>
+}
 
 @code {
     /// <summary>
@@ -126,8 +198,22 @@
     [Parameter]
     public bool LockActionFilter { get; set; }
 
+    /// <summary>
+    /// When provided, dynamic columns and field-value filters are generated for each action field.
+    /// Use this when embedding inside a tracked action where the fields are known.
+    /// </summary>
+    [Parameter]
+    public List<ActionFieldResponse>? ActionFields { get; set; }
+
+    /// <summary>
+    /// LocalStorage key for persisting grid and filter state.
+    /// </summary>
+    [Parameter]
+    public string? StorageKey { get; set; }
+
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
+    [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private DataGrid<ActionEntryResponse> _grid = default!;
@@ -135,6 +221,8 @@
     private string _selectedActionId = "";
     private string _encodedReturnUrl = "";
     private bool _showFilters;
+    private bool _loadingFields;
+    private bool _ready;
 
     // Period filter state
     private string _periodMode = "years";
@@ -149,38 +237,224 @@
 
     private List<DataGridColumn<ActionEntryResponse>> _columns = [];
 
+    // Effective field list: either externally provided or dynamically loaded
+    private List<ActionFieldResponse> _activeFields = [];
+
+    // Field value filters: fieldId -> filter value
+    private Dictionary<Guid, string> _fieldFilters = [];
+
+    private string? EntryStorageKey => StorageKey is not null ? $"traceon_entry_{StorageKey}" : null;
+
     protected override async Task OnInitializedAsync()
     {
-        _columns =
-        [
-            new()
+        _encodedReturnUrl = Uri.EscapeDataString(Nav.ToBaseRelativePath(Nav.Uri) is { Length: > 0 } rel ? $"/{rel}" : "/");
+
+        if (TrackedActionId.HasValue)
+        {
+            _selectedActionId = TrackedActionId.Value.ToString();
+        }
+
+        await RestoreEntryFiltersAsync();
+
+        // Use externally-provided fields, or load them for the pre-selected action
+        if (ActionFields is { Count: > 0 })
+        {
+            _activeFields = ActionFields;
+        }
+        else if (Guid.TryParse(_selectedActionId, out var preselectedId) && preselectedId != Guid.Empty)
+        {
+            _activeFields = await ActionFieldService.GetByTrackedActionAsync(preselectedId);
+        }
+
+        RebuildColumns();
+
+        if (!LockActionFilter)
+        {
+            _availableActions = await ActionService.GetAllAsync();
+        }
+
+        _ready = true;
+    }
+
+    private bool _hasExternalFilters =>
+        _periodMode != "years"
+        || _periodValue != 1
+        || _dateField != "OccurredAtUtc"
+        || _customFrom.HasValue
+        || _customTo.HasValue
+        || _fieldFilters.Count > 0
+        || (!LockActionFilter && !string.IsNullOrEmpty(_selectedActionId) && _selectedActionId != (TrackedActionId?.ToString() ?? ""));
+
+    // ── Filter persistence ──
+
+    private async Task RestoreEntryFiltersAsync()
+    {
+        if (EntryStorageKey is null) return;
+
+        try
+        {
+            var state = await LocalStorage.GetItemAsync<EntryFilterState>(EntryStorageKey);
+            if (state is null) return;
+
+            if (!LockActionFilter && !string.IsNullOrEmpty(state.SelectedActionId))
+                _selectedActionId = state.SelectedActionId;
+            if (state.PeriodMode is not null) _periodMode = state.PeriodMode;
+            if (state.PeriodValue.HasValue) _periodValue = state.PeriodValue.Value;
+            if (state.DateField is not null) _dateField = state.DateField;
+            _customFrom = state.CustomFrom;
+            _customTo = state.CustomTo;
+            if (state.FieldFilters is not null)
+                _fieldFilters = state.FieldFilters
+                    .Where(kv => Guid.TryParse(kv.Key, out _))
+                    .ToDictionary(kv => Guid.Parse(kv.Key), kv => kv.Value);
+        }
+        catch { /* best effort */ }
+    }
+
+    private async Task SaveEntryFiltersAsync()
+    {
+        if (EntryStorageKey is null) return;
+
+        try
+        {
+            var state = new EntryFilterState
+            {
+                SelectedActionId = LockActionFilter ? null : _selectedActionId,
+                PeriodMode = _periodMode,
+                PeriodValue = _periodValue,
+                DateField = _dateField,
+                CustomFrom = _customFrom,
+                CustomTo = _customTo,
+                FieldFilters = _fieldFilters.Count > 0
+                    ? _fieldFilters.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value)
+                    : null
+            };
+
+            await LocalStorage.SetItemAsync(EntryStorageKey, state);
+        }
+        catch { /* best effort */ }
+    }
+
+    private async Task OnGridResetAsync()
+    {
+        _selectedActionId = TrackedActionId?.ToString() ?? "";
+        _periodMode = "years";
+        _periodValue = 1;
+        _dateField = "OccurredAtUtc";
+        _customFrom = null;
+        _customTo = null;
+        _fieldFilters.Clear();
+
+        if (ActionFields is { Count: > 0 })
+            _activeFields = ActionFields;
+        else if (Guid.TryParse(_selectedActionId, out var id) && id != Guid.Empty)
+            _activeFields = await ActionFieldService.GetByTrackedActionAsync(id);
+        else
+            _activeFields = [];
+
+        RebuildColumns();
+
+        if (EntryStorageKey is not null)
+        {
+            try { await LocalStorage.RemoveItemAsync(EntryStorageKey); } catch { }
+        }
+    }
+
+    private sealed class EntryFilterState
+    {
+        public string? SelectedActionId { get; set; }
+        public string? PeriodMode { get; set; }
+        public int? PeriodValue { get; set; }
+        public string? DateField { get; set; }
+        public DateTime? CustomFrom { get; set; }
+        public DateTime? CustomTo { get; set; }
+        public Dictionary<string, string>? FieldFilters { get; set; }
+    }
+
+    private bool HasActionFilter =>
+        Guid.TryParse(_selectedActionId, out var id) && id != Guid.Empty;
+
+    private void RebuildColumns()
+    {
+        _columns = [];
+
+        if (!HasActionFilter)
+        {
+            _columns.Add(new()
             {
                 Title = L["EntryGrid_Action"],
                 Selector = x => x.ActionName,
                 SortField = "ActionName",
                 IsMobileTitle = true
-            },
-            new()
+            });
+        }
+
+        _columns.Add(new()
+        {
+            Title = L["EntryGrid_Date"],
+            Selector = x => x.OccurredAtUtc.ToLocalTime(),
+            SortField = "OccurredAtUtc",
+            Format = "g",
+            IsMobileTitle = HasActionFilter
+        });
+
+        _columns.Add(new()
+        {
+            Title = L["EntryGrid_Notes"],
+            Selector = x => x.Notes ?? "",
+            Template = item => builder =>
             {
-                Title = L["EntryGrid_Date"],
-                Selector = x => x.OccurredAtUtc.ToLocalTime(),
-                SortField = "OccurredAtUtc",
-                Format = "g"
-            },
-            new()
+                if (!string.IsNullOrEmpty(item.Notes))
+                {
+                    builder.OpenElement(0, "span");
+                    builder.AddAttribute(1, "class", "text-truncate d-inline-block");
+                    builder.AddAttribute(2, "style", "max-width: 200px;");
+                    builder.AddAttribute(3, "title", item.Notes);
+                    builder.AddContent(4, item.Notes);
+                    builder.CloseElement();
+                }
+                else
+                {
+                    builder.OpenElement(0, "span");
+                    builder.AddAttribute(1, "class", "text-muted");
+                    builder.AddContent(2, "\u2014");
+                    builder.CloseElement();
+                }
+            }
+        });
+
+        // Add dynamic columns for each action field
+        foreach (var field in _activeFields.OrderBy(f => f.Order))
+        {
+            var fieldId = field.Id;
+            var fieldUnit = field.Unit;
+            var fieldType = field.FieldType;
+
+            _columns.Add(new()
             {
-                Title = L["EntryGrid_Notes"],
-                Selector = x => x.Notes ?? "",
+                Title = field.Name,
+                Selector = x => x.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == fieldId)?.Value ?? "",
                 Template = item => builder =>
                 {
-                    if (!string.IsNullOrEmpty(item.Notes))
+                    var value = item.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == fieldId)?.Value;
+                    if (!string.IsNullOrEmpty(value))
                     {
-                        builder.OpenElement(0, "span");
-                        builder.AddAttribute(1, "class", "text-truncate d-inline-block");
-                        builder.AddAttribute(2, "style", "max-width: 200px;");
-                        builder.AddAttribute(3, "title", item.Notes);
-                        builder.AddContent(4, item.Notes);
-                        builder.CloseElement();
+                        if (fieldType == FieldType.Boolean)
+                        {
+                            var icon = value.Equals("true", StringComparison.OrdinalIgnoreCase)
+                                ? "check-circle-fill text-success" : "x-circle-fill text-danger";
+                            builder.OpenElement(0, "i");
+                            builder.AddAttribute(1, "class", $"bi bi-{icon}");
+                            builder.CloseElement();
+                        }
+                        else
+                        {
+                            var showUnit = fieldType is FieldType.Integer or FieldType.Decimal
+                                           && !string.IsNullOrWhiteSpace(fieldUnit);
+                            builder.OpenElement(0, "span");
+                            builder.AddContent(1, showUnit ? $"{value} {fieldUnit}" : value);
+                            builder.CloseElement();
+                        }
                     }
                     else
                     {
@@ -189,29 +463,19 @@
                         builder.AddContent(2, "\u2014");
                         builder.CloseElement();
                     }
-                }
-            },
-            new()
-            {
-                Title = L["Common_Created"],
-                Selector = x => x.CreatedAtUtc.ToLocalTime(),
-                SortField = "CreatedAtUtc",
-                Format = "g",
+                },
                 HideOnMobile = true
-            },
-        ];
-
-        _encodedReturnUrl = Uri.EscapeDataString(Nav.ToBaseRelativePath(Nav.Uri) is { Length: > 0 } rel ? $"/{rel}" : "/");
-
-        if (TrackedActionId.HasValue)
-        {
-            _selectedActionId = TrackedActionId.Value.ToString();
+            });
         }
 
-        if (!LockActionFilter)
+        _columns.Add(new()
         {
-            _availableActions = await ActionService.GetAllAsync();
-        }
+            Title = L["Common_Created"],
+            Selector = x => x.CreatedAtUtc.ToLocalTime(),
+            SortField = "CreatedAtUtc",
+            Format = "g",
+            HideOnMobile = true
+        });
     }
 
     private string? BuildFilterString()
@@ -229,6 +493,30 @@
         if (dateFilter is not null)
         {
             clauses.Add(dateFilter);
+        }
+
+        // Field value filters
+        if (_activeFields.Count > 0)
+        {
+            foreach (var (fieldId, value) in _fieldFilters)
+            {
+                if (string.IsNullOrWhiteSpace(value)) continue;
+
+                var field = _activeFields.FirstOrDefault(f => f.Id == fieldId);
+                if (field is null) continue;
+
+                var escaped = value.Replace("'", "''");
+
+                if (field.FieldType is FieldType.Dropdown or FieldType.Boolean)
+                {
+                    clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Value eq '{escaped}')");
+                }
+                else
+                {
+                    var lower = escaped.ToLowerInvariant();
+                    clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and contains(tolower(fv/Value),'{lower}'))");
+                }
+            }
         }
 
         return clauses.Count > 0 ? string.Join(" and ", clauses) : null;
@@ -296,7 +584,24 @@
     private async Task OnActionFilterChanged(ChangeEventArgs e)
     {
         _selectedActionId = e.Value?.ToString() ?? "";
+        _fieldFilters.Clear();
+
+        if (Guid.TryParse(_selectedActionId, out var actionId) && actionId != Guid.Empty)
+        {
+            _loadingFields = true;
+            StateHasChanged();
+
+            _activeFields = await ActionFieldService.GetByTrackedActionAsync(actionId);
+            _loadingFields = false;
+        }
+        else
+        {
+            _activeFields = [];
+        }
+
+        RebuildColumns();
         await _grid.RefreshAsync();
+        await SaveEntryFiltersAsync();
     }
 
     private async Task OnPeriodModeChanged(ChangeEventArgs e)
@@ -319,6 +624,7 @@
         }
 
         await _grid.RefreshAsync();
+        await SaveEntryFiltersAsync();
     }
 
     private async Task OnPeriodValueChanged(ChangeEventArgs e)
@@ -327,23 +633,56 @@
             _periodValue = val;
 
         await _grid.RefreshAsync();
+        await SaveEntryFiltersAsync();
     }
 
     private async Task OnDateFieldChanged(ChangeEventArgs e)
     {
         _dateField = e.Value?.ToString() ?? "OccurredAtUtc";
         await _grid.RefreshAsync();
+        await SaveEntryFiltersAsync();
     }
 
     private async Task OnCustomFromChanged(ChangeEventArgs e)
     {
         _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
         await _grid.RefreshAsync();
+        await SaveEntryFiltersAsync();
     }
 
     private async Task OnCustomToChanged(ChangeEventArgs e)
     {
         _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
         await _grid.RefreshAsync();
+        await SaveEntryFiltersAsync();
+    }
+
+    // Field filter helpers
+    private string GetFieldFilter(Guid fieldId)
+        => _fieldFilters.TryGetValue(fieldId, out var val) ? val : "";
+
+    private async Task OnFieldFilterChangedAsync(Guid fieldId, ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (string.IsNullOrWhiteSpace(value))
+            _fieldFilters.Remove(fieldId);
+        else
+            _fieldFilters[fieldId] = value;
+
+        await _grid.RefreshAsync();
+        await SaveEntryFiltersAsync();
+    }
+
+    private async Task OnFieldFilterKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await _grid.RefreshAsync();
+    }
+
+    private async Task ClearFieldFilterAsync(Guid fieldId)
+    {
+        _fieldFilters.Remove(fieldId);
+        await _grid.RefreshAsync();
+        await SaveEntryFiltersAsync();
     }
 }

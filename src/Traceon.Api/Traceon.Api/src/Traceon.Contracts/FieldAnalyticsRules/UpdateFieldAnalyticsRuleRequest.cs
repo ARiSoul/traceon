@@ -8,4 +8,7 @@ public sealed record UpdateFieldAnalyticsRuleRequest(
     Guid? FilterFieldId = null,
     string? FilterValue = null,
     string? Label = null,
-    int? SortOrder = null);
+    int? SortOrder = null,
+    Guid? SignFieldId = null,
+    string? NegativeValues = null,
+    bool ClearSignField = false);

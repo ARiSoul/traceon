@@ -30,6 +30,9 @@ internal sealed class FieldAnalyticsRuleConfiguration : IEntityTypeConfiguration
             .IsRequired()
             .HasDefaultValue(0);
 
+        builder.Property(e => e.NegativeValues)
+            .HasMaxLength(500);
+
         builder.HasIndex(e => e.TrackedActionId);
 
         builder.HasOne<TrackedAction>()
@@ -50,6 +53,11 @@ internal sealed class FieldAnalyticsRuleConfiguration : IEntityTypeConfiguration
         builder.HasOne<ActionField>()
             .WithMany()
             .HasForeignKey(e => e.FilterFieldId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<ActionField>()
+            .WithMany()
+            .HasForeignKey(e => e.SignFieldId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

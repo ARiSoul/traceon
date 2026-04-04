@@ -11,6 +11,8 @@ public sealed class FieldAnalyticsRule : Entity
     public int DisplayType { get; private set; }
     public string? Label { get; private set; }
     public int SortOrder { get; private set; }
+    public Guid? SignFieldId { get; private set; }
+    public string? NegativeValues { get; private set; }
 
     private FieldAnalyticsRule(
         Guid trackedActionId,
@@ -21,7 +23,9 @@ public sealed class FieldAnalyticsRule : Entity
         int aggregation,
         int displayType,
         string? label,
-        int sortOrder)
+        int sortOrder,
+        Guid? signFieldId,
+        string? negativeValues)
     {
         TrackedActionId = trackedActionId;
         MeasureFieldId = measureFieldId;
@@ -32,6 +36,8 @@ public sealed class FieldAnalyticsRule : Entity
         DisplayType = displayType;
         Label = label;
         SortOrder = sortOrder;
+        SignFieldId = signFieldId;
+        NegativeValues = negativeValues;
     }
 
     public static FieldAnalyticsRule Create(
@@ -43,7 +49,9 @@ public sealed class FieldAnalyticsRule : Entity
         Guid? filterFieldId = null,
         string? filterValue = null,
         string? label = null,
-        int sortOrder = 0)
+        int sortOrder = 0,
+        Guid? signFieldId = null,
+        string? negativeValues = null)
     {
         if (trackedActionId == Guid.Empty)
             throw new ArgumentException("Tracked action ID is required.", nameof(trackedActionId));
@@ -66,7 +74,9 @@ public sealed class FieldAnalyticsRule : Entity
             aggregation,
             displayType,
             label?.Trim(),
-            sortOrder);
+            sortOrder,
+            signFieldId,
+            negativeValues?.Trim());
     }
 
     public void Update(
@@ -75,7 +85,10 @@ public sealed class FieldAnalyticsRule : Entity
         Guid? filterFieldId = null,
         string? filterValue = null,
         string? label = null,
-        int? sortOrder = null)
+        int? sortOrder = null,
+        Guid? signFieldId = null,
+        string? negativeValues = null,
+        bool clearSignField = false)
     {
         if (aggregation.HasValue)
             Aggregation = aggregation.Value;
@@ -87,6 +100,11 @@ public sealed class FieldAnalyticsRule : Entity
             Label = label.Trim();
         if (sortOrder.HasValue)
             SortOrder = sortOrder.Value;
+        if (signFieldId.HasValue)
+            SignFieldId = signFieldId;
+        else if (clearSignField)
+            SignFieldId = null;
+        NegativeValues = negativeValues?.Trim();
         MarkUpdated();
     }
 }

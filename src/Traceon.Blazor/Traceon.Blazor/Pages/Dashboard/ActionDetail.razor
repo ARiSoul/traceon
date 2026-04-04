@@ -272,6 +272,12 @@ else
                                     <i class="bi bi-funnel me-1"></i>@L["Analytics_FilteredBy"]: @result.FilterDescription
                                 </small>
                             }
+                            @if (result.SignDescription is not null)
+                            {
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-plus-slash-minus me-1"></i>@result.SignDescription
+                                </small>
+                            }
                         </div>
                         <div class="card-body">
                             @if (result.DisplayType is AnalyticsDisplayType.BarChart or AnalyticsDisplayType.StackedBar)
@@ -577,6 +583,7 @@ else
         AnalyticsAggregation.Min => L["Aggregation_Min"],
         AnalyticsAggregation.Max => L["Aggregation_Max"],
         AnalyticsAggregation.Count => L["Aggregation_Count"],
+        AnalyticsAggregation.SignedSum => L["Aggregation_SignedSum"],
         _ => agg.ToString()
     };
 

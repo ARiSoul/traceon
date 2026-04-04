@@ -308,6 +308,8 @@
   <data name="EntryGrid_Notes"><value>Notas</value></data>
   <data name="EntryGrid_AllActions"><value>Todas las Acciones</value></data>
   <data name="EntryGrid_Empty"><value>Sin registros todavía. ¡Empieza a registrar!</value></data>
+  <data name="EntryGrid_FieldFilters"><value>Filtros de Campos</value></data>
+  <data name="EntryGrid_AllValues"><value>Todos</value></data>
 
   <!-- ═══ No Encontrado ═══ -->
   <data name="NotFound_Title"><value>Página No Encontrada</value></data>
@@ -409,6 +411,16 @@
   <data name="DataGrid_FirstPage"><value>Primera página</value></data>
   <data name="DataGrid_LastPage"><value>Última página</value></data>
   <data name="DataGrid_PerPage"><value>/ página</value></data>
+  <data name="DataGrid_ResetAll"><value>Restablecer Todo</value></data>
+  <data name="DataGrid_Summaries"><value>Totalizadores</value></data>
+  <data name="DataGrid_Sum"><value>Suma</value></data>
+  <data name="DataGrid_Avg"><value>Prom</value></data>
+  <data name="DataGrid_Min"><value>Mín</value></data>
+  <data name="DataGrid_Max"><value>Máx</value></data>
+  <data name="DataGrid_Count"><value>Conteo</value></data>
+  <data name="DataGrid_SortBy"><value>Ordenar por</value></data>
+  <data name="DataGrid_SortAsc"><value>Orden ascendente</value></data>
+  <data name="DataGrid_SortDesc"><value>Orden descendente</value></data>
 
   <!-- ═══ Estadísticas (extra) ═══ -->
   <data name="Analytics_Distribution"><value>Distribución</value></data>
@@ -643,6 +655,7 @@
   <data name="Aggregation_Min"><value>Mínimo</value></data>
   <data name="Aggregation_Max"><value>Máximo</value></data>
   <data name="Aggregation_Count"><value>Conteo</value></data>
+  <data name="Aggregation_SignedSum"><value>Suma con Signo</value></data>
   <data name="Analytics_RulesHint"><value>Define cómo los campos se relacionan entre sí para insights en el panel.</value></data>
   <data name="Analytics_AddRule"><value>Agregar Regla</value></data>
   <data name="Analytics_NewRule"><value>Nueva Regla de Análisis</value></data>
@@ -656,6 +669,10 @@
   <data name="Analytics_FilterField"><value>Campo de Filtro</value></data>
   <data name="Analytics_FilterValue"><value>Valor del Filtro</value></data>
   <data name="Analytics_SelectBothFields"><value>Selecciona un campo de medida y un campo de agrupación.</value></data>
+  <data name="Analytics_SignField"><value>Campo de Signo</value></data>
+  <data name="Analytics_NegativeValues"><value>Valores Negativos</value></data>
+  <data name="Analytics_NegativeValuesPlaceholder"><value>Separados por coma, ej: Gasto,Retiro</value></data>
+  <data name="Analytics_SignedSumHint"><value>Elige un campo desplegable que determine el signo. Los valores marcados como negativos se restarán del total (ej: Gasto → −Monto).</value></data>
   <data name="Analytics_NeedTwoFields"><value>Necesitas al menos dos campos (uno numérico) para crear reglas. Agrega campos en la pestaña Campos primero.</value></data>
   <data name="Common_Select"><value>Seleccionar</value></data>
   <data name="Common_None"><value>Ninguno</value></data>

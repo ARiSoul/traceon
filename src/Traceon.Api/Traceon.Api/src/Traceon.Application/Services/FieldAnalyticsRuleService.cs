@@ -36,7 +36,8 @@ public sealed class FieldAnalyticsRuleService(
             .Select(r => r.ToResponse(
                 fieldNames.GetValueOrDefault(r.MeasureFieldId, "?"),
                 fieldNames.GetValueOrDefault(r.GroupByFieldId, "?"),
-                r.FilterFieldId.HasValue ? fieldNames.GetValueOrDefault(r.FilterFieldId.Value, "?") : null))
+                r.FilterFieldId.HasValue ? fieldNames.GetValueOrDefault(r.FilterFieldId.Value, "?") : null,
+                r.SignFieldId.HasValue ? fieldNames.GetValueOrDefault(r.SignFieldId.Value, "?") : null))
             .ToList();
 
         return Result<IReadOnlyList<FieldAnalyticsRuleResponse>>.Success(responses);
@@ -69,6 +70,10 @@ public sealed class FieldAnalyticsRuleService(
             return Result<FieldAnalyticsRuleResponse>.Failure(
                 $"Filter field '{request.FilterFieldId}' not found in this action.", ResultErrorType.Validation);
 
+        if (request.SignFieldId.HasValue && !fieldIds.Contains(request.SignFieldId.Value))
+            return Result<FieldAnalyticsRuleResponse>.Failure(
+                $"Sign field '{request.SignFieldId}' not found in this action.", ResultErrorType.Validation);
+
         var entity = FieldAnalyticsRule.Create(
             trackedActionId,
             request.MeasureFieldId,
@@ -78,7 +83,9 @@ public sealed class FieldAnalyticsRuleService(
             request.FilterFieldId,
             request.FilterValue,
             request.Label,
-            request.SortOrder);
+            request.SortOrder,
+            request.SignFieldId,
+            request.NegativeValues);
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -88,7 +95,8 @@ public sealed class FieldAnalyticsRuleService(
         return Result<FieldAnalyticsRuleResponse>.Success(entity.ToResponse(
             fieldNames.GetValueOrDefault(entity.MeasureFieldId, "?"),
             fieldNames.GetValueOrDefault(entity.GroupByFieldId, "?"),
-            entity.FilterFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.FilterFieldId.Value, "?") : null));
+            entity.FilterFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.FilterFieldId.Value, "?") : null,
+            entity.SignFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.SignFieldId.Value, "?") : null));
     }
 
     public async Task<Result<FieldAnalyticsRuleResponse>> UpdateAsync(
@@ -110,13 +118,20 @@ public sealed class FieldAnalyticsRuleService(
             return Result<FieldAnalyticsRuleResponse>.Failure(
                 $"Filter field '{request.FilterFieldId}' not found in this action.", ResultErrorType.Validation);
 
+        if (request.SignFieldId.HasValue && !fieldIds.Contains(request.SignFieldId.Value))
+            return Result<FieldAnalyticsRuleResponse>.Failure(
+                $"Sign field '{request.SignFieldId}' not found in this action.", ResultErrorType.Validation);
+
         entity.Update(
             request.Aggregation.HasValue ? (int)request.Aggregation.Value : null,
             request.DisplayType.HasValue ? (int)request.DisplayType.Value : null,
             request.FilterFieldId,
             request.FilterValue,
             request.Label,
-            request.SortOrder);
+            request.SortOrder,
+            request.SignFieldId,
+            request.NegativeValues,
+            request.ClearSignField);
 
         await repository.UpdateAsync(entity, cancellationToken);
 
@@ -126,7 +141,8 @@ public sealed class FieldAnalyticsRuleService(
         return Result<FieldAnalyticsRuleResponse>.Success(entity.ToResponse(
             fieldNames.GetValueOrDefault(entity.MeasureFieldId, "?"),
             fieldNames.GetValueOrDefault(entity.GroupByFieldId, "?"),
-            entity.FilterFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.FilterFieldId.Value, "?") : null));
+            entity.FilterFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.FilterFieldId.Value, "?") : null,
+            entity.SignFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.SignFieldId.Value, "?") : null));
     }
 
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)

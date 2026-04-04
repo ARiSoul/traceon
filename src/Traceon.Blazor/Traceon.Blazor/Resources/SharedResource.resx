@@ -307,6 +307,8 @@
   <data name="EntryGrid_Notes"><value>Notes</value></data>
   <data name="EntryGrid_AllActions"><value>All Actions</value></data>
   <data name="EntryGrid_Empty"><value>No entries yet. Start tracking!</value></data>
+  <data name="EntryGrid_FieldFilters"><value>Field Filters</value></data>
+  <data name="EntryGrid_AllValues"><value>All</value></data>
 
   <!-- ═══ NotFound ═══ -->
   <data name="NotFound_Title"><value>Page Not Found</value></data>
@@ -406,6 +408,16 @@
   <data name="DataGrid_FirstPage"><value>First page</value></data>
   <data name="DataGrid_LastPage"><value>Last page</value></data>
   <data name="DataGrid_PerPage"><value>/ page</value></data>
+  <data name="DataGrid_ResetAll"><value>Reset All</value></data>
+  <data name="DataGrid_Summaries"><value>Summaries</value></data>
+  <data name="DataGrid_Sum"><value>Sum</value></data>
+  <data name="DataGrid_Avg"><value>Avg</value></data>
+  <data name="DataGrid_Min"><value>Min</value></data>
+  <data name="DataGrid_Max"><value>Max</value></data>
+  <data name="DataGrid_Count"><value>Count</value></data>
+  <data name="DataGrid_SortBy"><value>Sort by</value></data>
+  <data name="DataGrid_SortAsc"><value>Sort ascending</value></data>
+  <data name="DataGrid_SortDesc"><value>Sort descending</value></data>
 
   <!-- ═══ Analytics (extra) ═══ -->
   <data name="Analytics_Distribution"><value>Distribution</value></data>
@@ -640,6 +652,7 @@
   <data name="Aggregation_Min"><value>Minimum</value></data>
   <data name="Aggregation_Max"><value>Maximum</value></data>
   <data name="Aggregation_Count"><value>Count</value></data>
+  <data name="Aggregation_SignedSum"><value>Signed Sum</value></data>
   <data name="Analytics_RulesHint"><value>Define how fields relate to each other for dashboard insights.</value></data>
   <data name="Analytics_AddRule"><value>Add Rule</value></data>
   <data name="Analytics_NewRule"><value>New Analytics Rule</value></data>
@@ -653,6 +666,10 @@
   <data name="Analytics_FilterField"><value>Filter Field</value></data>
   <data name="Analytics_FilterValue"><value>Filter Value</value></data>
   <data name="Analytics_SelectBothFields"><value>Please select both a measure field and a group-by field.</value></data>
+  <data name="Analytics_SignField"><value>Sign Field</value></data>
+  <data name="Analytics_NegativeValues"><value>Negative Values</value></data>
+  <data name="Analytics_NegativeValuesPlaceholder"><value>Comma-separated, e.g.: Expense,Withdrawal</value></data>
+  <data name="Analytics_SignedSumHint"><value>Choose a dropdown field that determines sign. Values marked as negative will be subtracted in the total (e.g., Expense → −Amount).</value></data>
   <data name="Analytics_NeedTwoFields"><value>You need at least two fields (one numeric) to create analytics rules. Add fields in the Fields tab first.</value></data>
   <data name="Common_Select"><value>Select</value></data>
   <data name="Common_None"><value>None</value></data>

@@ -56,7 +56,8 @@
           LoadData="LoadDataAsync"
           Columns="_columns"
           FilterPlaceholder="@L["Filter_ByNameOrDesc"]"
-          EmptyText="@L["Tags_Empty"]">
+          EmptyText="@L["Tags_Empty"]"
+          StorageKey="tags">
     <Toolbar>
         <button class="btn btn-primary" @onclick="() => _showForm = !_showForm">
             <i class="bi bi-plus-circle me-1"></i> @L["Tags_New"]

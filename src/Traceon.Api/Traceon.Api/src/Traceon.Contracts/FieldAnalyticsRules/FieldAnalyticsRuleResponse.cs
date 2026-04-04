@@ -17,6 +17,9 @@ public sealed record FieldAnalyticsRuleResponse
     public required AnalyticsDisplayType DisplayType { get; init; }
     public required string? Label { get; init; }
     public required int SortOrder { get; init; }
+    public required Guid? SignFieldId { get; init; }
+    public required string? SignFieldName { get; init; }
+    public required string? NegativeValues { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime? UpdatedAtUtc { get; init; }
 }

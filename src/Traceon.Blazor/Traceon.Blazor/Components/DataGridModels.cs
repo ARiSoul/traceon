@@ -2,6 +2,15 @@ using Microsoft.AspNetCore.Components;
 
 namespace Traceon.Blazor.Components;
 
+public enum ColumnSummaryType
+{
+    Sum,
+    Avg,
+    Min,
+    Max,
+    Count
+}
+
 public sealed class DataGridColumn<TItem>
 {
     public required string Title { get; init; }
@@ -27,3 +36,13 @@ public sealed record DataGridRequest(
 public sealed record DataGridResult<T>(
     IReadOnlyList<T> Items,
     int TotalCount);
+
+/// <summary>State persisted to localStorage for each grid instance.</summary>
+public sealed class DataGridPersistedState
+{
+    public string? SortField { get; set; }
+    public bool SortDescending { get; set; }
+    public string? SearchTerm { get; set; }
+    public int? PageSize { get; set; }
+    public Dictionary<string, List<ColumnSummaryType>>? Summaries { get; set; }
+}

@@ -213,13 +213,25 @@ public sealed class DashboardService(
                         .FirstOrDefault(fv => fv.ActionFieldId == rule.GroupByFieldId)?.Value;
                     var measureVal = e.FieldValues
                         .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
-                    return (GroupKey: groupVal, MeasureValue: measureVal);
+                    var signVal = rule.SignFieldId.HasValue
+                        ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.SignFieldId.Value)?.Value
+                        : null;
+                    return (GroupKey: groupVal, MeasureValue: measureVal, SignValue: signVal);
                 })
                 .Where(p => !string.IsNullOrWhiteSpace(p.GroupKey))
                 .ToList();
 
             if (pairs.Count == 0)
                 continue;
+
+            // Parse negative values for SignedSum
+            HashSet<string>? negativeValueSet = null;
+            if (rule.Aggregation == AnalyticsAggregation.SignedSum && rule.NegativeValues is not null)
+            {
+                negativeValueSet = rule.NegativeValues
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
 
             var isNumericMeasure = measureField.FieldType is FieldType.Integer or FieldType.Decimal;
             var groups = new List<CrossFieldGroup>();
@@ -236,7 +248,18 @@ public sealed class DashboardService(
                 {
                     var nums = grp
                         .Where(p => decimal.TryParse(p.MeasureValue, out _))
-                        .Select(p => decimal.Parse(p.MeasureValue!))
+                        .Select(p =>
+                        {
+                            var val = decimal.Parse(p.MeasureValue!);
+                            if (rule.Aggregation == AnalyticsAggregation.SignedSum &&
+                                negativeValueSet is not null &&
+                                p.SignValue is not null &&
+                                negativeValueSet.Contains(p.SignValue))
+                            {
+                                val = -val;
+                            }
+                            return val;
+                        })
                         .ToList();
 
                     if (nums.Count == 0) continue;
@@ -244,6 +267,7 @@ public sealed class DashboardService(
                     aggregatedValue = rule.Aggregation switch
                     {
                         AnalyticsAggregation.Sum => nums.Sum(),
+                        AnalyticsAggregation.SignedSum => nums.Sum(),
                         AnalyticsAggregation.Avg => nums.Average(),
                         AnalyticsAggregation.Min => nums.Min(),
                         AnalyticsAggregation.Max => nums.Max(),
@@ -264,12 +288,16 @@ public sealed class DashboardService(
             var label = rule.Label
                 ?? $"{rule.Aggregation} of {measureField.Name} by {groupByField.Name}";
 
-            var unit = isNumericMeasure && rule.Aggregation != AnalyticsAggregation.Count
+            var unit = isNumericMeasure && rule.Aggregation is not AnalyticsAggregation.Count
                 ? measureField.Unit
                 : null;
 
             var filterDescription = rule.FilterFieldId.HasValue
                 ? $"{rule.FilterFieldName} = {rule.FilterValue}"
+                : null;
+
+            var signDescription = rule.Aggregation == AnalyticsAggregation.SignedSum && rule.SignFieldName is not null
+                ? $"{rule.SignFieldName} → −{rule.NegativeValues}"
                 : null;
 
             results.Add(new CrossFieldResult
@@ -282,6 +310,7 @@ public sealed class DashboardService(
                 DisplayType = rule.DisplayType,
                 Unit = unit,
                 FilterDescription = filterDescription,
+                SignDescription = signDescription,
                 Groups = groups
             });
         }
@@ -657,6 +686,7 @@ public sealed class CrossFieldResult
     public required AnalyticsDisplayType DisplayType { get; init; }
     public string? Unit { get; init; }
     public string? FilterDescription { get; init; }
+    public string? SignDescription { get; init; }
     public List<CrossFieldGroup> Groups { get; init; } = [];
 
     public decimal Total => Groups.Sum(g => g.Value);

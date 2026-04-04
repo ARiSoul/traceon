@@ -194,7 +194,7 @@ else
             }
             else if (_activeTab == "entries")
             {
-                <EntryDataGrid TrackedActionId="Id" LockActionFilter="true" />
+                <EntryDataGrid TrackedActionId="Id" LockActionFilter="true" ActionFields="_fields" StorageKey="@($"action-entries-{Id}")" />
             }
             else if (_activeTab == "analytics")
             {
@@ -307,6 +307,50 @@ else
                                             }
                                         </div>
                                     }
+                                    @if (_newRule.Aggregation == AnalyticsAggregation.SignedSum)
+                                    {
+                                        <div class="col-12">
+                                            <hr class="my-2" />
+                                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@L["Analytics_SignedSumHint"]</small>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label">@L["Analytics_SignField"]</label>
+                                            <select class="form-select" @bind="_newRule.SignFieldId">
+                                                <option value="">— @L["Common_Select"] —</option>
+                                                @foreach (var f in _fields.Where(f => f.FieldType == FieldType.Dropdown))
+                                                {
+                                                    <option value="@f.Id">@f.Name</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        @if (_newRule.SignFieldId != Guid.Empty)
+                                        {
+                                            <div class="col-12 col-md-4">
+                                                <label class="form-label">@L["Analytics_NegativeValues"]</label>
+                                                @{
+                                                    var signField = _fields.FirstOrDefault(f => f.Id == _newRule.SignFieldId);
+                                                }
+                                                @if (signField?.DropdownValues is not null)
+                                                {
+                                                    var signOptions = signField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                                                    var selectedNeg = (_newRule.NegativeValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                    @foreach (var opt in signOptions)
+                                                    {
+                                                        var capturedOpt = opt;
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="new-neg-@capturedOpt" checked="@selectedNeg.Contains(capturedOpt)"
+                                                                   @onchange="e => { _newRule.NegativeValues = ToggleNegativeValue(_newRule.NegativeValues, capturedOpt, (bool)(e.Value ?? false)); }" />
+                                                            <label class="form-check-label" for="new-neg-@capturedOpt">@capturedOpt</label>
+                                                        </div>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <input type="text" class="form-control" @bind="_newRule.NegativeValues" placeholder="@L["Analytics_NegativeValuesPlaceholder"]" />
+                                                }
+                                            </div>
+                                        }
+                                    }
                                 </div>
                                 <ErrorAlert Errors="_ruleErrors" OnDismiss="() => _ruleErrors = []" />
                                 <div class="d-flex justify-content-end gap-2 mt-3">
@@ -417,6 +461,50 @@ else
                                                             }
                                                         </div>
                                                     }
+                                                    @if (_editRule.Aggregation == AnalyticsAggregation.SignedSum)
+                                                    {
+                                                        <div class="col-12">
+                                                            <hr class="my-2" />
+                                                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@L["Analytics_SignedSumHint"]</small>
+                                                        </div>
+                                                        <div class="col-12 col-md-4">
+                                                            <label class="form-label">@L["Analytics_SignField"]</label>
+                                                            <select class="form-select" @bind="_editRule.SignFieldId">
+                                                                <option value="">— @L["Common_Select"] —</option>
+                                                                @foreach (var f in _fields.Where(f => f.FieldType == FieldType.Dropdown))
+                                                                {
+                                                                    <option value="@f.Id">@f.Name</option>
+                                                                }
+                                                            </select>
+                                                        </div>
+                                                        @if (_editRule.SignFieldId != Guid.Empty)
+                                                        {
+                                                            <div class="col-12 col-md-4">
+                                                                <label class="form-label">@L["Analytics_NegativeValues"]</label>
+                                                                @{
+                                                                    var editSignField = _fields.FirstOrDefault(f => f.Id == _editRule.SignFieldId);
+                                                                }
+                                                                @if (editSignField?.DropdownValues is not null)
+                                                                {
+                                                                    var editSignOptions = editSignField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                                                                    var editSelectedNeg = (_editRule.NegativeValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                                    @foreach (var opt in editSignOptions)
+                                                                    {
+                                                                        var capturedOpt = opt;
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="edit-neg-@capturedOpt" checked="@editSelectedNeg.Contains(capturedOpt)"
+                                                                                   @onchange="e => { _editRule.NegativeValues = ToggleNegativeValue(_editRule.NegativeValues, capturedOpt, (bool)(e.Value ?? false)); }" />
+                                                                            <label class="form-check-label" for="edit-neg-@capturedOpt">@capturedOpt</label>
+                                                                        </div>
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    <input type="text" class="form-control" @bind="_editRule.NegativeValues" placeholder="@L["Analytics_NegativeValuesPlaceholder"]" />
+                                                                }
+                                                            </div>
+                                                        }
+                                                    }
                                                 </div>
                                                 <ErrorAlert Errors="_ruleErrors" OnDismiss="() => _ruleErrors = []" />
                                                 <div class="d-flex justify-content-end gap-2 mt-3">
@@ -464,6 +552,12 @@ else
                                                     {
                                                         <span class="ms-2">
                                                             <i class="bi bi-funnel me-1"></i>@rule.FilterFieldName = @rule.FilterValue
+                                                        </span>
+                                                    }
+                                                    @if (rule.SignFieldName is not null)
+                                                    {
+                                                        <span class="ms-2">
+                                                            <i class="bi bi-plus-slash-minus me-1"></i>@rule.SignFieldName → @rule.NegativeValues
                                                         </span>
                                                     }
                                                 </small>
@@ -808,7 +902,9 @@ else
             _newRule.FilterFieldId != Guid.Empty ? _newRule.FilterFieldId : null,
             string.IsNullOrWhiteSpace(_newRule.FilterValue) ? null : _newRule.FilterValue,
             string.IsNullOrWhiteSpace(_newRule.Label) ? null : _newRule.Label,
-            _analyticsRules.Count);
+            _analyticsRules.Count,
+            _newRule.SignFieldId != Guid.Empty ? _newRule.SignFieldId : null,
+            string.IsNullOrWhiteSpace(_newRule.NegativeValues) ? null : _newRule.NegativeValues);
 
         var (ok, errs) = await AnalyticsRuleService.CreateAsync(Id, request);
 
@@ -851,7 +947,9 @@ else
             DisplayType = rule.DisplayType,
             Label = rule.Label,
             FilterFieldId = rule.FilterFieldId ?? Guid.Empty,
-            FilterValue = rule.FilterValue
+            FilterValue = rule.FilterValue,
+            SignFieldId = rule.SignFieldId ?? Guid.Empty,
+            NegativeValues = rule.NegativeValues
         };
         _ruleErrors = [];
         _showRuleForm = false;
@@ -862,6 +960,20 @@ else
         _editingRuleId = null;
         _editRule = new();
         _ruleErrors = [];
+    }
+
+    private static string? ToggleNegativeValue(string? current, string value, bool isChecked)
+    {
+        var set = (current ?? "")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (isChecked)
+            set.Add(value);
+        else
+            set.Remove(value);
+
+        return set.Count > 0 ? string.Join(",", set) : null;
     }
 
     private async Task UpdateRuleAsync()
@@ -876,7 +988,10 @@ else
             _editRule.DisplayType,
             _editRule.FilterFieldId != Guid.Empty ? _editRule.FilterFieldId : null,
             string.IsNullOrWhiteSpace(_editRule.FilterValue) ? null : _editRule.FilterValue,
-            string.IsNullOrWhiteSpace(_editRule.Label) ? null : _editRule.Label);
+            string.IsNullOrWhiteSpace(_editRule.Label) ? null : _editRule.Label,
+            SignFieldId: _editRule.SignFieldId != Guid.Empty ? _editRule.SignFieldId : null,
+            NegativeValues: string.IsNullOrWhiteSpace(_editRule.NegativeValues) ? null : _editRule.NegativeValues,
+            ClearSignField: _editRule.SignFieldId == Guid.Empty);
 
         var (ok, errs) = await AnalyticsRuleService.UpdateAsync(Id, _editingRuleId.Value, request);
 
@@ -909,6 +1024,8 @@ else
         public Guid FilterFieldId { get; set; }
         public string? FilterValue { get; set; }
         public string? Label { get; set; }
+        public Guid SignFieldId { get; set; }
+        public string? NegativeValues { get; set; }
     }
 
     private sealed class EditRuleModel
@@ -918,5 +1035,7 @@ else
         public Guid FilterFieldId { get; set; }
         public string? FilterValue { get; set; }
         public string? Label { get; set; }
+        public Guid SignFieldId { get; set; }
+        public string? NegativeValues { get; set; }
     }
 }

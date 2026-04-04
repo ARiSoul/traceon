@@ -10,7 +10,8 @@ public static class FieldAnalyticsRuleMappingExtensions
         this FieldAnalyticsRule entity,
         string measureFieldName,
         string groupByFieldName,
-        string? filterFieldName) =>
+        string? filterFieldName,
+        string? signFieldName = null) =>
         new()
         {
             Id = entity.Id,
@@ -26,6 +27,9 @@ public static class FieldAnalyticsRuleMappingExtensions
             DisplayType = (AnalyticsDisplayType)entity.DisplayType,
             Label = entity.Label,
             SortOrder = entity.SortOrder,
+            SignFieldId = entity.SignFieldId,
+            SignFieldName = signFieldName,
+            NegativeValues = entity.NegativeValues,
             CreatedAtUtc = entity.CreatedAtUtc,
             UpdatedAtUtc = entity.UpdatedAtUtc
         };

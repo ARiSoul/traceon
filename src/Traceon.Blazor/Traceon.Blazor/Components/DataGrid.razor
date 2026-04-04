@@ -1,8 +1,10 @@
 @typeparam TItem
 @inject IStringLocalizer<SharedResource> L
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorage
 
-<div class="data-grid">
-    @if (FilterPlaceholder is not null || Toolbar is not null)
+<div class="data-grid" @onclick="CloseSummaryDropdown">
+    @if (FilterPlaceholder is not null || Toolbar is not null || _hasActiveState)
     {
         <div class="data-grid-toolbar">
             @if (FilterPlaceholder is not null)
@@ -24,6 +26,13 @@
                         </button>
                     }
                 </div>
+            }
+            @if (_hasActiveState && StorageKey is not null)
+            {
+                <button class="btn btn-outline-warning btn-sm" @onclick="ResetAllAsync" disabled="@_loading"
+                        title="@L["DataGrid_ResetAll"]">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>@L["DataGrid_ResetAll"]
+                </button>
             }
             @if (Toolbar is not null)
             {
@@ -56,18 +65,50 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
-                            @foreach (var col in Columns)
+                            @for (var i = 0; i < Columns.Count; i++)
                             {
+                                var colIndex = i;
+                                var col = Columns[i];
                                 <th @onclick="() => SortByAsync(col)"
-                                    class="@(col.SortField is not null ? "sortable" : "")"
-                                    role="@(col.SortField is not null ? "button" : null)">
-                                    <span class="d-inline-flex align-items-center gap-1">
-                                        @col.Title
-                                        @if (col.SortField is not null && _sortField == col.SortField)
-                                        {
-                                            <i class="bi bi-@(_sortDescending ? "sort-down" : "sort-up") sort-indicator"></i>
+                                    class="@(col.SortField is not null ? "sortable" : "")">
+                                    <div class="column-header">
+                                        <span class="column-title"
+                                              role="@(col.SortField is not null ? "button" : null)">
+                                            @col.Title
+                                            @if (col.SortField is not null && _sortField == col.SortField)
+                                            {
+                                                <i class="bi bi-@(_sortDescending ? "sort-down" : "sort-up") sort-indicator"></i>
+                                            }
+                                        </span>
+                                        @{
+                                            var summaryOpts = GetAvailableSummaries(colIndex);
                                         }
-                                    </span>
+                                        @if (summaryOpts.Count > 0)
+                                        {
+                                            <div class="summary-toggle-wrapper" @onclick:stopPropagation>
+                                                <button class="btn-summary-toggle @(HasActiveSummaries(colIndex) ? "active" : "")"
+                                                        @onclick="() => ToggleSummaryDropdown(colIndex)"
+                                                        title="@L["DataGrid_Summaries"]">
+                                                    <i class="bi bi-calculator"></i>
+                                                </button>
+                                                @if (_summaryDropdownIndex == colIndex)
+                                                {
+                                                    <div class="summary-dropdown-menu">
+                                                        @foreach (var opt in summaryOpts)
+                                                        {
+                                                            var capturedOpt = opt;
+                                                            var isChecked = IsSummaryActive(colIndex, capturedOpt);
+                                                            <label class="summary-option">
+                                                                <input type="checkbox" checked="@isChecked"
+                                                                       @onchange="() => ToggleSummaryAsync(colIndex, capturedOpt)" />
+                                                                <span>@GetSummaryLabel(capturedOpt)</span>
+                                                            </label>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
                                 </th>
                             }
                             @if (RowActions is not null)
@@ -80,8 +121,9 @@
                         @foreach (var item in _items)
                         {
                             <tr>
-                                @foreach (var col in Columns)
+                                @for (var i = 0; i < Columns.Count; i++)
                                 {
+                                    var col = Columns[i];
                                     <td>
                                         @if (col.Template is not null)
                                         {
@@ -100,12 +142,116 @@
                             </tr>
                         }
                     </tbody>
+                    @if (_hasSummaryResults)
+                    {
+                        <tfoot>
+                            <tr class="summary-row">
+                                @for (var i = 0; i < Columns.Count; i++)
+                                {
+                                    var col = Columns[i];
+                                    <td>
+                                        @if (_computedSummaries.TryGetValue(i, out var results))
+                                        {
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @foreach (var r in results)
+                                                {
+                                                    <span class="badge bg-body-secondary text-body border">
+                                                        <small class="text-muted me-1">@GetSummaryLabel(r.Type):</small>@FormatSummaryValue(r.Value, col)
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                    </td>
+                                }
+                                @if (RowActions is not null)
+                                {
+                                    <td></td>
+                                }
+                            </tr>
+                        </tfoot>
+                    }
                 </table>
             </div>
         </div>
 
         @* ── Mobile cards ── *@
         <div class="data-grid-cards d-md-none">
+            @{
+                var sortableColumns = Columns.Where(c => c.SortField is not null).ToList();
+            }
+            @if (sortableColumns.Count > 0)
+            {
+                <div class="d-flex gap-2 mb-2 align-items-center">
+                    <select class="form-select form-select-sm flex-grow-1"
+                            value="@(_sortField ?? "")"
+                            @onchange="OnMobileSortFieldChangedAsync">
+                        <option value="">@L["DataGrid_SortBy"]…</option>
+                        @foreach (var col in sortableColumns)
+                        {
+                            <option value="@col.SortField">@col.Title</option>
+                        }
+                    </select>
+                    @if (_sortField is not null)
+                    {
+                        <button class="btn btn-outline-secondary btn-sm flex-shrink-0"
+                                @onclick="ToggleMobileSortDirectionAsync"
+                                title="@(_sortDescending ? L["DataGrid_SortAsc"] : L["DataGrid_SortDesc"])">
+                            <i class="bi bi-@(_sortDescending ? "sort-down" : "sort-up")"></i>
+                        </button>
+                    }
+                    <button class="btn btn-outline-secondary btn-sm flex-shrink-0 @(_summarySelections.Count > 0 ? "active" : "")"
+                            @onclick="() => _showMobileSummaries = !_showMobileSummaries"
+                            title="@L["DataGrid_Summaries"]">
+                        <i class="bi bi-calculator"></i>
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-outline-secondary btn-sm @(_summarySelections.Count > 0 ? "active" : "")"
+                            @onclick="() => _showMobileSummaries = !_showMobileSummaries"
+                            title="@L["DataGrid_Summaries"]">
+                        <i class="bi bi-calculator me-1"></i>@L["DataGrid_Summaries"]
+                    </button>
+                </div>
+            }
+
+            @if (_showMobileSummaries)
+            {
+                <div class="card mb-2 border-secondary">
+                    <div class="card-body py-2 px-3">
+                        <div class="fw-semibold mb-2 text-muted small">
+                            <i class="bi bi-calculator me-1"></i>@L["DataGrid_Summaries"]
+                        </div>
+                        @for (var i = 0; i < Columns.Count; i++)
+                        {
+                            var colIndex = i;
+                            var col = Columns[i];
+                            var opts = GetAvailableSummaries(colIndex);
+                            @if (opts.Count > 0)
+                            {
+                                <div class="mb-2">
+                                    <small class="fw-semibold">@col.Title</small>
+                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                        @foreach (var opt in opts)
+                                        {
+                                            var capturedOpt = opt;
+                                            var active = IsSummaryActive(colIndex, capturedOpt);
+                                            <button class="btn btn-sm @(active ? "btn-primary" : "btn-outline-secondary") py-0 px-2"
+                                                    style="font-size: 0.75rem;"
+                                                    @onclick="() => ToggleSummaryAsync(colIndex, capturedOpt)">
+                                                @GetSummaryLabel(capturedOpt)
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
             @foreach (var item in _items)
             {
                 <div class="card mb-2">
@@ -144,6 +290,34 @@
                         {
                             <div class="d-flex justify-content-end pt-1 mt-1 border-top">
                                 @RowActions(item)
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @* ── Mobile summaries ── *@
+            @if (_hasSummaryResults)
+            {
+                <div class="card mb-2 border-secondary">
+                    <div class="card-body py-2 px-3">
+                        <div class="fw-semibold mb-1 text-muted small">
+                            <i class="bi bi-calculator me-1"></i>@L["DataGrid_Summaries"]
+                        </div>
+                        @for (var i = 0; i < Columns.Count; i++)
+                        {
+                            if (!_computedSummaries.TryGetValue(i, out var results)) continue;
+                            var col = Columns[i];
+                            <div class="d-flex justify-content-between align-items-start py-1 mobile-field">
+                                <span class="text-muted small me-2">@col.Title</span>
+                                <span class="text-end">
+                                    @foreach (var r in results)
+                                    {
+                                        <span class="badge bg-body-secondary text-body border me-1">
+                                            <small class="text-muted me-1">@GetSummaryLabel(r.Type):</small>@FormatSummaryValue(r.Value, col)
+                                        </span>
+                                    }
+                                </span>
                             </div>
                         }
                     </div>
@@ -222,6 +396,19 @@
     [Parameter] public string? DefaultSortField { get; set; }
     [Parameter] public bool DefaultSortDescending { get; set; }
 
+    /// <summary>
+    /// When set, grid state (sort, filter, page size, summaries) is persisted
+    /// to localStorage under this key. Also enables the "Reset All" button.
+    /// </summary>
+    [Parameter] public string? StorageKey { get; set; }
+
+    /// <summary>Invoked when the user clicks "Reset All" so parent components can clear their own filters.</summary>
+    [Parameter] public EventCallback OnReset { get; set; }
+
+    /// <summary>When true, the Reset All button is shown even if the DataGrid's own state is at defaults.
+    /// Use this when a parent component has its own persisted filters.</summary>
+    [Parameter] public bool HasExternalFilters { get; set; }
+
     private IReadOnlyList<TItem> _items = [];
     private bool _loading = true;
     private int _totalCount;
@@ -233,14 +420,33 @@
     private string? _filterInput;
     private string? _appliedFilter;
 
+    // Summary state
+    private int _summaryDropdownIndex = -1;
+    private bool _showMobileSummaries;
+    private Dictionary<int, List<ColumnSummaryType>> _summarySelections = [];
+    private Dictionary<int, List<SummaryResult>> _computedSummaries = [];
+    private bool _hasSummaryResults => _computedSummaries.Count > 0;
+
+    private bool _hasActiveState =>
+        HasExternalFilters
+        || _appliedFilter is not null
+        || (_sortField is not null && _sortField != DefaultSortField)
+        || _sortDescending != DefaultSortDescending
+        || _pageSize != PageSize
+        || _summarySelections.Count > 0;
+
     private int _firstRecord => (_page - 1) * _pageSize + 1;
     private int _lastRecord => Math.Min(_page * _pageSize, _totalCount);
+
+    private string StorageFullKey => $"traceon_grid_{StorageKey}";
 
     protected override async Task OnInitializedAsync()
     {
         _pageSize = PageSize;
         _sortField = DefaultSortField;
         _sortDescending = DefaultSortDescending;
+
+        await RestoreStateAsync();
         await LoadDataInternalAsync();
     }
 
@@ -249,9 +455,94 @@
         await LoadDataInternalAsync();
     }
 
+    // ── Persistence ──
+
+    private async Task RestoreStateAsync()
+    {
+        if (StorageKey is null) return;
+
+        try
+        {
+            var state = await LocalStorage.GetItemAsync<DataGridPersistedState>(StorageFullKey);
+            if (state is null) return;
+
+            if (state.SortField is not null) _sortField = state.SortField;
+            _sortDescending = state.SortDescending;
+            if (!string.IsNullOrWhiteSpace(state.SearchTerm))
+            {
+                _filterInput = state.SearchTerm;
+                _appliedFilter = state.SearchTerm;
+            }
+            if (state.PageSize.HasValue && PageSizeOptions.Contains(state.PageSize.Value))
+                _pageSize = state.PageSize.Value;
+
+            if (state.Summaries is not null)
+            {
+                _summarySelections = [];
+                foreach (var (title, types) in state.Summaries)
+                {
+                    var colIndex = Columns.FindIndex(c => c.Title == title);
+                    if (colIndex >= 0)
+                        _summarySelections[colIndex] = [.. types];
+                }
+            }
+        }
+        catch { /* localStorage may be unavailable */ }
+    }
+
+    private async Task SaveStateAsync()
+    {
+        if (StorageKey is null) return;
+
+        try
+        {
+            var summaries = _summarySelections.Count > 0
+                ? _summarySelections.ToDictionary(
+                    kv => Columns[kv.Key].Title,
+                    kv => kv.Value)
+                : null;
+
+            var state = new DataGridPersistedState
+            {
+                SortField = _sortField,
+                SortDescending = _sortDescending,
+                SearchTerm = _appliedFilter,
+                PageSize = _pageSize,
+                Summaries = summaries
+            };
+
+            await LocalStorage.SetItemAsync(StorageFullKey, state);
+        }
+        catch { /* best effort */ }
+    }
+
+    private async Task ResetAllAsync()
+    {
+        _sortField = DefaultSortField;
+        _sortDescending = DefaultSortDescending;
+        _pageSize = PageSize;
+        _filterInput = null;
+        _appliedFilter = null;
+        _page = 1;
+        _summarySelections.Clear();
+        _computedSummaries.Clear();
+        _summaryDropdownIndex = -1;
+
+        if (StorageKey is not null)
+        {
+            try { await LocalStorage.RemoveItemAsync(StorageFullKey); } catch { }
+        }
+
+        await OnReset.InvokeAsync();
+        await LoadDataInternalAsync();
+    }
+
+    // ── Data loading ──
+
     private async Task LoadDataInternalAsync()
     {
         _loading = true;
+        _summaryDropdownIndex = -1;
         StateHasChanged();
 
         var request = new DataGridRequest(_page, _pageSize, _sortField, _sortDescending, _appliedFilter);
@@ -264,9 +555,13 @@
         if (_page > _totalPages)
             _page = _totalPages;
 
+        ComputeSummaries();
+
         _loading = false;
         StateHasChanged();
     }
+
+    // ── Sorting ──
 
     private async Task SortByAsync(DataGridColumn<TItem> column)
     {
@@ -282,13 +577,44 @@
 
         _page = 1;
         await LoadDataInternalAsync();
+        await SaveStateAsync();
     }
+
+    private async Task OnMobileSortFieldChangedAsync(ChangeEventArgs e)
+    {
+        var field = e.Value?.ToString();
+        if (string.IsNullOrEmpty(field))
+        {
+            _sortField = DefaultSortField;
+            _sortDescending = DefaultSortDescending;
+        }
+        else
+        {
+            _sortField = field;
+            _sortDescending = false;
+        }
+
+        _page = 1;
+        await LoadDataInternalAsync();
+        await SaveStateAsync();
+    }
+
+    private async Task ToggleMobileSortDirectionAsync()
+    {
+        _sortDescending = !_sortDescending;
+        _page = 1;
+        await LoadDataInternalAsync();
+        await SaveStateAsync();
+    }
+
+    // ── Filtering ──
 
     private async Task ApplyFilterAsync()
     {
         _appliedFilter = string.IsNullOrWhiteSpace(_filterInput) ? null : _filterInput;
         _page = 1;
         await LoadDataInternalAsync();
+        await SaveStateAsync();
     }
 
     private async Task ClearFilterAsync()
@@ -297,6 +623,7 @@
         _appliedFilter = null;
         _page = 1;
         await LoadDataInternalAsync();
+        await SaveStateAsync();
     }
 
     private async Task OnFilterKeyDownAsync(KeyboardEventArgs e)
@@ -304,6 +631,8 @@
         if (e.Key == "Enter")
             await ApplyFilterAsync();
     }
+
+    // ── Pagination ──
 
     private async Task NextPageAsync()
     {
@@ -357,6 +686,7 @@
             _pageSize = newSize;
             _page = 1;
             await LoadDataInternalAsync();
+            await SaveStateAsync();
         }
     }
 
@@ -372,6 +702,167 @@
             yield return i;
     }
 
+    // ── Summaries ──
+
+    private void CloseSummaryDropdown()
+    {
+        if (_summaryDropdownIndex >= 0)
+        {
+            _summaryDropdownIndex = -1;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleSummaryDropdown(int colIndex)
+    {
+        _summaryDropdownIndex = _summaryDropdownIndex == colIndex ? -1 : colIndex;
+    }
+
+    private List<ColumnSummaryType> GetAvailableSummaries(int colIndex)
+    {
+        if (_items.Count == 0 || colIndex >= Columns.Count) return [];
+
+        var col = Columns[colIndex];
+        var sample = col.Selector(_items[0]);
+
+        if (IsNumericValue(sample) || (sample is string s && decimal.TryParse(s, out _)))
+            return [ColumnSummaryType.Sum, ColumnSummaryType.Avg, ColumnSummaryType.Min, ColumnSummaryType.Max, ColumnSummaryType.Count];
+
+        if (sample is DateTime or DateTimeOffset)
+            return [ColumnSummaryType.Min, ColumnSummaryType.Max, ColumnSummaryType.Count];
+
+        return [ColumnSummaryType.Count];
+    }
+
+    private bool HasActiveSummaries(int colIndex) =>
+        _summarySelections.TryGetValue(colIndex, out var list) && list.Count > 0;
+
+    private bool IsSummaryActive(int colIndex, ColumnSummaryType type) =>
+        _summarySelections.TryGetValue(colIndex, out var list) && list.Contains(type);
+
+    private async Task ToggleSummaryAsync(int colIndex, ColumnSummaryType type)
+    {
+        if (!_summarySelections.TryGetValue(colIndex, out var list))
+        {
+            list = [];
+            _summarySelections[colIndex] = list;
+        }
+
+        if (!list.Remove(type))
+            list.Add(type);
+
+        if (list.Count == 0)
+            _summarySelections.Remove(colIndex);
+
+        ComputeSummaries();
+        await SaveStateAsync();
+    }
+
+    private void ComputeSummaries()
+    {
+        _computedSummaries = [];
+        if (_items.Count == 0 || _summarySelections.Count == 0) return;
+
+        foreach (var (colIndex, types) in _summarySelections)
+        {
+            if (colIndex >= Columns.Count) continue;
+            var col = Columns[colIndex];
+            var results = new List<SummaryResult>();
+
+            foreach (var type in types)
+            {
+                var value = ComputeSingleSummary(col, type);
+                if (value is not null)
+                    results.Add(new(type, value));
+            }
+
+            if (results.Count > 0)
+                _computedSummaries[colIndex] = results;
+        }
+    }
+
+    private object? ComputeSingleSummary(DataGridColumn<TItem> col, ColumnSummaryType type)
+    {
+        if (type == ColumnSummaryType.Count)
+            return _items.Count(item => col.Selector(item) is not null and not "");
+
+        // Try numeric
+        var nums = _items
+            .Select(item => TryGetNumericValue(col.Selector(item)))
+            .Where(v => v.HasValue)
+            .Select(v => v!.Value)
+            .ToList();
+
+        if (nums.Count > 0)
+        {
+            return type switch
+            {
+                ColumnSummaryType.Sum => nums.Sum(),
+                ColumnSummaryType.Avg => Math.Round(nums.Average(), 2),
+                ColumnSummaryType.Min => nums.Min(),
+                ColumnSummaryType.Max => nums.Max(),
+                _ => null
+            };
+        }
+
+        // Try DateTime for Min/Max
+        if (type is ColumnSummaryType.Min or ColumnSummaryType.Max)
+        {
+            var dates = _items
+                .Select(item => col.Selector(item))
+                .Where(v => v is DateTime or DateTimeOffset)
+                .Select(v => v is DateTimeOffset dto ? dto.DateTime : (DateTime)v!)
+                .ToList();
+
+            if (dates.Count > 0)
+                return type == ColumnSummaryType.Min ? dates.Min() : dates.Max();
+        }
+
+        return null;
+    }
+
+    private static decimal? TryGetNumericValue(object? value)
+    {
+        return value switch
+        {
+            null => null,
+            decimal d => d,
+            int i => i,
+            long l => l,
+            double d => (decimal)d,
+            float f => (decimal)f,
+            short s => s,
+            byte b => b,
+            string str => decimal.TryParse(str, out var p) ? p : null,
+            _ => null
+        };
+    }
+
+    private static bool IsNumericValue(object? value) =>
+        value is int or long or float or double or decimal or short or byte;
+
+    private string GetSummaryLabel(ColumnSummaryType type) => type switch
+    {
+        ColumnSummaryType.Sum => L["DataGrid_Sum"],
+        ColumnSummaryType.Avg => L["DataGrid_Avg"],
+        ColumnSummaryType.Min => L["DataGrid_Min"],
+        ColumnSummaryType.Max => L["DataGrid_Max"],
+        ColumnSummaryType.Count => L["DataGrid_Count"],
+        _ => type.ToString()
+    };
+
+    private static string FormatSummaryValue(object? value, DataGridColumn<TItem> col)
+    {
+        if (value is null) return "";
+        if (value is DateTime dt)
+            return dt.ToLocalTime().ToString(col.Format ?? "g");
+        if (value is decimal d)
+            return d == Math.Truncate(d) ? d.ToString("N0") : d.ToString("N2");
+        return value.ToString() ?? "";
+    }
+
+    // ── Formatting ──
+
     private static string FormatValue(DataGridColumn<TItem> column, TItem item)
     {
         var value = column.Selector(item);
@@ -380,4 +871,6 @@
             return formattable.ToString(column.Format, null);
         return value.ToString() ?? "";
     }
+
+    private sealed record SummaryResult(ColumnSummaryType Type, object Value);
 }
