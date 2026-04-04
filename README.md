@@ -8,6 +8,10 @@
 
 Whether you're logging workouts, purchases, study sessions, or any custom activity — Traceon lets you define exactly what you want to track and gives you the tools to understand your patterns through dashboards and charts.
 
+### 🌐 Try it live
+
+> **[traceon.arisoul.org](https://traceon.arisoul.org)** — Free to use. Create an account and start tracking.
+
 ---
 
 ## ✨ Features
@@ -174,4 +178,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-*Built with ❤️ in .NET by [ARiSoul](https://github.com/ARiSoul).*
+*Built with ❤️ in .NET by [ARiSoul](https://github.com/ARiSoul) and [Claude Opus 4](https://claude.ai).*

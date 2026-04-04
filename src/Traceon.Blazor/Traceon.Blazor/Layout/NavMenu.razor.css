@@ -56,6 +56,14 @@
     color: white;
 }
 
+.sidebar-footer {
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+    .sidebar-footer a:hover {
+        opacity: 0.8 !important;
+    }
+
 @media (min-width: 641px) {
     .navbar-toggler {
         display: none;
@@ -68,7 +76,7 @@
 
     .nav-scrollable {
         /* Allow sidebar to scroll for tall menus */
-        height: calc(100vh - 3.5rem);
+        height: calc(100vh - 3.5rem - 5.5rem);
         overflow-y: auto;
     }
 }

@@ -82,12 +82,24 @@
                         <i class="bi bi-chat-dots me-2"></i> <span>@L["Nav_Feedback"]</span>
                     </NavLink>
                 </div>
-            </Authorized>
-        </AuthorizeView>
-    </nav>
-</div>
+                    </Authorized>
+                    </AuthorizeView>
+                </nav>
+            </div>
 
-@code {
+            <div class="sidebar-footer px-3 py-3 text-center">
+                <a href="https://github.com/ARiSoul/traceon" target="_blank" rel="noopener noreferrer"
+                   class="text-decoration-none d-inline-flex align-items-center gap-1 small text-light opacity-50"
+                   title="Open Source on GitHub">
+                    <i class="bi bi-github"></i>
+                    <span>Open Source</span>
+                </a>
+                <div class="text-light opacity-25 mt-1" style="font-size: 0.7rem;">
+                    Built with ❤️ in .NET<br />by ARiSoul &amp; Claude Opus 4
+                </div>
+            </div>
+
+            @code {
     private bool collapseNavMenu = true;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
