@@ -327,7 +327,7 @@
                     {
                         var measureVal = e.FieldValues
                             .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
-                        if (!decimal.TryParse(measureVal, out var val)) continue;
+                        if (!decimal.TryParse(measureVal, CultureInfo.InvariantCulture, out var val)) continue;
 
                         var signVal = rule.SignFieldId.HasValue
                             ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.SignFieldId.Value)?.Value

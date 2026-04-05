@@ -318,13 +318,13 @@
                 case FieldType.Boolean:
                     _defaultBool = Field.DefaultValue.Equals("true", StringComparison.OrdinalIgnoreCase);
                     break;
-                case FieldType.Integer when int.TryParse(Field.DefaultValue, out var i):
+                case FieldType.Integer when int.TryParse(Field.DefaultValue, CultureInfo.InvariantCulture, out var i):
                     _defaultInt = i;
                     break;
-                case FieldType.Decimal when decimal.TryParse(Field.DefaultValue, out var d):
+                case FieldType.Decimal when decimal.TryParse(Field.DefaultValue, CultureInfo.InvariantCulture, out var d):
                     _defaultDecimal = d;
                     break;
-                case FieldType.Date when DateTime.TryParse(Field.DefaultValue, out var dt):
+                case FieldType.Date when DateTime.TryParse(Field.DefaultValue, CultureInfo.InvariantCulture, out var dt):
                     _defaultDate = dt;
                     break;
             }
@@ -375,8 +375,8 @@
     private string? ResolveDefaultValue() => Field.FieldType switch
     {
         FieldType.Boolean => _defaultBool ? "true" : "false",
-        FieldType.Integer => _defaultInt?.ToString(),
-        FieldType.Decimal => _defaultDecimal?.ToString(),
+        FieldType.Integer => _defaultInt?.ToString(CultureInfo.InvariantCulture),
+        FieldType.Decimal => _defaultDecimal?.ToString(CultureInfo.InvariantCulture),
         FieldType.Date => _defaultDate?.ToString("yyyy-MM-dd"),
         _ => _defaultValue
     };

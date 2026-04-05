@@ -647,7 +647,13 @@ else
             {
                 Bar = new PlotOptionsBar { ColumnWidth = "70%" }
             },
-            Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
+            Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } },
+            DataLabels = new DataLabels
+            {
+                Enabled = true,
+                Formatter = "function(val) { return val > 0 ? Math.round(val) : ''; }",
+                Style = new DataLabelsStyle { FontSize = "10px" }
+            }
         };
     }
 
@@ -656,7 +662,18 @@ else
         return new ApexChartOptions<DropdownDataPoint>
         {
             Chart = new Chart { },
-            Legend = new Legend { Position = LegendPosition.Bottom }
+            Legend = new Legend
+            {
+                Position = LegendPosition.Bottom,
+                Formatter = "function(seriesName, opts) { return seriesName + ' — ' + opts.w.globals.series[opts.seriesIndex]; }"
+            },
+            DataLabels = new DataLabels
+            {
+                Enabled = true,
+                Formatter = "function(val) { return Math.round(val) + '%'; }",
+                Style = new DataLabelsStyle { FontSize = "11px" },
+                DropShadow = new DropShadow { Enabled = false }
+            }
         };
     }
 
@@ -673,6 +690,7 @@ else
         var yTitle = result.Unit is not null && result.Unit != "UN"
             ? result.Unit
             : FormatAggregationLabel(result.Aggregation);
+        var isCount = result.Aggregation == AnalyticsAggregation.Count;
 
         return new ApexChartOptions<CrossFieldGroup>
         {
@@ -683,14 +701,22 @@ else
             Yaxis = [new YAxis
             {
                 Title = new AxisTitle { Text = yTitle },
-                DecimalsInFloat = result.Aggregation == AnalyticsAggregation.Count ? 0 : 2
+                DecimalsInFloat = isCount ? 0 : 2
             }],
             Colors = CrossFieldPalette,
             PlotOptions = new PlotOptions
             {
                 Bar = new PlotOptionsBar { ColumnWidth = "60%", Distributed = true }
             },
-            Legend = new Legend { Show = false }
+            Legend = new Legend { Show = false },
+            DataLabels = new DataLabels
+            {
+                Enabled = true,
+                Formatter = isCount
+                    ? "function(val) { return val > 0 ? Math.round(val) : ''; }"
+                    : "function(val) { return val > 0 ? (val % 1 === 0 ? val.toString() : val.toFixed(2)) : ''; }",
+                Style = new DataLabelsStyle { FontSize = "11px" }
+            }
         };
     }
 
@@ -700,7 +726,18 @@ else
         {
             Chart = new Chart { },
             Colors = CrossFieldPalette,
-            Legend = new Legend { Position = LegendPosition.Bottom }
+            Legend = new Legend
+            {
+                Position = LegendPosition.Bottom,
+                Formatter = "function(seriesName, opts) { return seriesName + ' — ' + opts.w.globals.series[opts.seriesIndex]; }"
+            },
+            DataLabels = new DataLabels
+            {
+                Enabled = true,
+                Formatter = "function(val) { return Math.round(val) + '%'; }",
+                Style = new DataLabelsStyle { FontSize = "11px" },
+                DropShadow = new DropShadow { Enabled = false }
+            }
         };
     }
 

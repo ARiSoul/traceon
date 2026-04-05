@@ -495,8 +495,14 @@ else
                         {
                             var showUnit = fieldType is FieldType.Integer or FieldType.Decimal
                                            && !string.IsNullOrWhiteSpace(fieldUnit);
+                            var displayValue = value;
+                            if (fieldType is FieldType.Integer or FieldType.Decimal
+                                && decimal.TryParse(value, CultureInfo.InvariantCulture, out var numVal))
+                            {
+                                displayValue = numVal.ToString(CultureInfo.CurrentCulture);
+                            }
                             builder.OpenElement(0, "span");
-                            builder.AddContent(1, showUnit ? $"{value} {fieldUnit}" : value);
+                            builder.AddContent(1, showUnit ? $"{displayValue} {fieldUnit}" : displayValue);
                             builder.CloseElement();
                         }
                     }

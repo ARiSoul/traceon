@@ -1,3 +1,4 @@
+using System.Globalization;
 using Traceon.Blazor.Components;
 using Traceon.Contracts.ActionEntries;
 using Traceon.Contracts.ActionFields;
@@ -123,7 +124,7 @@ public sealed class DashboardService(
                 case FieldType.Integer:
                 case FieldType.Decimal:
                     var rawPoints = entriesWithValues
-                        .Select(x => decimal.TryParse(x.Value, out var n) ? new NumericDataPoint(x.Entry.OccurredAtUtc, n) : null)
+                        .Select(x => decimal.TryParse(x.Value, CultureInfo.InvariantCulture, out var n) ? new NumericDataPoint(x.Entry.OccurredAtUtc, n) : null)
                         .Where(p => p is not null)
                         .Select(p => p!)
                         .ToList();
@@ -266,10 +267,10 @@ public sealed class DashboardService(
                 else if (isNumericMeasure)
                 {
                     var nums = grp
-                        .Where(p => decimal.TryParse(p.MeasureValue, out _))
+                        .Where(p => decimal.TryParse(p.MeasureValue, CultureInfo.InvariantCulture, out _))
                         .Select(p =>
                         {
-                            var val = decimal.Parse(p.MeasureValue!);
+                            var val = decimal.Parse(p.MeasureValue!, CultureInfo.InvariantCulture);
                             if (rule.Aggregation == AnalyticsAggregation.SignedSum &&
                                 negativeValueSet is not null &&
                                 p.SignValue is not null &&
@@ -373,7 +374,7 @@ public sealed class DashboardService(
                         : null;
                     return (Date: e.OccurredAtUtc, MeasureValue: measureVal, SignValue: signVal);
                 })
-                .Where(x => decimal.TryParse(x.MeasureValue, out _))
+                .Where(x => decimal.TryParse(x.MeasureValue, CultureInfo.InvariantCulture, out _))
                 .ToList();
 
             if (signedEntries.Count == 0) continue;
@@ -383,7 +384,7 @@ public sealed class DashboardService(
 
             foreach (var entry in signedEntries)
             {
-                var val = decimal.Parse(entry.MeasureValue!);
+                var val = decimal.Parse(entry.MeasureValue!, CultureInfo.InvariantCulture);
                 if (negativeValueSet is not null && entry.SignValue is not null &&
                     negativeValueSet.Contains(entry.SignValue))
                 {
@@ -437,7 +438,7 @@ public sealed class DashboardService(
             {
                 var measureVal = e.FieldValues
                     .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
-                if (!decimal.TryParse(measureVal, out var val)) continue;
+                if (!decimal.TryParse(measureVal, CultureInfo.InvariantCulture, out var val)) continue;
 
                 var signVal = rule.SignFieldId.HasValue
                     ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.SignFieldId.Value)?.Value
@@ -554,8 +555,8 @@ public sealed class DashboardService(
         {
             var rawPoints = entries
                 .Select(e => (e.OccurredAtUtc, Val: e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value))
-                .Where(x => !string.IsNullOrWhiteSpace(x.Val) && decimal.TryParse(x.Val, out _))
-                .Select(x => new NumericDataPoint(x.OccurredAtUtc, decimal.Parse(x.Val!)))
+                .Where(x => !string.IsNullOrWhiteSpace(x.Val) && decimal.TryParse(x.Val, CultureInfo.InvariantCulture, out _))
+                .Select(x => new NumericDataPoint(x.OccurredAtUtc, decimal.Parse(x.Val!, CultureInfo.InvariantCulture)))
                 .ToList();
 
             var points = AggregateTrendPoints(rawPoints, field.TrendAggregation);
@@ -610,7 +611,7 @@ public sealed class DashboardService(
             case FieldType.Integer:
             case FieldType.Decimal:
                 var numbers = rawValues
-                    .Select(v => decimal.TryParse(v, out var n) ? n : (decimal?)null)
+                    .Select(v => decimal.TryParse(v, CultureInfo.InvariantCulture, out var n) ? n : (decimal?)null)
                     .Where(n => n.HasValue)
                     .Select(n => n!.Value)
                     .ToList();
@@ -629,7 +630,7 @@ public sealed class DashboardService(
                     var latestValue = sortedDescEntries
                         .Select(e => e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value)
                         .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
-                    if (latestValue is not null && decimal.TryParse(latestValue, out var lat))
+                    if (latestValue is not null && decimal.TryParse(latestValue, CultureInfo.InvariantCulture, out var lat))
                         stats.NumericLatest = lat;
                 }
                 break;

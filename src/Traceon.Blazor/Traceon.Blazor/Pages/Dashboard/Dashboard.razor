@@ -497,7 +497,12 @@ else if (_data is not null)
         {
             Bar = new PlotOptionsBar { ColumnWidth = "60%", BorderRadius = 3 }
         },
-        DataLabels = new DataLabels { Enabled = false }
+        DataLabels = new DataLabels
+        {
+            Enabled = true,
+            Formatter = "function(val) { return val > 0 ? Math.round(val) : ''; }",
+            Style = new DataLabelsStyle { FontSize = "10px" }
+        }
     };
 
     private ApexChartOptions<NumericDataPoint> BuildMiniChartOptions(NumericFieldSeries series)

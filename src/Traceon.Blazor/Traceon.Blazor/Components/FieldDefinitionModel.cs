@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Microsoft.Extensions.Localization;
 using Traceon.Contracts.FieldDefinitions;
 using Traceon.Contracts.Enums;
@@ -61,13 +62,13 @@ public sealed class FieldDefinitionModel
             case FieldType.Boolean:
                 DefaultBoolValue = DefaultValue.Equals("true", StringComparison.OrdinalIgnoreCase);
                 break;
-            case FieldType.Integer when int.TryParse(DefaultValue, out var i):
+            case FieldType.Integer when int.TryParse(DefaultValue, CultureInfo.InvariantCulture, out var i):
                 DefaultIntValue = i;
                 break;
-            case FieldType.Decimal when decimal.TryParse(DefaultValue, out var d):
+            case FieldType.Decimal when decimal.TryParse(DefaultValue, CultureInfo.InvariantCulture, out var d):
                 DefaultDecimalValue = d;
                 break;
-            case FieldType.Date when DateTime.TryParse(DefaultValue, out var dt):
+            case FieldType.Date when DateTime.TryParse(DefaultValue, CultureInfo.InvariantCulture, out var dt):
                 DefaultDateValue = dt;
                 break;
         }
@@ -76,8 +77,8 @@ public sealed class FieldDefinitionModel
     public string? ResolveDefaultValue() => Type switch
     {
         FieldType.Boolean => DefaultBoolValue ? "true" : "false",
-        FieldType.Integer => DefaultIntValue?.ToString(),
-        FieldType.Decimal => DefaultDecimalValue?.ToString(),
+        FieldType.Integer => DefaultIntValue?.ToString(CultureInfo.InvariantCulture),
+        FieldType.Decimal => DefaultDecimalValue?.ToString(CultureInfo.InvariantCulture),
         FieldType.Date => DefaultDateValue?.ToString("yyyy-MM-dd"),
         _ => DefaultValue
     };

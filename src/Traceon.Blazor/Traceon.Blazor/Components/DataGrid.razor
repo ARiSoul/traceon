@@ -725,7 +725,7 @@
         var col = Columns[colIndex];
         var sample = col.Selector(_items[0]);
 
-        if (IsNumericValue(sample) || (sample is string s && decimal.TryParse(s, out _)))
+        if (IsNumericValue(sample) || (sample is string s && decimal.TryParse(s, CultureInfo.InvariantCulture, out _)))
             return [ColumnSummaryType.Sum, ColumnSummaryType.Avg, ColumnSummaryType.Min, ColumnSummaryType.Max, ColumnSummaryType.Count];
 
         if (sample is DateTime or DateTimeOffset)
@@ -833,7 +833,7 @@
             float f => (decimal)f,
             short s => s,
             byte b => b,
-            string str => decimal.TryParse(str, out var p) ? p : null,
+            string str => decimal.TryParse(str, CultureInfo.InvariantCulture, out var p) ? p : null,
             _ => null
         };
     }

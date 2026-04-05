@@ -349,7 +349,7 @@ else
                 var value = model.ResolveValue();
                 if (string.IsNullOrWhiteSpace(value)) continue;
 
-                if (decimal.TryParse(value, out var numericValue))
+                if (decimal.TryParse(value, CultureInfo.InvariantCulture, out var numericValue))
                 {
                     if (model.Field.MinValue.HasValue && numericValue < model.Field.MinValue)
                         errors.Add(L["Validation_FieldMinValue", model.Field.Name, model.Field.MinValue]);
@@ -408,13 +408,13 @@ else
                 case FieldType.Boolean:
                     BoolValue = value.Equals("true", StringComparison.OrdinalIgnoreCase);
                     break;
-                case FieldType.Integer when int.TryParse(value, out var i):
+                case FieldType.Integer when int.TryParse(value, CultureInfo.InvariantCulture, out var i):
                     IntValue = i;
                     break;
-                case FieldType.Decimal when decimal.TryParse(value, out var d):
+                case FieldType.Decimal when decimal.TryParse(value, CultureInfo.InvariantCulture, out var d):
                     DecimalValue = d;
                     break;
-                case FieldType.Date when DateTime.TryParse(value, out var dt):
+                case FieldType.Date when DateTime.TryParse(value, CultureInfo.InvariantCulture, out var dt):
                     DateValue = dt;
                     break;
                 default:
@@ -426,8 +426,8 @@ else
         public string? ResolveValue() => Field.FieldType switch
         {
             FieldType.Boolean => BoolValue.ToString().ToLowerInvariant(),
-            FieldType.Integer => IntValue?.ToString(),
-            FieldType.Decimal => DecimalValue?.ToString(),
+            FieldType.Integer => IntValue?.ToString(CultureInfo.InvariantCulture),
+            FieldType.Decimal => DecimalValue?.ToString(CultureInfo.InvariantCulture),
             FieldType.Date => DateValue?.ToString("yyyy-MM-dd"),
             _ => TextValue
         };
