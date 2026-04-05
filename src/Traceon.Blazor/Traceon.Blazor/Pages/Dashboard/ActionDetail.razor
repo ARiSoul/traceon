@@ -173,7 +173,7 @@ else
         <div class="col">
             <div class="card h-100">
                 <div class="card-body text-center py-2">
-                    <div class="fs-4 fw-bold text-warning">@FormatRelative(_data.Stats.LastEntryUtc)</div>
+                    <div class="fs-4 fw-bold text-warning-emphasis">@FormatRelative(_data.Stats.LastEntryUtc)</div>
                     <small class="text-muted">@L["Dashboard_LastEntry"]</small>
                 </div>
             </div>
@@ -465,9 +465,9 @@ else
                                 if (m.HasFlag(SummaryMetrics.Min)) cols.Add((L["Metric_Min"], "text-primary", $"{FormatNumeric(field.NumericMin, field.IsInteger)}{u}"));
                                 if (m.HasFlag(SummaryMetrics.Avg)) cols.Add((L["Metric_Avg"], "text-success", $"{FormatNumeric(field.NumericAvg, false)}{u}"));
                                 if (m.HasFlag(SummaryMetrics.Max)) cols.Add((L["Metric_Max"], "text-danger", $"{FormatNumeric(field.NumericMax, field.IsInteger)}{u}"));
-                                if (m.HasFlag(SummaryMetrics.Sum)) cols.Add((L["Metric_Sum"], "text-warning", $"{FormatNumeric(field.NumericSum, field.IsInteger)}{u}"));
+                                if (m.HasFlag(SummaryMetrics.Sum)) cols.Add((L["Metric_Sum"], "text-warning-emphasis", $"{FormatNumeric(field.NumericSum, field.IsInteger)}{u}"));
                                 if (m.HasFlag(SummaryMetrics.Count)) cols.Add((L["Metric_Count"], "text-info", $"{field.NumericCount}"));
-                                if (m.HasFlag(SummaryMetrics.Latest) && field.NumericLatest.HasValue) cols.Add((L["Metric_Latest"], "text-dark", $"{FormatNumeric(field.NumericLatest, field.IsInteger)}{u}"));
+                                if (m.HasFlag(SummaryMetrics.Latest) && field.NumericLatest.HasValue) cols.Add((L["Metric_Latest"], "text-body", $"{FormatNumeric(field.NumericLatest, field.IsInteger)}{u}"));
 
                                 @if (cols.Count > 0)
                                 {

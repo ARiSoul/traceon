@@ -338,19 +338,19 @@ else if (_data is not null)
                             <!-- Key Metrics Row -->
                             <div class="row row-cols-2 row-cols-md-4 g-2 mb-3">
                                 <div class="col">
-                                    <div class="border rounded p-2 text-center bg-light">
+                                    <div class="border rounded p-2 text-center bg-body-secondary">
                                         <div class="fw-bold">@action.EntryCount</div>
                                         <small class="text-muted">@L["Dashboard_TotalEntries_Label"]</small>
                                     </div>
                                 </div>
                                 <div class="col">
-                                    <div class="border rounded p-2 text-center bg-light">
+                                    <div class="border rounded p-2 text-center bg-body-secondary">
                                         <div class="fw-bold">@FormatRelativeDate(action.LastEntryUtc)</div>
                                         <small class="text-muted">@L["Dashboard_LastEntry"]</small>
                                     </div>
                                 </div>
                                 <div class="col">
-                                    <div class="border rounded p-2 text-center bg-light">
+                                    <div class="border rounded p-2 text-center bg-body-secondary">
                                         <div class="fw-bold">
                                             @if (action.AverageGapDays.HasValue)
                                             {
@@ -365,7 +365,7 @@ else if (_data is not null)
                                     </div>
                                 </div>
                                 <div class="col">
-                                    <div class="border rounded p-2 text-center bg-light">
+                                    <div class="border rounded p-2 text-center bg-body-secondary">
                                         <div class="fw-bold">
                                             <i class="bi bi-fire @(action.Streak > 0 ? "text-danger" : "text-muted") me-1"></i>@action.Streak
                                         </div>
@@ -510,7 +510,7 @@ else if (_data is not null)
         var options = new ApexChartOptions<NumericDataPoint>
         {
             Chart = new Chart { Toolbar = new Toolbar { Show = false } },
-            Xaxis = new XAxis { Type = XAxisType.Datetime, Labels = new XAxisLabels { Show = false } },
+            Xaxis = new XAxis { Type = XAxisType.Datetime, Labels = new XAxisLabels { Format = "MMM dd", RotateAlways = false, HideOverlappingLabels = true } },
             Yaxis = [new YAxis { DecimalsInFloat = series.IsInteger ? 0 : 2 }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
             Colors = ["#198754"],
@@ -830,9 +830,9 @@ else if (_data is not null)
         if (m.HasFlag(SummaryMetrics.Min)) cols.Add((L["Metric_Min"], "text-primary", $"{FormatNumeric(field.NumericMin, field.IsInteger)}{u}"));
         if (m.HasFlag(SummaryMetrics.Avg)) cols.Add((L["Metric_Avg"], "text-success", $"{FormatNumeric(field.NumericAvg, false)}{u}"));
         if (m.HasFlag(SummaryMetrics.Max)) cols.Add((L["Metric_Max"], "text-danger", $"{FormatNumeric(field.NumericMax, field.IsInteger)}{u}"));
-        if (m.HasFlag(SummaryMetrics.Sum)) cols.Add((L["Metric_Sum"], "text-warning", $"{FormatNumeric(field.NumericSum, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Sum)) cols.Add((L["Metric_Sum"], "text-warning-emphasis", $"{FormatNumeric(field.NumericSum, field.IsInteger)}{u}"));
         if (m.HasFlag(SummaryMetrics.Count)) cols.Add((L["Metric_Count"], "text-info", $"{field.NumericCount}"));
-        if (m.HasFlag(SummaryMetrics.Latest) && field.NumericLatest.HasValue) cols.Add((L["Metric_Latest"], "text-dark", $"{FormatNumeric(field.NumericLatest, field.IsInteger)}{u}"));
+        if (m.HasFlag(SummaryMetrics.Latest) && field.NumericLatest.HasValue) cols.Add((L["Metric_Latest"], "text-body", $"{FormatNumeric(field.NumericLatest, field.IsInteger)}{u}"));
 
         @if (cols.Count > 0)
         {
