@@ -551,7 +551,8 @@ else
             },
             Xaxis = new XAxis
             {
-                Type = XAxisType.Datetime
+                Type = XAxisType.Datetime,
+                Labels = new XAxisLabels { Format = "dd MMM yyyy" }
             },
             Yaxis = [new YAxis { Title = new AxisTitle { Text = L["Common_Entries"].Value }, Min = 0 }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
@@ -571,7 +572,11 @@ else
                 Toolbar = new Toolbar { Show = true },
                 Zoom = new Zoom { Enabled = true }
             },
-            Xaxis = new XAxis { Type = XAxisType.Datetime },
+            Xaxis = new XAxis
+            {
+                Type = XAxisType.Datetime,
+                Labels = new XAxisLabels { Format = "dd MMM yyyy" }
+            },
             Yaxis = [new YAxis
             {
                 Title = new AxisTitle { Text = yTitle },
@@ -631,7 +636,11 @@ else
                 Stacked = true,
                 Toolbar = new Toolbar { Show = true }
             },
-            Xaxis = new XAxis { Type = XAxisType.Datetime },
+            Xaxis = new XAxis
+            {
+                Type = XAxisType.Datetime,
+                Labels = new XAxisLabels { Format = "dd MMM yyyy" }
+            },
             Yaxis = [new YAxis { Title = new AxisTitle { Text = L["Metric_Count"].Value }, Min = 0 }],
             Colors = ["#198754", "#dc3545"],
             PlotOptions = new PlotOptions
@@ -705,7 +714,11 @@ else
                 Toolbar = new Toolbar { Show = true },
                 Zoom = new Zoom { Enabled = true }
             },
-            Xaxis = new XAxis { Type = XAxisType.Datetime },
+            Xaxis = new XAxis
+            {
+                Type = XAxisType.Datetime,
+                Labels = new XAxisLabels { Format = "dd MMM yyyy" }
+            },
             Yaxis = [new YAxis { Title = new AxisTitle { Text = yTitle }, DecimalsInFloat = 2 }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
             Fill = new Fill { Opacity = new Opacity(0.25) },

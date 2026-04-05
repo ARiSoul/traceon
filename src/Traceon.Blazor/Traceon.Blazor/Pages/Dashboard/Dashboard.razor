@@ -390,8 +390,7 @@ else if (_data is not null)
                                                     SeriesType="SeriesType.Bar"
                                                     Name="@L["Common_Entries"]"
                                                     XValue="@(w => w.WeekStart.ToString("MMM d"))"
-                                                    YValue="w => w.Count"
-                                                    OrderBy="w => w.X" />
+                                                    YValue="w => w.Count" />
                                 </ApexChart>
                             </div>
 
@@ -582,7 +581,11 @@ else if (_data is not null)
                 Toolbar = new Toolbar { Show = true },
                 Zoom = new Zoom { Enabled = true }
             },
-            Xaxis = new XAxis { Type = XAxisType.Datetime },
+            Xaxis = new XAxis
+            {
+                Type = XAxisType.Datetime,
+                Labels = new XAxisLabels { Format = "dd MMM yyyy" }
+            },
             Yaxis = [new YAxis { Title = new AxisTitle { Text = L["Common_Entries"].Value }, Min = 0 }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
             Fill = new Fill { Opacity = new Opacity(0.3) },
