@@ -676,7 +676,7 @@ else
 
     // Fields
     private List<ActionFieldResponse> _fields = [];
-    private List<Guid> _fieldExcludedKeys => _fields.Select(f => f.FieldDefinitionId).ToList();
+    private List<Guid> _fieldExcludedKeys => [];
     private bool _showFieldSelector;
 
     // Drag-and-drop reorder state
