@@ -103,18 +103,76 @@
         }
         else
         {
-            <h5 class="mb-3">
-                <i class="bi bi-lightning-charge me-1"></i>@L["Home_QuickTracking"]
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning-charge me-1"></i>@L["Home_QuickTracking"]
+                </h5>
+                <button class="btn btn-sm @(_showFilters ? "btn-primary" : "btn-outline-secondary")"
+                        @onclick="() => _showFilters = !_showFilters">
+                    <i class="bi bi-funnel me-1"></i>@L["Common_Filter"]
+                    @if (_hasActiveFilters)
+                    {
+                        <span class="badge bg-light text-primary ms-1">!</span>
+                    }
+                </button>
                 @if (_actions.Count > 1)
                 {
-                    <button class="btn btn-sm @(_reordering ? "btn-primary" : "btn-outline-secondary") ms-2"
+                    <button class="btn btn-sm @(_reordering ? "btn-primary" : "btn-outline-secondary")"
                             @onclick="ToggleReorder">
                         <i class="bi bi-arrows-move me-1"></i>@(_reordering ? L["Home_Done"] : L["Home_Reorder"])
                     </button>
                 }
-            </h5>
+            </div>
+
+            @if (_showFilters)
+            {
+                <div class="card card-body mb-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label small mb-1">@L["Common_Search"]</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   placeholder="@L["Home_SearchPlaceholder"]"
+                                   @bind="_filterText" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small mb-1">@L["Common_Tags"]</label>
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach (var tag in _allTags)
+                                {
+                                    var selected = _selectedTags.Contains(tag);
+                                    <button class="btn btn-sm @(selected ? "" : "btn-outline-secondary")"
+                                            style="@(selected ? $"background-color: {tag.Color}; color: #fff; border-color: {tag.Color};" : "")"
+                                            @onclick="() => ToggleTag(tag)">
+                                        @tag.Name
+                                    </button>
+                                }
+                                @if (_allTags.Count == 0)
+                                {
+                                    <span class="text-muted small">@L["Home_NoTags"]</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            @if (_hasActiveFilters)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary w-100" @onclick="ClearFilters">
+                                    <i class="bi bi-x-circle me-1"></i>@L["DataGrid_Clear"]
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (FilteredActions.Count == 0)
+            {
+                <p class="text-muted text-center py-3">
+                    <i class="bi bi-search me-1"></i>@L["Home_NoMatchingActions"]
+                </p>
+            }
+
             <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 mb-4">
-                @foreach (var action in _actions)
+                @foreach (var action in FilteredActions)
                 {
                     <div class="col"
                          draggable="@(_reordering ? "true" : "false")"
@@ -183,6 +241,13 @@
     private bool _reordering;
     private int _dragIndex = -1;
 
+    // Filters
+    private bool _showFilters;
+    private string _filterText = string.Empty;
+    private HashSet<TrackedActionTagSummary> _selectedTags = new(TagComparer.Instance);
+    private List<TrackedActionTagSummary> _allTags = [];
+    private bool _hasActiveFilters => !string.IsNullOrWhiteSpace(_filterText) || _selectedTags.Count > 0;
+
     // Onboarding
     private IReadOnlyList<TemplatePackResponse> _templates = [];
     private string? _installingTemplate;
@@ -207,6 +272,11 @@
             }
             else
             {
+                _allTags = _actions
+                    .SelectMany(a => a.Tags)
+                    .DistinctBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(t => t.Name)
+                    .ToList();
                 _ = LoadBalancesAsync();
             }
         }
@@ -246,6 +316,50 @@
         _actions.RemoveAt(_dragIndex);
         _actions.Insert(targetIndex, item);
         _dragIndex = -1;
+    }
+
+    private List<TrackedActionResponse> FilteredActions
+    {
+        get
+        {
+            IEnumerable<TrackedActionResponse> result = _actions;
+
+            if (!string.IsNullOrWhiteSpace(_filterText))
+            {
+                result = result.Where(a =>
+                    a.Name.Contains(_filterText, StringComparison.OrdinalIgnoreCase) ||
+                    (a.Description is not null && a.Description.Contains(_filterText, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            if (_selectedTags.Count > 0)
+            {
+                var tagNames = _selectedTags.Select(t => t.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                result = result.Where(a => a.Tags.Any(t => tagNames.Contains(t.Name)));
+            }
+
+            return result.ToList();
+        }
+    }
+
+    private void ToggleTag(TrackedActionTagSummary tag)
+    {
+        if (!_selectedTags.Remove(tag))
+            _selectedTags.Add(tag);
+    }
+
+    private void ClearFilters()
+    {
+        _filterText = string.Empty;
+        _selectedTags.Clear();
+    }
+
+    private sealed class TagComparer : IEqualityComparer<TrackedActionTagSummary>
+    {
+        public static readonly TagComparer Instance = new();
+        public bool Equals(TrackedActionTagSummary? x, TrackedActionTagSummary? y) =>
+            string.Equals(x?.Name, y?.Name, StringComparison.OrdinalIgnoreCase);
+        public int GetHashCode(TrackedActionTagSummary obj) =>
+            StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Name);
     }
 
     private async Task ToggleReorder()

@@ -81,6 +81,9 @@
   <data name="Home_Welcome"><value>Bienvenido a Traceon</value></data>
   <data name="Home_WelcomeHint"><value>Registra, mide y mejora tus acciones diarias.</value></data>
   <data name="Home_Register"><value>Registrarse</value></data>
+  <data name="Home_SearchPlaceholder"><value>Buscar acciones…</value></data>
+  <data name="Home_NoTags"><value>Sin etiquetas disponibles</value></data>
+  <data name="Home_NoMatchingActions"><value>Ninguna acción coincide con los filtros actuales.</value></data>
 
   <!-- ═══ Autenticación ═══ -->
   <data name="Auth_Login"><value>Iniciar sesión</value></data>

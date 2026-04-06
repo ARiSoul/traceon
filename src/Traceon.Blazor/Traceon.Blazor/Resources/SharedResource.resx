@@ -80,6 +80,9 @@
   <data name="Home_Welcome"><value>Welcome to Traceon</value></data>
   <data name="Home_WelcomeHint"><value>Track, measure, and improve your daily actions.</value></data>
   <data name="Home_Register"><value>Register</value></data>
+  <data name="Home_SearchPlaceholder"><value>Search actions…</value></data>
+  <data name="Home_NoTags"><value>No tags available</value></data>
+  <data name="Home_NoMatchingActions"><value>No actions match the current filters.</value></data>
 
   <!-- ═══ Auth ═══ -->
   <data name="Auth_Login"><value>Login</value></data>
