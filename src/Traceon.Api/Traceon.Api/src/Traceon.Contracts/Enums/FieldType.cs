@@ -7,5 +7,6 @@ public enum FieldType
     Decimal,
     Date,
     Boolean,
-    Dropdown
+    Dropdown,
+    CompositeDropdown
 }

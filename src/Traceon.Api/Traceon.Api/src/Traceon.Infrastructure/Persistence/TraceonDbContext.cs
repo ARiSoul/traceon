@@ -18,6 +18,7 @@ public sealed class TraceonDbContext(DbContextOptions<TraceonDbContext> options)
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<TrackedActionTag> TrackedActionTags => Set<TrackedActionTag>();
     public DbSet<FieldAnalyticsRule> FieldAnalyticsRules => Set<FieldAnalyticsRule>();
+    public DbSet<FieldDependencyRule> FieldDependencyRules => Set<FieldDependencyRule>();
     public DbSet<UserAuditLog> UserAuditLogs => Set<UserAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

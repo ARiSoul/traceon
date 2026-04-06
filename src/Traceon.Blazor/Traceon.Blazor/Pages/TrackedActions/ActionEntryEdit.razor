@@ -149,7 +149,8 @@ else
 
                                 case FieldType.Dropdown:
                                     <div class="input-group">
-                                        <select class="form-select" @bind="model.TextValue">
+                                        <select class="form-select" value="@model.TextValue"
+                                                @onchange="e => OnDropdownChanged(model, e.Value?.ToString())">
                                             <option value="">@L["Entry_Select"]</option>
                                             @foreach (var opt in model.DropdownOptions)
                                             {
@@ -187,6 +188,25 @@ else
                                         </div>
                                     }
                                     break;
+
+                                case FieldType.CompositeDropdown:
+                                    <select class="form-select" value="@model.TextValue"
+                                            @onchange="e => OnDropdownChanged(model, e.Value?.ToString())">
+                                        <option value="">@L["Entry_Select"]</option>
+                                        @if (model.CompositeGroups.Count > 0)
+                                        {
+                                            @foreach (var (groupName, values) in model.CompositeGroups)
+                                            {
+                                                <optgroup label="@groupName">
+                                                    @foreach (var val in values)
+                                                    {
+                                                        <option value="@val">@val</option>
+                                                    }
+                                                </optgroup>
+                                            }
+                                        }
+                                    </select>
+                                    break;
                             }
                         </div>
                     }
@@ -222,6 +242,7 @@ else
     [Inject] private ActionFieldService FieldService { get; set; } = default!;
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
     [Inject] private FieldDefinitionService FieldDefService { get; set; } = default!;
+    [Inject] private FieldDependencyRuleService DepRuleService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     [SupplyParameterFromQuery(Name = "returnUrl")]
@@ -237,6 +258,9 @@ else
     private Guid? _quickAddFieldId;
     private string _quickAddValue = string.Empty;
     private bool _quickAddSaving;
+
+    // Dependency rules
+    private List<FieldDependencyRuleResponse> _depRules = [];
 
     private string _returnUrl = "/";
     private DateTime _occurredLocal;
@@ -280,6 +304,10 @@ else
 
             await LoadComputedInitialValuesAsync();
         }
+
+        try { _depRules = await DepRuleService.GetByTrackedActionAsync(TrackedActionId); } catch { _depRules = []; }
+        await ResolveCompositeDropdownsAsync();
+        EvaluateDependencyRules();
 
         _loading = false;
     }
@@ -485,8 +513,40 @@ else
 
         private string[]? _dropdownOverride;
 
+        // Composite dropdown: grouped options resolved from sibling fields
+        private List<(string GroupName, string[] Values)>? _originalCompositeGroups;
+        public List<(string GroupName, string[] Values)> CompositeGroups { get; set; } = [];
+
+        public void SetOriginalCompositeGroups(List<(string GroupName, string[] Values)> groups)
+        {
+            _originalCompositeGroups = groups;
+            CompositeGroups = groups;
+        }
+
+        public void FilterCompositeGroups(HashSet<string> allowedValues)
+        {
+            var source = _originalCompositeGroups ?? CompositeGroups;
+            CompositeGroups = source
+                .Select(g => (g.GroupName, Values: g.Values
+                    .Where(v => allowedValues.Contains(v, StringComparer.OrdinalIgnoreCase))
+                    .ToArray()))
+                .Where(g => g.Values.Length > 0)
+                .ToList();
+        }
+
+        public void ResetCompositeGroups()
+        {
+            if (_originalCompositeGroups is not null)
+                CompositeGroups = _originalCompositeGroups;
+        }
+
+        public void ClearCompositeGroups()
+        {
+            CompositeGroups = [];
+        }
+
         public string[] DropdownOptions => _dropdownOverride
-            ?? (string.IsNullOrWhiteSpace(Field.DropdownValues)
+            ?? (string.IsNullOrWhiteSpace(Field.DropdownValues) || Field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal)
                 ? []
                 : Field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray());
@@ -574,5 +634,136 @@ else
     {
         if (e.Key == "Enter")
             await QuickAddDropdownValueAsync(model);
+    }
+
+    // ── Composite dropdown resolution ──
+
+    private List<FieldDefinitionResponse> _cachedFieldDefinitions = [];
+
+    private async Task ResolveCompositeDropdownsAsync()
+    {
+        var hasComposite = _fieldModels.Any(m => m.Field.FieldType == FieldType.CompositeDropdown);
+        if (!hasComposite) return;
+
+        // Load all field definitions once so we can resolve ref: IDs
+        if (_cachedFieldDefinitions.Count == 0)
+            _cachedFieldDefinitions = await FieldDefService.GetAllAsync();
+
+        var fieldDefLookup = _cachedFieldDefinitions
+            .Where(fd => fd.Type == FieldType.Dropdown && !string.IsNullOrWhiteSpace(fd.DropdownValues))
+            .ToDictionary(fd => fd.Id);
+
+        foreach (var model in _fieldModels)
+        {
+            if (model.Field.FieldType != FieldType.CompositeDropdown) continue;
+            if (string.IsNullOrWhiteSpace(model.Field.DropdownValues)) continue;
+            if (!model.Field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal)) continue;
+
+            var refIds = model.Field.DropdownValues["ref:".Length..]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
+                .Where(id => id != Guid.Empty)
+                .ToList();
+
+            var groups = new List<(string GroupName, string[] Values)>();
+            foreach (var refId in refIds)
+            {
+                if (fieldDefLookup.TryGetValue(refId, out var fd))
+                {
+                    var values = fd.DropdownValues!
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                        .ToArray();
+                    groups.Add((fd.DefaultName, values));
+                }
+            }
+
+            model.SetOriginalCompositeGroups(groups.OrderBy(g => g.GroupName, StringComparer.CurrentCultureIgnoreCase).ToList());
+        }
+    }
+
+    // ── Dependency rule evaluation ──
+
+    private void OnDropdownChanged(EntryFieldModel model, string? value)
+    {
+        model.TextValue = value;
+        EvaluateDependencyRules();
+    }
+
+    private void EvaluateDependencyRules()
+    {
+        if (_depRules.Count == 0) return;
+
+        var currentValues = _fieldModels.ToDictionary(m => m.Field.Id, m => m.TextValue ?? "");
+
+        foreach (var model in _fieldModels)
+        {
+            var isComposite = model.Field.FieldType == FieldType.CompositeDropdown;
+            if (model.Field.FieldType != FieldType.Dropdown && !isComposite) continue;
+
+            var rulesForTarget = _depRules
+                .Where(r => r.RuleType == DependencyRuleType.FilterDropdownValues && r.TargetFieldId == model.Field.Id)
+                .ToList();
+
+            if (rulesForTarget.Count == 0) continue;
+
+            var matchedConstraints = new List<string>();
+            var anySourceMatched = false;
+
+            foreach (var rule in rulesForTarget)
+            {
+                currentValues.TryGetValue(rule.SourceFieldId, out var srcVal);
+
+                if (!string.IsNullOrEmpty(srcVal) && string.Equals(srcVal, rule.SourceValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    anySourceMatched = true;
+                    if (!string.IsNullOrWhiteSpace(rule.TargetConstraint))
+                    {
+                        matchedConstraints.AddRange(
+                            rule.TargetConstraint.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                    }
+                }
+            }
+
+            if (anySourceMatched)
+            {
+                var allowed = matchedConstraints.Distinct(StringComparer.OrdinalIgnoreCase).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                model.SetDropdownValues(string.Join(",", allowed));
+
+                if (isComposite)
+                    model.FilterCompositeGroups(allowed);
+
+                if (!string.IsNullOrEmpty(model.TextValue) &&
+                    !allowed.Contains(model.TextValue))
+                {
+                    model.TextValue = null;
+                }
+            }
+            else
+            {
+                // Check if any source field that governs this target has a value selected
+                var sourceFieldIds = rulesForTarget.Select(r => r.SourceFieldId).Distinct();
+                var anySourceHasValue = sourceFieldIds.Any(sfId =>
+                    currentValues.TryGetValue(sfId, out var v) && !string.IsNullOrEmpty(v));
+
+                if (anySourceHasValue)
+                {
+                    // Source has a value but no rule matched → show nothing
+                    model.SetDropdownValues("");
+                    model.TextValue = null;
+
+                    if (isComposite)
+                        model.ClearCompositeGroups();
+                }
+                else
+                {
+                    // No source value selected yet → show all original values
+                    model.SetDropdownValues(model.Field.DropdownValues ?? "");
+
+                    if (isComposite)
+                        model.ResetCompositeGroups();
+                }
+            }
+        }
     }
 }

@@ -165,6 +165,7 @@ public sealed class DashboardService(
                     break;
 
                 case FieldType.Dropdown:
+                case FieldType.CompositeDropdown:
                     var dist = entriesWithValues
                         .GroupBy(x => x.Value!)
                         .OrderByDescending(g => g.Count())
@@ -643,6 +644,7 @@ public sealed class DashboardService(
                 break;
 
             case FieldType.Dropdown:
+            case FieldType.CompositeDropdown:
                 stats.DropdownDistribution = rawValues
                     .GroupBy(v => v)
                     .OrderByDescending(g => g.Count())

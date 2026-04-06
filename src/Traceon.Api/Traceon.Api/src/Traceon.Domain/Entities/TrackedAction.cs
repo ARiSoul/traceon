@@ -1,4 +1,4 @@
-namespace Traceon.Domain.Entities;
+﻿namespace Traceon.Domain.Entities;
 
 public sealed class TrackedAction : OwnedEntity
 {
@@ -14,6 +14,9 @@ public sealed class TrackedAction : OwnedEntity
 
     private readonly List<FieldAnalyticsRule> _analyticsRules = [];
     public IReadOnlyCollection<FieldAnalyticsRule> AnalyticsRules => _analyticsRules.AsReadOnly();
+
+    private readonly List<FieldDependencyRule> _dependencyRules = [];
+    public IReadOnlyCollection<FieldDependencyRule> DependencyRules => _dependencyRules.AsReadOnly();
 
     private TrackedAction(string name, string? description, int sortOrder)
     {

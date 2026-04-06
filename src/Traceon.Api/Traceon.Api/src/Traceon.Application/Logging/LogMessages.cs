@@ -102,4 +102,17 @@ internal static partial class LogMessages
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Analytics rule with ID '{Id}' was not found.")]
     public static partial void FieldAnalyticsRuleNotFound(this ILogger logger, Guid id);
+
+    // FieldDependencyRule
+    [LoggerMessage(Level = LogLevel.Information, Message = "Dependency rule created with ID '{Id}' for tracked action '{TrackedActionId}'.")]
+    public static partial void FieldDependencyRuleCreated(this ILogger logger, Guid id, Guid trackedActionId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Dependency rule '{Id}' updated.")]
+    public static partial void FieldDependencyRuleUpdated(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Dependency rule '{Id}' deleted.")]
+    public static partial void FieldDependencyRuleDeleted(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Dependency rule with ID '{Id}' was not found.")]
+    public static partial void FieldDependencyRuleNotFound(this ILogger logger, Guid id);
 }

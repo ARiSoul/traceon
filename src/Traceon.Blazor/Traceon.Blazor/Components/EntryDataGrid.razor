@@ -119,7 +119,7 @@
             var fieldId = field.Id;
             <div class="col-6 col-md-2">
                 <label class="form-label form-label-sm mb-1">@field.Name</label>
-                @if (field.FieldType == FieldType.Dropdown && field.DropdownValues is not null)
+                @if (field.FieldType == FieldType.Dropdown && field.DropdownValues is not null && !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
                 {
                     <select class="form-select form-select-sm"
                             value="@GetFieldFilter(fieldId)"
@@ -130,6 +130,13 @@
                             <option value="@opt">@opt</option>
                         }
                     </select>
+                }
+                else if (field.FieldType == FieldType.CompositeDropdown)
+                {
+                    <input type="text" class="form-control form-control-sm"
+                           placeholder="@L["Common_Search"]"
+                           value="@GetFieldFilter(fieldId)"
+                           @onchange="e => OnFieldFilterChangedAsync(fieldId, e)" />
                 }
                 else if (field.FieldType == FieldType.Boolean)
                 {
@@ -557,7 +564,7 @@ else
 
                 var escaped = value.Replace("'", "''");
 
-                if (field.FieldType is FieldType.Dropdown or FieldType.Boolean)
+                if (field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown or FieldType.Boolean)
                 {
                     clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Value eq '{escaped}')");
                 }

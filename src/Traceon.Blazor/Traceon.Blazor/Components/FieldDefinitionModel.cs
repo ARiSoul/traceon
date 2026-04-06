@@ -36,10 +36,24 @@ public sealed class FieldDefinitionModel
     public DateTime? DefaultDateValue { get; set; }
 
     public string[] ParsedDropdownValues =>
-        string.IsNullOrWhiteSpace(DropdownValues)
+        string.IsNullOrWhiteSpace(DropdownValues) || IsCompositeRef
             ? Array.Empty<string>()
             : DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
+
+    // Composite dropdown helpers
+    public bool IsCompositeRef => DropdownValues?.StartsWith("ref:", StringComparison.Ordinal) == true;
+
+    public List<Guid> SourceFieldIds
+    {
+        get => IsCompositeRef
+            ? DropdownValues!["ref:".Length..].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
+                .Where(id => id != Guid.Empty)
+                .ToList()
+            : [];
+        set => DropdownValues = value.Count > 0 ? "ref:" + string.Join(",", value) : null;
+    }
 
     public void LoadTypedDefaults(decimal? apiMin, decimal? apiMax)
     {

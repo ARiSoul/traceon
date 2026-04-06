@@ -86,6 +86,15 @@ else
                     </button>
                 </li>
                 <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "dependencies" ? "active" : "")" @onclick="ActivateDependenciesTabAsync">
+                        <i class="bi bi-link-45deg me-1"></i>@L["Dep_FieldDependencies"]
+                        @if (_dependencyRules.Count > 0)
+                        {
+                            <span class="badge bg-primary ms-1">@_dependencyRules.Count</span>
+                        }
+                    </button>
+                </li>
+                <li class="nav-item">
                     <button class="nav-link @(_activeTab == "analytics" ? "active" : "")" @onclick="ActivateAnalyticsTabAsync">
                         <i class="bi bi-diagram-3 me-1"></i>@L["Analytics_CrossField"]
                         @if (_analyticsRules.Count > 0)
@@ -229,7 +238,7 @@ else
                                         <label class="form-label">@L["Analytics_MeasureField"] <span class="text-danger">*</span></label>
                                         <select class="form-select" @bind="_newRule.MeasureFieldId">
                                             <option value="@Guid.Empty">— @L["Common_Select"] —</option>
-                                            @foreach (var f in _fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal))
+                                            @foreach (var f in _fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
                                             {
                                                 <option value="@f.Id">@f.Name (@f.FieldType)</option>
                                             }
@@ -239,7 +248,7 @@ else
                                         <label class="form-label">@L["Analytics_GroupByField"] <span class="text-danger">*</span></label>
                                         <select class="form-select" @bind="_newRule.GroupByFieldId">
                                             <option value="@Guid.Empty">— @L["Common_Select"] —</option>
-                                            @foreach (var f in _fields.Where(f => f.Id != _newRule.MeasureFieldId))
+                                            @foreach (var f in _fields.Where(f => f.Id != _newRule.MeasureFieldId).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
                                             {
                                                 <option value="@f.Id">@f.Name (@f.FieldType)</option>
                                             }
@@ -271,7 +280,7 @@ else
                                         <label class="form-label">@L["Analytics_FilterField"]</label>
                                         <select class="form-select" @bind="_newRule.FilterFieldId">
                                             <option value="">— @L["Common_None"] —</option>
-                                            @foreach (var f in _fields.Where(f => f.Id != _newRule.MeasureFieldId && f.Id != _newRule.GroupByFieldId))
+                                            @foreach (var f in _fields.Where(f => f.Id != _newRule.MeasureFieldId && f.Id != _newRule.GroupByFieldId).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
                                             {
                                                 <option value="@f.Id">@f.Name (@f.FieldType)</option>
                                             }
@@ -295,19 +304,19 @@ else
                                             {
                                                 <select class="form-select" @bind="_newRule.FilterValue">
                                                     <option value="">—</option>
-                                                    @foreach (var opt in filterField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                                                    {
-                                                        <option value="@opt">@opt</option>
+                                                                @foreach (var opt in filterField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
+                                                                    {
+                                                                        <option value="@opt">@opt</option>
+                                                                    }
+                                                                </select>
+                                                            }
+                                                            else
+                                                            {
+                                                                <input type="text" class="form-control" @bind="_newRule.FilterValue" />
+                                                            }
+                                                        </div>
                                                     }
-                                                </select>
-                                            }
-                                            else
-                                            {
-                                                <input type="text" class="form-control" @bind="_newRule.FilterValue" />
-                                            }
-                                        </div>
-                                    }
-                                    @if (_newRule.Aggregation == AnalyticsAggregation.SignedSum)
+                                                    @if (_newRule.Aggregation == AnalyticsAggregation.SignedSum)
                                     {
                                         <div class="col-12">
                                             <hr class="my-2" />
@@ -317,7 +326,7 @@ else
                                             <label class="form-label">@L["Analytics_SignField"]</label>
                                             <select class="form-select" @bind="_newRule.SignFieldId">
                                                 <option value="">— @L["Common_Select"] —</option>
-                                                @foreach (var f in _fields.Where(f => f.FieldType == FieldType.Dropdown))
+                                                @foreach (var f in _fields.Where(f => f.FieldType == FieldType.Dropdown).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
                                                 {
                                                     <option value="@f.Id">@f.Name</option>
                                                 }
@@ -332,7 +341,7 @@ else
                                                 }
                                                 @if (signField?.DropdownValues is not null)
                                                 {
-                                                    var signOptions = signField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                                                    var signOptions = signField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
                                                     var selectedNeg = (_newRule.NegativeValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
                                                     @foreach (var opt in signOptions)
                                                     {
@@ -425,7 +434,7 @@ else
                                                         <label class="form-label">@L["Analytics_FilterField"]</label>
                                                         <select class="form-select" @bind="_editRule.FilterFieldId">
                                                             <option value="">— @L["Common_None"] —</option>
-                                                            @foreach (var f in _fields.Where(f => f.Id != rule.MeasureFieldId && f.Id != rule.GroupByFieldId))
+                                                            @foreach (var f in _fields.Where(f => f.Id != rule.MeasureFieldId && f.Id != rule.GroupByFieldId).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
                                                             {
                                                                 <option value="@f.Id">@f.Name (@f.FieldType)</option>
                                                             }
@@ -449,10 +458,10 @@ else
                                                             {
                                                                 <select class="form-select" @bind="_editRule.FilterValue">
                                                                     <option value="">—</option>
-                                                                    @foreach (var opt in editFilterField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                                                                    {
-                                                                        <option value="@opt">@opt</option>
-                                                                    }
+                                                                    @foreach (var opt in editFilterField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
+                                                                        {
+                                                                            <option value="@opt">@opt</option>
+                                                                        }
                                                                 </select>
                                                             }
                                                             else
@@ -471,7 +480,7 @@ else
                                                             <label class="form-label">@L["Analytics_SignField"]</label>
                                                             <select class="form-select" @bind="_editRule.SignFieldId">
                                                                 <option value="">— @L["Common_Select"] —</option>
-                                                                @foreach (var f in _fields.Where(f => f.FieldType == FieldType.Dropdown))
+                                                                @foreach (var f in _fields.Where(f => f.FieldType == FieldType.Dropdown).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
                                                                 {
                                                                     <option value="@f.Id">@f.Name</option>
                                                                 }
@@ -486,7 +495,7 @@ else
                                                                 }
                                                                 @if (editSignField?.DropdownValues is not null)
                                                                 {
-                                                                    var editSignOptions = editSignField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                                                                    var editSignOptions = editSignField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
                                                                     var editSelectedNeg = (_editRule.NegativeValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
                                                                     @foreach (var opt in editSignOptions)
                                                                     {
@@ -578,6 +587,244 @@ else
                     }
                 }
             }
+            else if (_activeTab == "dependencies")
+            {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="text-muted mb-0">@L["Dep_Hint"]</p>
+                    @if (_dropdownFields.Count >= 2 && !_depEditorOpen)
+                    {
+                        <button class="btn btn-outline-primary btn-sm" @onclick="OpenNewDepEditor">
+                            <i class="bi bi-plus-circle me-1"></i>@L["Dep_AddMapping"]
+                        </button>
+                    }
+                </div>
+
+                @if (_dropdownFields.Count < 2)
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>@L["Dep_NeedTwoDropdowns"]
+                    </div>
+                }
+                else
+                {
+                    @* ── Mapping Editor ── *@
+                    @if (_depEditorOpen)
+                    {
+                        <div class="card border-primary mb-3">
+                            <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-link-45deg me-2"></i>
+                                    @(_depEditingPairKey is not null ? L["Dep_EditMapping"] : L["Dep_NewMapping"])
+                                </h6>
+                                <button class="btn-close" @onclick="CloseDepEditor"></button>
+                            </div>
+                            <div class="card-body">
+                                @* Field selectors (locked when editing) *@
+                                <div class="row g-3 mb-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold">@L["Dep_SourceField"] <span class="text-danger">*</span></label>
+                                        <select class="form-select" value="@_depSourceFieldId" @onchange="OnDepSourceFieldChanged"
+                                                disabled="@(_depEditingPairKey is not null)">
+                                            <option value="@Guid.Empty">— @L["Common_Select"] —</option>
+                                            @foreach (var f in _dropdownFields.OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
+                                            {
+                                                <option value="@f.Id">@f.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold">@L["Dep_TargetField"] <span class="text-danger">*</span></label>
+                                        <select class="form-select" value="@_depTargetFieldId" @onchange="OnDepTargetFieldChanged"
+                                                disabled="@(_depEditingPairKey is not null)">
+                                            <option value="@Guid.Empty">— @L["Common_Select"] —</option>
+                                            @foreach (var f in _dropdownFields.Where(f => f.Id != _depSourceFieldId).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
+                                            {
+                                                <option value="@f.Id">@f.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                @* Split panel: source values left, target checkboxes right *@
+                                @if (_depSourceFieldId != Guid.Empty && _depTargetFieldId != Guid.Empty)
+                                {
+                                    var srcOptions = GetFieldDropdownValues(_depSourceFieldId);
+                                    var tgtOptions = GetFieldDropdownValues(_depTargetFieldId);
+
+                                    @if (srcOptions.Length == 0 || tgtOptions.Length == 0)
+                                    {
+                                        <div class="alert alert-warning">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>@L["Dep_NoDropdownValues"]
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="row g-0 border rounded" style="min-height: 250px;">
+                                            @* Left panel: source values *@
+                                            <div class="col-12 col-md-4 border-end" style="max-height: 350px; overflow-y: auto;">
+                                                <div class="list-group list-group-flush">
+                                                    @foreach (var srcVal in srcOptions)
+                                                    {
+                                                        var captured = srcVal;
+                                                        var isActive = captured == _depActiveSourceValue;
+                                                        var hasMapping = _depMappings.TryGetValue(captured, out var m) && m.Count > 0;
+                                                        <button type="button"
+                                                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isActive ? "active" : "")"
+                                                                @onclick="() => _depActiveSourceValue = captured">
+                                                            <span>@captured</span>
+                                                            @if (hasMapping)
+                                                            {
+                                                                <span class="badge @(isActive ? "bg-light text-primary" : "bg-primary") rounded-pill">@m!.Count</span>
+                                                            }
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            @* Right panel: target checkboxes *@
+                                            <div class="col-12 col-md-8 p-3" style="max-height: 350px; overflow-y: auto;">
+                                                @if (_depActiveSourceValue is null)
+                                                {
+                                                    <div class="text-center text-muted py-4">
+                                                        <i class="bi bi-arrow-left-circle fs-3 d-block mb-2"></i>
+                                                        <p class="mb-0">@L["Dep_PickSourceValue"]</p>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="fw-semibold">
+                                                            @L["Dep_WhenValueIs"] <span class="badge bg-secondary">@_depActiveSourceValue</span>
+                                                            → @L["Dep_AllowedValues"]:
+                                                        </span>
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button class="btn btn-outline-secondary" @onclick="() => DepSelectAll(tgtOptions)">@L["Common_All"]</button>
+                                                            <button class="btn btn-outline-secondary" @onclick="DepSelectNone">@L["Common_None"]</button>
+                                                        </div>
+                                                    </div>
+
+                                                    var compositeGroups = GetGroupedFieldDropdownValues(_depTargetFieldId);
+                                                    if (compositeGroups.Count > 0)
+                                                    {
+                                                         @foreach (var (groupName, groupValues) in compositeGroups)
+                                                        {
+                                                            var capturedGroup = groupValues;
+                                                            var depSetForGroup = _depMappings.GetValueOrDefault(_depActiveSourceValue!) ?? [];
+                                                            var allGroupChecked = capturedGroup.All(v => depSetForGroup.Contains(v, StringComparer.OrdinalIgnoreCase));
+                                                            <div class="mb-2">
+                                                                <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1">
+                                                                    <span class="fw-semibold text-muted small">
+                                                                        <i class="bi bi-collection me-1"></i>@groupName
+                                                                    </span>
+                                                                    <button type="button"
+                                                                            class="btn btn-link btn-sm p-0 text-decoration-none"
+                                                                            style="font-size: 0.7rem;"
+                                                                            @onclick="() => DepToggleGroup(capturedGroup, !allGroupChecked)">
+                                                                        @(allGroupChecked ? L["Common_None"] : L["Common_All"])
+                                                                    </button>
+                                                                </div>
+                                                                <div class="row row-cols-1 row-cols-sm-2 g-1">
+                                                                    @foreach (var tgtVal in groupValues)
+                                                                    {
+                                                                        var capturedTgt = tgtVal;
+                                                                        var depSet = _depMappings.GetValueOrDefault(_depActiveSourceValue!) ?? [];
+                                                                        var isChecked = depSet.Contains(capturedTgt, StringComparer.OrdinalIgnoreCase);
+                                                                        <div class="col">
+                                                                            <div class="form-check">
+                                                                                <input class="form-check-input" type="checkbox" id="dep-@_depActiveSourceValue-@capturedTgt"
+                                                                                       checked="@isChecked"
+                                                                                       @onchange="e => ToggleDepMapping(_depActiveSourceValue, capturedTgt, (bool)(e.Value ?? false))" />
+                                                                                <label class="form-check-label" for="dep-@_depActiveSourceValue-@capturedTgt">@capturedTgt</label>
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                    <div class="row row-cols-1 row-cols-sm-2 g-1">
+                                                        @foreach (var tgtVal in tgtOptions)
+                                                        {
+                                                            var capturedTgt = tgtVal;
+                                                            var depSet = _depMappings.GetValueOrDefault(_depActiveSourceValue!) ?? [];
+                                                            var isChecked = depSet.Contains(capturedTgt, StringComparer.OrdinalIgnoreCase);
+                                                            <div class="col">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input" type="checkbox" id="dep-@_depActiveSourceValue-@capturedTgt"
+                                                                           checked="@isChecked"
+                                                                           @onchange="e => ToggleDepMapping(_depActiveSourceValue, capturedTgt, (bool)(e.Value ?? false))" />
+                                                                    <label class="form-check-label" for="dep-@_depActiveSourceValue-@capturedTgt">@capturedTgt</label>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <ErrorAlert Errors="_depErrors" OnDismiss="() => _depErrors = []" />
+                                        <div class="d-flex justify-content-end gap-2 mt-3">
+                                            <button class="btn btn-outline-secondary btn-sm" @onclick="CloseDepEditor">@L["Common_Cancel"]</button>
+                                            <button class="btn btn-primary btn-sm" @onclick="SaveAllDepMappingsAsync" disabled="@_savingDep">
+                                                @if (_savingDep) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                                <i class="bi bi-check-circle me-1"></i>@L["Common_SaveChanges"]
+                                            </button>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @* ── Rules summary grouped by source→target pair ── *@
+                    @if (GetGroupedDepRules().Count == 0 && !_depEditorOpen)
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-link-45deg fs-3 d-block mb-2"></i>
+                            <p>@L["Dep_NoRulesYet"]</p>
+                        </div>
+                    }
+                    else if (!_depEditorOpen)
+                    {
+                        <div class="list-group">
+                            @foreach (var group in GetGroupedDepRules())
+                            {
+                                var first = group.First();
+                                var pairKey = $"{first.SourceFieldId}|{first.TargetFieldId}";
+                                var ruleCount = group.Count();
+                                var mappedValues = group.Select(r => r.SourceValue).Where(v => v is not null).Distinct().ToList();
+                                <div class="list-group-item list-group-item-action" style="cursor: pointer;" @onclick="() => OpenEditDepEditor(group.ToList())">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <i class="bi bi-link-45deg me-1 text-primary"></i>
+                                                <span class="badge bg-secondary">@first.SourceFieldName</span>
+                                                <i class="bi bi-arrow-right mx-1"></i>
+                                                <span class="badge bg-info text-dark">@first.TargetFieldName</span>
+                                                <span class="badge bg-primary ms-2">@ruleCount @(ruleCount == 1 ? L["Dep_Rule"] : L["Dep_Rules"])</span>
+                                            </h6>
+                                            <small class="text-muted">
+                                                @L["Dep_MappedValues"]: @string.Join(", ", mappedValues.Take(5))@(mappedValues.Count > 5 ? $" (+{mappedValues.Count - 5})" : "")
+                                            </small>
+                                        </div>
+                                        <div class="d-flex gap-1" @onclick:stopPropagation="true">
+                                            <button class="btn btn-outline-secondary btn-sm" @onclick="() => OpenEditDepEditor(group.ToList())" title="@L["Common_Edit"]">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteDepGroupAsync(group.ToList())" title="@L["Common_Delete"]">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            }
         </div>
     </div>
 }
@@ -657,6 +904,7 @@ else
     [Inject] private FieldDefinitionService FieldDefinitionService { get; set; } = default!;
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
     [Inject] private FieldAnalyticsRuleService AnalyticsRuleService { get; set; } = default!;
+    [Inject] private FieldDependencyRuleService DependencyRuleService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private EditModel? _model;
@@ -664,6 +912,7 @@ else
     private bool _loading = true;
     private bool _saving;
     private string _activeTab = "basic";
+    private List<FieldDefinitionResponse> _allFieldDefinitions = [];
 
     // Tags
     private List<TagResponse> _tags = [];
@@ -705,10 +954,12 @@ else
 
             var tagsTask = Service.GetTagsAsync(Id);
             var fieldsTask = ActionFieldService.GetByTrackedActionAsync(Id);
-            await Task.WhenAll(tagsTask, fieldsTask);
+            var fieldDefsTask = FieldDefinitionService.GetAllAsync();
+            await Task.WhenAll(tagsTask, fieldsTask, fieldDefsTask);
 
             _tags = tagsTask.Result;
             _fields = fieldsTask.Result;
+            _allFieldDefinitions = fieldDefsTask.Result;
         }
 
         _loading = false;
@@ -1037,5 +1288,288 @@ else
         public string? Label { get; set; }
         public Guid SignFieldId { get; set; }
         public string? NegativeValues { get; set; }
+    }
+
+    // ── Dependency rules ──
+
+    private List<FieldDependencyRuleResponse> _dependencyRules = [];
+    private List<ActionFieldResponse> _dropdownFields => _fields.Where(f => f.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown).ToList();
+    private bool _savingDep;
+    private IReadOnlyList<string> _depErrors = [];
+
+    // Editor state
+    private bool _depEditorOpen;
+    private string? _depEditingPairKey;
+    private Guid _depSourceFieldId;
+    private Guid _depTargetFieldId;
+    private string? _depActiveSourceValue;
+    private Dictionary<string, HashSet<string>> _depMappings = new(StringComparer.OrdinalIgnoreCase);
+
+    private async Task ActivateDependenciesTabAsync()
+    {
+        _activeTab = "dependencies";
+        if (_dependencyRules.Count == 0)
+            await LoadDependencyRulesAsync();
+    }
+
+    private async Task LoadDependencyRulesAsync()
+    {
+        try
+        {
+            _dependencyRules = await DependencyRuleService.GetByTrackedActionAsync(Id);
+        }
+        catch
+        {
+            _dependencyRules = [];
+        }
+    }
+
+    private List<IGrouping<(Guid SourceFieldId, Guid TargetFieldId), FieldDependencyRuleResponse>> GetGroupedDepRules()
+        => _dependencyRules.GroupBy(r => (r.SourceFieldId, r.TargetFieldId)).ToList();
+
+    private string[] GetFieldDropdownValues(Guid fieldId)
+    {
+        var field = _dropdownFields.FirstOrDefault(f => f.Id == fieldId);
+        if (field?.DropdownValues is null) return [];
+
+        if (field.FieldType == FieldType.CompositeDropdown && field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+        {
+            var refIds = field.DropdownValues["ref:".Length..]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
+                .Where(id => id != Guid.Empty)
+                .ToHashSet();
+
+            return _allFieldDefinitions
+                .Where(fd => fd.Type == FieldType.Dropdown && refIds.Contains(fd.Id) && !string.IsNullOrWhiteSpace(fd.DropdownValues))
+                .SelectMany(fd => fd.DropdownValues!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                .ToArray();
+        }
+
+        return field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
+    }
+
+    private List<(string GroupName, string[] Values)> GetGroupedFieldDropdownValues(Guid fieldId)
+    {
+        var field = _dropdownFields.FirstOrDefault(f => f.Id == fieldId);
+        if (field?.DropdownValues is null) return [];
+
+        if (field.FieldType == FieldType.CompositeDropdown && field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+        {
+            var refIds = field.DropdownValues["ref:".Length..]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
+                .Where(id => id != Guid.Empty)
+                .ToList();
+
+            return refIds
+                .Select(id => _allFieldDefinitions.FirstOrDefault(fd => fd.Id == id))
+                .Where(fd => fd is not null && fd.Type == FieldType.Dropdown && !string.IsNullOrWhiteSpace(fd.DropdownValues))
+                .Select(fd => (
+                    GroupName: fd!.DefaultName,
+                    Values: fd.DropdownValues!
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                        .ToArray()))
+                .Where(g => g.Values.Length > 0)
+                .OrderBy(g => g.GroupName, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        }
+
+        return [];
+    }
+
+    private bool IsCompositeDropdownTarget(Guid fieldId)
+    {
+        var field = _dropdownFields.FirstOrDefault(f => f.Id == fieldId);
+        return field?.FieldType == FieldType.CompositeDropdown;
+    }
+
+    private void OpenNewDepEditor()
+    {
+        _depEditorOpen = true;
+        _depEditingPairKey = null;
+        _depSourceFieldId = Guid.Empty;
+        _depTargetFieldId = Guid.Empty;
+        _depActiveSourceValue = null;
+        _depMappings = new(StringComparer.OrdinalIgnoreCase);
+        _depErrors = [];
+    }
+
+    private void OpenEditDepEditor(List<FieldDependencyRuleResponse> group)
+    {
+        var first = group.First();
+        _depEditorOpen = true;
+        _depEditingPairKey = $"{first.SourceFieldId}|{first.TargetFieldId}";
+        _depSourceFieldId = first.SourceFieldId;
+        _depTargetFieldId = first.TargetFieldId;
+        _depErrors = [];
+
+        _depMappings = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var rule in group)
+        {
+            if (rule.SourceValue is not null && rule.TargetConstraint is not null)
+            {
+                var values = rule.TargetConstraint
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                _depMappings[rule.SourceValue] = values;
+            }
+        }
+
+        var srcOptions = GetFieldDropdownValues(_depSourceFieldId);
+        _depActiveSourceValue = srcOptions.FirstOrDefault();
+    }
+
+    private void CloseDepEditor()
+    {
+        _depEditorOpen = false;
+        _depEditingPairKey = null;
+        _depActiveSourceValue = null;
+        _depMappings = new(StringComparer.OrdinalIgnoreCase);
+        _depErrors = [];
+    }
+
+    private void OnDepSourceFieldChanged(ChangeEventArgs e)
+    {
+        _depSourceFieldId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : Guid.Empty;
+        _depActiveSourceValue = null;
+        _depMappings = new(StringComparer.OrdinalIgnoreCase);
+        if (_depTargetFieldId == _depSourceFieldId)
+            _depTargetFieldId = Guid.Empty;
+    }
+
+    private void OnDepTargetFieldChanged(ChangeEventArgs e)
+    {
+        _depTargetFieldId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : Guid.Empty;
+        _depMappings = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private void ToggleDepMapping(string sourceValue, string targetValue, bool isChecked)
+    {
+        if (!_depMappings.TryGetValue(sourceValue, out var set))
+        {
+            set = new(StringComparer.OrdinalIgnoreCase);
+            _depMappings[sourceValue] = set;
+        }
+
+        if (isChecked) set.Add(targetValue);
+        else set.Remove(targetValue);
+
+        if (set.Count == 0) _depMappings.Remove(sourceValue);
+    }
+
+    private void DepSelectAll(string[] tgtOptions)
+    {
+        if (_depActiveSourceValue is null) return;
+        _depMappings[_depActiveSourceValue] = new(tgtOptions, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private void DepSelectNone()
+    {
+        if (_depActiveSourceValue is null) return;
+        _depMappings.Remove(_depActiveSourceValue);
+    }
+
+    private void DepToggleGroup(string[] groupValues, bool select)
+    {
+        if (_depActiveSourceValue is null) return;
+        if (!_depMappings.TryGetValue(_depActiveSourceValue, out var set))
+        {
+            set = new(StringComparer.OrdinalIgnoreCase);
+            _depMappings[_depActiveSourceValue] = set;
+        }
+
+        foreach (var val in groupValues)
+        {
+            if (select) set.Add(val);
+            else set.Remove(val);
+        }
+
+        if (set.Count == 0) _depMappings.Remove(_depActiveSourceValue);
+    }
+
+    private async Task SaveAllDepMappingsAsync()
+    {
+        _depErrors = [];
+
+        if (_depSourceFieldId == Guid.Empty || _depTargetFieldId == Guid.Empty)
+        {
+            _depErrors = [L["Dep_SelectBothFields"]];
+            return;
+        }
+
+        var mappingsWithValues = _depMappings
+            .Where(kv => kv.Value.Count > 0)
+            .ToDictionary(kv => kv.Key, kv => string.Join(",", kv.Value), StringComparer.OrdinalIgnoreCase);
+
+        if (mappingsWithValues.Count == 0)
+        {
+            _depErrors = [L["Dep_SelectAllowedValues"]];
+            return;
+        }
+
+        _savingDep = true;
+
+        var existingForPair = _dependencyRules
+            .Where(r => r.SourceFieldId == _depSourceFieldId && r.TargetFieldId == _depTargetFieldId)
+            .ToList();
+
+        var existingBySource = existingForPair
+            .Where(r => r.SourceValue is not null)
+            .ToDictionary(r => r.SourceValue!, r => r, StringComparer.OrdinalIgnoreCase);
+
+        var hasError = false;
+
+        foreach (var (srcVal, constraint) in mappingsWithValues)
+        {
+            if (existingBySource.TryGetValue(srcVal, out var existing))
+            {
+                if (!string.Equals(existing.TargetConstraint, constraint, StringComparison.OrdinalIgnoreCase))
+                {
+                    var (ok, errs) = await DependencyRuleService.UpdateAsync(Id, existing.Id,
+                        new UpdateFieldDependencyRuleRequest(TargetConstraint: constraint));
+                    if (!ok) { _depErrors = errs; hasError = true; break; }
+                }
+                existingBySource.Remove(srcVal);
+            }
+            else
+            {
+                var (ok, errs) = await DependencyRuleService.CreateAsync(Id,
+                    new CreateFieldDependencyRuleRequest(_depSourceFieldId, srcVal, _depTargetFieldId,
+                        DependencyRuleType.FilterDropdownValues, constraint, _dependencyRules.Count));
+                if (!ok) { _depErrors = errs; hasError = true; break; }
+            }
+        }
+
+        if (!hasError)
+        {
+            foreach (var leftover in existingBySource.Values)
+            {
+                var (ok, errs) = await DependencyRuleService.DeleteAsync(Id, leftover.Id);
+                if (!ok) { _depErrors = errs; break; }
+            }
+        }
+
+        await LoadDependencyRulesAsync();
+
+        if (_depErrors.Count == 0)
+            CloseDepEditor();
+
+        _savingDep = false;
+    }
+
+    private async Task DeleteDepGroupAsync(List<FieldDependencyRuleResponse> group)
+    {
+        _errors = [];
+        foreach (var rule in group)
+        {
+            var (ok, errs) = await DependencyRuleService.DeleteAsync(Id, rule.Id);
+            if (!ok) { _errors = errs; break; }
+        }
+        await LoadDependencyRulesAsync();
     }
 }

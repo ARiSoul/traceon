@@ -215,6 +215,10 @@
   <data name="Fields_CreateField"><value>Create Field</value></data>
   <data name="Fields_SelectDefault"><value>— Select a default —</value></data>
   <data name="Fields_DefineDropdownFirst"><value>Define dropdown values above first.</value></data>
+  <data name="Fields_SourceDropdowns"><value>Source Dropdown Fields</value></data>
+  <data name="Fields_SourceDropdownsHint"><value>Select the dropdown fields whose values will be aggregated into this composite dropdown, grouped by field name.</value></data>
+  <data name="Fields_NoDropdownsAvailable"><value>No dropdown fields exist yet. Create regular dropdown fields first.</value></data>
+  <data name="Fields_CompositeNoDefault"><value>Default value is inherited from source fields.</value></data>
 
   <!-- ═══ ActionField Editor ═══ -->
   <data name="FieldEditor_AnalyticsConfig"><value>Analytics Configuration</value></data>
@@ -694,6 +698,31 @@
   <data name="Analytics_NegativeValuesPlaceholder"><value>Comma-separated, e.g.: Expense,Withdrawal</value></data>
   <data name="Analytics_SignedSumHint"><value>Choose a dropdown field that determines sign. Values marked as negative will be subtracted in the total (e.g., Expense → −Amount).</value></data>
   <data name="Analytics_NeedTwoFields"><value>You need at least two fields (one numeric) to create analytics rules. Add fields in the Fields tab first.</value></data>
+  <data name="Dep_FieldDependencies"><value>Dependencies</value></data>
+  <data name="Dep_Hint"><value>Define how dropdown fields depend on each other. When a source value is selected, the target dropdown shows only the allowed values.</value></data>
+  <data name="Dep_AddRule"><value>Add Rule</value></data>
+  <data name="Dep_AddMapping"><value>Add Mapping</value></data>
+  <data name="Dep_NewMapping"><value>New Dependency Mapping</value></data>
+  <data name="Dep_EditMapping"><value>Edit Dependency Mapping</value></data>
+  <data name="Dep_NewRule"><value>New Dependency Rule</value></data>
+  <data name="Dep_SourceField"><value>Source Field</value></data>
+  <data name="Dep_SourceValue"><value>When value is</value></data>
+  <data name="Dep_SelectSourceFirst"><value>Select a source field first</value></data>
+  <data name="Dep_TargetField"><value>Target Field</value></data>
+  <data name="Dep_AllowedValues"><value>Show only these values</value></data>
+  <data name="Dep_PickSourceValue"><value>Select a value on the left to configure its allowed target values.</value></data>
+  <data name="Dep_WhenValueIs"><value>When value is</value></data>
+  <data name="Dep_NoDropdownValues"><value>One or both selected fields have no dropdown values configured.</value></data>
+  <data name="Dep_MappedValues"><value>Mapped values</value></data>
+  <data name="Dep_Rule"><value>rule</value></data>
+  <data name="Dep_Rules"><value>rules</value></data>
+  <data name="Common_All"><value>All</value></data>
+  <data name="Dep_CommaSeparated"><value>Comma-separated values</value></data>
+  <data name="Dep_NoRulesYet"><value>No dependency rules configured yet.</value></data>
+  <data name="Dep_NeedTwoDropdowns"><value>You need at least two dropdown fields to create dependency rules. Add dropdown fields in the Fields tab first.</value></data>
+  <data name="Dep_SelectBothFields"><value>Please select both a source and target field.</value></data>
+  <data name="Dep_SelectSourceValue"><value>Please select a source value.</value></data>
+  <data name="Dep_SelectAllowedValues"><value>Please select at least one allowed value for the target field.</value></data>
   <data name="Common_Select"><value>Select</value></data>
   <data name="Common_None"><value>None</value></data>
   <data name="Nav_Trash"><value>Trash</value></data>

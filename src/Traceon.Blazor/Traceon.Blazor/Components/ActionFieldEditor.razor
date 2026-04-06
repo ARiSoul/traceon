@@ -136,6 +136,11 @@
                                 </small>
                             }
                             break;
+                        case FieldType.CompositeDropdown:
+                            <small class="text-muted">
+                                <i class="bi bi-layers me-1"></i>@L["Fields_CompositeNoDefault"]
+                            </small>
+                            break;
                         default:
                             <input type="text" class="form-control form-control-sm" @bind="_defaultValue" />
                             break;

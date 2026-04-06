@@ -132,6 +132,47 @@ else
                     </div>
                 }
 
+                @if (_model.Type == FieldType.CompositeDropdown)
+                {
+                    <div class="row g-3 mt-1">
+                        <div class="col-12">
+                            <label class="form-label">@L["Fields_SourceDropdowns"] <span class="text-danger">*</span></label>
+                            <div class="form-text mb-2">@L["Fields_SourceDropdownsHint"]</div>
+                            @if (_availableDropdownFields.Count == 0)
+                            {
+                                <div class="alert alert-info py-2">
+                                    <i class="bi bi-info-circle me-1"></i>@L["Fields_NoDropdownsAvailable"]
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                                    @foreach (var field in _availableDropdownFields.OrderBy(f => f.DefaultName, StringComparer.CurrentCultureIgnoreCase))
+                                    {
+                                        var fieldId = field.Id;
+                                        var isSelected = _model.SourceFieldIds.Contains(fieldId);
+                                        var valuesPreview = string.IsNullOrWhiteSpace(field.DropdownValues)
+                                            ? ""
+                                            : string.Join(", ", field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(4));
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="@($"src-{fieldId}")"
+                                                   checked="@isSelected"
+                                                   @onchange="e => ToggleSourceField(fieldId, (bool)(e.Value ?? false))" />
+                                            <label class="form-check-label" for="@($"src-{fieldId}")">
+                                                <span class="fw-semibold">@field.DefaultName</span>
+                                                @if (!string.IsNullOrEmpty(valuesPreview))
+                                                {
+                                                    <small class="text-muted ms-1">(@valuesPreview@(field.DropdownValues!.Split(',').Length > 4 ? ", ..." : ""))</small>
+                                                }
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
                 <div class="row g-3 mt-1">
                     <div class="col-12">
                         <label class="form-label">@L["Fields_DefaultValue"]</label>
@@ -177,6 +218,12 @@ else
                                 }
                                 break;
 
+                            case FieldType.CompositeDropdown:
+                                <small class="text-muted">
+                                    <i class="bi bi-layers me-1"></i>@L["Fields_CompositeNoDefault"]
+                                </small>
+                                break;
+
                             default:
                                 <InputText @bind-Value="_model.DefaultValue" class="form-control" />
                                 break;
@@ -215,6 +262,7 @@ else
     private bool _loading = true;
     private bool _saving;
     private bool _isEdit => Id.HasValue;
+    private List<FieldDefinitionResponse> _availableDropdownFields = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -243,7 +291,23 @@ else
             _model = new FieldDefinitionModel();
         }
 
+        var all = await Service.GetAllAsync();
+        _availableDropdownFields = all
+            .Where(f => f.Type == FieldType.Dropdown && (!_isEdit || f.Id != Id!.Value))
+            .ToList();
+
         _loading = false;
+    }
+
+    private void ToggleSourceField(Guid fieldId, bool isChecked)
+    {
+        if (_model is null) return;
+        var ids = _model.SourceFieldIds;
+        if (isChecked && !ids.Contains(fieldId))
+            ids.Add(fieldId);
+        else
+            ids.Remove(fieldId);
+        _model.SourceFieldIds = ids;
     }
 
     private async Task SaveAsync()
@@ -263,7 +327,7 @@ else
 
         var defaultValue = _model.ResolveDefaultValue();
         var (minValue, maxValue) = _model.ResolveMinMax();
-        var dropdownValues = _model.Type == FieldType.Dropdown ? _model.DropdownValues : null;
+        var dropdownValues = _model.Type is FieldType.Dropdown or FieldType.CompositeDropdown ? _model.DropdownValues : null;
 
         bool success;
         IReadOnlyList<string> errors;

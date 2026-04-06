@@ -216,6 +216,10 @@
   <data name="Fields_CreateField"><value>Crear Campo</value></data>
   <data name="Fields_SelectDefault"><value>— Seleccionar predeterminado —</value></data>
   <data name="Fields_DefineDropdownFirst"><value>Define los valores del desplegable arriba primero.</value></data>
+  <data name="Fields_SourceDropdowns"><value>Campos Desplegables de Origen</value></data>
+  <data name="Fields_SourceDropdownsHint"><value>Seleccione los campos desplegables cuyos valores se agregarán en este desplegable compuesto, agrupados por nombre de campo.</value></data>
+  <data name="Fields_NoDropdownsAvailable"><value>Aún no existen campos desplegables. Cree campos desplegables regulares primero.</value></data>
+  <data name="Fields_CompositeNoDefault"><value>El valor predeterminado se hereda de los campos de origen.</value></data>
 
   <!-- ═══ Editor de Campos ═══ -->
   <data name="FieldEditor_AnalyticsConfig"><value>Configuración de Estadísticas</value></data>
@@ -697,6 +701,31 @@
   <data name="Analytics_NegativeValuesPlaceholder"><value>Separados por coma, ej: Gasto,Retiro</value></data>
   <data name="Analytics_SignedSumHint"><value>Elige un campo desplegable que determine el signo. Los valores marcados como negativos se restarán del total (ej: Gasto → −Monto).</value></data>
   <data name="Analytics_NeedTwoFields"><value>Necesitas al menos dos campos (uno numérico) para crear reglas. Agrega campos en la pestaña Campos primero.</value></data>
+  <data name="Dep_FieldDependencies"><value>Dependencias</value></data>
+  <data name="Dep_Hint"><value>Define cómo los campos desplegables dependen entre sí. Al seleccionar un valor de origen, el desplegable de destino muestra solo los valores permitidos.</value></data>
+  <data name="Dep_AddRule"><value>Agregar Regla</value></data>
+  <data name="Dep_AddMapping"><value>Agregar Mapeo</value></data>
+  <data name="Dep_NewMapping"><value>Nuevo Mapeo de Dependencia</value></data>
+  <data name="Dep_EditMapping"><value>Editar Mapeo de Dependencia</value></data>
+  <data name="Dep_NewRule"><value>Nueva Regla de Dependencia</value></data>
+  <data name="Dep_SourceField"><value>Campo de Origen</value></data>
+  <data name="Dep_SourceValue"><value>Cuando el valor es</value></data>
+  <data name="Dep_SelectSourceFirst"><value>Selecciona primero un campo de origen</value></data>
+  <data name="Dep_TargetField"><value>Campo de Destino</value></data>
+  <data name="Dep_AllowedValues"><value>Mostrar solo estos valores</value></data>
+  <data name="Dep_PickSourceValue"><value>Selecciona un valor a la izquierda para configurar los valores permitidos en el destino.</value></data>
+  <data name="Dep_WhenValueIs"><value>Cuando el valor es</value></data>
+  <data name="Dep_NoDropdownValues"><value>Uno o ambos campos seleccionados no tienen valores desplegables configurados.</value></data>
+  <data name="Dep_MappedValues"><value>Valores mapeados</value></data>
+  <data name="Dep_Rule"><value>regla</value></data>
+  <data name="Dep_Rules"><value>reglas</value></data>
+  <data name="Common_All"><value>Todos</value></data>
+  <data name="Dep_CommaSeparated"><value>Valores separados por coma</value></data>
+  <data name="Dep_NoRulesYet"><value>No hay reglas de dependencia configuradas.</value></data>
+  <data name="Dep_NeedTwoDropdowns"><value>Necesitas al menos dos campos desplegables para crear reglas de dependencia. Agrega campos desplegables en la pestaña Campos primero.</value></data>
+  <data name="Dep_SelectBothFields"><value>Selecciona un campo de origen y un campo de destino.</value></data>
+  <data name="Dep_SelectSourceValue"><value>Selecciona un valor de origen.</value></data>
+  <data name="Dep_SelectAllowedValues"><value>Selecciona al menos un valor permitido para el campo de destino.</value></data>
   <data name="Common_Select"><value>Seleccionar</value></data>
   <data name="Common_None"><value>Ninguno</value></data>
   <data name="Nav_Trash"><value>Papelera</value></data>

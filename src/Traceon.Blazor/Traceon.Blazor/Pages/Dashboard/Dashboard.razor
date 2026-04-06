@@ -811,6 +811,7 @@ else if (_data is not null)
                             @RenderBooleanStats(field)
                             break;
                         case FieldType.Dropdown:
+                        case FieldType.CompositeDropdown:
                             @RenderDropdownStats(field)
                             break;
                         default:
