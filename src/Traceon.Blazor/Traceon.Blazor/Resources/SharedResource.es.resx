@@ -231,6 +231,15 @@
   <data name="FieldEditor_Bar"><value>Barra</value></data>
   <data name="FieldEditor_Area"><value>Área</value></data>
   <data name="FieldEditor_TargetValue"><value>Valor Objetivo</value></data>
+  <data name="FieldEditor_InitialValueConfig"><value>Pre-llenado</value></data>
+  <data name="FieldEditor_InitialValueHint"><value>Elige cómo se pre-llena este campo al crear un nuevo registro.</value></data>
+  <data name="FieldEditor_InitialValueBehavior"><value>Comportamiento</value></data>
+  <data name="FieldEditor_IV_Default"><value>Valor predeterminado</value></data>
+  <data name="FieldEditor_IV_Last"><value>Valor del último registro</value></data>
+  <data name="FieldEditor_IV_Min"><value>Mínimo</value></data>
+  <data name="FieldEditor_IV_Max"><value>Máximo</value></data>
+  <data name="FieldEditor_IV_Avg"><value>Promedio</value></data>
+  <data name="FieldEditor_IV_Period"><value>Período</value></data>
 
   <!-- ═══ Ajustes ═══ -->
   <data name="Settings_Title"><value>Ajustes</value></data>

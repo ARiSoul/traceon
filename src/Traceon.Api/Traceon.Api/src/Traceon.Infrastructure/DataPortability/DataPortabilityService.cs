@@ -84,7 +84,10 @@ public sealed class DataPortabilityService(TraceonDbContext db)
                     SummaryMetrics = f.SummaryMetrics,
                     TrendAggregation = f.TrendAggregation,
                     TrendChartType = f.TrendChartType,
-                    TargetValue = f.TargetValue
+                    TargetValue = f.TargetValue,
+                    InitialValueBehavior = f.InitialValueBehavior,
+                    InitialValuePeriodUnit = f.InitialValuePeriodUnit,
+                    InitialValuePeriodCount = f.InitialValuePeriodCount
                 }).OrderBy(f => f.Order).ToList(),
                 Entries = entriesByAction.GetValueOrDefault(a.Id, [])
                     .Select(e => new ActionEntryExport
@@ -213,7 +216,9 @@ public sealed class DataPortabilityService(TraceonDbContext db)
                     fieldExport.MaxValue, fieldExport.MinValue, fieldExport.IsRequired,
                     fieldExport.DefaultValue, fieldExport.Unit, fieldExport.Order,
                     fieldExport.SummaryMetrics, fieldExport.TrendAggregation,
-                    fieldExport.TrendChartType, fieldExport.TargetValue);
+                    fieldExport.TrendChartType, fieldExport.TargetValue,
+                    fieldExport.InitialValueBehavior, fieldExport.InitialValuePeriodUnit,
+                    fieldExport.InitialValuePeriodCount);
                 db.ActionFields.Add(field);
                 actionFieldIdMap[fieldExport.Id] = field.Id;
             }

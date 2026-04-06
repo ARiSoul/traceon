@@ -209,6 +209,49 @@
                 </div>
             }
 
+            <hr class="my-2" />
+            <div class="d-flex align-items-center gap-1 mb-2">
+                <i class="bi bi-play-circle text-muted"></i>
+                <strong class="small">@L["FieldEditor_InitialValueConfig"]</strong>
+            </div>
+            <div class="form-text mt-0 mb-2">@L["FieldEditor_InitialValueHint"]</div>
+
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm mb-1">@L["FieldEditor_InitialValueBehavior"]</label>
+                    <select class="form-select form-select-sm" @bind="_initialValueBehavior">
+                        <option value="@InitialValueBehavior.DefaultValue">@L["FieldEditor_IV_Default"]</option>
+                        <option value="@InitialValueBehavior.LastValue">@L["FieldEditor_IV_Last"]</option>
+                        @if (Field.FieldType is FieldType.Integer or FieldType.Decimal)
+                        {
+                            <option value="@InitialValueBehavior.MinValue">@L["FieldEditor_IV_Min"]</option>
+                            <option value="@InitialValueBehavior.MaxValue">@L["FieldEditor_IV_Max"]</option>
+                            <option value="@InitialValueBehavior.AvgValue">@L["FieldEditor_IV_Avg"]</option>
+                        }
+                    </select>
+                </div>
+                @if (_initialValueBehavior is InitialValueBehavior.MinValue or InitialValueBehavior.MaxValue or InitialValueBehavior.AvgValue)
+                {
+                    <div class="col-md-4">
+                        <label class="form-label form-label-sm mb-1">@L["FieldEditor_IV_Period"]</label>
+                        <select class="form-select form-select-sm" @bind="_initialValuePeriodUnit">
+                            <option value="@InitialValuePeriodUnit.AllTime">@L["Common_AllTime"]</option>
+                            <option value="@InitialValuePeriodUnit.Days">@L["Dashboard_LastNDays"]</option>
+                            <option value="@InitialValuePeriodUnit.Months">@L["Dashboard_LastNMonths"]</option>
+                        </select>
+                    </div>
+                    @if (_initialValuePeriodUnit is not InitialValuePeriodUnit.AllTime)
+                    {
+                        <div class="col-md-4">
+                            <label class="form-label form-label-sm mb-1">
+                                @(_initialValuePeriodUnit == InitialValuePeriodUnit.Days ? L["Dashboard_Days"] : L["Dashboard_Months"])
+                            </label>
+                            <input type="number" min="1" class="form-control form-control-sm" @bind="_initialValuePeriodCount" />
+                        </div>
+                    }
+                }
+            </div>
+
             <div class="d-flex gap-2 mt-3">
                 <button class="btn btn-success btn-sm" @onclick="SaveAsync" disabled="@_saving">
                     @if (_saving)
@@ -252,6 +295,9 @@
     private TrendAggregation _trendAggregation = TrendAggregation.AllPoints;
     private TrendChartType _trendChartType = TrendChartType.Line;
     private decimal? _targetValue;
+    private InitialValueBehavior _initialValueBehavior = InitialValueBehavior.DefaultValue;
+    private InitialValuePeriodUnit _initialValuePeriodUnit = InitialValuePeriodUnit.AllTime;
+    private int _initialValuePeriodCount;
 
     // Typed values
     private int? _intMinValue;
@@ -296,6 +342,9 @@
         _trendAggregation = Field.TrendAggregation;
         _trendChartType = Field.TrendChartType;
         _targetValue = Field.TargetValue;
+        _initialValueBehavior = Field.InitialValueBehavior;
+        _initialValuePeriodUnit = Field.InitialValuePeriodUnit;
+        _initialValuePeriodCount = Field.InitialValuePeriodCount;
 
         // Load min/max
         switch (Field.FieldType)
@@ -355,7 +404,8 @@
 
         var request = new UpdateActionFieldRequest(
             _name, _description, maxValue, minValue, _isRequired, defaultVal, _unit, _order,
-            _summaryMetrics, _trendAggregation, _trendChartType, _targetValue);
+            _summaryMetrics, _trendAggregation, _trendChartType, _targetValue,
+            _initialValueBehavior, _initialValuePeriodUnit, _initialValuePeriodCount);
 
         var (ok, errs) = await ActionFieldService.UpdateAsync(TrackedActionId, Field.Id, request);
 

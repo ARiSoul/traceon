@@ -230,6 +230,15 @@
   <data name="FieldEditor_Bar"><value>Bar</value></data>
   <data name="FieldEditor_Area"><value>Area</value></data>
   <data name="FieldEditor_TargetValue"><value>Target Value</value></data>
+  <data name="FieldEditor_InitialValueConfig"><value>New Entry Pre-fill</value></data>
+  <data name="FieldEditor_InitialValueHint"><value>Choose how this field is pre-filled when creating a new entry.</value></data>
+  <data name="FieldEditor_InitialValueBehavior"><value>Behavior</value></data>
+  <data name="FieldEditor_IV_Default"><value>Default value</value></data>
+  <data name="FieldEditor_IV_Last"><value>Last entry value</value></data>
+  <data name="FieldEditor_IV_Min"><value>Minimum</value></data>
+  <data name="FieldEditor_IV_Max"><value>Maximum</value></data>
+  <data name="FieldEditor_IV_Avg"><value>Average</value></data>
+  <data name="FieldEditor_IV_Period"><value>Period</value></data>
 
   <!-- ═══ Settings ═══ -->
   <data name="Settings_Title"><value>Settings</value></data>

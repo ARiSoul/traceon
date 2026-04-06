@@ -15,4 +15,7 @@ public sealed record CreateActionFieldRequest(
     SummaryMetrics SummaryMetrics = SummaryMetrics.All,
     TrendAggregation TrendAggregation = TrendAggregation.AllPoints,
     TrendChartType TrendChartType = TrendChartType.Line,
-    decimal? TargetValue = null);
+    decimal? TargetValue = null,
+    InitialValueBehavior InitialValueBehavior = InitialValueBehavior.DefaultValue,
+    InitialValuePeriodUnit InitialValuePeriodUnit = InitialValuePeriodUnit.AllTime,
+    int InitialValuePeriodCount = 0);

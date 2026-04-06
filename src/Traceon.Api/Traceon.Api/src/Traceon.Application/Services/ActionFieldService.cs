@@ -53,7 +53,10 @@ public sealed class ActionFieldService(
                             TrackedActionId = trackedActionId,
                             UpdatedAtUtc = af.UpdatedAtUtc,
                             Unit = af.Unit,
-                            DropdownValues = fd.DropdownValues
+                            DropdownValues = fd.DropdownValues,
+                            InitialValueBehavior = (Contracts.Enums.InitialValueBehavior)af.InitialValueBehavior,
+                            InitialValuePeriodUnit = (Contracts.Enums.InitialValuePeriodUnit)af.InitialValuePeriodUnit,
+                            InitialValuePeriodCount = af.InitialValuePeriodCount
                         };
 
         return Result<IQueryable<ActionFieldResponse>>.Success(queryable);
@@ -134,7 +137,10 @@ public sealed class ActionFieldService(
             (int)request.SummaryMetrics,
             (int)request.TrendAggregation,
             (int)request.TrendChartType,
-            request.TargetValue);
+            request.TargetValue,
+            (int)request.InitialValueBehavior,
+            (int)request.InitialValuePeriodUnit,
+            request.InitialValuePeriodCount);
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -172,7 +178,10 @@ public sealed class ActionFieldService(
             request.SummaryMetrics.HasValue ? (int)request.SummaryMetrics.Value : null,
             request.TrendAggregation.HasValue ? (int)request.TrendAggregation.Value : null,
             request.TrendChartType.HasValue ? (int)request.TrendChartType.Value : null,
-            request.TargetValue);
+            request.TargetValue,
+            request.InitialValueBehavior.HasValue ? (int)request.InitialValueBehavior.Value : null,
+            request.InitialValuePeriodUnit.HasValue ? (int)request.InitialValuePeriodUnit.Value : null,
+            request.InitialValuePeriodCount);
 
         await repository.UpdateAsync(entity, cancellationToken);
 

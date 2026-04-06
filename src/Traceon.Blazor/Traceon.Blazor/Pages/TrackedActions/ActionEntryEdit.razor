@@ -277,9 +277,114 @@ else
                 model.LoadValue(f.DefaultValue);
                 return model;
             }).ToList();
+
+            await LoadComputedInitialValuesAsync();
         }
 
         _loading = false;
+    }
+
+    private async Task LoadComputedInitialValuesAsync()
+    {
+        var needsEntries = _fieldModels.Any(m =>
+            m.Field.InitialValueBehavior != InitialValueBehavior.DefaultValue);
+
+        if (!needsEntries) return;
+
+        try
+        {
+            // Determine the widest time window needed for Min/Max/Avg fields.
+            // LastValue fields always need the most recent entry regardless of period,
+            // so if any LastValue field exists we must NOT restrict the date window.
+            var hasLastValue = _fieldModels.Any(m =>
+                m.Field.InitialValueBehavior == InitialValueBehavior.LastValue);
+
+            DateTime? fromUtc = null;
+            if (!hasLastValue)
+            {
+                foreach (var m in _fieldModels)
+                {
+                    if (m.Field.InitialValueBehavior is InitialValueBehavior.MinValue
+                        or InitialValueBehavior.MaxValue or InitialValueBehavior.AvgValue)
+                    {
+                        var fieldFrom = GetPeriodStart(m.Field.InitialValuePeriodUnit, m.Field.InitialValuePeriodCount);
+                        if (fieldFrom is not null && (fromUtc is null || fieldFrom < fromUtc))
+                            fromUtc = fieldFrom;
+                    }
+                }
+            }
+
+            var filter = $"TrackedActionId eq {TrackedActionId}";
+            if (fromUtc.HasValue)
+                filter += $" and OccurredAtUtc ge {fromUtc.Value:yyyy-MM-ddTHH:mm:ssZ}";
+
+            var request = new DataGridRequest(1, 10_000, "OccurredAtUtc", true, null);
+            var result = await EntryService.QueryAsync(request, null, filter);
+            var entries = result.Items;
+
+            if (entries.Count == 0) return;
+
+            foreach (var model in _fieldModels)
+            {
+                switch (model.Field.InitialValueBehavior)
+                {
+                    case InitialValueBehavior.LastValue:
+                        var lastEntry = entries.FirstOrDefault();
+                        var lastVal = lastEntry?.FieldValues
+                            ?.FirstOrDefault(v => v.ActionFieldId == model.Field.Id)?.Value;
+                        if (lastVal is not null)
+                            model.LoadValue(lastVal);
+                        break;
+
+                    case InitialValueBehavior.MinValue:
+                    case InitialValueBehavior.MaxValue:
+                    case InitialValueBehavior.AvgValue:
+                        var periodStart = GetPeriodStart(model.Field.InitialValuePeriodUnit, model.Field.InitialValuePeriodCount);
+                        var values = entries
+                            .Where(e => periodStart is null || e.OccurredAtUtc >= periodStart)
+                            .Select(e => e.FieldValues
+                                ?.FirstOrDefault(v => v.ActionFieldId == model.Field.Id)?.Value)
+                            .Where(v => v is not null && decimal.TryParse(v, CultureInfo.InvariantCulture, out _))
+                            .Select(v => decimal.Parse(v!, CultureInfo.InvariantCulture))
+                            .ToList();
+
+                        if (values.Count > 0)
+                        {
+                            var computed = model.Field.InitialValueBehavior switch
+                            {
+                                InitialValueBehavior.MinValue => values.Min(),
+                                InitialValueBehavior.MaxValue => values.Max(),
+                                InitialValueBehavior.AvgValue => Math.Round(values.Average(), 4),
+                                _ => (decimal?)null
+                            };
+                            if (computed.HasValue)
+                            {
+                                // For Integer fields, round to whole number so int.TryParse succeeds in LoadValue
+                                var formatted = model.Field.FieldType == FieldType.Integer
+                                    ? ((int)Math.Round(computed.Value, 0)).ToString(CultureInfo.InvariantCulture)
+                                    : computed.Value.ToString(CultureInfo.InvariantCulture);
+                                model.LoadValue(formatted);
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Traceon] Failed to compute initial field values: {ex.Message}");
+        }
+    }
+
+    private static DateTime? GetPeriodStart(InitialValuePeriodUnit unit, int count)
+    {
+        if (unit == InitialValuePeriodUnit.AllTime || count <= 0) return null;
+        return unit switch
+        {
+            InitialValuePeriodUnit.Days => DateTime.UtcNow.AddDays(-count),
+            InitialValuePeriodUnit.Months => DateTime.UtcNow.AddMonths(-count),
+            _ => null
+        };
     }
 
     private void OnDateTimeChanged(ChangeEventArgs e)

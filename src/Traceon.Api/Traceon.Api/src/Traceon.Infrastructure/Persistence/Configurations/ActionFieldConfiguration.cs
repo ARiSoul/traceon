@@ -52,6 +52,18 @@ internal sealed class ActionFieldConfiguration : IEntityTypeConfiguration<Action
         builder.Property(e => e.TargetValue)
             .HasPrecision(18, 4);
 
+        builder.Property(e => e.InitialValueBehavior)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(e => e.InitialValuePeriodUnit)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(e => e.InitialValuePeriodCount)
+            .IsRequired()
+            .HasDefaultValue(0);
+
         builder.HasIndex(e => e.TrackedActionId);
 
         builder.HasOne<FieldDefinition>()

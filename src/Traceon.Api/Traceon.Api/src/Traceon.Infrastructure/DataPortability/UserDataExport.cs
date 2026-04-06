@@ -69,6 +69,9 @@ public sealed class ActionFieldExport
     public int TrendAggregation { get; set; }
     public int TrendChartType { get; set; }
     public decimal? TargetValue { get; set; }
+    public int InitialValueBehavior { get; set; }
+    public int InitialValuePeriodUnit { get; set; }
+    public int InitialValuePeriodCount { get; set; }
 }
 
 public sealed class ActionEntryExport

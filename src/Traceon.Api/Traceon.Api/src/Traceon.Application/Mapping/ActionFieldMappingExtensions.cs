@@ -27,6 +27,9 @@ public static class ActionFieldMappingExtensions
             TrackedActionId = entity.TrackedActionId,
             UpdatedAtUtc = entity.UpdatedAtUtc,
             Unit = entity.Unit,
-            DropdownValues = fieldDefinition.DropdownValues
+            DropdownValues = fieldDefinition.DropdownValues,
+            InitialValueBehavior = (InitialValueBehavior)entity.InitialValueBehavior,
+            InitialValuePeriodUnit = (InitialValuePeriodUnit)entity.InitialValuePeriodUnit,
+            InitialValuePeriodCount = entity.InitialValuePeriodCount
         };
 }

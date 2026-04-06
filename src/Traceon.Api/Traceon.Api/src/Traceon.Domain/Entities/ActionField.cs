@@ -16,6 +16,9 @@ public sealed class ActionField : Entity
     public int TrendAggregation { get; private set; }
     public int TrendChartType { get; private set; }
     public decimal? TargetValue { get; private set; }
+    public int InitialValueBehavior { get; private set; }
+    public int InitialValuePeriodUnit { get; private set; }
+    public int InitialValuePeriodCount { get; private set; }
 
     private ActionField(
         Guid trackedActionId,
@@ -31,7 +34,10 @@ public sealed class ActionField : Entity
         int summaryMetrics,
         int trendAggregation,
         int trendChartType,
-        decimal? targetValue)
+        decimal? targetValue,
+        int initialValueBehavior,
+        int initialValuePeriodUnit,
+        int initialValuePeriodCount)
     {
         TrackedActionId = trackedActionId;
         FieldDefinitionId = fieldDefinitionId;
@@ -47,6 +53,9 @@ public sealed class ActionField : Entity
         TrendAggregation = trendAggregation;
         TrendChartType = trendChartType;
         TargetValue = targetValue;
+        InitialValueBehavior = initialValueBehavior;
+        InitialValuePeriodUnit = initialValuePeriodUnit;
+        InitialValuePeriodCount = initialValuePeriodCount;
     }
 
     public static ActionField Create(
@@ -63,7 +72,10 @@ public sealed class ActionField : Entity
         int summaryMetrics = 63,
         int trendAggregation = 0,
         int trendChartType = 0,
-        decimal? targetValue = null)
+        decimal? targetValue = null,
+        int initialValueBehavior = 0,
+        int initialValuePeriodUnit = 0,
+        int initialValuePeriodCount = 0)
     {
         if (trackedActionId == Guid.Empty)
             throw new ArgumentException("Tracked action ID is required.", nameof(trackedActionId));
@@ -87,7 +99,10 @@ public sealed class ActionField : Entity
             summaryMetrics,
             trendAggregation,
             trendChartType,
-            targetValue);
+            targetValue,
+            initialValueBehavior,
+            initialValuePeriodUnit,
+            initialValuePeriodCount);
     }
 
     public void Update(
@@ -102,7 +117,10 @@ public sealed class ActionField : Entity
         int? summaryMetrics = null,
         int? trendAggregation = null,
         int? trendChartType = null,
-        decimal? targetValue = null)
+        decimal? targetValue = null,
+        int? initialValueBehavior = null,
+        int? initialValuePeriodUnit = null,
+        int? initialValuePeriodCount = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -122,6 +140,12 @@ public sealed class ActionField : Entity
         if (trendChartType.HasValue)
             TrendChartType = trendChartType.Value;
         TargetValue = targetValue;
+        if (initialValueBehavior.HasValue)
+            InitialValueBehavior = initialValueBehavior.Value;
+        if (initialValuePeriodUnit.HasValue)
+            InitialValuePeriodUnit = initialValuePeriodUnit.Value;
+        if (initialValuePeriodCount.HasValue)
+            InitialValuePeriodCount = initialValuePeriodCount.Value;
         MarkUpdated();
     }
 }

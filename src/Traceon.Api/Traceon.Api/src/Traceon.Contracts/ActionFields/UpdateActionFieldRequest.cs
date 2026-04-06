@@ -14,4 +14,7 @@ public sealed record UpdateActionFieldRequest(
     SummaryMetrics? SummaryMetrics = null,
     TrendAggregation? TrendAggregation = null,
     TrendChartType? TrendChartType = null,
-    decimal? TargetValue = null);
+    decimal? TargetValue = null,
+    InitialValueBehavior? InitialValueBehavior = null,
+    InitialValuePeriodUnit? InitialValuePeriodUnit = null,
+    int? InitialValuePeriodCount = null);
