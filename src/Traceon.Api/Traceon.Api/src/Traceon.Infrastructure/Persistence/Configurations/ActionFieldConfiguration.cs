@@ -64,6 +64,17 @@ internal sealed class ActionFieldConfiguration : IEntityTypeConfiguration<Action
             .IsRequired()
             .HasDefaultValue(0);
 
+        builder.Property(e => e.DropdownTrendValueFieldId)
+            .IsRequired(false);
+
+        builder.Property(e => e.DropdownTrendAggregation)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(e => e.DropdownTrendChartType)
+            .IsRequired()
+            .HasDefaultValue(0);
+
         builder.HasIndex(e => e.TrackedActionId);
 
         builder.HasOne<FieldDefinition>()

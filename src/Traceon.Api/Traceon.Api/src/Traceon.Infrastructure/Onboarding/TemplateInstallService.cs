@@ -119,6 +119,22 @@ public sealed class TemplateInstallService(TraceonDbContext db)
 
             await db.SaveChangesAsync();
 
+            // Resolve DropdownTrendValueFieldId references (requires fields to be persisted first)
+            foreach (var fieldTemplate in actionTemplate.Fields)
+            {
+                if (fieldTemplate.DropdownTrendValueFieldName is not null
+                    && fieldIdsByName.TryGetValue(fieldTemplate.Name, out var selfId)
+                    && fieldIdsByName.TryGetValue(fieldTemplate.DropdownTrendValueFieldName, out var refId))
+                {
+                    var tracked = await db.ActionFields.FindAsync(selfId);
+                    tracked?.Update(tracked.Name,
+                        dropdownTrendValueFieldId: refId,
+                        dropdownTrendAggregation: fieldTemplate.DropdownTrendAggregation,
+                        dropdownTrendChartType: fieldTemplate.DropdownTrendChartType);
+                }
+            }
+            await db.SaveChangesAsync();
+
             // Create analytics rules
             foreach (var ruleTemplate in actionTemplate.AnalyticsRules)
             {

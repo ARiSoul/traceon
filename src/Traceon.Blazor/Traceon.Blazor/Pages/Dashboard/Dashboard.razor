@@ -378,7 +378,7 @@ else if (_data is not null)
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6 class="text-muted mb-0"><i class="bi bi-bar-chart me-1"></i>@L["Dashboard_WeeklyActivity"]</h6>
-                                    <a href="/dashboard/action/@action.ActionId/detail" class="btn btn-outline-primary btn-sm">
+                                    <a href="@BuildDetailUrl(action.ActionId)" class="btn btn-outline-primary btn-sm">
                                         <i class="bi bi-graph-up-arrow me-1"></i>@L["Dashboard_FullAnalytics"]
                                     </a>
                                 </div>
@@ -707,6 +707,24 @@ else if (_data is not null)
         if (from.HasValue) queryParams.Add($"from={from.Value:yyyy-MM-dd}");
         if (to.HasValue) queryParams.Add($"to={to.Value:yyyy-MM-dd}");
         return queryParams.Count > 0 ? $"{url}?{string.Join("&", queryParams)}" : url;
+    }
+
+    private string BuildDetailUrl(Guid actionId)
+    {
+        var url = $"/dashboard/action/{actionId}/detail";
+        if (_periodMode == "all") return url;
+
+        var qp = new List<string> { $"period={Uri.EscapeDataString(_periodMode)}" };
+        if (_periodMode is "days" or "months" or "years")
+            qp.Add($"pv={_periodValue}");
+        else if (_periodMode == "month" && _selectedMonth.HasValue)
+            qp.Add($"month={_selectedMonth.Value:yyyy-MM}");
+        else if (_periodMode == "custom")
+        {
+            if (_customFrom.HasValue) qp.Add($"from={_customFrom.Value:yyyy-MM-dd}");
+            if (_customTo.HasValue) qp.Add($"to={_customTo.Value:yyyy-MM-dd}");
+        }
+        return $"{url}?{string.Join("&", qp)}";
     }
 
     private async Task ReloadAsync()

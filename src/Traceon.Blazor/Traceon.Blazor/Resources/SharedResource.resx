@@ -234,6 +234,8 @@
   <data name="FieldEditor_Bar"><value>Bar</value></data>
   <data name="FieldEditor_Area"><value>Area</value></data>
   <data name="FieldEditor_TargetValue"><value>Target Value</value></data>
+  <data name="FieldEditor_DropdownTrendConfig"><value>Value Trend Analytics</value></data>
+  <data name="FieldEditor_DropdownTrendHint"><value>Track how a numeric field evolves over time for each dropdown value (e.g., spending per store over time).</value></data>
   <data name="FieldEditor_InitialValueConfig"><value>New Entry Pre-fill</value></data>
   <data name="FieldEditor_InitialValueHint"><value>Choose how this field is pre-filled when creating a new entry.</value></data>
   <data name="FieldEditor_InitialValueBehavior"><value>Behavior</value></data>
@@ -680,6 +682,13 @@
   <data name="Aggregation_Max"><value>Maximum</value></data>
   <data name="Aggregation_Count"><value>Count</value></data>
   <data name="Aggregation_SignedSum"><value>Signed Sum</value></data>
+  <data name="Aggregation_CountByValue"><value>Count by Value</value></data>
+  <data name="Analytics_Agg_Count"><value>Count (total entries per group)</value></data>
+  <data name="Analytics_Agg_CountByValue"><value>Count by Value (breakdown per group)</value></data>
+  <data name="Analytics_CountByValueHint"><value>Count counts entries per group. Count by Value shows how each measure value is distributed within each group.</value></data>
+  <data name="Analytics_ValueField"><value>Value Field</value></data>
+  <data name="Analytics_ValueFieldHint"><value>Optionally select a numeric field to aggregate alongside counts (e.g., sum of Amount per category).</value></data>
+  <data name="Analytics_ValueMetrics"><value>Metrics</value></data>
   <data name="Analytics_RulesHint"><value>Define how fields relate to each other for dashboard insights.</value></data>
   <data name="Analytics_AddRule"><value>Add Rule</value></data>
   <data name="Analytics_NewRule"><value>New Analytics Rule</value></data>

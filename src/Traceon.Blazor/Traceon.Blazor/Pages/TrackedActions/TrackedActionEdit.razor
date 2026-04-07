@@ -155,7 +155,8 @@ else
                                                IsFirst="index == 0"
                                                IsLast="index == _fields.Count - 1"
                                                OnMoveUp="() => MoveFieldAsync(index, -1)"
-                                               OnMoveDown="() => MoveFieldAsync(index, 1)" />
+                                               OnMoveDown="() => MoveFieldAsync(index, 1)"
+                                               SiblingFields="_fields" />
                         }
                     </div>
                     @if (_savingOrder)
@@ -238,7 +239,7 @@ else
                                         <label class="form-label">@L["Analytics_MeasureField"] <span class="text-danger">*</span></label>
                                         <select class="form-select" @bind="_newRule.MeasureFieldId">
                                             <option value="@Guid.Empty">— @L["Common_Select"] —</option>
-                                            @foreach (var f in _fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
+                                            @foreach (var f in _fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal or FieldType.Dropdown or FieldType.CompositeDropdown).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
                                             {
                                                 <option value="@f.Id">@f.Name (@f.FieldType)</option>
                                             }
@@ -256,13 +257,72 @@ else
                                     </div>
                                     <div class="col-12 col-md-4">
                                         <label class="form-label">@L["Analytics_Aggregation"]</label>
+                                        @{
+                                            var newMeasureField = _fields.FirstOrDefault(f => f.Id == _newRule.MeasureFieldId);
+                                            var newMeasureIsDropdown = newMeasureField?.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown;
+                                        }
                                         <select class="form-select" @bind="_newRule.Aggregation">
-                                            @foreach (var agg in Enum.GetValues<AnalyticsAggregation>())
+                                            @if (newMeasureIsDropdown)
                                             {
-                                                <option value="@agg">@agg</option>
+                                                <option value="@AnalyticsAggregation.Count">@L["Analytics_Agg_Count"]</option>
+                                                <option value="@AnalyticsAggregation.CountByValue">@L["Analytics_Agg_CountByValue"]</option>
+                                            }
+                                            else
+                                            {
+                                                @foreach (var agg in Enum.GetValues<AnalyticsAggregation>().Where(a => a != AnalyticsAggregation.CountByValue))
+                                                {
+                                                    <option value="@agg">@agg</option>
+                                                }
                                             }
                                         </select>
+                                        @if (newMeasureIsDropdown)
+                                        {
+                                            <div class="form-text small">
+                                                <i class="bi bi-info-circle me-1"></i>@L["Analytics_CountByValueHint"]
+                                            </div>
+                                        }
                                     </div>
+                                    @if (_newRule.Aggregation == AnalyticsAggregation.CountByValue && newMeasureIsDropdown)
+                                    {
+                                        var hasNumericFields = _fields.Any(f => f.FieldType is FieldType.Integer or FieldType.Decimal && f.Id != _newRule.MeasureFieldId && f.Id != _newRule.GroupByFieldId);
+                                        @if (hasNumericFields)
+                                        {
+                                            <div class="col-12">
+                                                <hr class="my-2" />
+                                                <small class="text-muted"><i class="bi bi-calculator me-1"></i>@L["Analytics_ValueFieldHint"]</small>
+                                            </div>
+                                            <div class="col-12 col-md-4">
+                                                <label class="form-label">@L["Analytics_ValueField"]</label>
+                                                <select class="form-select" @bind="_newRule.SignFieldId">
+                                                    <option value="">— @L["Common_None"] —</option>
+                                                    @foreach (var f in _fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal && f.Id != _newRule.MeasureFieldId && f.Id != _newRule.GroupByFieldId).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
+                                                    {
+                                                        <option value="@f.Id">@f.Name (@f.Unit)</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            @if (_newRule.SignFieldId != Guid.Empty)
+                                            {
+                                                <div class="col-12 col-md-4">
+                                                    <label class="form-label">@L["Analytics_ValueMetrics"]</label>
+                                                    @{
+                                                        var newSelectedMetrics = (_newRule.NegativeValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                    }
+                                                    @foreach (var metric in new[] { "Sum", "Avg", "Min", "Max" })
+                                                    {
+                                                        var capturedMetric = metric;
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="new-metric-@capturedMetric" checked="@newSelectedMetrics.Contains(capturedMetric)"
+                                                                   @onchange="e => { _newRule.NegativeValues = ToggleNegativeValue(_newRule.NegativeValues, capturedMetric, (bool)(e.Value ?? false)); }" />
+                                                            <label class="form-check-label" for="new-metric-@capturedMetric">@L[$"Aggregation_{capturedMetric}"]</label>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        }
+                                    }
+                                    @if (_newRule.Aggregation != AnalyticsAggregation.CountByValue)
+                                    {
                                     <div class="col-12 col-md-4">
                                         <label class="form-label">@L["Analytics_DisplayAs"]</label>
                                         <select class="form-select" @bind="_newRule.DisplayType">
@@ -272,6 +332,7 @@ else
                                             }
                                         </select>
                                     </div>
+                                    }
                                     <div class="col-12 col-md-4">
                                         <label class="form-label">@L["Analytics_Label"]</label>
                                         <input type="text" class="form-control" @bind="_newRule.Label" placeholder="@L["Analytics_LabelPlaceholder"]" />
@@ -410,13 +471,27 @@ else
                                                     </div>
                                                     <div class="col-12 col-md-4">
                                                         <label class="form-label">@L["Analytics_Aggregation"]</label>
+                                                        @{
+                                                            var editMeasureField = _fields.FirstOrDefault(f => f.Id == rule.MeasureFieldId);
+                                                            var editMeasureIsDropdown = editMeasureField?.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown;
+                                                        }
                                                         <select class="form-select" @bind="_editRule.Aggregation">
-                                                            @foreach (var agg in Enum.GetValues<AnalyticsAggregation>())
+                                                            @if (editMeasureIsDropdown)
                                                             {
-                                                                <option value="@agg">@agg</option>
+                                                                <option value="@AnalyticsAggregation.Count">@L["Analytics_Agg_Count"]</option>
+                                                                <option value="@AnalyticsAggregation.CountByValue">@L["Analytics_Agg_CountByValue"]</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                @foreach (var agg in Enum.GetValues<AnalyticsAggregation>().Where(a => a != AnalyticsAggregation.CountByValue))
+                                                                {
+                                                                    <option value="@agg">@agg</option>
+                                                                }
                                                             }
                                                         </select>
                                                     </div>
+                                                    @if (_editRule.Aggregation != AnalyticsAggregation.CountByValue)
+                                                    {
                                                     <div class="col-12 col-md-4">
                                                         <label class="form-label">@L["Analytics_DisplayAs"]</label>
                                                         <select class="form-select" @bind="_editRule.DisplayType">
@@ -426,6 +501,7 @@ else
                                                             }
                                                         </select>
                                                     </div>
+                                                    }
                                                     <div class="col-12 col-md-4">
                                                         <label class="form-label">@L["Analytics_Label"]</label>
                                                         <input type="text" class="form-control" @bind="_editRule.Label" placeholder="@L["Analytics_LabelPlaceholder"]" />
@@ -469,6 +545,45 @@ else
                                                                 <input type="text" class="form-control" @bind="_editRule.FilterValue" />
                                                             }
                                                         </div>
+                                                    }
+                                                    @if (_editRule.Aggregation == AnalyticsAggregation.CountByValue && editMeasureIsDropdown)
+                                                    {
+                                                        var editHasNumericFields = _fields.Any(f => f.FieldType is FieldType.Integer or FieldType.Decimal && f.Id != rule.MeasureFieldId && f.Id != rule.GroupByFieldId);
+                                                        @if (editHasNumericFields)
+                                                        {
+                                                            <div class="col-12">
+                                                                <hr class="my-2" />
+                                                                <small class="text-muted"><i class="bi bi-calculator me-1"></i>@L["Analytics_ValueFieldHint"]</small>
+                                                            </div>
+                                                            <div class="col-12 col-md-4">
+                                                                <label class="form-label">@L["Analytics_ValueField"]</label>
+                                                                <select class="form-select" @bind="_editRule.SignFieldId">
+                                                                    <option value="">— @L["Common_None"] —</option>
+                                                                    @foreach (var f in _fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal && f.Id != rule.MeasureFieldId && f.Id != rule.GroupByFieldId).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
+                                                                    {
+                                                                        <option value="@f.Id">@f.Name (@f.Unit)</option>
+                                                                    }
+                                                                </select>
+                                                            </div>
+                                                            @if (_editRule.SignFieldId != Guid.Empty)
+                                                            {
+                                                                <div class="col-12 col-md-4">
+                                                                    <label class="form-label">@L["Analytics_ValueMetrics"]</label>
+                                                                    @{
+                                                                        var editSelectedMetrics = (_editRule.NegativeValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                                    }
+                                                                    @foreach (var metric in new[] { "Sum", "Avg", "Min", "Max" })
+                                                                    {
+                                                                        var capturedMetric = metric;
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="edit-metric-@capturedMetric" checked="@editSelectedMetrics.Contains(capturedMetric)"
+                                                                                   @onchange="e => { _editRule.NegativeValues = ToggleNegativeValue(_editRule.NegativeValues, capturedMetric, (bool)(e.Value ?? false)); }" />
+                                                                            <label class="form-check-label" for="edit-metric-@capturedMetric">@L[$"Aggregation_{capturedMetric}"]</label>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        }
                                                     }
                                                     @if (_editRule.Aggregation == AnalyticsAggregation.SignedSum)
                                                     {

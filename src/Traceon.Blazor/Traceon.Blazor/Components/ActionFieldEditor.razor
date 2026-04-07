@@ -214,6 +214,55 @@
                 </div>
             }
 
+            @if (Field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
+            {
+                var numericSiblings = SiblingFields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal && f.Id != Field.Id).ToList();
+                @if (numericSiblings.Count > 0)
+                {
+                    <hr class="my-2" />
+                    <div class="d-flex align-items-center gap-1 mb-2">
+                        <i class="bi bi-graph-up text-muted"></i>
+                        <strong class="small">@L["FieldEditor_DropdownTrendConfig"]</strong>
+                    </div>
+                    <div class="form-text mt-0 mb-2">@L["FieldEditor_DropdownTrendHint"]</div>
+
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label form-label-sm mb-1">@L["Analytics_ValueField"]</label>
+                            <select class="form-select form-select-sm" value="@(_dropdownTrendValueFieldId?.ToString() ?? "")"
+                                    @onchange="e => _dropdownTrendValueFieldId = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null">
+                                <option value="">— @L["Common_None"] —</option>
+                                @foreach (var f in numericSiblings.OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
+                                {
+                                    <option value="@f.Id">@f.Name (@f.Unit)</option>
+                                }
+                            </select>
+                        </div>
+                        @if (_dropdownTrendValueFieldId.HasValue)
+                        {
+                            <div class="col-md-4">
+                                <label class="form-label form-label-sm mb-1">@L["FieldEditor_TrendAggregation"]</label>
+                                <select class="form-select form-select-sm" @bind="_dropdownTrendAggregation">
+                                    <option value="@TrendAggregation.Sum">@L["FieldEditor_DailySum"]</option>
+                                    <option value="@TrendAggregation.Average">@L["FieldEditor_DailyAverage"]</option>
+                                    <option value="@TrendAggregation.Min">@L["FieldEditor_DailyMin"]</option>
+                                    <option value="@TrendAggregation.Max">@L["FieldEditor_DailyMax"]</option>
+                                    <option value="@TrendAggregation.AllPoints">@L["FieldEditor_AllPoints"]</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label form-label-sm mb-1">@L["FieldEditor_ChartType"]</label>
+                                <select class="form-select form-select-sm" @bind="_dropdownTrendChartType">
+                                    <option value="@TrendChartType.Line">@L["FieldEditor_Line"]</option>
+                                    <option value="@TrendChartType.Bar">@L["FieldEditor_Bar"]</option>
+                                    <option value="@TrendChartType.Area">@L["FieldEditor_Area"]</option>
+                                </select>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
             <hr class="my-2" />
             <div class="d-flex align-items-center gap-1 mb-2">
                 <i class="bi bi-play-circle text-muted"></i>
@@ -282,6 +331,7 @@
     [Parameter] public EventCallback OnMoveDown { get; set; }
     [Parameter] public bool IsFirst { get; set; }
     [Parameter] public bool IsLast { get; set; }
+    [Parameter] public IReadOnlyList<ActionFieldResponse> SiblingFields { get; set; } = [];
 
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
 
@@ -303,6 +353,9 @@
     private InitialValueBehavior _initialValueBehavior = InitialValueBehavior.DefaultValue;
     private InitialValuePeriodUnit _initialValuePeriodUnit = InitialValuePeriodUnit.AllTime;
     private int _initialValuePeriodCount;
+    private Guid? _dropdownTrendValueFieldId;
+    private TrendAggregation _dropdownTrendAggregation = TrendAggregation.AllPoints;
+    private TrendChartType _dropdownTrendChartType = TrendChartType.Line;
 
     // Typed values
     private int? _intMinValue;
@@ -350,6 +403,9 @@
         _initialValueBehavior = Field.InitialValueBehavior;
         _initialValuePeriodUnit = Field.InitialValuePeriodUnit;
         _initialValuePeriodCount = Field.InitialValuePeriodCount;
+        _dropdownTrendValueFieldId = Field.DropdownTrendValueFieldId;
+        _dropdownTrendAggregation = Field.DropdownTrendAggregation;
+        _dropdownTrendChartType = Field.DropdownTrendChartType;
 
         // Load min/max
         switch (Field.FieldType)
@@ -410,7 +466,8 @@
         var request = new UpdateActionFieldRequest(
             _name, _description, maxValue, minValue, _isRequired, defaultVal, _unit, _order,
             _summaryMetrics, _trendAggregation, _trendChartType, _targetValue,
-            _initialValueBehavior, _initialValuePeriodUnit, _initialValuePeriodCount);
+            _initialValueBehavior, _initialValuePeriodUnit, _initialValuePeriodCount,
+            _dropdownTrendValueFieldId, _dropdownTrendAggregation, _dropdownTrendChartType);
 
         var (ok, errs) = await ActionFieldService.UpdateAsync(TrackedActionId, Field.Id, request);
 

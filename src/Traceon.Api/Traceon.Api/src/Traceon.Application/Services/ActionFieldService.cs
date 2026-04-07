@@ -56,7 +56,10 @@ public sealed class ActionFieldService(
                             DropdownValues = fd.DropdownValues,
                             InitialValueBehavior = (Contracts.Enums.InitialValueBehavior)af.InitialValueBehavior,
                             InitialValuePeriodUnit = (Contracts.Enums.InitialValuePeriodUnit)af.InitialValuePeriodUnit,
-                            InitialValuePeriodCount = af.InitialValuePeriodCount
+                            InitialValuePeriodCount = af.InitialValuePeriodCount,
+                            DropdownTrendValueFieldId = af.DropdownTrendValueFieldId,
+                            DropdownTrendAggregation = (Contracts.Enums.TrendAggregation)af.DropdownTrendAggregation,
+                            DropdownTrendChartType = (Contracts.Enums.TrendChartType)af.DropdownTrendChartType
                         };
 
         return Result<IQueryable<ActionFieldResponse>>.Success(queryable);
@@ -140,7 +143,10 @@ public sealed class ActionFieldService(
             request.TargetValue,
             (int)request.InitialValueBehavior,
             (int)request.InitialValuePeriodUnit,
-            request.InitialValuePeriodCount);
+            request.InitialValuePeriodCount,
+            request.DropdownTrendValueFieldId,
+            (int)request.DropdownTrendAggregation,
+            (int)request.DropdownTrendChartType);
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -181,7 +187,10 @@ public sealed class ActionFieldService(
             request.TargetValue,
             request.InitialValueBehavior.HasValue ? (int)request.InitialValueBehavior.Value : null,
             request.InitialValuePeriodUnit.HasValue ? (int)request.InitialValuePeriodUnit.Value : null,
-            request.InitialValuePeriodCount);
+            request.InitialValuePeriodCount,
+            request.DropdownTrendValueFieldId,
+            request.DropdownTrendAggregation.HasValue ? (int)request.DropdownTrendAggregation.Value : null,
+            request.DropdownTrendChartType.HasValue ? (int)request.DropdownTrendChartType.Value : null);
 
         await repository.UpdateAsync(entity, cancellationToken);
 

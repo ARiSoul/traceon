@@ -178,7 +178,7 @@
               Columns="_columns"
               FilterPlaceholder="@L["Filter_ByNotes"]"
               EmptyText="@L["EntryGrid_Empty"]"
-              StorageKey="@StorageKey"
+              StorageKey="@UserScopedStorageKey"
               HasExternalFilters="_hasExternalFilters"
               OnReset="OnGridResetAsync">
         <Toolbar>
@@ -252,6 +252,7 @@ else
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
     private DataGrid<ActionEntryResponse> _grid = default!;
     private List<TrackedActionResponse> _availableActions = [];
@@ -281,20 +282,37 @@ else
     // Field value filters: fieldId -> filter value
     private Dictionary<Guid, string> _fieldFilters = [];
 
-    private string? EntryStorageKey => StorageKey is not null ? $"traceon_entry_{StorageKey}" : null;
+    private string? _userKey;
+
+    private string? UserScopedStorageKey => _userKey is not null && StorageKey is not null
+        ? $"{_userKey}_{StorageKey}" : StorageKey;
+
+    private string? EntryStorageKey => UserScopedStorageKey is not null
+        ? $"traceon_entry_{UserScopedStorageKey}" : null;
 
     protected override async Task OnInitializedAsync()
     {
         _encodedReturnUrl = Uri.EscapeDataString(Nav.ToBaseRelativePath(Nav.Uri) is { Length: > 0 } rel ? $"/{rel}" : "/");
+
+        // Resolve user-scoped storage key
+        if (AuthState is not null)
+        {
+            var authState = await AuthState;
+            _userKey = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        }
 
         if (TrackedActionId.HasValue)
         {
             _selectedActionId = TrackedActionId.Value.ToString();
         }
 
-        await RestoreEntryFiltersAsync();
+        // Restore persisted filters only when not receiving external date context
+        if (!InitialFrom.HasValue && !InitialTo.HasValue)
+        {
+            await RestoreEntryFiltersAsync();
+        }
 
-        // Override with dates passed from dashboard navigation
+        // Apply dashboard date overrides
         if (InitialFrom.HasValue || InitialTo.HasValue)
         {
             _periodMode = "custom";
@@ -309,7 +327,19 @@ else
         }
         else if (Guid.TryParse(_selectedActionId, out var preselectedId) && preselectedId != Guid.Empty)
         {
-            _activeFields = await ActionFieldService.GetByTrackedActionAsync(preselectedId);
+            try
+            {
+                _activeFields = await ActionFieldService.GetByTrackedActionAsync(preselectedId);
+            }
+            catch (HttpRequestException)
+            {
+                // Stale reference (deleted action, different user, etc.)
+                _selectedActionId = "";
+                _activeFields = [];
+                _fieldFilters.Clear();
+                if (EntryStorageKey is not null)
+                    try { await LocalStorage.RemoveItemAsync(EntryStorageKey); } catch { }
+            }
         }
 
         RebuildColumns();
@@ -343,7 +373,7 @@ else
             var state = await LocalStorage.GetItemAsync<EntryFilterState>(EntryStorageKey);
             if (state is null) return;
 
-            if (!LockActionFilter && !string.IsNullOrEmpty(state.SelectedActionId))
+            if (!LockActionFilter && !TrackedActionId.HasValue && !string.IsNullOrEmpty(state.SelectedActionId))
                 _selectedActionId = state.SelectedActionId;
             if (state.PeriodMode is not null) _periodMode = state.PeriodMode;
             if (state.PeriodValue.HasValue) _periodValue = state.PeriodValue.Value;
@@ -351,7 +381,9 @@ else
             _customFrom = state.CustomFrom;
             _customTo = state.CustomTo;
             _selectedMonth = state.SelectedMonth;
-            if (state.FieldFilters is not null)
+            // Only restore field filters if the action context matches the stored action
+            if (state.FieldFilters is not null
+                && _selectedActionId == (state.SelectedActionId ?? ""))
                 _fieldFilters = state.FieldFilters
                     .Where(kv => Guid.TryParse(kv.Key, out _))
                     .ToDictionary(kv => Guid.Parse(kv.Key), kv => kv.Value);
@@ -396,11 +428,24 @@ else
         _fieldFilters.Clear();
 
         if (ActionFields is { Count: > 0 })
+        {
             _activeFields = ActionFields;
+        }
         else if (Guid.TryParse(_selectedActionId, out var id) && id != Guid.Empty)
-            _activeFields = await ActionFieldService.GetByTrackedActionAsync(id);
+        {
+            try
+            {
+                _activeFields = await ActionFieldService.GetByTrackedActionAsync(id);
+            }
+            catch (HttpRequestException)
+            {
+                _activeFields = [];
+            }
+        }
         else
+        {
             _activeFields = [];
+        }
 
         RebuildColumns();
 
@@ -652,7 +697,14 @@ else
             _loadingFields = true;
             StateHasChanged();
 
-            _activeFields = await ActionFieldService.GetByTrackedActionAsync(actionId);
+            try
+            {
+                _activeFields = await ActionFieldService.GetByTrackedActionAsync(actionId);
+            }
+            catch (HttpRequestException)
+            {
+                _activeFields = [];
+            }
             _loadingFields = false;
         }
         else

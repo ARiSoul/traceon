@@ -43,15 +43,16 @@
             <option value="all">@L["Common_AllTime"]</option>
             <option value="days">@L["Dashboard_LastNDays"]</option>
             <option value="months">@L["Dashboard_LastNMonths"]</option>
+            <option value="years">@L["Dashboard_LastNYears"]</option>
             <option value="month">@L["Dashboard_SpecificMonth"]</option>
             <option value="custom">@L["Dashboard_CustomRange"]</option>
         </select>
     </div>
-    @if (_periodMode is "days" or "months")
+    @if (_periodMode is "days" or "months" or "years")
     {
         <div class="col-6 col-md-2">
             <label class="form-label form-label-sm mb-1">
-                @(_periodMode == "days" ? L["Dashboard_Days"] : L["Dashboard_Months"])
+                @(_periodMode switch { "days" => L["Dashboard_Days"], "months" => L["Dashboard_Months"], _ => L["Dashboard_Years"] })
             </label>
             <input type="number" class="form-control form-control-sm" min="1"
                    value="@_periodValue" @onchange="e => { if (int.TryParse(e.Value?.ToString(), out var v) && v > 0) _periodValue = v; }" />
@@ -290,6 +291,68 @@ else
         </div>
     }
 
+    <!-- Dropdown Value Trend Charts -->
+    @foreach (var trend in _data.DropdownValueTrends)
+    {
+        var chartKey = $"ddt-{trend.FieldName}";
+        _isolatedSeries.TryGetValue(chartKey, out var isolated);
+        var visibleSeries = isolated is not null
+            ? trend.Series.Where(s => s.ValueLabel == isolated).ToList()
+            : trend.Series;
+
+        <div class="card mb-4" @key="@($"{chartKey}-{_loadKey}")">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>@trend.FieldName — @trend.ValueFieldName
+                    @if (trend.ValueFieldUnit != "UN")
+                    {
+                        <span class="badge bg-info ms-1">@trend.ValueFieldUnit</span>
+                    }
+                </h6>
+                <small class="text-muted">@L["FieldEditor_DropdownTrendHint"]</small>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                    @for (var i = 0; i < trend.Series.Count; i++)
+                    {
+                        var s = trend.Series[i];
+                        var isActive = isolated is null || isolated == s.ValueLabel;
+                        var color = i < CrossFieldPalette.Count ? CrossFieldPalette[i] : "#999";
+                        var idx = i;
+                        <button class="btn btn-sm px-2 py-0 border @(isActive ? "" : "opacity-25")"
+                                style="font-size:.75rem; color:@color; border-color:@color !important;"
+                                @onclick="() => ToggleDropdownTrendSeries(chartKey, trend.Series[idx].ValueLabel)">
+                            <i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>@s.ValueLabel
+                        </button>
+                    }
+                    @if (isolated is not null)
+                    {
+                        <button class="btn btn-outline-secondary btn-sm px-2 py-0" style="font-size:.75rem;"
+                                @onclick="() => { _isolatedSeries.Remove(chartKey); }">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>@L["DataGrid_ResetAll"]
+                        </button>
+                    }
+                </div>
+                <div @key="@($"{chartKey}-{isolated ?? "all"}-{_loadKey}")">
+                    <ApexChart TItem="NumericDataPoint"
+                               Options="BuildDropdownTrendOptions(trend)"
+                               Height="300">
+                        @foreach (var valueSeries in visibleSeries)
+                        {
+                            <ApexPointSeries TItem="NumericDataPoint"
+                                            Items="valueSeries.Points"
+                                            SeriesType="MapChartType(trend.ChartType)"
+                                            Name="@valueSeries.ValueLabel"
+                                            XValue="p => p.Date"
+                                            YValue="p => p.Value"
+                                            OrderBy="p => p.X" />
+                        }
+                    </ApexChart>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Cross-Field Analytics -->
     @if (_data.CrossFieldResults.Count > 0)
     {
@@ -305,7 +368,11 @@ else
                     <div class="card h-100">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                @if (result.DisplayType is AnalyticsDisplayType.PieChart)
+                                @if (result.Aggregation == AnalyticsAggregation.CountByValue && result.IsDropdownMeasure)
+                                {
+                                    <i class="bi bi-diagram-3 me-2"></i>
+                                }
+                                else if (result.DisplayType is AnalyticsDisplayType.PieChart)
                                 {
                                     <i class="bi bi-pie-chart me-2"></i>
                                 }
@@ -335,9 +402,21 @@ else
                                     <i class="bi bi-plus-slash-minus me-1"></i>@result.SignDescription
                                 </small>
                             }
+                            @if (result.ValueFieldName is not null)
+                            {
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-calculator me-1"></i>@L["Analytics_ValueField"]: @result.ValueFieldName
+                                    @if (result.ValueFieldUnit is not null) { <text>(@result.ValueFieldUnit)</text> }
+                                    — @string.Join(", ", result.ValueMetrics.OrderBy(m => m))
+                                </small>
+                            }
                         </div>
                         <div class="card-body">
-                            @if (result.DisplayType is AnalyticsDisplayType.BarChart or AnalyticsDisplayType.StackedBar)
+                            @if (result.Aggregation == AnalyticsAggregation.CountByValue && result.IsDropdownMeasure && result.Groups.Any(g => g.SubGroups.Count > 0))
+                            {
+                                @RenderCountByValueResult(result)
+                            }
+                            else if (result.DisplayType is AnalyticsDisplayType.BarChart or AnalyticsDisplayType.StackedBar)
                             {
                                 <ApexChart TItem="CrossFieldGroup"
                                            Options="BuildCrossFieldBarOptions(result)"
@@ -500,6 +579,11 @@ else
 
 @code {
     [Parameter] public Guid ActionId { get; set; }
+    [SupplyParameterFromQuery(Name = "period")] public string? PeriodParam { get; set; }
+    [SupplyParameterFromQuery(Name = "pv")] public int? PeriodValueParam { get; set; }
+    [SupplyParameterFromQuery(Name = "from")] public string? FromParam { get; set; }
+    [SupplyParameterFromQuery(Name = "to")] public string? ToParam { get; set; }
+    [SupplyParameterFromQuery(Name = "month")] public string? MonthParam { get; set; }
     [Inject] private DashboardService DashService { get; set; } = default!;
     @using Blazored.LocalStorage
     [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
@@ -510,6 +594,7 @@ else
     private int _loadKey;
     private IReadOnlyList<string> _errors = [];
     private ApexChart<DailyCount>? _frequencyChart;
+    private readonly Dictionary<string, string?> _isolatedSeries = [];
 
     private string _periodMode = "all";
     private int _periodValue = 90;
@@ -526,7 +611,21 @@ else
     protected override async Task OnInitializedAsync()
     {
         BuildFrequencyOptions();
-        await RestoreFiltersAsync();
+
+        // If navigated with explicit period params, use them; otherwise restore from storage
+        if (!string.IsNullOrEmpty(PeriodParam))
+        {
+            _periodMode = PeriodParam;
+            if (PeriodValueParam.HasValue) _periodValue = PeriodValueParam.Value;
+            if (DateTime.TryParse(FromParam, out var f)) _customFrom = f;
+            if (DateTime.TryParse(ToParam, out var t)) _customTo = t;
+            if (DateTime.TryParse(MonthParam + "-01", out var m)) _selectedMonth = m;
+        }
+        else
+        {
+            await RestoreFiltersAsync();
+        }
+
         await LoadAsync();
     }
 
@@ -677,6 +776,45 @@ else
         };
     }
 
+    private ApexChartOptions<NumericDataPoint> BuildDropdownTrendOptions(DropdownValueTrendSeries trend)
+    {
+        var unitLabel = trend.ValueFieldUnit != "UN" ? trend.ValueFieldUnit : trend.ValueFieldName;
+        return new ApexChartOptions<NumericDataPoint>
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = true },
+                Zoom = new Zoom { Enabled = true }
+            },
+            Xaxis = new XAxis
+            {
+                Type = XAxisType.Datetime,
+                Labels = new XAxisLabels
+                {
+                    DatetimeFormatter = new DatetimeFormatter
+                    {
+                        Day = "dd MMM",
+                        Month = "MMM yyyy"
+                    }
+                }
+            },
+            Yaxis = [new YAxis { Title = new AxisTitle { Text = unitLabel } }],
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Colors = CrossFieldPalette,
+            Legend = new Legend { Position = LegendPosition.Bottom, Show = false },
+            Tooltip = new Tooltip { X = new TooltipX { Format = "dd MMM yyyy" } }
+        };
+    }
+
+    private void ToggleDropdownTrendSeries(string chartKey, string seriesName)
+    {
+        _isolatedSeries.TryGetValue(chartKey, out var current);
+        if (current == seriesName)
+            _isolatedSeries.Remove(chartKey);
+        else
+            _isolatedSeries[chartKey] = seriesName;
+    }
+
     private static readonly List<string> CrossFieldPalette = new()
     {
         "#008FFB", "#00E396", "#FEB019", "#FF4560", "#775DD0",
@@ -778,23 +916,161 @@ else
         AnalyticsAggregation.Max => L["Aggregation_Max"],
         AnalyticsAggregation.Count => L["Aggregation_Count"],
         AnalyticsAggregation.SignedSum => L["Aggregation_SignedSum"],
+        AnalyticsAggregation.CountByValue => L["Aggregation_CountByValue"],
         _ => agg.ToString()
     };
 
     private static string FormatCrossFieldValue(decimal value, CrossFieldResult result)
     {
         var unit = result.Unit is not null && result.Unit != "UN" ? $" {result.Unit}" : "";
-        if (result.Aggregation == AnalyticsAggregation.Count)
+        if (result.Aggregation is AnalyticsAggregation.Count or AnalyticsAggregation.CountByValue)
             return ((int)value).ToString();
         return value == Math.Truncate(value)
             ? $"{value:F0}{unit}"
             : $"{value:F2}{unit}";
     }
 
+    private static string FormatMetricValue(decimal value)
+        => value == Math.Truncate(value) ? $"{value:F0}" : $"{value:F2}";
+
+    private RenderFragment RenderCountByValueResult(CrossFieldResult result) => __builder =>
+    {
+        var sortedGroups = result.Groups.OrderByDescending(g => g.Value).ToList();
+        var grandTotal = sortedGroups.Sum(g => g.Value);
+        var hasMetrics = result.ValueMetrics.Count > 0 && sortedGroups.Any(g => g.Metrics is not null);
+        var unitSuffix = result.ValueFieldUnit is not null ? $" {result.ValueFieldUnit}" : "";
+
+        <!-- Overview bar chart -->
+        <ApexChart TItem="CrossFieldGroup"
+                   Options="BuildCrossFieldBarOptions(result)"
+                   Height="200">
+            <ApexPointSeries TItem="CrossFieldGroup"
+                            Items="sortedGroups"
+                            SeriesType="SeriesType.Bar"
+                            Name="@L["Aggregation_Count"]"
+                            XValue="g => g.Key"
+                            YValue="g => g.Value"
+                            OrderByDescending="g => g.Y" />
+        </ApexChart>
+
+        <!-- Hierarchical breakdown -->
+        <div class="mt-3">
+            @foreach (var grp in sortedGroups)
+            {
+                var grpPct = grandTotal > 0 ? (double)(grp.Value / grandTotal * 100) : 0;
+                var maxSubVal = grp.SubGroups.Count > 0 ? grp.SubGroups.Max(s => s.Value) : 1;
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold">
+                            <i class="bi bi-folder2 me-1 text-primary"></i>@grp.Key
+                        </span>
+                        <span>
+                            <span class="badge bg-primary rounded-pill">@((int)grp.Value)</span>
+                            <small class="text-muted ms-1">(@grpPct.ToString("F1")%)</small>
+                        </span>
+                    </div>
+
+                    @if (hasMetrics && grp.Metrics is not null)
+                    {
+                        <div class="d-flex gap-3 ps-3 mb-1">
+                            @foreach (var m in result.ValueMetrics.OrderBy(m => m))
+                            {
+                                if (grp.Metrics.TryGetValue(m, out var mVal))
+                                {
+                                    <small class="text-muted">
+                                        <span class="fw-semibold">@L[$"Aggregation_{m}"]:</span>
+                                        @FormatMetricValue(mVal)@unitSuffix
+                                    </small>
+                                }
+                            }
+                        </div>
+                    }
+
+                    @if (grp.SubGroups.Count > 0)
+                    {
+                        <div class="ps-3 border-start border-2 border-primary-subtle">
+                            @foreach (var sub in grp.SubGroups)
+                            {
+                                var subWidthPct = (int)(sub.Value / maxSubVal * 100);
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="text-truncate" style="min-width: 80px; max-width: 140px; font-size: 0.8rem;">@sub.Key</span>
+                                    <div class="flex-grow-1">
+                                        <div class="progress" style="height: 14px;">
+                                            <div class="progress-bar bg-info bg-opacity-75" style="width: @subWidthPct%">
+                                                @if (subWidthPct > 20)
+                                                {
+                                                    <small>@((int)sub.Value)</small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @if (subWidthPct <= 20)
+                                    {
+                                        <small class="text-muted flex-shrink-0">@((int)sub.Value)</small>
+                                    }
+                                    @if (hasMetrics && sub.Metrics is not null)
+                                    {
+                                        <span class="flex-shrink-0 d-flex gap-2">
+                                            @foreach (var m in result.ValueMetrics.OrderBy(m => m))
+                                            {
+                                                if (sub.Metrics.TryGetValue(m, out var sVal))
+                                                {
+                                                    <small class="text-muted" title="@L[$"Aggregation_{m}"]">
+                                                        @L[$"Metric_{m}"] @FormatMetricValue(sVal)@unitSuffix
+                                                    </small>
+                                                }
+                                            }
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <small class="text-muted ps-3">@L["Common_NoDataYet"]</small>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Summary totals table -->
+        <div class="table-responsive mt-2">
+            <table class="table table-sm mb-0">
+                <tfoot>
+                    <tr class="table-light">
+                        <td class="fw-bold">@L["Analytics_Total"]</td>
+                        <td class="text-end fw-bold">
+                            @((int)grandTotal)
+                            @if (hasMetrics)
+                            {
+                                var allMetricsGroups = sortedGroups.Where(g => g.Metrics is not null).SelectMany(g => g.Metrics!).ToList();
+                                @foreach (var m in result.ValueMetrics.OrderBy(m => m))
+                                {
+                                    var vals = allMetricsGroups.Where(kv => kv.Key.Equals(m, StringComparison.OrdinalIgnoreCase)).Select(kv => kv.Value).ToList();
+                                    if (vals.Count > 0)
+                                    {
+                                        var total = m.Equals("Avg", StringComparison.OrdinalIgnoreCase) ? vals.Average()
+                                                  : m.Equals("Min", StringComparison.OrdinalIgnoreCase) ? vals.Min()
+                                                  : m.Equals("Max", StringComparison.OrdinalIgnoreCase) ? vals.Max()
+                                                  : vals.Sum();
+                                        <small class="text-muted ms-2">@L[$"Aggregation_{m}"]: @FormatMetricValue(total)@unitSuffix</small>
+                                    }
+                                }
+                            }
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    };
+
     private (DateTime? From, DateTime? To) ResolveDateRange() => _periodMode switch
     {
         "days" => (DateTime.UtcNow.AddDays(-_periodValue), null),
         "months" => (DateTime.UtcNow.AddMonths(-_periodValue), null),
+        "years" => (DateTime.UtcNow.AddYears(-_periodValue), null),
         "month" when _selectedMonth.HasValue => (_selectedMonth.Value, _selectedMonth.Value.AddMonths(1)),
         "custom" => (_customFrom, _customTo?.AddDays(1)),
         _ => (null, null)

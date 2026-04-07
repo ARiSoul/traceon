@@ -179,6 +179,18 @@ public sealed class DashboardService(
                             Distribution = dist
                         });
                     }
+
+                    // Dropdown value trend chart (one time-series per dropdown value)
+                    if (field.DropdownTrendValueFieldId.HasValue)
+                    {
+                        var valueField = fields.FirstOrDefault(f => f.Id == field.DropdownTrendValueFieldId.Value);
+                        if (valueField is not null)
+                        {
+                            var trendSeries = BuildDropdownValueTrend(field, valueField, entries);
+                            if (trendSeries is not null)
+                                detail.DropdownValueTrends.Add(trendSeries);
+                        }
+                    }
                     break;
             }
         }
@@ -255,8 +267,57 @@ public sealed class DashboardService(
             }
 
             var isNumericMeasure = measureField.FieldType is FieldType.Integer or FieldType.Decimal;
+            var isDropdownMeasure = measureField.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown;
             var groups = new List<CrossFieldGroup>();
 
+            if (rule.Aggregation == AnalyticsAggregation.CountByValue && isDropdownMeasure)
+            {
+                // Parse requested metrics (stored in NegativeValues for CountByValue)
+                var requestedMetrics = rule.NegativeValues?
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+
+                var hasValueField = rule.SignFieldId.HasValue;
+
+                // Hierarchical: group by GroupByField, then count each MeasureField value within
+                foreach (var grp in pairs.GroupBy(p => p.GroupKey!).OrderBy(g => g.Key))
+                {
+                    var subGroups = grp
+                        .Where(p => !string.IsNullOrWhiteSpace(p.MeasureValue))
+                        .GroupBy(p => p.MeasureValue!, StringComparer.OrdinalIgnoreCase)
+                        .OrderByDescending(sg => sg.Count())
+                        .Select(sg =>
+                        {
+                            Dictionary<string, decimal>? subMetrics = null;
+                            if (hasValueField && requestedMetrics.Count > 0)
+                            {
+                                var nums = sg
+                                    .Where(p => decimal.TryParse(p.SignValue, CultureInfo.InvariantCulture, out _))
+                                    .Select(p => decimal.Parse(p.SignValue!, CultureInfo.InvariantCulture))
+                                    .ToList();
+                                if (nums.Count > 0)
+                                    subMetrics = ComputeMetrics(nums, requestedMetrics);
+                            }
+                            return new CrossFieldGroup(sg.Key, sg.Count()) { Metrics = subMetrics };
+                        })
+                        .ToList();
+
+                    Dictionary<string, decimal>? grpMetrics = null;
+                    if (hasValueField && requestedMetrics.Count > 0)
+                    {
+                        var allNums = grp
+                            .Where(p => decimal.TryParse(p.SignValue, CultureInfo.InvariantCulture, out _))
+                            .Select(p => decimal.Parse(p.SignValue!, CultureInfo.InvariantCulture))
+                            .ToList();
+                        if (allNums.Count > 0)
+                            grpMetrics = ComputeMetrics(allNums, requestedMetrics);
+                    }
+
+                    groups.Add(new CrossFieldGroup(grp.Key!, grp.Count()) { SubGroups = subGroups, Metrics = grpMetrics });
+                }
+            }
+            else
+            {
             foreach (var grp in pairs.GroupBy(p => p.GroupKey!).OrderBy(g => g.Key))
             {
                 decimal aggregatedValue;
@@ -303,13 +364,14 @@ public sealed class DashboardService(
 
                 groups.Add(new CrossFieldGroup(grp.Key!, aggregatedValue));
             }
+            } // end else (non-CountByValue)
 
             if (groups.Count == 0) continue;
 
             var label = rule.Label
                 ?? $"{rule.Aggregation} of {measureField.Name} by {groupByField.Name}";
 
-            var unit = isNumericMeasure && rule.Aggregation is not AnalyticsAggregation.Count
+            var unit = isNumericMeasure && rule.Aggregation is not AnalyticsAggregation.Count and not AnalyticsAggregation.CountByValue
                 ? measureField.Unit
                 : null;
 
@@ -320,6 +382,22 @@ public sealed class DashboardService(
             var signDescription = rule.Aggregation == AnalyticsAggregation.SignedSum && rule.SignFieldName is not null
                 ? $"{rule.SignFieldName} → −{rule.NegativeValues}"
                 : null;
+
+            // For CountByValue, SignFieldId is the optional value field
+            string? valueFieldName = null;
+            string? valueFieldUnit = null;
+            HashSet<string> valueMetrics = [];
+            if (rule.Aggregation == AnalyticsAggregation.CountByValue && rule.SignFieldId.HasValue)
+            {
+                if (fieldMap.TryGetValue(rule.SignFieldId.Value, out var valField))
+                {
+                    valueFieldName = valField.Name;
+                    valueFieldUnit = valField.Unit is not null && valField.Unit != "UN" ? valField.Unit : null;
+                }
+                valueMetrics = rule.NegativeValues?
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+            }
 
             results.Add(new CrossFieldResult
             {
@@ -332,6 +410,10 @@ public sealed class DashboardService(
                 Unit = unit,
                 FilterDescription = filterDescription,
                 SignDescription = signDescription,
+                IsDropdownMeasure = isDropdownMeasure,
+                ValueFieldName = valueFieldName,
+                ValueFieldUnit = valueFieldUnit,
+                ValueMetrics = valueMetrics,
                 Groups = groups
             });
         }
@@ -663,6 +745,70 @@ public sealed class DashboardService(
         return stats;
     }
 
+    private static Dictionary<string, decimal> ComputeMetrics(List<decimal> values, HashSet<string> requested)
+    {
+        var metrics = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+        if (requested.Contains("Sum")) metrics["Sum"] = values.Sum();
+        if (requested.Contains("Avg")) metrics["Avg"] = values.Average();
+        if (requested.Contains("Min")) metrics["Min"] = values.Min();
+        if (requested.Contains("Max")) metrics["Max"] = values.Max();
+        return metrics;
+    }
+
+    private static DropdownValueTrendSeries? BuildDropdownValueTrend(
+        ActionFieldResponse dropdownField,
+        ActionFieldResponse valueField,
+        List<ActionEntryResponse> entries)
+    {
+        // For each entry, extract (date, dropdownValue, numericValue)
+        var tuples = entries
+            .Select(e =>
+            {
+                var ddVal = e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == dropdownField.Id)?.Value;
+                var numVal = e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == valueField.Id)?.Value;
+                return (Date: e.OccurredAtUtc, DropdownValue: ddVal, NumericValue: numVal);
+            })
+            .Where(t => !string.IsNullOrWhiteSpace(t.DropdownValue)
+                     && decimal.TryParse(t.NumericValue, CultureInfo.InvariantCulture, out _))
+            .Select(t => (t.Date, DropdownValue: t.DropdownValue!, NumericValue: decimal.Parse(t.NumericValue!, CultureInfo.InvariantCulture)))
+            .ToList();
+
+        if (tuples.Count == 0) return null;
+
+        // Group by dropdown value, then build time series for each
+        var seriesList = tuples
+            .GroupBy(t => t.DropdownValue, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(g => g.Count())
+            .Take(15) // Limit to top 15 values for readability
+            .Select(g =>
+            {
+                var rawPoints = g
+                    .Select(t => new NumericDataPoint(t.Date, t.NumericValue))
+                    .ToList();
+
+                var aggregated = AggregateTrendPoints(rawPoints, dropdownField.DropdownTrendAggregation);
+
+                return new DropdownValueSeries
+                {
+                    ValueLabel = g.Key,
+                    Points = aggregated
+                };
+            })
+            .Where(s => s.Points.Count > 0)
+            .ToList();
+
+        if (seriesList.Count == 0) return null;
+
+        return new DropdownValueTrendSeries
+        {
+            FieldName = dropdownField.Name,
+            ValueFieldName = valueField.Name,
+            ValueFieldUnit = valueField.Unit,
+            ChartType = dropdownField.DropdownTrendChartType,
+            Series = seriesList
+        };
+    }
+
     private static int ComputeStreak(List<ActionEntryResponse> sortedDesc, DateTime today)
     {
         if (sortedDesc.Count == 0) return 0;
@@ -794,6 +940,7 @@ public sealed class ActionDetailData
     public List<NumericFieldSeries> NumericSeries { get; init; } = [];
     public List<BooleanFieldSeries> BooleanSeries { get; init; } = [];
     public List<DropdownFieldSeries> DropdownSeries { get; init; } = [];
+    public List<DropdownValueTrendSeries> DropdownValueTrends { get; init; } = [];
     public List<CrossFieldResult> CrossFieldResults { get; set; } = [];
     public List<RunningBalanceSeries> RunningBalances { get; set; } = [];
 }
@@ -840,6 +987,22 @@ public sealed class DropdownDataPoint(string Label, int Count)
     public int Count { get; } = Count;
 }
 
+/// <summary>Multi-series time trend chart for a dropdown field — one series per dropdown value.</summary>
+public sealed class DropdownValueTrendSeries
+{
+    public required string FieldName { get; init; }
+    public required string ValueFieldName { get; init; }
+    public required string ValueFieldUnit { get; init; }
+    public TrendChartType ChartType { get; init; } = TrendChartType.Line;
+    public List<DropdownValueSeries> Series { get; init; } = [];
+}
+
+public sealed class DropdownValueSeries
+{
+    public required string ValueLabel { get; init; }
+    public List<NumericDataPoint> Points { get; init; } = [];
+}
+
 // ── Cross-field analytics models ──
 
 public sealed class CrossFieldResult
@@ -853,9 +1016,20 @@ public sealed class CrossFieldResult
     public string? Unit { get; init; }
     public string? FilterDescription { get; init; }
     public string? SignDescription { get; init; }
+    public bool IsDropdownMeasure { get; init; }
+    public string? ValueFieldName { get; init; }
+    public string? ValueFieldUnit { get; init; }
+    public HashSet<string> ValueMetrics { get; init; } = [];
     public List<CrossFieldGroup> Groups { get; init; } = [];
 
     public decimal Total => Groups.Sum(g => g.Value);
 }
 
-public sealed record CrossFieldGroup(string Key, decimal Value);
+public sealed record CrossFieldGroup(string Key, decimal Value)
+{
+    /// <summary>Sub-distribution when measure is a Dropdown/CompositeDropdown (CountByValue).</summary>
+    public List<CrossFieldGroup> SubGroups { get; init; } = [];
+
+    /// <summary>Optional numeric metrics (Sum, Avg, Min, Max) when a value field is configured.</summary>
+    public Dictionary<string, decimal>? Metrics { get; init; }
+}

@@ -30,6 +30,9 @@ public static class ActionFieldMappingExtensions
             DropdownValues = fieldDefinition.DropdownValues,
             InitialValueBehavior = (InitialValueBehavior)entity.InitialValueBehavior,
             InitialValuePeriodUnit = (InitialValuePeriodUnit)entity.InitialValuePeriodUnit,
-            InitialValuePeriodCount = entity.InitialValuePeriodCount
+            InitialValuePeriodCount = entity.InitialValuePeriodCount,
+            DropdownTrendValueFieldId = entity.DropdownTrendValueFieldId,
+            DropdownTrendAggregation = (TrendAggregation)entity.DropdownTrendAggregation,
+            DropdownTrendChartType = (TrendChartType)entity.DropdownTrendChartType
         };
 }

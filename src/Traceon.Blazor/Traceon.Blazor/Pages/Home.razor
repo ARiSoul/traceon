@@ -234,6 +234,7 @@
     [Inject] private ActionFieldService FieldService { get; set; } = default!;
     [Inject] private FieldAnalyticsRuleService AnalyticsRuleService { get; set; } = default!;
     [Inject] private TemplateService TemplateService { get; set; } = default!;
+    [Inject] private LocalizationService LocalizationService { get; set; } = default!;
     [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
 
     private List<TrackedActionResponse> _actions = [];
@@ -291,7 +292,7 @@
         _installingTemplate = templateId;
         StateHasChanged();
 
-        var (success, _) = await TemplateService.InstallAsync(templateId);
+        var (success, _) = await TemplateService.InstallAsync(templateId, LocalizationService.CurrentLanguage);
 
         if (success)
         {

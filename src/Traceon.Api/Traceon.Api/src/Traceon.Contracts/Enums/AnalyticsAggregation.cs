@@ -7,5 +7,6 @@ public enum AnalyticsAggregation
     Min = 2,
     Max = 3,
     Count = 4,
-    SignedSum = 5
+    SignedSum = 5,
+    CountByValue = 6
 }

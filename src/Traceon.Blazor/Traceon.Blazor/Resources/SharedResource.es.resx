@@ -235,6 +235,8 @@
   <data name="FieldEditor_Bar"><value>Barra</value></data>
   <data name="FieldEditor_Area"><value>Área</value></data>
   <data name="FieldEditor_TargetValue"><value>Valor Objetivo</value></data>
+  <data name="FieldEditor_DropdownTrendConfig"><value>Tendencia de Valores</value></data>
+  <data name="FieldEditor_DropdownTrendHint"><value>Observa cómo un campo numérico evoluciona a lo largo del tiempo para cada valor del desplegable (ej: gasto por tienda a lo largo del tiempo).</value></data>
   <data name="FieldEditor_InitialValueConfig"><value>Pre-llenado</value></data>
   <data name="FieldEditor_InitialValueHint"><value>Elige cómo se pre-llena este campo al crear un nuevo registro.</value></data>
   <data name="FieldEditor_InitialValueBehavior"><value>Comportamiento</value></data>
@@ -683,6 +685,13 @@
   <data name="Aggregation_Max"><value>Máximo</value></data>
   <data name="Aggregation_Count"><value>Conteo</value></data>
   <data name="Aggregation_SignedSum"><value>Suma con Signo</value></data>
+  <data name="Aggregation_CountByValue"><value>Conteo por Valor</value></data>
+  <data name="Analytics_Agg_Count"><value>Conteo (total de registros por grupo)</value></data>
+  <data name="Analytics_Agg_CountByValue"><value>Conteo por Valor (distribución por grupo)</value></data>
+  <data name="Analytics_CountByValueHint"><value>Conteo cuenta registros por grupo. Conteo por Valor muestra cómo cada valor del campo medido se distribuye dentro de cada grupo.</value></data>
+  <data name="Analytics_ValueField"><value>Campo de Valor</value></data>
+  <data name="Analytics_ValueFieldHint"><value>Opcionalmente selecciona un campo numérico para agregar junto con los conteos (ej: suma de Monto por categoría).</value></data>
+  <data name="Analytics_ValueMetrics"><value>Métricas</value></data>
   <data name="Analytics_RulesHint"><value>Define cómo los campos se relacionan entre sí para insights en el panel.</value></data>
   <data name="Analytics_AddRule"><value>Agregar Regla</value></data>
   <data name="Analytics_NewRule"><value>Nueva Regla de Análisis</value></data>

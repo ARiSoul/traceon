@@ -235,6 +235,8 @@
   <data name="FieldEditor_Bar"><value>Barra</value></data>
   <data name="FieldEditor_Area"><value>Área</value></data>
   <data name="FieldEditor_TargetValue"><value>Valor Objectivo</value></data>
+  <data name="FieldEditor_DropdownTrendConfig"><value>Tendência de Valores</value></data>
+  <data name="FieldEditor_DropdownTrendHint"><value>Acompanhe como um campo numérico evolui ao longo do tempo para cada valor do desplegável (ex: gastos por loja ao longo do tempo).</value></data>
   <data name="FieldEditor_InitialValueConfig"><value>Pré-preenchimento</value></data>
   <data name="FieldEditor_InitialValueHint"><value>Escolha como este campo é pré-preenchido ao criar um novo registo.</value></data>
   <data name="FieldEditor_InitialValueBehavior"><value>Comportamento</value></data>
@@ -683,6 +685,13 @@
   <data name="Aggregation_Max"><value>Máximo</value></data>
   <data name="Aggregation_Count"><value>Contagem</value></data>
   <data name="Aggregation_SignedSum"><value>Soma com Sinal</value></data>
+  <data name="Aggregation_CountByValue"><value>Contagem por Valor</value></data>
+  <data name="Analytics_Agg_Count"><value>Contagem (total de registos por grupo)</value></data>
+  <data name="Analytics_Agg_CountByValue"><value>Contagem por Valor (distribuição por grupo)</value></data>
+  <data name="Analytics_CountByValueHint"><value>Contagem conta registos por grupo. Contagem por Valor mostra como cada valor do campo medido se distribui dentro de cada grupo.</value></data>
+  <data name="Analytics_ValueField"><value>Campo de Valor</value></data>
+  <data name="Analytics_ValueFieldHint"><value>Opcionalmente selecione um campo numérico para agregar junto com as contagens (ex: soma de Montante por categoria).</value></data>
+  <data name="Analytics_ValueMetrics"><value>Métricas</value></data>
   <data name="Analytics_RulesHint"><value>Defina como os campos se relacionam entre si para insights no painel.</value></data>
   <data name="Analytics_AddRule"><value>Adicionar Regra</value></data>
   <data name="Analytics_NewRule"><value>Nova Regra de Análise</value></data>

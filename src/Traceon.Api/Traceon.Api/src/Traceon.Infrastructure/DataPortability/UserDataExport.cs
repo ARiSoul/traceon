@@ -72,6 +72,9 @@ public sealed class ActionFieldExport
     public int InitialValueBehavior { get; set; }
     public int InitialValuePeriodUnit { get; set; }
     public int InitialValuePeriodCount { get; set; }
+    public Guid? DropdownTrendValueFieldId { get; set; }
+    public int DropdownTrendAggregation { get; set; }
+    public int DropdownTrendChartType { get; set; }
 }
 
 public sealed class ActionEntryExport

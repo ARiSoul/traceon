@@ -18,4 +18,7 @@ public sealed record CreateActionFieldRequest(
     decimal? TargetValue = null,
     InitialValueBehavior InitialValueBehavior = InitialValueBehavior.DefaultValue,
     InitialValuePeriodUnit InitialValuePeriodUnit = InitialValuePeriodUnit.AllTime,
-    int InitialValuePeriodCount = 0);
+    int InitialValuePeriodCount = 0,
+    Guid? DropdownTrendValueFieldId = null,
+    TrendAggregation DropdownTrendAggregation = TrendAggregation.AllPoints,
+    TrendChartType DropdownTrendChartType = TrendChartType.Line);

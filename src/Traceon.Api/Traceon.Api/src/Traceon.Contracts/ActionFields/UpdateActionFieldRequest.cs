@@ -17,4 +17,7 @@ public sealed record UpdateActionFieldRequest(
     decimal? TargetValue = null,
     InitialValueBehavior? InitialValueBehavior = null,
     InitialValuePeriodUnit? InitialValuePeriodUnit = null,
-    int? InitialValuePeriodCount = null);
+    int? InitialValuePeriodCount = null,
+    Guid? DropdownTrendValueFieldId = null,
+    TrendAggregation? DropdownTrendAggregation = null,
+    TrendChartType? DropdownTrendChartType = null);

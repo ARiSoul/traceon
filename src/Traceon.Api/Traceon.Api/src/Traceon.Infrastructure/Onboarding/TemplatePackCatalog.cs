@@ -26,6 +26,13 @@ public sealed class FieldTemplate
     public string? DefaultValue { get; init; }
     public decimal? TargetValue { get; init; }
     public int Order { get; init; }
+
+    /// <summary>Name of a sibling numeric field to use as the value axis for dropdown trend charts.</summary>
+    public string? DropdownTrendValueFieldName { get; init; }
+    /// <summary>Aggregation for the dropdown trend chart (matches TrendAggregation enum). Default: Sum (4).</summary>
+    public int DropdownTrendAggregation { get; init; } = 4;
+    /// <summary>Chart type for the dropdown trend (matches TrendChartType enum). Default: Line (0).</summary>
+    public int DropdownTrendChartType { get; init; }
 }
 
 /// <summary>
@@ -121,7 +128,7 @@ public static class TemplatePackCatalog
                     Fields =
                     [
                         new() { Name = "Glucose", NameKey = "Template_Field_Glucose", Type = FieldType.Decimal, Unit = "mg/dL", MinValue = 20, MaxValue = 600, IsRequired = true, Order = 0 },
-                        new() { Name = "Meal", NameKey = "Template_Field_Meal", Type = FieldType.Dropdown, DropdownValues = "Fasting,Before meal,After meal,Bedtime", DropdownValuesKey = "Template_Dropdown_Meal", Order = 1 },
+                        new() { Name = "Meal", NameKey = "Template_Field_Meal", Type = FieldType.Dropdown, DropdownValues = "Fasting,Before meal,After meal,Bedtime", DropdownValuesKey = "Template_Dropdown_Meal", Order = 1, DropdownTrendValueFieldName = "Glucose" },
                     ]
                 },
             ]
@@ -142,7 +149,7 @@ public static class TemplatePackCatalog
                     Description = "Track exercise type, duration and calories.", DescriptionKey = "Template_Fitness_Workout_Desc",
                     Fields =
                     [
-                        new() { Name = "Workout Type", NameKey = "Template_Field_WorkoutType", Type = FieldType.Dropdown, DropdownValues = "Strength,Cardio,HIIT,Yoga,Swimming,Cycling,Other", DropdownValuesKey = "Template_Dropdown_WorkoutType", IsRequired = true, Order = 0 },
+                        new() { Name = "Workout Type", NameKey = "Template_Field_WorkoutType", Type = FieldType.Dropdown, DropdownValues = "Strength,Cardio,HIIT,Yoga,Swimming,Cycling,Other", DropdownValuesKey = "Template_Dropdown_WorkoutType", IsRequired = true, Order = 0, DropdownTrendValueFieldName = "Duration" },
                         new() { Name = "Duration", NameKey = "Template_Field_Duration", Type = FieldType.Integer, Unit = "min", MinValue = 1, MaxValue = 600, IsRequired = true, Order = 1 },
                         new() { Name = "Calories", NameKey = "Template_Field_Calories", Type = FieldType.Integer, Unit = "kcal", MinValue = 0, MaxValue = 5000, Order = 2 },
                     ]
@@ -185,7 +192,7 @@ public static class TemplatePackCatalog
                     Fields =
                     [
                         new() { Name = "Hours", NameKey = "Template_Field_Hours", Type = FieldType.Decimal, Unit = "h", MinValue = 0, MaxValue = 24, IsRequired = true, TargetValue = 8, Order = 0 },
-                        new() { Name = "Quality", NameKey = "Template_Field_Quality", Type = FieldType.Dropdown, DropdownValues = "Poor,Fair,Good,Excellent", DropdownValuesKey = "Template_Dropdown_Quality", Order = 1 },
+                        new() { Name = "Quality", NameKey = "Template_Field_Quality", Type = FieldType.Dropdown, DropdownValues = "Poor,Fair,Good,Excellent", DropdownValuesKey = "Template_Dropdown_Quality", Order = 1, DropdownTrendValueFieldName = "Hours" },
                     ]
                 },
                 new ActionTemplate
@@ -236,7 +243,7 @@ public static class TemplatePackCatalog
                     [
                         new() { Name = "Amount", NameKey = "Template_Field_Amount", Type = FieldType.Decimal, Unit = "€", MinValue = 0, IsRequired = true, Order = 0 },
                         new() { Name = "Type", NameKey = "Template_Field_TransactionType", Type = FieldType.Dropdown, DropdownValues = "Income,Expense", DropdownValuesKey = "Template_Dropdown_TransactionType", IsRequired = true, Order = 1 },
-                        new() { Name = "Category", NameKey = "Template_Field_Category", Type = FieldType.Dropdown, DropdownValues = "Salary,Freelance,Food,Transport,Housing,Health,Entertainment,Shopping,Investment,Gift,Other", DropdownValuesKey = "Template_Dropdown_FinanceCategory", IsRequired = true, Order = 2 },
+                        new() { Name = "Category", NameKey = "Template_Field_Category", Type = FieldType.Dropdown, DropdownValues = "Salary,Freelance,Food,Transport,Housing,Health,Entertainment,Shopping,Investment,Gift,Other", DropdownValuesKey = "Template_Dropdown_FinanceCategory", IsRequired = true, Order = 2, DropdownTrendValueFieldName = "Amount" },
                     ],
                     AnalyticsRules =
                     [
@@ -253,7 +260,7 @@ public static class TemplatePackCatalog
                     Fields =
                     [
                         new() { Name = "Amount", NameKey = "Template_Field_Amount", Type = FieldType.Decimal, Unit = "€", MinValue = 0, IsRequired = true, Order = 0 },
-                        new() { Name = "Category", NameKey = "Template_Field_Category", Type = FieldType.Dropdown, DropdownValues = "Food,Transport,Housing,Health,Entertainment,Shopping,Other", DropdownValuesKey = "Template_Dropdown_ExpenseCategory", IsRequired = true, Order = 1 },
+                        new() { Name = "Category", NameKey = "Template_Field_Category", Type = FieldType.Dropdown, DropdownValues = "Food,Transport,Housing,Health,Entertainment,Shopping,Other", DropdownValuesKey = "Template_Dropdown_ExpenseCategory", IsRequired = true, Order = 1, DropdownTrendValueFieldName = "Amount" },
                     ],
                     AnalyticsRules =
                     [
@@ -267,7 +274,7 @@ public static class TemplatePackCatalog
                     Fields =
                     [
                         new() { Name = "Amount", NameKey = "Template_Field_Amount", Type = FieldType.Decimal, Unit = "€", MinValue = 0, IsRequired = true, Order = 0 },
-                        new() { Name = "Source", NameKey = "Template_Field_Source", Type = FieldType.Dropdown, DropdownValues = "Salary,Freelance,Investment,Gift,Other", DropdownValuesKey = "Template_Dropdown_IncomeSource", Order = 1 },
+                        new() { Name = "Source", NameKey = "Template_Field_Source", Type = FieldType.Dropdown, DropdownValues = "Salary,Freelance,Investment,Gift,Other", DropdownValuesKey = "Template_Dropdown_IncomeSource", Order = 1, DropdownTrendValueFieldName = "Amount" },
                     ],
                     AnalyticsRules =
                     [

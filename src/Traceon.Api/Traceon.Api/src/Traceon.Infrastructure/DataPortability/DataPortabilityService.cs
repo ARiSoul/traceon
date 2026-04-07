@@ -225,6 +225,19 @@ public sealed class DataPortabilityService(TraceonDbContext db)
 
             await db.SaveChangesAsync();
 
+            // Remap DropdownTrendValueFieldId references to new IDs
+            foreach (var fieldExport2 in actionExport.Fields)
+            {
+                if (fieldExport2.DropdownTrendValueFieldId.HasValue
+                    && actionFieldIdMap.TryGetValue(fieldExport2.Id, out var newSelfId)
+                    && actionFieldIdMap.TryGetValue(fieldExport2.DropdownTrendValueFieldId.Value, out var newRefId))
+                {
+                    var tracked = await db.ActionFields.FindAsync(newSelfId);
+                    tracked?.Update(tracked.Name, dropdownTrendValueFieldId: newRefId);
+                }
+            }
+            await db.SaveChangesAsync();
+
             // Entries — add field values directly to the DbSet to avoid
             // change-tracker conflicts with the entry's private backing field
             foreach (var entryExport in actionExport.Entries)
