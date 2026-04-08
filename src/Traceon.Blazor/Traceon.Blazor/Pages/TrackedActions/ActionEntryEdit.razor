@@ -190,22 +190,83 @@ else
                                     break;
 
                                 case FieldType.CompositeDropdown:
-                                    <select class="form-select" value="@model.TextValue"
-                                            @onchange="e => OnDropdownChanged(model, e.Value?.ToString())">
-                                        <option value="">@L["Entry_Select"]</option>
-                                        @if (model.CompositeGroups.Count > 0)
-                                        {
-                                            @foreach (var (groupName, values) in model.CompositeGroups)
+                                    <div class="input-group">
+                                        <select class="form-select" value="@model.TextValue"
+                                                @onchange="e => OnDropdownChanged(model, e.Value?.ToString())">
+                                            <option value="">@L["Entry_Select"]</option>
+                                            @if (model.CompositeGroups.Count > 0)
                                             {
-                                                <optgroup label="@groupName">
-                                                    @foreach (var val in values)
-                                                    {
-                                                        <option value="@val">@val</option>
-                                                    }
-                                                </optgroup>
+                                                @foreach (var (groupName, values) in model.CompositeGroups)
+                                                {
+                                                    <optgroup label="@groupName">
+                                                        @foreach (var val in values)
+                                                        {
+                                                            <option value="@val">@val</option>
+                                                        }
+                                                    </optgroup>
+                                                }
                                             }
-                                        }
-                                    </select>
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button"
+                                                title="@L["Dropdown_AddNew"]"
+                                                @onclick="() => ToggleCompositeQuickAdd(model)">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                    </div>
+                                    @if (_compositeQuickAdd?.Model == model)
+                                    {
+                                        <div class="card card-body mt-2 p-2 border-primary">
+                                            <div class="mb-2">
+                                                <label class="form-label form-label-sm mb-1">@L["CompositeQuickAdd_Source"]</label>
+                                                <select class="form-select form-select-sm"
+                                                        value="@_compositeQuickAdd.SelectedSourceId"
+                                                        @onchange="e => _compositeQuickAdd.SelectedSourceId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : Guid.Empty">
+                                                    <option value="@Guid.Empty">@L["Entry_Select"]</option>
+                                                    @foreach (var src in _compositeQuickAdd.SourceOptions)
+                                                    {
+                                                        <option value="@src.Id">@src.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label form-label-sm mb-1">@L["Dropdown_NewValue"]</label>
+                                                <input type="text" class="form-control form-control-sm"
+                                                       placeholder="@L["Dropdown_NewValue"]"
+                                                       @bind="_compositeQuickAdd.NewValue" @bind:event="oninput"
+                                                       @onkeydown="OnCompositeQuickAddKeyDown" />
+                                            </div>
+                                            @if (_compositeQuickAdd.ParentContext is not null)
+                                            {
+                                                <div class="form-check form-check-sm mb-2">
+                                                    <input type="checkbox" class="form-check-input" id="qa-link-dep"
+                                                           @bind="_compositeQuickAdd.LinkDependency" />
+                                                    <label class="form-check-label small" for="qa-link-dep">
+                                                        @string.Format(L["CompositeQuickAdd_Link"],
+                                                            _compositeQuickAdd.ParentContext.Value.ParentFieldName,
+                                                            _compositeQuickAdd.ParentContext.Value.ParentValue)
+                                                    </label>
+                                                </div>
+                                            }
+                                            <div class="d-flex gap-1">
+                                                <button class="btn btn-success btn-sm" type="button"
+                                                        disabled="@(!_compositeQuickAdd.IsValid || _compositeQuickAdd.Saving)"
+                                                        @onclick="CompositeQuickAddSaveAsync">
+                                                    @if (_compositeQuickAdd.Saving)
+                                                    {
+                                                        <span class="spinner-border spinner-border-sm"></span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-check-lg"></i>
+                                                    }
+                                                </button>
+                                                <button class="btn btn-outline-secondary btn-sm" type="button"
+                                                        @onclick="() => _compositeQuickAdd = null">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
                                     break;
                             }
                         </div>
@@ -765,5 +826,160 @@ else
                 }
             }
         }
+    }
+
+    // ── Composite Quick-Add ──
+
+    private CompositeQuickAddState? _compositeQuickAdd;
+
+    private void ToggleCompositeQuickAdd(EntryFieldModel model)
+    {
+        if (_compositeQuickAdd?.Model == model)
+        {
+            _compositeQuickAdd = null;
+            return;
+        }
+
+        // Parse the ref: IDs to find which source field definitions this composite pulls from
+        var sourceOptions = new List<CompositeSourceOption>();
+        if (!string.IsNullOrWhiteSpace(model.Field.DropdownValues)
+            && model.Field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+        {
+            var refIds = model.Field.DropdownValues["ref:".Length..]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
+                .Where(id => id != Guid.Empty)
+                .ToList();
+
+            foreach (var refId in refIds)
+            {
+                var fd = _cachedFieldDefinitions.FirstOrDefault(f => f.Id == refId);
+                if (fd is not null)
+                    sourceOptions.Add(new CompositeSourceOption(fd.Id, fd.DefaultName));
+            }
+        }
+
+        // Detect parent context: find the dependency rule source that currently has a value
+        (Guid ParentFieldId, string ParentFieldName, string ParentValue)? parentCtx = null;
+        var rulesForTarget = _depRules
+            .Where(r => r.RuleType == DependencyRuleType.FilterDropdownValues && r.TargetFieldId == model.Field.Id)
+            .ToList();
+
+        if (rulesForTarget.Count > 0)
+        {
+            var sourceFieldIds = rulesForTarget.Select(r => r.SourceFieldId).Distinct().ToList();
+            foreach (var sfId in sourceFieldIds)
+            {
+                var parentModel = _fieldModels.FirstOrDefault(m => m.Field.Id == sfId);
+                if (parentModel is not null && !string.IsNullOrEmpty(parentModel.TextValue))
+                {
+                    parentCtx = (sfId, parentModel.Field.Name, parentModel.TextValue);
+                    break;
+                }
+            }
+        }
+
+        _compositeQuickAdd = new CompositeQuickAddState
+        {
+            Model = model,
+            SourceOptions = sourceOptions,
+            SelectedSourceId = sourceOptions.Count == 1 ? sourceOptions[0].Id : Guid.Empty,
+            ParentContext = parentCtx,
+            LinkDependency = parentCtx is not null
+        };
+    }
+
+    private async Task OnCompositeQuickAddKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && _compositeQuickAdd is { IsValid: true })
+            await CompositeQuickAddSaveAsync();
+    }
+
+    private async Task CompositeQuickAddSaveAsync()
+    {
+        if (_compositeQuickAdd is null || !_compositeQuickAdd.IsValid) return;
+
+        _compositeQuickAdd.Saving = true;
+        var newValue = _compositeQuickAdd.NewValue.Trim();
+
+        // 1. Add value to the source field definition
+        var (addSuccess, _) = await FieldDefService.AppendDropdownValueAsync(
+            _compositeQuickAdd.SelectedSourceId, newValue);
+
+        if (!addSuccess)
+        {
+            _compositeQuickAdd.Saving = false;
+            return;
+        }
+
+        // 2. If "link dependency" is checked, create or update the dependency rule
+        if (_compositeQuickAdd is { LinkDependency: true, ParentContext: not null })
+        {
+            var ctx = _compositeQuickAdd.ParentContext.Value;
+            var targetFieldId = _compositeQuickAdd.Model.Field.Id;
+
+            // Find existing rule for this source+value+target combo
+            var existingRule = _depRules.FirstOrDefault(r =>
+                r.SourceFieldId == ctx.ParentFieldId
+                && string.Equals(r.SourceValue, ctx.ParentValue, StringComparison.OrdinalIgnoreCase)
+                && r.TargetFieldId == targetFieldId
+                && r.RuleType == DependencyRuleType.FilterDropdownValues);
+
+            if (existingRule is not null)
+            {
+                // Append to existing constraint
+                var existingValues = existingRule.TargetConstraint?
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToList() ?? [];
+
+                if (!existingValues.Contains(newValue, StringComparer.OrdinalIgnoreCase))
+                {
+                    existingValues.Add(newValue);
+                    var updatedConstraint = string.Join(",", existingValues);
+                    await DepRuleService.UpdateAsync(TrackedActionId, existingRule.Id,
+                        new UpdateFieldDependencyRuleRequest(
+                            TargetConstraint: updatedConstraint));
+                }
+            }
+            else
+            {
+                // Create new rule
+                await DepRuleService.CreateAsync(TrackedActionId,
+                    new CreateFieldDependencyRuleRequest(
+                        ctx.ParentFieldId,
+                        ctx.ParentValue,
+                        targetFieldId,
+                        DependencyRuleType.FilterDropdownValues,
+                        newValue));
+            }
+
+            // Reload dependency rules
+            try { _depRules = await DepRuleService.GetByTrackedActionAsync(TrackedActionId); } catch { }
+        }
+
+        // 3. Refresh composite dropdown sources and re-evaluate
+        _cachedFieldDefinitions = await FieldDefService.GetAllAsync();
+        await ResolveCompositeDropdownsAsync();
+        EvaluateDependencyRules();
+
+        // 4. Auto-select the new value
+        _compositeQuickAdd.Model.TextValue = newValue;
+        EvaluateDependencyRules(); // re-evaluate for downstream deps
+
+        _compositeQuickAdd = null;
+    }
+
+    private sealed record CompositeSourceOption(Guid Id, string Name);
+
+    private sealed class CompositeQuickAddState
+    {
+        public required EntryFieldModel Model { get; init; }
+        public required List<CompositeSourceOption> SourceOptions { get; init; }
+        public Guid SelectedSourceId { get; set; }
+        public string NewValue { get; set; } = string.Empty;
+        public bool LinkDependency { get; set; }
+        public bool Saving { get; set; }
+        public (Guid ParentFieldId, string ParentFieldName, string ParentValue)? ParentContext { get; init; }
+        public bool IsValid => SelectedSourceId != Guid.Empty && !string.IsNullOrWhiteSpace(NewValue);
     }
 }

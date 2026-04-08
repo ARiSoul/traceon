@@ -303,6 +303,8 @@
   <data name="Entry_Select"><value>— Seleccionar —</value></data>
   <data name="Dropdown_AddNew"><value>Adicionar novo valor</value></data>
   <data name="Dropdown_NewValue"><value>Novo valor…</value></data>
+  <data name="CompositeQuickAdd_Source"><value>Adicionar a que lista?</value></data>
+  <data name="CompositeQuickAdd_Link"><value>Permitir quando {0} = {1}</value></data>
 
   <!-- ═══ Edição de Acção - Separadores ═══ -->
   <data name="ActionEdit_BasicInfo"><value>Informações Básicas</value></data>
@@ -738,6 +740,27 @@
   <data name="Dep_SelectAllowedValues"><value>Selecione pelo menos um valor permitido para o campo de destino.</value></data>
   <data name="Common_Select"><value>Selecionar</value></data>
   <data name="Common_None"><value>Nenhum</value></data>
+
+  <!-- ═══ Construtor de Hierarquia ═══ -->
+  <data name="Hierarchy_Title"><value>Construir Hierarquia</value></data>
+  <data name="Hierarchy_BuildButton"><value>Construir Hierarquia</value></data>
+  <data name="Hierarchy_Step1Hint"><value>Nomeie os níveis da hierarquia (ex: Categoria, Sub-categoria, Detalhe).</value></data>
+  <data name="Hierarchy_Step2Hint"><value>Construa a árvore de valores. Para cada pai, adicione os valores-filho permitidos.</value></data>
+  <data name="Hierarchy_Step3Hint"><value>Reveja a estrutura que será criada.</value></data>
+  <data name="Hierarchy_Level"><value>Nível</value></data>
+  <data name="Hierarchy_LevelPlaceholderRoot"><value>ex: Categoria</value></data>
+  <data name="Hierarchy_LevelPlaceholderChild"><value>ex: Sub-categoria</value></data>
+  <data name="Hierarchy_AddLevel"><value>Adicionar nível</value></data>
+  <data name="Hierarchy_ValuePlaceholder"><value>Valor de {0}…</value></data>
+  <data name="Hierarchy_AddValue"><value>Adicionar {0}</value></data>
+  <data name="Hierarchy_LevelsOverview"><value>Níveis</value></data>
+  <data name="Hierarchy_TreeOverview"><value>Árvore</value></data>
+  <data name="Hierarchy_WillCreate"><value>O assistente irá criar:</value></data>
+  <data name="Hierarchy_FieldDefinitions"><value>definições de campo</value></data>
+  <data name="Hierarchy_ActionFields"><value>campos na ação</value></data>
+  <data name="Hierarchy_DependencyRules"><value>regras de dependência</value></data>
+  <data name="Hierarchy_Build"><value>Construir Hierarquia</value></data>
+
   <data name="Nav_Trash"><value>Lixeira</value></data>
   <data name="Trash_Title"><value>Lixeira</value></data>
   <data name="Trash_Subtitle"><value>Itens eliminados são mantidos durante o período de retenção configurado antes da remoção permanente.</value></data>

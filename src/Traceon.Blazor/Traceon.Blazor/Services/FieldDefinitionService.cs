@@ -34,6 +34,18 @@ public sealed class FieldDefinitionService(HttpClient http)
         return await ToResultAsync(response);
     }
 
+    public async Task<(bool Success, FieldDefinitionResponse? Created, IReadOnlyList<string> Errors)> CreateWithResultAsync(CreateFieldDefinitionRequest request)
+    {
+        var response = await http.PostAsJsonAsync("/api/field-definitions", request);
+        if (response.IsSuccessStatusCode)
+        {
+            var created = await response.Content.ReadFromJsonAsync<FieldDefinitionResponse>();
+            return (true, created, []);
+        }
+        var errors = await ApiErrorParser.ExtractErrorsAsync(response);
+        return (false, null, errors);
+    }
+
     public async Task<(bool Success, IReadOnlyList<string> Errors)> UpdateAsync(Guid id, UpdateFieldDefinitionRequest request)
     {
         var response = await http.PutAsJsonAsync($"/api/field-definitions/{id}", request);

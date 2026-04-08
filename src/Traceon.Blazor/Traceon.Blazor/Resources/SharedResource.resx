@@ -302,6 +302,8 @@
   <data name="Entry_Select"><value>— Select —</value></data>
   <data name="Dropdown_AddNew"><value>Add new value</value></data>
   <data name="Dropdown_NewValue"><value>New value…</value></data>
+  <data name="CompositeQuickAdd_Source"><value>Add to which list?</value></data>
+  <data name="CompositeQuickAdd_Link"><value>Allow when {0} = {1}</value></data>
 
   <!-- ═══ Action Edit Tabs ═══ -->
   <data name="ActionEdit_BasicInfo"><value>Basic Info</value></data>
@@ -735,6 +737,27 @@
   <data name="Dep_SelectAllowedValues"><value>Please select at least one allowed value for the target field.</value></data>
   <data name="Common_Select"><value>Select</value></data>
   <data name="Common_None"><value>None</value></data>
+
+  <!-- ═══ Hierarchy Builder ═══ -->
+  <data name="Hierarchy_Title"><value>Build Hierarchy</value></data>
+  <data name="Hierarchy_BuildButton"><value>Build Hierarchy</value></data>
+  <data name="Hierarchy_Step1Hint"><value>Name the levels of your hierarchy (e.g. Category, Sub-category, Detail).</value></data>
+  <data name="Hierarchy_Step2Hint"><value>Build the tree of values. For each parent, add the child values allowed under it.</value></data>
+  <data name="Hierarchy_Step3Hint"><value>Review the structure that will be created.</value></data>
+  <data name="Hierarchy_Level"><value>Level</value></data>
+  <data name="Hierarchy_LevelPlaceholderRoot"><value>e.g. Category</value></data>
+  <data name="Hierarchy_LevelPlaceholderChild"><value>e.g. Sub-category</value></data>
+  <data name="Hierarchy_AddLevel"><value>Add level</value></data>
+  <data name="Hierarchy_ValuePlaceholder"><value>{0} value…</value></data>
+  <data name="Hierarchy_AddValue"><value>Add {0}</value></data>
+  <data name="Hierarchy_LevelsOverview"><value>Levels</value></data>
+  <data name="Hierarchy_TreeOverview"><value>Tree</value></data>
+  <data name="Hierarchy_WillCreate"><value>The wizard will create:</value></data>
+  <data name="Hierarchy_FieldDefinitions"><value>field definitions</value></data>
+  <data name="Hierarchy_ActionFields"><value>action fields</value></data>
+  <data name="Hierarchy_DependencyRules"><value>dependency rules</value></data>
+  <data name="Hierarchy_Build"><value>Build Hierarchy</value></data>
+
   <data name="Nav_Trash"><value>Trash</value></data>
   <data name="Trash_Title"><value>Trash</value></data>
   <data name="Trash_Subtitle"><value>Deleted items are kept for your configured retention period before permanent removal.</value></data>

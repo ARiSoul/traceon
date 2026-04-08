@@ -1,0 +1,488 @@
+@* Wizard to visually build a hierarchical dropdown structure (e.g. Category → Sub-category → Sub-sub-category).
+   Creates field definitions, composites, action field assignments, and dependency rules in one go. *@
+@inject IStringLocalizer<SharedResource> L
+
+@if (!IsVisible) return;
+
+<div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary bg-opacity-10">
+                <h5 class="modal-title">
+                    <i class="bi bi-diagram-3 me-2"></i>@L["Hierarchy_Title"]
+                </h5>
+                <button type="button" class="btn-close" @onclick="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+                @if (_step == 0)
+                {
+                    @* ── Step 1: Define levels ── *@
+                    <p class="text-muted mb-3">@L["Hierarchy_Step1Hint"]</p>
+
+                    @for (var i = 0; i < _levels.Count; i++)
+                    {
+                        var idx = i;
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text" style="min-width: 80px;">
+                                @L["Hierarchy_Level"] @(i + 1)
+                            </span>
+                            <input type="text" class="form-control"
+                                   placeholder="@(i == 0 ? L["Hierarchy_LevelPlaceholderRoot"] : L["Hierarchy_LevelPlaceholderChild"])"
+                                   @bind="_levels[idx]" />
+                            @if (i >= 2)
+                            {
+                                <button class="btn btn-outline-danger" @onclick="() => RemoveLevel(idx)">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    @if (_levels.Count < 5)
+                    {
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="AddLevel">
+                            <i class="bi bi-plus-circle me-1"></i>@L["Hierarchy_AddLevel"]
+                        </button>
+                    }
+                }
+                else if (_step == 1)
+                {
+                    @* ── Step 2: Define the tree values ── *@
+                    <p class="text-muted mb-3">
+                        @L["Hierarchy_Step2Hint"]
+                    </p>
+
+                    @RenderTreeEditor(_rootNodes, 0)
+                }
+                else if (_step == 2)
+                {
+                    @* ── Step 3: Review ── *@
+                    <p class="text-muted mb-3">@L["Hierarchy_Step3Hint"]</p>
+
+                    <div class="mb-3">
+                        <h6>@L["Hierarchy_LevelsOverview"]</h6>
+                        <div class="d-flex gap-2 flex-wrap mb-3">
+                            @for (var i = 0; i < _levels.Count; i++)
+                            {
+                                <span class="badge bg-primary fs-6">
+                                    @(i + 1). @_levels[i]
+                                </span>
+                                @if (i < _levels.Count - 1)
+                                {
+                                    <i class="bi bi-arrow-right text-muted align-self-center"></i>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>@L["Hierarchy_TreeOverview"]</h6>
+                        @RenderTreePreview(_rootNodes, 0)
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-1"></i>
+                        @L["Hierarchy_WillCreate"]
+                        <ul class="mb-0 mt-1">
+                            <li>@CountFieldDefinitions() @L["Hierarchy_FieldDefinitions"]</li>
+                            <li>@_levels.Count @L["Hierarchy_ActionFields"]</li>
+                            <li>@CountDependencyRules() @L["Hierarchy_DependencyRules"]</li>
+                        </ul>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                @if (_step > 0)
+                {
+                    <button class="btn btn-outline-secondary" @onclick="PrevStep" disabled="@_saving">
+                        <i class="bi bi-arrow-left me-1"></i>@L["ActionCreate_Previous"]
+                    </button>
+                }
+                <button class="btn btn-outline-secondary" @onclick="Close" disabled="@_saving">
+                    @L["Common_Cancel"]
+                </button>
+                @if (_step < 2)
+                {
+                    <button class="btn btn-primary" @onclick="NextStep" disabled="@(!CanAdvance)">
+                        @L["ActionCreate_Next"] <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-success" @onclick="BuildAsync" disabled="@(_saving || !CanAdvance)">
+                        @if (_saving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle me-1"></i>
+                        }
+                        @L["Hierarchy_Build"]
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public Guid TrackedActionId { get; set; }
+    [Parameter] public EventCallback OnBuilt { get; set; }
+
+    /// <summary>Current order index for newly assigned action fields.</summary>
+    [Parameter] public int NextFieldOrder { get; set; }
+
+    [Inject] private FieldDefinitionService FieldDefService { get; set; } = default!;
+    [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
+    [Inject] private FieldDependencyRuleService DepRuleService { get; set; } = default!;
+
+    private int _step;
+    private bool _saving;
+    private IReadOnlyList<string> _errors = [];
+
+    // Step 1: Level names (minimum 2)
+    private List<string> _levels = ["", ""];
+
+    // Step 2: Tree of values
+    private List<TreeNode> _rootNodes = [];
+
+    private bool CanAdvance => _step switch
+    {
+        0 => _levels.Count >= 2 && _levels.All(l => !string.IsNullOrWhiteSpace(l)),
+        1 => _rootNodes.Count > 0 && _rootNodes.All(n => !string.IsNullOrWhiteSpace(n.Value)),
+        2 => true,
+        _ => false
+    };
+
+    private void AddLevel()
+    {
+        if (_levels.Count < 5) _levels.Add("");
+    }
+
+    private void RemoveLevel(int idx)
+    {
+        if (_levels.Count <= 2) return;
+        _levels.RemoveAt(idx);
+        // Trim tree depth if needed
+        TrimTreeToDepth(_rootNodes, 0);
+    }
+
+    private void NextStep()
+    {
+        if (!CanAdvance) return;
+        if (_step == 0 && _rootNodes.Count == 0)
+        {
+            // Initialize root with one empty node
+            _rootNodes = [new TreeNode()];
+        }
+        _step++;
+    }
+
+    private void PrevStep()
+    {
+        if (_step > 0) _step--;
+    }
+
+    private async Task Close()
+    {
+        Reset();
+        await OnClose.InvokeAsync();
+    }
+
+    private void Reset()
+    {
+        _step = 0;
+        _levels = ["", ""];
+        _rootNodes = [];
+        _errors = [];
+        _saving = false;
+    }
+
+    // ── Tree node model ──
+
+    private sealed class TreeNode
+    {
+        public string Value { get; set; } = "";
+        public List<TreeNode> Children { get; set; } = [];
+    }
+
+    private void TrimTreeToDepth(List<TreeNode> nodes, int currentDepth)
+    {
+        if (currentDepth >= _levels.Count - 1)
+        {
+            foreach (var n in nodes) n.Children = [];
+            return;
+        }
+        foreach (var n in nodes)
+            TrimTreeToDepth(n.Children, currentDepth + 1);
+    }
+
+    // ── Tree editor rendering ──
+
+    private RenderFragment RenderTreeEditor(List<TreeNode> nodes, int depth) => __builder =>
+    {
+        var levelName = depth < _levels.Count ? _levels[depth] : "?";
+        var hasChildLevel = depth < _levels.Count - 1;
+
+        <div class="@(depth > 0 ? "ps-3 border-start border-2 border-primary-subtle" : "")">
+            @for (var i = 0; i < nodes.Count; i++)
+            {
+                var idx = i;
+                var node = nodes[i];
+                <div class="mb-2">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text text-muted" style="min-width: 40px; font-size: .7rem;">
+                            @levelName
+                        </span>
+                        <input type="text" class="form-control"
+                               placeholder="@string.Format(L["Hierarchy_ValuePlaceholder"], levelName)"
+                               @bind="node.Value" />
+                        <button class="btn btn-outline-danger" @onclick="() => nodes.RemoveAt(idx)">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    @if (hasChildLevel && !string.IsNullOrWhiteSpace(node.Value))
+                    {
+                        @RenderTreeEditor(node.Children, depth + 1)
+                    }
+                </div>
+            }
+            <button class="btn btn-outline-secondary btn-sm mt-1" @onclick="() => nodes.Add(new TreeNode())">
+                <i class="bi bi-plus me-1"></i>@string.Format(L["Hierarchy_AddValue"], levelName)
+            </button>
+        </div>
+    };
+
+    // ── Tree preview ──
+
+    private RenderFragment RenderTreePreview(List<TreeNode> nodes, int depth) => __builder =>
+    {
+        if (nodes.Count == 0) return;
+        <ul class="list-unstyled @(depth > 0 ? "ps-3 border-start" : "") mb-0">
+            @foreach (var node in nodes.Where(n => !string.IsNullOrWhiteSpace(n.Value)))
+            {
+                <li class="mb-1">
+                    <i class="bi bi-@(node.Children.Count > 0 ? "folder2" : "file-earmark") me-1 text-primary"></i>
+                    <span class="@(depth == 0 ? "fw-semibold" : "")">@node.Value</span>
+                    @if (node.Children.Count > 0)
+                    {
+                        @RenderTreePreview(node.Children, depth + 1)
+                    }
+                </li>
+            }
+        </ul>
+    };
+
+    // ── Counting helpers for review ──
+
+    private int CountFieldDefinitions()
+    {
+        // Level 0 is always a plain Dropdown (1 field def)
+        // Levels 1+ each get: N source dropdowns (one per parent value) + 1 composite (= N+1)
+        // But we can simplify: level 0 = 1 dropdown. Each deeper level = 1 composite + 1 source dropdown per distinct value group
+        // Actually the cleanest approach: level 0 = 1 dropdown. For each subsequent level,
+        // one composite + one source dropdown per parent value that has children.
+        var count = 1; // root dropdown
+        CountFieldDefsRecursive(_rootNodes, 0, ref count);
+        return count;
+    }
+
+    private void CountFieldDefsRecursive(List<TreeNode> nodes, int depth, ref int count)
+    {
+        if (depth >= _levels.Count - 1) return;
+
+        // Nodes at this depth that have children → each contributes a source dropdown for the composite at depth+1
+        var parentsWithChildren = nodes.Where(n => !string.IsNullOrWhiteSpace(n.Value) && n.Children.Any(c => !string.IsNullOrWhiteSpace(c.Value))).ToList();
+        if (parentsWithChildren.Count > 0)
+        {
+            count += 1; // composite for the next level
+            count += parentsWithChildren.Count; // one source dropdown per parent value
+        }
+
+        foreach (var n in nodes)
+            CountFieldDefsRecursive(n.Children, depth + 1, ref count);
+    }
+
+    private int CountDependencyRules()
+    {
+        var count = 0;
+        CountRulesRecursive(_rootNodes, ref count);
+        return count;
+    }
+
+    private void CountRulesRecursive(List<TreeNode> nodes, ref int count)
+    {
+        foreach (var n in nodes.Where(n => !string.IsNullOrWhiteSpace(n.Value)))
+        {
+            var validChildren = n.Children.Where(c => !string.IsNullOrWhiteSpace(c.Value)).ToList();
+            if (validChildren.Count > 0)
+                count++; // one rule: parent value → allowed children
+            CountRulesRecursive(n.Children, ref count);
+        }
+    }
+
+    // ── Build everything ──
+
+    private async Task BuildAsync()
+    {
+        _errors = [];
+        _saving = true;
+
+        try
+        {
+            var fieldOrder = NextFieldOrder;
+            // Will track action field IDs per level for dependency rules
+            var levelActionFieldIds = new Guid[_levels.Count];
+
+            // ── Level 0: plain Dropdown ──
+            var rootValues = _rootNodes
+                .Where(n => !string.IsNullOrWhiteSpace(n.Value))
+                .Select(n => n.Value.Trim())
+                .ToList();
+
+            var (rootOk, rootDef, rootErrs) = await FieldDefService.CreateWithResultAsync(
+                new CreateFieldDefinitionRequest(
+                    _levels[0].Trim(),
+                    FieldType.Dropdown,
+                    DropdownValues: string.Join(",", rootValues)));
+
+            if (!rootOk || rootDef is null)
+            {
+                _errors = rootErrs.Count > 0 ? rootErrs : [L["Common_ErrorOccurred"]];
+                _saving = false;
+                return;
+            }
+
+            var (afOk, afErrs) = await ActionFieldService.CreateAsync(TrackedActionId,
+                new CreateActionFieldRequest(rootDef.Id, _levels[0].Trim(), Order: fieldOrder++));
+            if (!afOk)
+            {
+                _errors = afErrs;
+                _saving = false;
+                return;
+            }
+
+            // Fetch to get the action field ID
+            var allFields = await ActionFieldService.GetByTrackedActionAsync(TrackedActionId);
+            levelActionFieldIds[0] = allFields.First(f => f.FieldDefinitionId == rootDef.Id).Id;
+
+            // ── Levels 1+: for each level, collect parent→children mappings and create source dropdowns + composite ──
+            for (var level = 1; level < _levels.Count; level++)
+            {
+                var parentNodes = GetNodesAtDepth(_rootNodes, level - 1);
+                var parentsWithChildren = parentNodes
+                    .Where(n => !string.IsNullOrWhiteSpace(n.Value)
+                        && n.Children.Any(c => !string.IsNullOrWhiteSpace(c.Value)))
+                    .ToList();
+
+                if (parentsWithChildren.Count == 0) continue;
+
+                // Create one source dropdown per parent value
+                var sourceDefIds = new List<Guid>();
+                foreach (var parent in parentsWithChildren)
+                {
+                    var childValues = parent.Children
+                        .Where(c => !string.IsNullOrWhiteSpace(c.Value))
+                        .Select(c => c.Value.Trim())
+                        .ToList();
+
+                    var sourceName = $"{_levels[level].Trim()} ({parent.Value.Trim()})";
+                    var (sOk, sDef, sErrs) = await FieldDefService.CreateWithResultAsync(
+                        new CreateFieldDefinitionRequest(
+                            sourceName,
+                            FieldType.Dropdown,
+                            DropdownValues: string.Join(",", childValues)));
+
+                    if (!sOk || sDef is null)
+                    {
+                        _errors = sErrs.Count > 0 ? sErrs : [L["Common_ErrorOccurred"]];
+                        _saving = false;
+                        return;
+                    }
+                    sourceDefIds.Add(sDef.Id);
+                }
+
+                // Create composite referencing all source dropdowns
+                var refValue = "ref:" + string.Join(",", sourceDefIds);
+                var (cOk, cDef, cErrs) = await FieldDefService.CreateWithResultAsync(
+                    new CreateFieldDefinitionRequest(
+                        _levels[level].Trim(),
+                        FieldType.CompositeDropdown,
+                        DropdownValues: refValue));
+
+                if (!cOk || cDef is null)
+                {
+                    _errors = cErrs.Count > 0 ? cErrs : [L["Common_ErrorOccurred"]];
+                    _saving = false;
+                    return;
+                }
+
+                // Assign composite to the action
+                var (cafOk, cafErrs) = await ActionFieldService.CreateAsync(TrackedActionId,
+                    new CreateActionFieldRequest(cDef.Id, _levels[level].Trim(), Order: fieldOrder++));
+                if (!cafOk)
+                {
+                    _errors = cafErrs;
+                    _saving = false;
+                    return;
+                }
+
+                allFields = await ActionFieldService.GetByTrackedActionAsync(TrackedActionId);
+                levelActionFieldIds[level] = allFields.First(f => f.FieldDefinitionId == cDef.Id).Id;
+
+                // Create dependency rules: for each parent value → allowed child values
+                var parentActionFieldId = levelActionFieldIds[level - 1];
+                var targetActionFieldId = levelActionFieldIds[level];
+
+                foreach (var parent in parentsWithChildren)
+                {
+                    var childValues = parent.Children
+                        .Where(c => !string.IsNullOrWhiteSpace(c.Value))
+                        .Select(c => c.Value.Trim())
+                        .ToList();
+
+                    var (dOk, dErrs) = await DepRuleService.CreateAsync(TrackedActionId,
+                        new CreateFieldDependencyRuleRequest(
+                            parentActionFieldId,
+                            parent.Value.Trim(),
+                            targetActionFieldId,
+                            DependencyRuleType.FilterDropdownValues,
+                            string.Join(",", childValues)));
+
+                    if (!dOk)
+                    {
+                        _errors = dErrs;
+                        _saving = false;
+                        return;
+                    }
+                }
+            }
+
+            // Success
+            _saving = false;
+            Reset();
+            await OnBuilt.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _errors = [$"{L["Common_ErrorOccurred"]}: {ex.Message}"];
+            _saving = false;
+        }
+    }
+
+    private List<TreeNode> GetNodesAtDepth(List<TreeNode> nodes, int targetDepth, int currentDepth = 0)
+    {
+        if (currentDepth == targetDepth)
+            return nodes.Where(n => !string.IsNullOrWhiteSpace(n.Value)).ToList();
+
+        return nodes
+            .Where(n => !string.IsNullOrWhiteSpace(n.Value))
+            .SelectMany(n => GetNodesAtDepth(n.Children, targetDepth, currentDepth + 1))
+            .ToList();
+    }
+}

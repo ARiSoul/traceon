@@ -706,12 +706,17 @@ else
             {
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <p class="text-muted mb-0">@L["Dep_Hint"]</p>
-                    @if (_dropdownFields.Count >= 2 && !_depEditorOpen)
-                    {
-                        <button class="btn btn-outline-primary btn-sm" @onclick="OpenNewDepEditor">
-                            <i class="bi bi-plus-circle me-1"></i>@L["Dep_AddMapping"]
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-success btn-sm" @onclick="() => _showHierarchyWizard = true">
+                            <i class="bi bi-diagram-3 me-1"></i>@L["Hierarchy_BuildButton"]
                         </button>
-                    }
+                        @if (_dropdownFields.Count >= 2 && !_depEditorOpen)
+                        {
+                            <button class="btn btn-outline-primary btn-sm" @onclick="OpenNewDepEditor">
+                                <i class="bi bi-plus-circle me-1"></i>@L["Dep_AddMapping"]
+                            </button>
+                        }
+                    </div>
                 </div>
 
                 @if (_dropdownFields.Count < 2)
@@ -943,6 +948,13 @@ else
         </div>
     </div>
 }
+
+<!-- Hierarchy Builder Wizard -->
+<HierarchyBuilderWizard IsVisible="_showHierarchyWizard"
+                        TrackedActionId="Id"
+                        NextFieldOrder="_fields.Count"
+                        OnClose="() => _showHierarchyWizard = false"
+                        OnBuilt="OnHierarchyBuiltAsync" />
 
 <!-- Tag Selector Modal -->
 <ModalSelector TItem="TagResponse"
@@ -1411,6 +1423,15 @@ else
     private List<ActionFieldResponse> _dropdownFields => _fields.Where(f => f.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown).ToList();
     private bool _savingDep;
     private IReadOnlyList<string> _depErrors = [];
+    private bool _showHierarchyWizard;
+
+    private async Task OnHierarchyBuiltAsync()
+    {
+        _showHierarchyWizard = false;
+        await ReloadFieldsAsync();
+        await LoadDependencyRulesAsync();
+        _allFieldDefinitions = await FieldDefinitionService.GetAllAsync();
+    }
 
     // Editor state
     private bool _depEditorOpen;
