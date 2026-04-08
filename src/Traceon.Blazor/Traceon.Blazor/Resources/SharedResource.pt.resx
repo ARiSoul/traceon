@@ -436,6 +436,7 @@
   <data name="DataGrid_LastPage"><value>Última página</value></data>
   <data name="DataGrid_PerPage"><value>/ página</value></data>
   <data name="DataGrid_ResetAll"><value>Repor Tudo</value></data>
+  <data name="Common_Invert"><value>Inverter</value></data>
   <data name="DataGrid_Summaries"><value>Totalizadores</value></data>
   <data name="DataGrid_Sum"><value>Soma</value></data>
   <data name="DataGrid_Avg"><value>Méd</value></data>

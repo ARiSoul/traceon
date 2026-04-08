@@ -433,6 +433,7 @@
   <data name="DataGrid_LastPage"><value>Last page</value></data>
   <data name="DataGrid_PerPage"><value>/ page</value></data>
   <data name="DataGrid_ResetAll"><value>Reset All</value></data>
+  <data name="Common_Invert"><value>Invert</value></data>
   <data name="DataGrid_Summaries"><value>Summaries</value></data>
   <data name="DataGrid_Sum"><value>Sum</value></data>
   <data name="DataGrid_Avg"><value>Avg</value></data>

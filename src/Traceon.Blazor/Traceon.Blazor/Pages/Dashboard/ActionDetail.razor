@@ -295,9 +295,10 @@ else
     @foreach (var trend in _data.DropdownValueTrends)
     {
         var chartKey = $"ddt-{trend.FieldName}";
-        _isolatedSeries.TryGetValue(chartKey, out var isolated);
-        var visibleSeries = isolated is not null
-            ? trend.Series.Where(s => s.ValueLabel == isolated).ToList()
+        _selectedSeries.TryGetValue(chartKey, out var selected);
+        var hasFilter = selected is { Count: > 0 };
+        var visibleSeries = hasFilter
+            ? trend.Series.Where(s => selected!.Contains(s.ValueLabel)).ToList()
             : trend.Series;
 
         <div class="card mb-4" @key="@($"{chartKey}-{_loadKey}")">
@@ -316,26 +317,39 @@ else
                     @for (var i = 0; i < trend.Series.Count; i++)
                     {
                         var s = trend.Series[i];
-                        var isActive = isolated is null || isolated == s.ValueLabel;
+                        var isActive = !hasFilter || selected!.Contains(s.ValueLabel);
                         var color = i < CrossFieldPalette.Count ? CrossFieldPalette[i] : "#999";
                         var idx = i;
                         <button class="btn btn-sm px-2 py-0 border @(isActive ? "" : "opacity-25")"
                                 style="font-size:.75rem; color:@color; border-color:@color !important;"
-                                @onclick="() => ToggleDropdownTrendSeries(chartKey, trend.Series[idx].ValueLabel)">
+                                @onclick="() => ToggleDropdownTrendSeries(chartKey, trend.Series[idx].ValueLabel, trend.Series.Count)">
                             <i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>@s.ValueLabel
                         </button>
                     }
-                    @if (isolated is not null)
+                    @if (hasFilter)
                     {
                         <button class="btn btn-outline-secondary btn-sm px-2 py-0" style="font-size:.75rem;"
-                                @onclick="() => { _isolatedSeries.Remove(chartKey); }">
+                                @onclick="() => InvertDropdownTrendSeries(chartKey, trend.Series)">
+                            <i class="bi bi-arrow-left-right me-1"></i>@L["Common_Invert"]
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm px-2 py-0" style="font-size:.75rem;"
+                                @onclick="() => { _selectedSeries.Remove(chartKey); }">
                             <i class="bi bi-arrow-counterclockwise me-1"></i>@L["DataGrid_ResetAll"]
                         </button>
                     }
                 </div>
-                <div @key="@($"{chartKey}-{isolated ?? "all"}-{_loadKey}")">
+                <div @key="@($"{chartKey}-{(hasFilter ? string.Join(',', selected!) : "all")}-{_loadKey}")">
+                    @{
+                        var visibleColors = hasFilter
+                            ? trend.Series
+                                .Select((s, i) => (s, i))
+                                .Where(x => selected!.Contains(x.s.ValueLabel))
+                                .Select(x => x.i < CrossFieldPalette.Count ? CrossFieldPalette[x.i] : "#999")
+                                .ToList()
+                            : CrossFieldPalette;
+                    }
                     <ApexChart TItem="NumericDataPoint"
-                               Options="BuildDropdownTrendOptions(trend)"
+                               Options="BuildDropdownTrendOptions(trend, visibleColors)"
                                Height="300">
                         @foreach (var valueSeries in visibleSeries)
                         {
@@ -594,7 +608,7 @@ else
     private int _loadKey;
     private IReadOnlyList<string> _errors = [];
     private ApexChart<DailyCount>? _frequencyChart;
-    private readonly Dictionary<string, string?> _isolatedSeries = [];
+    private readonly Dictionary<string, HashSet<string>> _selectedSeries = [];
 
     private string _periodMode = "all";
     private int _periodValue = 90;
@@ -776,7 +790,7 @@ else
         };
     }
 
-    private ApexChartOptions<NumericDataPoint> BuildDropdownTrendOptions(DropdownValueTrendSeries trend)
+    private ApexChartOptions<NumericDataPoint> BuildDropdownTrendOptions(DropdownValueTrendSeries trend, List<string> colors)
     {
         var unitLabel = trend.ValueFieldUnit != "UN" ? trend.ValueFieldUnit : trend.ValueFieldName;
         return new ApexChartOptions<NumericDataPoint>
@@ -800,19 +814,53 @@ else
             },
             Yaxis = [new YAxis { Title = new AxisTitle { Text = unitLabel } }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
-            Colors = CrossFieldPalette,
+            Colors = colors,
             Legend = new Legend { Position = LegendPosition.Bottom, Show = false },
             Tooltip = new Tooltip { X = new TooltipX { Format = "dd MMM yyyy" } }
         };
     }
 
-    private void ToggleDropdownTrendSeries(string chartKey, string seriesName)
+    private void ToggleDropdownTrendSeries(string chartKey, string seriesName, int totalCount)
     {
-        _isolatedSeries.TryGetValue(chartKey, out var current);
-        if (current == seriesName)
-            _isolatedSeries.Remove(chartKey);
+        if (!_selectedSeries.TryGetValue(chartKey, out var selected))
+        {
+            // No filter active — first click isolates this single series
+            _selectedSeries[chartKey] = [seriesName];
+            return;
+        }
+
+        if (selected.Contains(seriesName))
+        {
+            // Already selected — remove it (but don't allow empty set)
+            if (selected.Count > 1)
+                selected.Remove(seriesName);
+            else
+                _selectedSeries.Remove(chartKey); // last one — restore all
+        }
         else
-            _isolatedSeries[chartKey] = seriesName;
+        {
+            // Not selected — add it
+            selected.Add(seriesName);
+            // If all are now selected, just clear the filter
+            if (selected.Count >= totalCount)
+                _selectedSeries.Remove(chartKey);
+        }
+    }
+
+    private void InvertDropdownTrendSeries(string chartKey, IReadOnlyList<DropdownValueSeries> allSeries)
+    {
+        if (!_selectedSeries.TryGetValue(chartKey, out var selected))
+            return;
+
+        var inverted = allSeries
+            .Where(s => !selected.Contains(s.ValueLabel))
+            .Select(s => s.ValueLabel)
+            .ToHashSet();
+
+        if (inverted.Count == 0 || inverted.Count == allSeries.Count)
+            _selectedSeries.Remove(chartKey);
+        else
+            _selectedSeries[chartKey] = inverted;
     }
 
     private static readonly List<string> CrossFieldPalette = new()
