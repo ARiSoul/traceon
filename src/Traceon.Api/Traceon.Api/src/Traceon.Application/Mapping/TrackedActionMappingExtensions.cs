@@ -5,7 +5,7 @@ namespace Traceon.Application.Mapping;
 
 public static class TrackedActionMappingExtensions
 {
-    public static TrackedActionResponse ToResponse(this TrackedAction entity) =>
+    public static TrackedActionResponse ToResponse(this TrackedAction entity, bool hasReceiptConfig = false) =>
         new()
         {
             Id = entity.Id,
@@ -16,9 +16,10 @@ public static class TrackedActionMappingExtensions
             EntryCount = 0,
             SortOrder = entity.SortOrder,
             CreatedAtUtc = entity.CreatedAtUtc,
-            UpdatedAtUtc = entity.UpdatedAtUtc
+            UpdatedAtUtc = entity.UpdatedAtUtc,
+            HasReceiptConfig = hasReceiptConfig
         };
 
-    public static IReadOnlyList<TrackedActionResponse> ToResponseList(this IReadOnlyList<TrackedAction> entities) =>
-        [.. entities.Select(e => e.ToResponse())];
+    public static IReadOnlyList<TrackedActionResponse> ToResponseList(this IReadOnlyList<TrackedAction> entities, HashSet<Guid>? receiptEnabledIds = null) =>
+        [.. entities.Select(e => e.ToResponse(receiptEnabledIds?.Contains(e.Id) ?? false))];
 }

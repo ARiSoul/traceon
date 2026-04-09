@@ -44,6 +44,8 @@ builder.Services.AddScoped<FieldAnalyticsRuleService>();
 builder.Services.AddScoped<FieldDependencyRuleService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<DataPortabilityService>();
+builder.Services.AddScoped<ReceiptScanService>();
+builder.Services.AddScoped<ReceiptImportConfigService>();
 builder.Services.AddScoped<FeedbackService>();
 builder.Services.AddScoped<TemplateService>();
 builder.Services.AddScoped<ThemeService>();
