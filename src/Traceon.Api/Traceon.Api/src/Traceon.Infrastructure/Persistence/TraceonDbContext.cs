@@ -20,6 +20,7 @@ public sealed class TraceonDbContext(DbContextOptions<TraceonDbContext> options)
     public DbSet<FieldAnalyticsRule> FieldAnalyticsRules => Set<FieldAnalyticsRule>();
     public DbSet<FieldDependencyRule> FieldDependencyRules => Set<FieldDependencyRule>();
     public DbSet<UserAuditLog> UserAuditLogs => Set<UserAuditLog>();
+    public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

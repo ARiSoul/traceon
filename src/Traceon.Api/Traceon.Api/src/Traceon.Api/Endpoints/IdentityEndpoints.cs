@@ -3,16 +3,16 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Traceon.Infrastructure.Audit;
 using Traceon.Infrastructure.Email;
 using Traceon.Infrastructure.Identity;
+using Traceon.Infrastructure.Persistence;
 
 namespace Traceon.Api.Endpoints;
 
 internal static class IdentityEndpoints
 {
-    private const string LoginProvider = "Traceon";
-    private const string RefreshTokenName = "RefreshToken";
 
     public static RouteGroupBuilder MapIdentityEndpoints(this RouteGroupBuilder group)
     {
@@ -106,6 +106,7 @@ internal static class IdentityEndpoints
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         JwtTokenService tokenService,
+        TraceonDbContext db,
         AuditService audit)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
@@ -128,7 +129,16 @@ internal static class IdentityEndpoints
         var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken();
 
-        await userManager.SetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName, refreshToken);
+        var entity = UserRefreshToken.Create(user.Id, refreshToken, tokenService.RefreshTokenExpirationDays);
+        db.UserRefreshTokens.Add(entity);
+
+        // Remove expired tokens for this user to prevent unbounded growth.
+        var expired = await db.UserRefreshTokens
+            .Where(t => t.UserId == user.Id && t.ExpiresAtUtc <= DateTime.UtcNow)
+            .ToListAsync();
+        db.UserRefreshTokens.RemoveRange(expired);
+
+        await db.SaveChangesAsync();
 
         await audit.LogAsync(user.Id, request.Email, AuditActions.Login);
 
@@ -142,16 +152,19 @@ internal static class IdentityEndpoints
     private static async Task<IResult> RefreshAsync(
         RefreshTokenRequest request,
         UserManager<ApplicationUser> userManager,
-        JwtTokenService tokenService)
+        JwtTokenService tokenService,
+        TraceonDbContext db)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
 
         if (user is null)
             return TypedResults.Unauthorized();
 
-        var storedToken = await userManager.GetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName);
+        var hash = UserRefreshToken.HashToken(request.RefreshToken);
+        var storedToken = await db.UserRefreshTokens
+            .FirstOrDefaultAsync(t => t.UserId == user.Id && t.TokenHash == hash);
 
-        if (storedToken is null || storedToken != request.RefreshToken)
+        if (storedToken is null || storedToken.IsExpired)
             return TypedResults.Unauthorized();
 
         // Issue a new access token but keep the same refresh token.
@@ -342,6 +355,7 @@ internal static class IdentityEndpoints
         HttpContext httpContext,
         UserManager<ApplicationUser> userManager,
         JwtTokenService tokenService,
+        TraceonDbContext db,
         EmailSettings emailSettings,
         AuditService audit)
     {
@@ -396,7 +410,10 @@ internal static class IdentityEndpoints
 
         var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken();
-        await userManager.SetAuthenticationTokenAsync(user, LoginProvider, RefreshTokenName, refreshToken);
+
+        var entity = UserRefreshToken.Create(user.Id, refreshToken, tokenService.RefreshTokenExpirationDays);
+        db.UserRefreshTokens.Add(entity);
+        await db.SaveChangesAsync();
 
         await audit.LogAsync(user.Id, email, AuditActions.LoginExternal, new { provider });
 

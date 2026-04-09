@@ -36,4 +36,5 @@ public sealed class JwtTokenService(JwtSettings settings)
     }
 
     public int AccessTokenExpirationSeconds => settings.AccessTokenExpirationMinutes * 60;
+    public int RefreshTokenExpirationDays => settings.RefreshTokenExpirationDays;
 }
