@@ -9,6 +9,7 @@ public enum ReceiptFieldMappingSource
     ReceiptQuantity,
     ReceiptUnitPrice,
     ReceiptTotal,
+    ReceiptDiscount,
     MerchantName,
     FixedValue
 }

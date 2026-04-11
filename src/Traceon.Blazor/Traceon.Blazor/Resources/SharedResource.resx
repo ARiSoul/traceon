@@ -836,12 +836,14 @@
   <data name="Receipt_Description"><value>Description</value></data>
   <data name="Receipt_Qty"><value>Qty</value></data>
   <data name="Receipt_UnitPrice"><value>Unit Price</value></data>
+  <data name="Receipt_Discount"><value>Discount</value></data>
   <data name="Receipt_Total"><value>Total</value></data>
   <data name="Receipt_Uncategorized"><value>Uncategorized</value></data>
   <data name="Receipt_NewValue"><value>New Value</value></data>
   <data name="Receipt_TypeNewValue"><value>Type new value…</value></data>
   <data name="Receipt_NewValuesWillBeCreated"><value>New dropdown values will be created</value></data>
   <data name="Receipt_SelectedTotal"><value>Selected total</value></data>
+  <data name="Receipt_EntryDate"><value>Entry date</value></data>
   <data name="Receipt_ReviewImport"><value>Review &amp; Import</value></data>
   <data name="Receipt_ReviewTitle"><value>Review Import</value></data>
   <data name="Receipt_ItemsToImport"><value>items to import</value></data>

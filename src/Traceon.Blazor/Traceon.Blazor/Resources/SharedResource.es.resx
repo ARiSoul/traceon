@@ -839,12 +839,14 @@
   <data name="Receipt_Description"><value>Descripción</value></data>
   <data name="Receipt_Qty"><value>Cant.</value></data>
   <data name="Receipt_UnitPrice"><value>Precio Unit.</value></data>
+  <data name="Receipt_Discount"><value>Descuento</value></data>
   <data name="Receipt_Total"><value>Total</value></data>
   <data name="Receipt_Uncategorized"><value>Sin categoría</value></data>
   <data name="Receipt_NewValue"><value>Nuevo Valor</value></data>
   <data name="Receipt_TypeNewValue"><value>Escribe nuevo valor…</value></data>
   <data name="Receipt_NewValuesWillBeCreated"><value>Se crearán nuevos valores en los desplegables</value></data>
   <data name="Receipt_SelectedTotal"><value>Total seleccionado</value></data>
+  <data name="Receipt_EntryDate"><value>Fecha del registro</value></data>
   <data name="Receipt_ReviewImport"><value>Revisar e Importar</value></data>
   <data name="Receipt_ReviewTitle"><value>Revisar Importación</value></data>
   <data name="Receipt_ItemsToImport"><value>artículos a importar</value></data>

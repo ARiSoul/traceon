@@ -43,5 +43,10 @@ internal sealed class ReceiptImportConfigConfiguration : IEntityTypeConfiguratio
             .WithMany()
             .HasForeignKey(e => e.UnitPriceFieldId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne<ActionField>()
+            .WithMany()
+            .HasForeignKey(e => e.DiscountFieldId)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }

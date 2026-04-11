@@ -354,6 +354,7 @@
                             <th style="width: 140px;"><i class="bi bi-magic me-1"></i>@L["RcptCfg_Rule"]</th>
                             <th style="width: 80px;">@L["Receipt_Qty"]</th>
                             <th style="width: 100px;">@L["Receipt_UnitPrice"]</th>
+                            <th style="width: 90px;">@L["Receipt_Discount"]</th>
                             <th style="width: 100px;">@L["Receipt_Total"]</th>
                             @foreach (var field in _perItemDropdownFields)
                             {
@@ -401,6 +402,7 @@
                                 </td>
                                 <td @onclick:stopPropagation="true"><input type="number" class="form-control form-control-sm text-end p-1" @bind="item.Quantity" step="any" style="width: 70px;" /></td>
                                 <td @onclick:stopPropagation="true"><input type="number" class="form-control form-control-sm text-end p-1" @bind="item.UnitPrice" step="0.01" style="width: 90px;" /></td>
+                                <td @onclick:stopPropagation="true"><input type="number" class="form-control form-control-sm text-end text-danger p-1" @bind="item.Discount" step="0.01" style="width: 80px;" /></td>
                                 <td @onclick:stopPropagation="true"><input type="number" class="form-control form-control-sm text-end fw-semibold p-1" @bind="item.TotalPrice" step="0.01" style="width: 90px;" /></td>
                                 @foreach (var field in _perItemDropdownFields)
                                 {
@@ -417,7 +419,7 @@
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
-                            <td colspan="5" class="text-end fw-semibold">@L["Receipt_SelectedTotal"]:</td>
+                            <td colspan="6" class="text-end fw-semibold">@L["Receipt_SelectedTotal"]:</td>
                             <td class="text-end fw-bold text-primary">
                                 @_receiptItems.Where(i => i.Include).Sum(i => i.TotalPrice ?? 0).ToString("F2")
                             </td>
@@ -674,7 +676,18 @@
                 </div>
             </div>
 
-            <h6 class="mb-2">@L["Receipt_TargetAction"]: <strong>@_selectedActionName</strong></h6>
+            <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
+                <div>
+                    <h6 class="mb-0">@L["Receipt_TargetAction"]: <strong>@_selectedActionName</strong></h6>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <label class="form-label mb-0 small text-nowrap">
+                        <i class="bi bi-calendar-event me-1"></i>@L["Receipt_EntryDate"]:
+                    </label>
+                    <input type="date" class="form-control form-control-sm" style="width: 160px;"
+                           @bind="_importDate" />
+                </div>
+            </div>
 
             @* Desktop review table *@
             <div class="table-responsive d-none d-md-block mb-3">
@@ -1097,6 +1110,7 @@
     // Step 4+: Import
     private bool _importing;
     private int _importedCount;
+    private DateTime _importDate = DateTime.Today;
 
     // Draft persistence
     private Guid? _draftId;
@@ -1164,6 +1178,7 @@
                 Description = i.Description,
                 Quantity = i.Quantity,
                 UnitPrice = i.UnitPrice,
+                Discount = i.Discount,
                 TotalPrice = i.TotalPrice,
                 Include = true
             }).ToList();
@@ -1288,6 +1303,7 @@
         SetSource(_receiptConfig.QuantityFieldId, ReceiptFieldMappingSource.ReceiptQuantity);
         SetSource(_receiptConfig.UnitPriceFieldId, ReceiptFieldMappingSource.ReceiptUnitPrice);
         SetSource(_receiptConfig.DescriptionFieldId, ReceiptFieldMappingSource.ReceiptDescription);
+        SetSource(_receiptConfig.DiscountFieldId, ReceiptFieldMappingSource.ReceiptDiscount);
         SetSource(_receiptConfig.ShopFieldId, ReceiptFieldMappingSource.MerchantName);
 
         // Restore fixed-value mappings from JSON
@@ -1337,7 +1353,8 @@
             foreach (var (source, keyword) in new[] {
                 (ReceiptFieldMappingSource.ReceiptTotal, "total"),
                 (ReceiptFieldMappingSource.ReceiptQuantity, "qty"),
-                (ReceiptFieldMappingSource.ReceiptUnitPrice, "unit") })
+                (ReceiptFieldMappingSource.ReceiptUnitPrice, "unit"),
+                (ReceiptFieldMappingSource.ReceiptDiscount, "discount") })
             {
                 var match = numericFields.FirstOrDefault(f =>
                     f.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
@@ -1364,6 +1381,7 @@
             new() { ReceiptColumn = L["Receipt_Qty"], SourceProperty = "Quantity" },
             new() { ReceiptColumn = L["Receipt_UnitPrice"], SourceProperty = "UnitPrice" },
             new() { ReceiptColumn = L["Receipt_Total"], SourceProperty = "TotalPrice" },
+            new() { ReceiptColumn = L["Receipt_Discount"], SourceProperty = "Discount" },
         ];
 
         foreach (var fm in _fieldMappings)
@@ -1374,6 +1392,7 @@
                 ReceiptFieldMappingSource.ReceiptQuantity => "Quantity",
                 ReceiptFieldMappingSource.ReceiptUnitPrice => "UnitPrice",
                 ReceiptFieldMappingSource.ReceiptTotal => "TotalPrice",
+                ReceiptFieldMappingSource.ReceiptDiscount => "Discount",
                 _ => null
             };
 
@@ -1550,6 +1569,7 @@
     private void ProceedToReview()
     {
         RefreshNewValues();
+        _importDate = _scanResult?.TransactionDate?.Date ?? DateTime.Today;
         _currentStep = 3;
         _ = SaveDraftAsync();
     }
@@ -1632,6 +1652,7 @@
             {
                 _receiptItems[nextIdx].Quantity = _receiptItems[idx].Quantity;
                 _receiptItems[nextIdx].UnitPrice = _receiptItems[idx].UnitPrice;
+                _receiptItems[nextIdx].Discount = _receiptItems[idx].Discount;
                 _receiptItems[nextIdx].TotalPrice = _receiptItems[idx].TotalPrice;
             }
         }
@@ -1639,6 +1660,7 @@
         var first = _receiptItems[indices[0]];
         first.Quantity = null;
         first.UnitPrice = null;
+        first.Discount = null;
         first.TotalPrice = null;
     }
 
@@ -1656,6 +1678,7 @@
             {
                 _receiptItems[prevIdx].Quantity = _receiptItems[idx].Quantity;
                 _receiptItems[prevIdx].UnitPrice = _receiptItems[idx].UnitPrice;
+                _receiptItems[prevIdx].Discount = _receiptItems[idx].Discount;
                 _receiptItems[prevIdx].TotalPrice = _receiptItems[idx].TotalPrice;
             }
         }
@@ -1663,6 +1686,7 @@
         var last = _receiptItems[indices[^1]];
         last.Quantity = null;
         last.UnitPrice = null;
+        last.Discount = null;
         last.TotalPrice = null;
     }
 
@@ -1717,6 +1741,7 @@
         // Build conflict fields for Qty, UnitPrice, TotalPrice
         AddConflictField(state, L["Receipt_Qty"], selected, i => i.Quantity, "qty");
         AddConflictField(state, L["Receipt_UnitPrice"], selected, i => i.UnitPrice, "unitPrice");
+        AddConflictField(state, L["Receipt_Discount"], selected, i => i.Discount, "discount");
         AddConflictField(state, L["Receipt_Total"], selected, i => i.TotalPrice, "total");
 
         _mergeState = state;
@@ -1760,6 +1785,7 @@
             {
                 "qty" => i.Quantity,
                 "unitPrice" => i.UnitPrice,
+                "discount" => i.Discount,
                 "total" => i.TotalPrice,
                 _ => null
             }).Where(v => v.HasValue).Select(v => v!.Value);
@@ -1772,6 +1798,7 @@
             {
                 "qty" => item.Quantity,
                 "unitPrice" => item.UnitPrice,
+                "discount" => item.Discount,
                 "total" => item.TotalPrice,
                 _ => null
             };
@@ -1794,6 +1821,7 @@
         // Resolve each numeric field
         merged.Quantity = ResolveField("qty", items, i => i.Quantity);
         merged.UnitPrice = ResolveField("unitPrice", items, i => i.UnitPrice);
+        merged.Discount = ResolveField("discount", items, i => i.Discount);
         merged.TotalPrice = ResolveField("total", items, i => i.TotalPrice);
 
         // Merge category values: keep first non-empty value per field
@@ -2294,6 +2322,8 @@
             // 3. Create one entry per included receipt item
             var includedItems = _receiptItems.Where(i => i.Include).ToList();
 
+            var occurredAt = DateTime.SpecifyKind(_importDate, DateTimeKind.Utc);
+
             foreach (var item in includedItems)
             {
                 var fieldValues = new List<ActionEntryFieldValue>();
@@ -2307,6 +2337,7 @@
                         "Quantity" => item.Quantity?.ToString("G"),
                         "UnitPrice" => item.UnitPrice?.ToString("F2"),
                         "TotalPrice" => item.TotalPrice?.ToString("F2"),
+                        "Discount" => item.Discount?.ToString("F2"),
                         _ => null
                     };
 
@@ -2346,7 +2377,7 @@
                 }
 
                 var request = new CreateActionEntryRequest(
-                    _scanResult?.TransactionDate?.ToUniversalTime() ?? DateTime.UtcNow,
+                    occurredAt,
                     Notes: $"Receipt: {_scanResult?.MerchantName} — {item.Description}",
                     FieldValues: fieldValues);
 
@@ -2387,6 +2418,7 @@
         _errors = [];
         _successMessage = null;
         _importedCount = 0;
+        _importDate = DateTime.Today;
         _draftId = null;
         _showDraftPicker = false;
     }
@@ -2409,6 +2441,7 @@
         TransactionDate = _scanResult?.TransactionDate,
         Subtotal = _scanResult?.Subtotal,
         Tax = _scanResult?.Tax,
+        TotalDiscount = _scanResult?.TotalDiscount,
         Total = _scanResult?.Total,
         Confidence = _scanResult?.Confidence ?? 0,
         Items = _receiptItems.Select(i => new DraftReceiptItem
@@ -2416,6 +2449,7 @@
             Description = i.Description,
             Quantity = i.Quantity,
             UnitPrice = i.UnitPrice,
+            Discount = i.Discount,
             TotalPrice = i.TotalPrice,
             Include = i.Include,
             MatchedRuleId = i.MatchedRule?.Id,
@@ -2446,6 +2480,7 @@
             TransactionDate = state.TransactionDate,
             Subtotal = state.Subtotal,
             Tax = state.Tax,
+            TotalDiscount = state.TotalDiscount,
             Total = state.Total,
             Confidence = state.Confidence,
             Items = state.Items.Select(i => new ReceiptLineItem
@@ -2453,6 +2488,7 @@
                 Description = i.Description,
                 Quantity = i.Quantity,
                 UnitPrice = i.UnitPrice,
+                Discount = i.Discount,
                 TotalPrice = i.TotalPrice
             }).ToList()
         };
@@ -2464,6 +2500,7 @@
                 Description = i.Description,
                 Quantity = i.Quantity,
                 UnitPrice = i.UnitPrice,
+                Discount = i.Discount,
                 TotalPrice = i.TotalPrice,
                 Include = i.Include
             };
@@ -2820,6 +2857,7 @@
         public string Description { get; set; } = string.Empty;
         public decimal? Quantity { get; set; }
         public decimal? UnitPrice { get; set; }
+        public decimal? Discount { get; set; }
         public decimal? TotalPrice { get; set; }
         public bool Include { get; set; } = true;
 

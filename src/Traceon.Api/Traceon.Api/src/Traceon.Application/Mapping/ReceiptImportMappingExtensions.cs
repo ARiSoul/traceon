@@ -15,6 +15,7 @@ public static class ReceiptImportMappingExtensions
             TotalFieldId = entity.TotalFieldId,
             QuantityFieldId = entity.QuantityFieldId,
             UnitPriceFieldId = entity.UnitPriceFieldId,
+            DiscountFieldId = entity.DiscountFieldId,
             StaticFieldValues = entity.StaticFieldValues,
             CreatedAtUtc = entity.CreatedAtUtc,
             UpdatedAtUtc = entity.UpdatedAtUtc

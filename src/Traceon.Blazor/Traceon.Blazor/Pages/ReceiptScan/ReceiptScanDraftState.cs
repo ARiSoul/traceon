@@ -17,6 +17,7 @@ public sealed class ReceiptScanDraftState
     public DateTime? TransactionDate { get; set; }
     public decimal? Subtotal { get; set; }
     public decimal? Tax { get; set; }
+    public decimal? TotalDiscount { get; set; }
     public decimal? Total { get; set; }
     public double Confidence { get; set; }
 
@@ -32,6 +33,7 @@ public sealed class DraftReceiptItem
     public string Description { get; set; } = string.Empty;
     public decimal? Quantity { get; set; }
     public decimal? UnitPrice { get; set; }
+    public decimal? Discount { get; set; }
     public decimal? TotalPrice { get; set; }
     public bool Include { get; set; } = true;
     public Guid? MatchedRuleId { get; set; }

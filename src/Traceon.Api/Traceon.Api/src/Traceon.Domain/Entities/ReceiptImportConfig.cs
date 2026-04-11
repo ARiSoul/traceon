@@ -8,6 +8,7 @@ public sealed class ReceiptImportConfig : Entity
     public Guid? TotalFieldId { get; private set; }
     public Guid? QuantityFieldId { get; private set; }
     public Guid? UnitPriceFieldId { get; private set; }
+    public Guid? DiscountFieldId { get; private set; }
 
     /// <summary>JSON dictionary of fieldId to static value.</summary>
     public string? StaticFieldValues { get; private set; }
@@ -34,6 +35,7 @@ public sealed class ReceiptImportConfig : Entity
         Guid? totalFieldId,
         Guid? quantityFieldId,
         Guid? unitPriceFieldId,
+        Guid? discountFieldId = null,
         string? staticFieldValues = null)
     {
         ShopFieldId = shopFieldId;
@@ -41,6 +43,7 @@ public sealed class ReceiptImportConfig : Entity
         TotalFieldId = totalFieldId;
         QuantityFieldId = quantityFieldId;
         UnitPriceFieldId = unitPriceFieldId;
+        DiscountFieldId = discountFieldId;
         StaticFieldValues = staticFieldValues;
         MarkUpdated();
     }

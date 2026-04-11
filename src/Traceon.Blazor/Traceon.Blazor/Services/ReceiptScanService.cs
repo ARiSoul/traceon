@@ -35,6 +35,7 @@ public sealed class ReceiptScanService(HttpClient http)
             TransactionDate = scanResponse.TransactionDate,
             Subtotal = scanResponse.Subtotal,
             Tax = scanResponse.Tax,
+            TotalDiscount = scanResponse.TotalDiscount,
             Total = scanResponse.Total,
             Confidence = scanResponse.Confidence,
             Items = scanResponse.Items.Select(i => new ReceiptLineItem
@@ -42,6 +43,7 @@ public sealed class ReceiptScanService(HttpClient http)
                 Description = i.Description,
                 Quantity = i.Quantity,
                 UnitPrice = i.UnitPrice,
+                Discount = i.Discount,
                 TotalPrice = i.TotalPrice
             }).ToList()
         };
@@ -56,6 +58,7 @@ public sealed class ReceiptScanResult
     public List<ReceiptLineItem> Items { get; set; } = [];
     public decimal? Subtotal { get; set; }
     public decimal? Tax { get; set; }
+    public decimal? TotalDiscount { get; set; }
     public decimal? Total { get; set; }
     /// <summary>Overall OCR confidence (0.0–1.0).</summary>
     public double Confidence { get; set; }
@@ -67,5 +70,6 @@ public sealed class ReceiptLineItem
     public string Description { get; set; } = string.Empty;
     public decimal? Quantity { get; set; }
     public decimal? UnitPrice { get; set; }
+    public decimal? Discount { get; set; }
     public decimal? TotalPrice { get; set; }
 }

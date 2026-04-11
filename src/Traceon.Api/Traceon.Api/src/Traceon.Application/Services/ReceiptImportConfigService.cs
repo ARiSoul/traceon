@@ -47,6 +47,7 @@ public sealed class ReceiptImportConfigService(
                 request.TotalFieldId,
                 request.QuantityFieldId,
                 request.UnitPriceFieldId,
+                request.DiscountFieldId,
                 request.StaticFieldValues);
             await repository.AddAsync(config, cancellationToken);
             logger.LogInformation("Receipt import config created for action {ActionId}.", trackedActionId);
@@ -59,6 +60,7 @@ public sealed class ReceiptImportConfigService(
                 request.TotalFieldId,
                 request.QuantityFieldId,
                 request.UnitPriceFieldId,
+                request.DiscountFieldId,
                 request.StaticFieldValues);
             await repository.UpdateAsync(config, cancellationToken);
             logger.LogInformation("Receipt import config updated for action {ActionId}.", trackedActionId);

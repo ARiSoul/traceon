@@ -40,6 +40,7 @@ public sealed class ReceiptOcrService(
             var transactionDate = GetDateField(fields, "TransactionDate");
             var subtotal = GetCurrencyAmount(fields, "Subtotal");
             var tax = GetCurrencyAmount(fields, "TotalTax");
+            var totalDiscount = GetCurrencyAmount(fields, "TotalDiscount");
             var total = GetCurrencyAmount(fields, "Total");
 
             var items = new List<ReceiptScanLineItemResponse>();
@@ -54,6 +55,7 @@ public sealed class ReceiptOcrService(
                     var description = GetStringField(itemFields, "Description") ?? "—";
                     var quantity = GetNumberField(itemFields, "Quantity");
                     var unitPrice = GetCurrencyAmount(itemFields, "Price");
+                    var discount = GetCurrencyAmount(itemFields, "Discount");
                     var totalPrice = GetCurrencyAmount(itemFields, "TotalPrice");
 
                     // If total price is missing, calculate from qty × unit
@@ -73,6 +75,7 @@ public sealed class ReceiptOcrService(
                         Description = description,
                         Quantity = quantity,
                         UnitPrice = unitPrice,
+                        Discount = discount,
                         TotalPrice = totalPrice
                     });
                 }
@@ -91,6 +94,7 @@ public sealed class ReceiptOcrService(
                 Items = items,
                 Subtotal = subtotal,
                 Tax = tax,
+                TotalDiscount = totalDiscount,
                 Total = total,
                 Confidence = confidence
             });
