@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IFieldAnalyticsRuleService, FieldAnalyticsRuleService>();
         services.AddScoped<IFieldDependencyRuleService, FieldDependencyRuleService>();
         services.AddScoped<IReceiptImportConfigService, ReceiptImportConfigService>();
+        services.AddScoped<IReceiptScanDraftService, ReceiptScanDraftService>();
 
         return services;
     }

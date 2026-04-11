@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Traceon.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Traceon.Infrastructure.Persistence;
 namespace Traceon.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(TraceonDbContext))]
-    partial class TraceonDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260410185318_AddStaticFieldValues")]
+    partial class AddStaticFieldValues
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -650,62 +653,6 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                     b.HasIndex("TargetFieldId");
 
                     b.ToTable("ReceiptMappingRules", "Traceon");
-                });
-
-            modelBuilder.Entity("Traceon.Domain.Entities.ReceiptScanDraft", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CurrentStep")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("MerchantName")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<Guid>("SelectedActionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SelectedActionName")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("SerializedState")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("Total")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("TransactionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ReceiptScanDrafts", "Traceon");
                 });
 
             modelBuilder.Entity("Traceon.Domain.Entities.Tag", b =>

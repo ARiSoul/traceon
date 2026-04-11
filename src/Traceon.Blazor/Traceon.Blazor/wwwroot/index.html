@@ -59,6 +59,53 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         };
+        /**
+         * Compresses an image from a Blazor InputFile stream to a JPEG under maxBytes.
+         * Returns a base64 data-URL string that can be decoded back to a byte array in C#.
+         */
+        window.compressImage = function (dotNetStreamRef, maxWidth, maxBytes) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const buffer = await dotNetStreamRef.arrayBuffer();
+                    const blob = new Blob([buffer]);
+                    const bmp = await createImageBitmap(blob);
+
+                    // Scale down if wider than maxWidth, preserving aspect ratio
+                    let w = bmp.width, h = bmp.height;
+                    if (w > maxWidth) {
+                        h = Math.round(h * maxWidth / w);
+                        w = maxWidth;
+                    }
+
+                    const canvas = new OffscreenCanvas(w, h);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(bmp, 0, 0, w, h);
+                    bmp.close();
+
+                    // Binary-search for the highest JPEG quality that stays under maxBytes
+                    let lo = 0.3, hi = 0.92, result = null;
+                    for (let i = 0; i < 6; i++) {
+                        const mid = (lo + hi) / 2;
+                        const b = await canvas.convertToBlob({ type: 'image/jpeg', quality: mid });
+                        if (b.size <= maxBytes) {
+                            result = b;
+                            lo = mid;
+                        } else {
+                            hi = mid;
+                        }
+                    }
+                    // If even the lowest quality is too large, just use it (best effort)
+                    if (!result) {
+                        result = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.3 });
+                    }
+
+                    const arr = new Uint8Array(await result.arrayBuffer());
+                    resolve(arr);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        };
     </script>
 </body>
 

@@ -5,4 +5,5 @@ public sealed record UpdateReceiptImportConfigRequest(
     Guid? DescriptionFieldId = null,
     Guid? TotalFieldId = null,
     Guid? QuantityFieldId = null,
-    Guid? UnitPriceFieldId = null);
+    Guid? UnitPriceFieldId = null,
+    string? StaticFieldValues = null);

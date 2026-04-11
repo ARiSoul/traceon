@@ -9,6 +9,9 @@ public sealed class ReceiptImportConfig : Entity
     public Guid? QuantityFieldId { get; private set; }
     public Guid? UnitPriceFieldId { get; private set; }
 
+    /// <summary>JSON dictionary of fieldId to static value.</summary>
+    public string? StaticFieldValues { get; private set; }
+
     private readonly List<ReceiptMappingRule> _mappingRules = [];
     public IReadOnlyCollection<ReceiptMappingRule> MappingRules => _mappingRules.AsReadOnly();
 
@@ -30,13 +33,15 @@ public sealed class ReceiptImportConfig : Entity
         Guid? descriptionFieldId,
         Guid? totalFieldId,
         Guid? quantityFieldId,
-        Guid? unitPriceFieldId)
+        Guid? unitPriceFieldId,
+        string? staticFieldValues = null)
     {
         ShopFieldId = shopFieldId;
         DescriptionFieldId = descriptionFieldId;
         TotalFieldId = totalFieldId;
         QuantityFieldId = quantityFieldId;
         UnitPriceFieldId = unitPriceFieldId;
+        StaticFieldValues = staticFieldValues;
         MarkUpdated();
     }
 }

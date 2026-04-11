@@ -24,6 +24,8 @@
 }
 
 @* ── Wizard Steps Indicator ── *@
+@if (!_showDraftPicker)
+{
 <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
     @foreach (var (step, label, icon) in _wizardSteps)
     {
@@ -46,9 +48,84 @@
         }
     }
 </div>
+}
+
+@* ── Draft Picker ── *@
+@if (_showDraftPicker)
+{
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-clock-history me-2"></i>@L["Receipt_DraftTitle"]
+            </h5>
+            <p class="text-muted mb-3">@L["Receipt_DraftHint"]</p>
+
+            @if (_loadingDrafts)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3 mb-4">
+                    @foreach (var draft in _drafts)
+                    {
+                        <div class="col-12 col-md-6">
+                            <div class="card border h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="min-w-0">
+                                            <h6 class="mb-1 text-truncate">
+                                                <i class="bi bi-shop me-1"></i>@(draft.MerchantName ?? L["Receipt_UnknownMerchant"])
+                                            </h6>
+                                            <div class="small text-muted">
+                                                <i class="bi bi-bullseye me-1"></i>@draft.SelectedActionName
+                                            </div>
+                                            <div class="d-flex gap-3 mt-1 small">
+                                                @if (draft.TransactionDate.HasValue)
+                                                {
+                                                    <span><i class="bi bi-calendar me-1"></i>@draft.TransactionDate.Value.ToLocalTime().ToString("g")</span>
+                                                }
+                                                @if (draft.Total.HasValue)
+                                                {
+                                                    <span class="fw-semibold"><i class="bi bi-currency-euro me-1"></i>@draft.Total.Value.ToString("F2")</span>
+                                                }
+                                            </div>
+                                            <div class="mt-1">
+                                                <span class="badge bg-secondary bg-opacity-25 small">
+                                                    @L[$"Receipt_StepLabel_{draft.CurrentStep}"]
+                                                </span>
+                                                <span class="text-muted small ms-1">
+                                                    @((draft.UpdatedAtUtc ?? draft.CreatedAtUtc).ToLocalTime().ToString("g"))
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1 ms-2">
+                                            <button class="btn btn-primary btn-sm" @onclick="() => ResumeDraftAsync(draft)">
+                                                <i class="bi bi-play-fill me-1"></i>@L["Receipt_DraftResume"]
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" @onclick="() => AbandonDraftAsync(draft)">
+                                                <i class="bi bi-trash3 me-1"></i>@L["Receipt_DraftAbandon"]
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <button class="btn btn-outline-primary" @onclick="StartNewScan">
+                <i class="bi bi-plus-circle me-1"></i>@L["Receipt_DraftStartNew"]
+            </button>
+        </div>
+    </div>
+}
 
 @* ── Step 1: Select Target Action ── *@
-@if (_currentStep == 0)
+@if (_currentStep == 0 && !_showDraftPicker)
 {
     <div class="card">
         <div class="card-body">
@@ -123,12 +200,20 @@
             <h5 class="mb-3">@L["Receipt_UploadTitle"]</h5>
             <p class="text-muted mb-4">@L["Receipt_UploadHint"]</p>
 
-            <div class="d-flex justify-content-center">
-                <InputFile OnChange="OnFileSelected"
-                           accept="image/*"
-                           capture="environment"
-                           class="form-control"
-                           style="max-width: 400px;" />
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <label class="btn btn-outline-primary mb-0">
+                    <i class="bi bi-camera me-1"></i>@L["Receipt_TakePhoto"]
+                    <InputFile OnChange="OnFileSelected"
+                               accept="image/*"
+                               capture="environment"
+                               style="display: none;" />
+                </label>
+                <label class="btn btn-outline-secondary mb-0">
+                    <i class="bi bi-image me-1"></i>@L["Receipt_ChooseFile"]
+                    <InputFile OnChange="OnFileSelected"
+                               accept="image/*"
+                               style="display: none;" />
+                </label>
             </div>
 
             @if (_selectedFile is not null)
@@ -183,70 +268,22 @@
                 </div>
             </div>
 
-            @* Column mapping *@
-            <div class="card bg-light mb-3">
-                <div class="card-body py-2">
-                    <h6 class="mb-2"><i class="bi bi-columns-gap me-1"></i>@L["Receipt_ColumnMapping"]</h6>
-                    <div class="row g-2">
-                        @foreach (var mapping in _columnMappings)
-                        {
-                            <div class="col-6 col-md-3">
-                                <label class="form-label small mb-1">@mapping.ReceiptColumn</label>
-                                <select class="form-select form-select-sm" @bind="mapping.TargetFieldId">
-                                    <option value="@Guid.Empty">— @L["Receipt_Skip"] —</option>
-                                    @foreach (var field in _actionFields)
-                                    {
-                                        <option value="@field.Id">@field.Name (@field.FieldType)</option>
-                                    }
-                                </select>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            @* Batch assignment for dropdown fields *@
-            @if (_dropdownFields.Count > 0)
-            {
-                <div class="card border-primary border-opacity-25 mb-3">
-                    <div class="card-body py-2">
-                        <h6 class="mb-2"><i class="bi bi-collection me-1"></i>@L["Receipt_BatchAssign"]</h6>
-                        <p class="text-muted small mb-2">@L["Receipt_BatchAssignHint"]</p>
-                        <div class="row g-2">
-                            @foreach (var field in _dropdownFields)
-                            {
-                                var fieldId = field.Id;
-                                var options = GetBatchDropdownOptions(field);
-                                var batchVal = GetBatchValue(fieldId) ?? "";
-                                <div class="col-6 col-md-3">
-                                    <label class="form-label small mb-1">@field.Name</label>
-                                    <select class="form-select form-select-sm"
-                                            value="@batchVal"
-                                            @onchange="e => ApplyBatchSelection(fieldId, e.Value?.ToString())">
-                                        <option value="">— @L["Receipt_NoChange"] —</option>
-                                        @foreach (var opt in options)
-                                        {
-                                            <option value="@opt">@opt</option>
-                                        }
-                                        <option value="__new__">+ @L["Receipt_NewValue"]...</option>
-                                    </select>
-                                    @if (batchVal == "__new__")
-                                    {
-                                        <input type="text" class="form-control form-control-sm mt-1"
-                                               placeholder="@L["Receipt_TypeNewValue"]"
-                                               @onchange="e => OnBatchNewValueEntered(fieldId, e.Value?.ToString())" />
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-            }
+            @* Field mapping via shared editor (rules hidden — managed inline in items table) *@
+            <ReceiptFieldMappingEditor FieldMappings="_fieldMappings"
+                                       MappingRules="_mappingRules"
+                                       DropdownOptions="_resolvedDropdownOptions"
+                                       DependencyRules="_depRules"
+                                       MerchantName="@_scanResult?.MerchantName"
+                                       ShowMappingRules="false"
+                                       OnMappingChanged="OnSharedMappingChanged"
+                                       OnAddRule="OnImportAddRuleAsync"
+                                       OnDeleteRule="OnImportDeleteRuleAsync" />
 
             @* Auto-categorization summary & uncategorized items *@
             @{
+                var perItemDdFields = _perItemDropdownFields;
                 var uncategorizedItems = _receiptItems
-                    .Where(i => i.Include && _dropdownFields.Any(f => string.IsNullOrEmpty(i.GetCategoryValue(f.Id))))
+                    .Where(i => i.Include && perItemDdFields.Any(f => string.IsNullOrEmpty(i.GetCategoryValue(f.Id))))
                     .ToList();
             }
             <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -269,11 +306,40 @@
     @* Items — Desktop table *@
     <div class="card d-none d-md-block">
         <div class="card-body">
-            <h6 class="mb-3">
-                <i class="bi bi-list-ul me-1"></i>@L["Receipt_Items"]
-                <span class="badge bg-primary ms-1">@_receiptItems.Count(i => i.Include)</span>
-                / @_receiptItems.Count
-            </h6>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">
+                    <i class="bi bi-list-ul me-1"></i>@L["Receipt_Items"]
+                    <span class="badge bg-primary ms-1">@_receiptItems.Count(i => i.Include)</span>
+                    / @_receiptItems.Count
+                </h6>
+                <div class="d-flex align-items-center gap-2">
+                    @if (SelectedCount > 0)
+                    {
+                        <span class="badge bg-info-subtle text-info-emphasis py-1 px-2">
+                            <i class="bi bi-check2-square me-1"></i>@SelectedCount @L["Receipt_RowsSelected"]
+                        </span>
+                        @if (SelectedCount >= 2)
+                        {
+                            <button class="btn btn-outline-info btn-sm" @onclick="OpenMergeModal"
+                                    title="@L["Receipt_MergeRows"]">
+                                <i class="bi bi-union me-1"></i>@L["Receipt_MergeRows"]
+                            </button>
+                        }
+                        <button class="btn btn-outline-secondary btn-sm py-0" @onclick="ClearSelection"
+                                title="@L["Receipt_ClearSelection"]">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    }
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="ShiftPricesUp" title="@L["Receipt_ShiftPricesUp"]">
+                        <i class="bi bi-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="ShiftPricesDown" title="@L["Receipt_ShiftPricesDown"]">
+                        <i class="bi bi-arrow-down"></i>
+                    </button>
+                </div>
+            </div>
+
+            <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>@L["Receipt_ShiftHint"]</p>
 
             <div class="table-responsive">
                 <table class="table table-sm table-hover align-middle mb-0">
@@ -285,46 +351,77 @@
                                        @onchange="ToggleAllItems" />
                             </th>
                             <th>@L["Receipt_Description"]</th>
+                            <th style="width: 140px;"><i class="bi bi-magic me-1"></i>@L["RcptCfg_Rule"]</th>
                             <th style="width: 80px;">@L["Receipt_Qty"]</th>
                             <th style="width: 100px;">@L["Receipt_UnitPrice"]</th>
                             <th style="width: 100px;">@L["Receipt_Total"]</th>
-                            @foreach (var field in _dropdownFields)
+                            @foreach (var field in _perItemDropdownFields)
                             {
                                 <th style="min-width: 150px;">
                                     @field.Name
                                     <i class="bi bi-tag text-muted ms-1" style="font-size: 0.7rem;"></i>
                                 </th>
                             }
+                            <th style="width: 36px;"></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in _receiptItems)
                         {
-                            <tr class="@(!item.Include ? "opacity-50" : "")">
-                                <td>
+                            <tr class="@(!item.Include ? "opacity-50" : "") @(item.Selected ? "table-info" : "")"
+                                style="@(item.Selected ? "border-left: 3px solid var(--bs-info); cursor: pointer;" : "cursor: pointer;")"
+                                @onclick="() => ToggleRowSelection(item)">
+                                <td @onclick:stopPropagation="true">
                                     <input type="checkbox" class="form-check-input"
                                            @bind="item.Include" />
                                 </td>
                                 <td class="@(!item.Include ? "text-decoration-line-through" : "")">
                                     @item.Description
                                 </td>
-                                <td class="text-end">@item.Quantity?.ToString("G")</td>
-                                <td class="text-end">@item.UnitPrice?.ToString("F2")</td>
-                                <td class="text-end fw-semibold">@item.TotalPrice?.ToString("F2")</td>
-                                @foreach (var field in _dropdownFields)
+                                <td @onclick:stopPropagation="true">
+                                    @if (item.MatchedRule is not null)
+                                    {
+                                        <span class="badge bg-success-subtle text-success-emphasis" role="button"
+                                              title="@item.MatchedRule.Pattern → @item.MatchedRule.Value"
+                                              @onclick="() => OpenRuleEditor(item, item.MatchedRule)">
+                                            <i class="bi bi-magic me-1"></i>@item.MatchedRule.Value
+                                        </span>
+                                        <button class="btn btn-link btn-sm text-danger p-0 ms-1" style="font-size: 0.7rem;"
+                                                title="@L["Receipt_ClearRule"]" @onclick="() => ClearItemRuleAsync(item)">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    }
+                                    else if (item.Include && _dropdownFields.Count > 0)
+                                    {
+                                        <button class="btn btn-outline-warning btn-sm py-0 px-1" style="font-size: 0.7rem;"
+                                                @onclick="() => OpenRuleEditor(item, null)">
+                                            <i class="bi bi-plus-circle me-1"></i>@L["RcptCfg_Rule"]
+                                        </button>
+                                    }
+                                </td>
+                                <td @onclick:stopPropagation="true"><input type="number" class="form-control form-control-sm text-end p-1" @bind="item.Quantity" step="any" style="width: 70px;" /></td>
+                                <td @onclick:stopPropagation="true"><input type="number" class="form-control form-control-sm text-end p-1" @bind="item.UnitPrice" step="0.01" style="width: 90px;" /></td>
+                                <td @onclick:stopPropagation="true"><input type="number" class="form-control form-control-sm text-end fw-semibold p-1" @bind="item.TotalPrice" step="0.01" style="width: 90px;" /></td>
+                                @foreach (var field in _perItemDropdownFields)
                                 {
                                     @RenderDropdownCell(item, field)
                                 }
+                                <td @onclick:stopPropagation="true">
+                                    <button class="btn btn-link btn-sm text-danger p-0" title="@L["Receipt_RemoveRow"]"
+                                            @onclick="() => RemoveItem(item)">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </td>
                             </tr>
                         }
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
-                            <td colspan="4" class="text-end fw-semibold">@L["Receipt_SelectedTotal"]:</td>
+                            <td colspan="5" class="text-end fw-semibold">@L["Receipt_SelectedTotal"]:</td>
                             <td class="text-end fw-bold text-primary">
                                 @_receiptItems.Where(i => i.Include).Sum(i => i.TotalPrice ?? 0).ToString("F2")
                             </td>
-                            <td colspan="@_dropdownFields.Count"></td>
+                            <td colspan="@(_perItemDropdownFields.Count + 1)"></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -343,36 +440,92 @@
                 <span class="badge bg-primary ms-1">@_receiptItems.Count(i => i.Include)</span>
                 / @_receiptItems.Count
             </h6>
-            <div class="form-check form-check-inline mb-0">
-                <input type="checkbox" class="form-check-input" id="toggleAllMobile"
-                       checked="@_receiptItems.All(i => i.Include)"
-                       @onchange="ToggleAllItems" />
-                <label class="form-check-label small" for="toggleAllMobile">@L["DataGrid_SelectAll"]</label>
+            <div class="d-flex align-items-center gap-2">
+                @if (SelectedCount > 0)
+                {
+                    <span class="badge bg-info-subtle text-info-emphasis small py-1 px-2">@SelectedCount</span>
+                    @if (SelectedCount >= 2)
+                    {
+                        <button class="btn btn-outline-info btn-sm py-0" @onclick="OpenMergeModal">
+                            <i class="bi bi-union"></i>
+                        </button>
+                    }
+                    <button class="btn btn-outline-secondary btn-sm py-0" @onclick="ClearSelection">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                }
+                <div class="d-flex gap-1">
+                    <button class="btn btn-outline-secondary btn-sm py-0" @onclick="ShiftPricesUp" title="@L["Receipt_ShiftPricesUp"]">
+                        <i class="bi bi-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm py-0" @onclick="ShiftPricesDown" title="@L["Receipt_ShiftPricesDown"]">
+                        <i class="bi bi-arrow-down"></i>
+                    </button>
+                </div>
+                <div class="form-check form-check-inline mb-0">
+                    <input type="checkbox" class="form-check-input" id="toggleAllMobile"
+                           checked="@_receiptItems.All(i => i.Include)"
+                           @onchange="ToggleAllItems" />
+                    <label class="form-check-label small" for="toggleAllMobile">@L["DataGrid_SelectAll"]</label>
+                </div>
             </div>
         </div>
 
+        <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>@L["Receipt_ShiftHintMobile"]</p>
+
         @foreach (var item in _receiptItems)
         {
-            <div class="card mb-2 @(!item.Include ? "opacity-50" : "")">
+            <div class="card mb-2 @(!item.Include ? "opacity-50" : "")"
+                 style="@(item.Selected ? "border-left: 3px solid var(--bs-info); background: var(--bs-info-bg-subtle);" : "")"
+                 @onclick="() => ToggleRowSelection(item)">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-start gap-2">
-                        <input type="checkbox" class="form-check-input mt-1" @bind="item.Include" />
+                        <input type="checkbox" class="form-check-input mt-1" @bind="item.Include" @onclick:stopPropagation="true" />
                         <div class="flex-grow-1 min-w-0">
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start">
                                 <span class="fw-semibold text-truncate @(!item.Include ? "text-decoration-line-through" : "")">
                                     @item.Description
                                 </span>
-                                <span class="fw-bold text-primary text-nowrap ms-2">@item.TotalPrice?.ToString("F2")</span>
+                                <div class="d-flex align-items-center gap-1 ms-2">
+                                    <input type="number" class="form-control form-control-sm text-end fw-bold p-1"
+                                           @bind="item.TotalPrice" step="0.01" style="width: 80px;" />
+                                    <button class="btn btn-link btn-sm text-danger p-0" @onclick="() => RemoveItem(item)"
+                                            title="@L["Receipt_RemoveRow"]">
+                                        <i class="bi bi-trash3" style="font-size: 0.75rem;"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="text-muted small">
-                                @if (item.Quantity is not null)
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <div class="d-flex align-items-center gap-1">
+                                    <input type="number" class="form-control form-control-sm text-end p-1"
+                                           @bind="item.Quantity" step="any" style="width: 55px;" placeholder="Qty" />
+                                    <span class="text-muted small">×</span>
+                                    <input type="number" class="form-control form-control-sm text-end p-1"
+                                           @bind="item.UnitPrice" step="0.01" style="width: 70px;" placeholder="Price" />
+                                </div>
+                                @if (item.MatchedRule is not null)
                                 {
-                                    <span>@item.Quantity?.ToString("G") × @item.UnitPrice?.ToString("F2")</span>
+                                    <span class="badge bg-success-subtle text-success-emphasis" role="button"
+                                          title="@item.MatchedRule.Pattern → @item.MatchedRule.Value"
+                                          @onclick="() => OpenRuleEditor(item, item.MatchedRule)">
+                                        <i class="bi bi-magic me-1"></i>@item.MatchedRule.Value
+                                    </span>
+                                    <button class="btn btn-link btn-sm text-danger p-0" style="font-size: 0.65rem;"
+                                            @onclick="() => ClearItemRuleAsync(item)">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                }
+                                else if (item.Include && _dropdownFields.Count > 0)
+                                {
+                                    <button class="btn btn-outline-warning btn-sm py-0 px-1" style="font-size: 0.65rem;"
+                                            @onclick="() => OpenRuleEditor(item, null)">
+                                        <i class="bi bi-plus-circle me-1"></i>@L["RcptCfg_Rule"]
+                                    </button>
                                 }
                             </div>
                             @if (item.Include)
                             {
-                                @foreach (var field in _dropdownFields)
+                                @foreach (var field in _perItemDropdownFields)
                                 {
                                     var fieldId = field.Id;
                                     var currentValue = item.GetCategoryValue(fieldId);
@@ -415,6 +568,69 @@
 
         @RenderNewValuesAlert()
         @RenderMapStepNav()
+    </div>
+}
+
+@* ── Rule Editor Modal (rendered once, shown when _ruleEditItem is set) ── *@
+@{ @RenderInlineRuleEditor() }
+
+@* ── Merge Rows Modal ── *@
+@if (_mergeState is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title mb-0">
+                        <i class="bi bi-union me-1"></i>@L["Receipt_MergeRows"]
+                    </h6>
+                    <button type="button" class="btn-close" @onclick="CloseMergeModal"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small mb-1">@L["Receipt_Description"]</label>
+                        <input type="text" class="form-control form-control-sm" @bind="_mergeState.Description" />
+                    </div>
+
+                    @foreach (var field in _mergeState.ConflictFields)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label small mb-1">@field.Label</label>
+                            <div class="d-flex gap-2 flex-wrap mb-1">
+                                @foreach (var opt in field.Options)
+                                {
+                                    var isActive = field.SelectedOption == opt.Key;
+                                    <button class="btn btn-sm @(isActive ? "btn-primary" : "btn-outline-secondary")"
+                                            @onclick="() => SelectMergeOption(field, opt.Key)">
+                                        @opt.Label <span class="fw-semibold ms-1">@opt.DisplayValue</span>
+                                    </button>
+                                }
+                            </div>
+                            @if (field.SelectedOption == "manual")
+                            {
+                                <input type="number" class="form-control form-control-sm mt-1"
+                                       @bind="field.ManualValue" step="0.01" />
+                            }
+                        </div>
+                    }
+
+                    @if (_mergeState.ConflictFields.Count == 0)
+                    {
+                        <div class="alert alert-success py-2 mb-0">
+                            <i class="bi bi-check-circle me-1"></i>@L["Receipt_MergeNoConflicts"]
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer py-2">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CloseMergeModal">
+                        <i class="bi bi-x-lg me-1"></i>@L["Common_Cancel"]
+                    </button>
+                    <button class="btn btn-primary btn-sm" @onclick="ExecuteMerge">
+                        <i class="bi bi-union me-1"></i>@L["Receipt_MergeRows"]
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 }
 
@@ -525,7 +741,10 @@
                                     <small class="text-muted">@field.Name: </small>
                                     <small class="@(isNew ? "text-warning fw-semibold" : "")">
                                         @val
-                                        @if (isNew) { <i class="bi bi-lightning-fill text-warning"></i> }
+                                        @if (isNew)
+                                        {
+                                            <i class="bi bi-lightning-fill text-warning"></i>
+                                        }
                                     </small>
                                 }
                             }
@@ -539,62 +758,6 @@
                 <div class="alert alert-info py-2">
                     <i class="bi bi-info-circle me-1"></i>
                     @L["Receipt_NewValuesInfo"]
-                </div>
-            }
-
-            @* ── Suggest creating rules for manually categorized items ── *@
-            @{
-                var suggestedRules = GetSuggestedRules(includedItems);
-            }
-            @if (suggestedRules.Count > 0)
-            {
-                <div class="card border-warning mb-3">
-                    <div class="card-header bg-warning bg-opacity-10 py-2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>
-                                <i class="bi bi-lightbulb me-1"></i>
-                                @L["Receipt_SuggestRules"]
-                            </span>
-                            <div class="form-check form-switch mb-0">
-                                <input type="checkbox" class="form-check-input" id="createRulesToggle" @bind="_createSuggestedRules" />
-                                <label class="form-check-label small" for="createRulesToggle">@L["Receipt_CreateRulesOnImport"]</label>
-                            </div>
-                        </div>
-                    </div>
-                    @if (_createSuggestedRules)
-                    {
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-sm mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th style="width: 40px;"></th>
-                                            <th>@L["RcptCfg_Pattern"]</th>
-                                            <th>@L["RcptCfg_TargetField"]</th>
-                                            <th>@L["RcptCfg_Value"]</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var suggestion in suggestedRules)
-                                        {
-                                            var captured = suggestion;
-                                            var isSelected = _selectedSuggestedRules.Contains(captured.Key);
-                                            <tr class="@(isSelected ? "" : "opacity-50")">
-                                                <td>
-                                                    <input type="checkbox" class="form-check-input"
-                                                           checked="@isSelected"
-                                                           @onchange="e => ToggleSuggestedRule(captured.Key, (bool)(e.Value ?? false))" />
-                                                </td>
-                                                <td><code>@captured.Description</code></td>
-                                                <td><span class="badge bg-secondary">@captured.FieldName</span></td>
-                                                <td><span class="badge bg-primary">@captured.Value</span></td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    }
                 </div>
             }
 
@@ -630,75 +793,221 @@
             </p>
 
             <div class="d-flex justify-content-center gap-2 flex-wrap">
-                <a href="@($"/tracked-actions/{_selectedActionId}")" class="btn btn-primary">
+                <a href="@($"/entries/action/{_selectedActionId}")" class="btn btn-primary">
                     <i class="bi bi-eye me-1"></i>@L["Receipt_ViewAction"]
                 </a>
                 <button class="btn btn-outline-primary" @onclick="Reset">
                     <i class="bi bi-receipt me-1"></i>@L["Receipt_ScanAnother"]
                 </button>
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="bi bi-house me-1"></i>@L["Nav_Home"]
+                </a>
             </div>
         </div>
     </div>
 }
 
 @* ── Shared render fragments ── *@
-@{ RenderFragment RenderDropdownCell(ReceiptItemRow item, ActionFieldResponse field) => __builder =>
-{
-    var fieldId = field.Id;
-    var currentValue = item.GetCategoryValue(fieldId);
-    var options = GetItemDropdownOptions(item, field);
-    <td>
-        <select class="form-select form-select-sm"
-                value="@currentValue"
-                @onchange="e => OnItemCategoryChanged(item, fieldId, e.Value?.ToString())">
-            <option value="">— @L["Receipt_Uncategorized"] —</option>
-            @foreach (var opt in options)
-            {
-                <option value="@opt">@opt</option>
-            }
-            <option value="__new__">+ @L["Receipt_NewValue"]...</option>
-        </select>
-        @if (currentValue == "__new__")
-        {
-            <input type="text" class="form-control form-control-sm mt-1"
-                   placeholder="@L["Receipt_TypeNewValue"]"
-                   @onchange="e => OnNewValueEntered(item, fieldId, e.Value?.ToString())" />
-        }
-    </td>
-}; }
-
-@{ RenderFragment RenderNewValuesAlert() => __builder =>
-{
-    @if (_newDropdownValues.Count > 0)
+@{
+    RenderFragment RenderDropdownCell(ReceiptItemRow item, ActionFieldResponse field) => __builder =>
     {
-        <div class="alert alert-warning mt-3 py-2">
-            <i class="bi bi-lightning me-1"></i>
-            <strong>@L["Receipt_NewValuesWillBeCreated"]:</strong>
-            <div class="d-flex gap-2 flex-wrap mt-1">
-                @foreach (var (fieldName, value) in _newDropdownValues)
+        var fieldId = field.Id;
+        var currentValue = item.GetCategoryValue(fieldId);
+        var options = GetItemDropdownOptions(item, field);
+        <td>
+            <select class="form-select form-select-sm"
+                    value="@currentValue"
+                    @onchange="e => OnItemCategoryChanged(item, fieldId, e.Value?.ToString())">
+                <option value="">— @L["Receipt_Uncategorized"] —</option>
+                @foreach (var opt in options)
                 {
-                    <span class="badge bg-warning text-dark">
-                        @fieldName: "@value"
-                    </span>
+                    <option value="@opt">@opt</option>
                 }
-            </div>
-        </div>
-    }
-}; }
+                <option value="__new__">+ @L["Receipt_NewValue"]...</option>
+            </select>
+            @if (currentValue == "__new__")
+            {
+                <input type="text" class="form-control form-control-sm mt-1"
+                       placeholder="@L["Receipt_TypeNewValue"]"
+                       @onchange="e => OnNewValueEntered(item, fieldId, e.Value?.ToString())" />
+            }
+        </td>
+    };
 
-@{ RenderFragment RenderMapStepNav() => __builder =>
-{
-    <div class="d-flex justify-content-between mt-4">
-        <button class="btn btn-outline-secondary" @onclick="GoBack">
-            <i class="bi bi-arrow-left me-1"></i>@L["Common_Back"]
-        </button>
-        <button class="btn btn-primary"
-                disabled="@(!_receiptItems.Any(i => i.Include))"
-                @onclick="ProceedToReview">
-            @L["Receipt_ReviewImport"] <i class="bi bi-arrow-right ms-1"></i>
-        </button>
-    </div>
-}; }
+}
+
+@{
+    RenderFragment RenderNewValuesAlert() => __builder =>
+    {
+        @if (_newDropdownValues.Count > 0)
+        {
+            <div class="alert alert-warning mt-3 py-2">
+                <i class="bi bi-lightning me-1"></i>
+                <strong>@L["Receipt_NewValuesWillBeCreated"]:</strong>
+                <div class="d-flex gap-2 flex-wrap mt-1">
+                    @foreach (var (fieldName, value) in _newDropdownValues)
+                    {
+                        <span class="badge bg-warning text-dark">
+                            @fieldName: "@value"
+                        </span>
+                    }
+                </div>
+            </div>
+        }
+    };
+}
+
+@{
+    RenderFragment RenderInlineRuleEditor() => __builder =>
+    {
+        @if (_ruleEditItem is not null)
+        {
+            var isEdit = _ruleEditExistingRuleId != Guid.Empty;
+            var existingRule = isEdit ? _mappingRules.FirstOrDefault(r => r.Id == _ruleEditExistingRuleId) : null;
+
+            <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header py-2">
+                            <h6 class="modal-title mb-0">
+                                <i class="bi bi-@(isEdit ? "pencil-square" : "plus-circle") me-1"></i>
+                                @(isEdit ? L["RcptCfg_EditRule"] : L["RcptCfg_AddRule"])
+                            </h6>
+                            <button type="button" class="btn-close" @onclick="CloseRuleEditor"></button>
+                        </div>
+                        <div class="modal-body py-3">
+                            <div class="mb-3">
+                                <label class="form-label small mb-1">@L["Receipt_Item"]</label>
+                                <div class="p-2 rounded border bg-body-secondary">
+                                    <i class="bi bi-receipt me-1 text-muted"></i><code>@_ruleEditItem.Description</code>
+                                </div>
+                            </div>
+
+                            @if (isEdit && existingRule is not null)
+                            {
+                                <p class="small text-muted mb-3">
+                                    @L["RcptCfg_EditRuleHint"]
+                                    <span class="badge bg-secondary">@existingRule.TargetFieldName</span>
+                                    <span class="mx-1">→</span>
+                                    <span class="badge bg-primary">@existingRule.Value</span>
+                                    <span class="mx-1">|</span> @L["RcptCfg_Pattern"]: <code>@existingRule.Pattern</code>
+                                </p>
+                            }
+
+                            <div class="mb-3">
+                                <label class="form-label small mb-1">@L["RcptCfg_Pattern"]</label>
+                                <input type="text" class="form-control form-control-sm" @bind="_ruleEditPattern"
+                                       placeholder="@L["RcptCfg_PatternPlaceholder"]" />
+                            </div>
+
+                            @if (!isEdit)
+                            {
+                                var descTargetId = _fieldMappings
+                                    .FirstOrDefault(m => m.Source == ReceiptFieldMappingSource.ReceiptDescription)?.FieldId;
+                                var autoTargetField = descTargetId.HasValue
+                                    ? _dropdownFields.FirstOrDefault(f => f.Id == descTargetId.Value)
+                                    : null;
+                                var showFieldSelector = autoTargetField is null && _dropdownFields.Count > 1;
+                                var targetLabel = (autoTargetField ?? _dropdownFields.FirstOrDefault(f => f.Id == _ruleEditFieldId))?.Name;
+
+                                @if (showFieldSelector)
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label small mb-1">@L["RcptCfg_TargetField"]</label>
+                                        <select class="form-select form-select-sm" @bind="_ruleEditFieldId">
+                                            <option value="@Guid.Empty">— @L["Common_Select"] —</option>
+                                            @foreach (var f in _dropdownFields)
+                                            {
+                                                <option value="@f.Id">@f.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                }
+                                else if (targetLabel is not null)
+                                {
+                                    <div class="mb-2">
+                                        <span class="small text-muted me-1">@L["RcptCfg_TargetField"]:</span>
+                                        <span class="badge bg-secondary">@targetLabel</span>
+                                    </div>
+                                }
+
+                                <div class="mb-3">
+                                    <label class="form-label small mb-1">@L["RcptCfg_Value"]</label>
+                                    @{
+                                        var valueOptions = _ruleEditFieldId != Guid.Empty && _resolvedDropdownOptions.TryGetValue(_ruleEditFieldId, out var opts) ? opts : [];
+                                    }
+                                    <select class="form-select form-select-sm" @bind="_ruleEditValue">
+                                        <option value="">— @L["Common_Select"] —</option>
+                                        @foreach (var o in valueOptions)
+                                        {
+                                            <option value="@o">@o</option>
+                                        }
+                                        <option value="__new__">+ @L["Receipt_NewValue"]...</option>
+                                    </select>
+                                    @if (_ruleEditValue == "__new__")
+                                    {
+                                        <input type="text" class="form-control form-control-sm mt-1"
+                                               placeholder="@L["Receipt_TypeNewValue"]"
+                                               @bind="_ruleEditNewValue" />
+                                    }
+                                </div>
+
+                                @if (_mappingRules.Count > 0)
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label small mb-1">@L["RcptCfg_OrAddToExisting"]</label>
+                                        <select class="form-select form-select-sm"
+                                                @onchange="e => OnSelectExistingRule(e.Value?.ToString())">
+                                            <option value="">— @L["RcptCfg_NewRule"] —</option>
+                                            @foreach (var r in _mappingRules)
+                                            {
+                                                <option value="@r.Id">@r.TargetFieldName → @r.Value</option>
+                                            }
+                                        </select>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <div class="modal-footer py-2">
+                            <button class="btn btn-outline-secondary btn-sm" @onclick="CloseRuleEditor">
+                                <i class="bi bi-x-lg me-1"></i>@L["Common_Cancel"]
+                            </button>
+                            <button class="btn btn-primary btn-sm" @onclick="SaveInlineRuleAsync"
+                                    disabled="@(string.IsNullOrWhiteSpace(_ruleEditPattern) || _ruleEditSaving || (!isEdit && (_ruleEditFieldId == Guid.Empty || string.IsNullOrEmpty(_ruleEditValue) || (_ruleEditValue == "__new__" && string.IsNullOrWhiteSpace(_ruleEditNewValue)))))">
+                                @if (_ruleEditSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-check-lg me-1"></i>
+                                }
+                                @(isEdit ? L["Common_Save"] : L["RcptCfg_AddRule"])
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    };
+}
+
+@{
+    RenderFragment RenderMapStepNav() => __builder =>
+    {
+        <div class="d-flex justify-content-between mt-4">
+            <button class="btn btn-outline-secondary" @onclick="GoBack">
+                <i class="bi bi-arrow-left me-1"></i>@L["Common_Back"]
+            </button>
+            <button class="btn btn-primary"
+                    disabled="@(!_receiptItems.Any(i => i.Include))"
+                    @onclick="ProceedToReview">
+                @L["Receipt_ReviewImport"] <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    };
+
+}
 
 @code {
     [Inject] private ReceiptScanService ScanService { get; set; } = default!;
@@ -708,6 +1017,7 @@
     [Inject] private FieldDefinitionService FieldDefService { get; set; } = default!;
     [Inject] private FieldDependencyRuleService DepRuleService { get; set; } = default!;
     [Inject] private ReceiptImportConfigService RcptConfigService { get; set; } = default!;
+    [Inject] private ReceiptScanDraftService DraftService { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private readonly (int Step, string Label, string Icon)[] _wizardSteps =
@@ -738,11 +1048,29 @@
     private List<ActionFieldResponse> _actionFields = [];
     private List<ActionFieldResponse> _dropdownFields = [];
     private List<ColumnMapping> _columnMappings = [];
+    private List<ReceiptFieldMapping> _fieldMappings = [];
     private List<ReceiptItemRow> _receiptItems = [];
     private List<(string FieldName, string Value)> _newDropdownValues = [];
 
+    /// <summary>
+    /// Dropdown fields that don't already have a fixed value assigned —
+    /// these appear as per-item columns in the items table.
+    /// </summary>
+    private List<ActionFieldResponse> _perItemDropdownFields =>
+        _dropdownFields.Where(f =>
+        {
+            var fm = _fieldMappings.FirstOrDefault(m => m.FieldId == f.Id);
+            return fm is null or { Source: ReceiptFieldMappingSource.None };
+        }).ToList();
+
     // Resolved dropdown options (handles CompositeDropdown ref: format)
     private Dictionary<Guid, List<string>> _resolvedDropdownOptions = [];
+
+    /// <summary>
+    /// For CompositeDropdown fields, maps ActionFieldId → list of referenced FieldDefinitions
+    /// so that new values can be appended to the correct leaf field definition at import time.
+    /// </summary>
+    private Dictionary<Guid, List<FieldDefinitionResponse>> _compositeRefFieldDefs = [];
 
     // Dependency rules
     private List<FieldDependencyRuleResponse> _depRules = [];
@@ -757,16 +1085,36 @@
     // Auto-categorization
     private int _patternsAppliedCount;
 
-    // Rule suggestions (review step)
-    private bool _createSuggestedRules = true;
-    private HashSet<string> _selectedSuggestedRules = [];
+    // Inline rule editing (Map step)
+    private ReceiptItemRow? _ruleEditItem;
+    private Guid _ruleEditExistingRuleId;
+    private string _ruleEditPattern = string.Empty;
+    private string _ruleEditValue = string.Empty;
+    private string _ruleEditNewValue = string.Empty;
+    private Guid _ruleEditFieldId;
+    private bool _ruleEditSaving;
 
     // Step 4+: Import
     private bool _importing;
     private int _importedCount;
 
+    // Draft persistence
+    private Guid? _draftId;
+    private List<ReceiptScanDraftResponse> _drafts = [];
+    private bool _loadingDrafts;
+    private bool _showDraftPicker;
+
     protected override async Task OnInitializedAsync()
     {
+        _loadingDrafts = true;
+        try
+        {
+            _drafts = await DraftService.GetMyDraftsAsync();
+            _showDraftPicker = _drafts.Count > 0;
+        }
+        catch { _drafts = []; }
+        _loadingDrafts = false;
+
         await LoadActionsAsync();
     }
 
@@ -786,7 +1134,28 @@
 
         try
         {
-            using var stream = _selectedFile.OpenReadStream(10 * 1024 * 1024);
+            const int maxBytes = 3_700_000; // stay under Azure's 4 MB limit
+            const int maxWidth = 2048;      // enough detail for OCR
+
+            byte[] imageBytes;
+
+            if (_selectedFile.Size > maxBytes)
+            {
+                // Compress client-side via canvas JS interop
+                using var rawStream = _selectedFile.OpenReadStream(20 * 1024 * 1024);
+                var dotNetStreamRef = new DotNetStreamReference(rawStream);
+                imageBytes = await JS.InvokeAsync<byte[]>("compressImage", dotNetStreamRef, maxWidth, maxBytes);
+            }
+            else
+            {
+                // Small enough already — send as-is
+                using var rawStream = _selectedFile.OpenReadStream(10 * 1024 * 1024);
+                using var ms = new MemoryStream();
+                await rawStream.CopyToAsync(ms);
+                imageBytes = ms.ToArray();
+            }
+
+            using var stream = new MemoryStream(imageBytes);
             _scanResult = await ScanService.ScanAsync(stream, _selectedFile.Name);
 
             // Initialize receipt item rows
@@ -866,40 +1235,34 @@
             }
             catch { _receiptConfig = null; _mappingRules = []; }
 
-            // Build column mappings for numeric/date OCR columns → action fields
-            _columnMappings =
-            [
-                new() { ReceiptColumn = L["Receipt_Description"], SourceProperty = "Description" },
-                new() { ReceiptColumn = L["Receipt_Qty"], SourceProperty = "Quantity" },
-                new() { ReceiptColumn = L["Receipt_UnitPrice"], SourceProperty = "UnitPrice" },
-                new() { ReceiptColumn = L["Receipt_Total"], SourceProperty = "TotalPrice" },
-            ];
+            // Build unified field mappings — one entry per action field
+            _fieldMappings = _actionFields.Select(f => new ReceiptFieldMapping
+            {
+                FieldId = f.Id,
+                FieldName = f.Name,
+                FieldType = f.FieldType,
+                Source = ReceiptFieldMappingSource.None
+            }).ToList();
 
-            // If receipt config exists, use its field mappings; otherwise fall back to name matching
+            // Auto-assign from receipt config or name matching
             if (_receiptConfig is not null)
             {
-                ApplyReceiptConfigMappings();
+                ApplyReceiptConfigToFieldMappings();
             }
             else
             {
-                // Auto-map by best guess (name matching)
-                foreach (var mapping in _columnMappings)
-                {
-                    var bestMatch = _actionFields.FirstOrDefault(f =>
-                        f.Name.Contains(mapping.SourceProperty, StringComparison.OrdinalIgnoreCase) ||
-                        mapping.SourceProperty.Contains(f.Name, StringComparison.OrdinalIgnoreCase));
-                    if (bestMatch is not null)
-                        mapping.TargetFieldId = bestMatch.Id;
-                }
+                AutoDetectFieldMappings();
             }
 
-            // Reset batch values
+            // Reset batch values and sync to legacy structures
             _batchValues.Clear();
+            SyncFieldMappingsToLegacy();
 
             // Apply server-side mapping rules for auto-categorization
             ApplyServerMappingRules();
 
             _currentStep = 2;
+            _ = SaveDraftAsync();
         }
         catch
         {
@@ -908,35 +1271,133 @@
     }
 
     /// <summary>
-    /// Applies the server-side receipt import config field mappings to the column mapping model.
+    /// Applies server-side receipt import config to unified field mappings.
     /// </summary>
-    private void ApplyReceiptConfigMappings()
+    private void ApplyReceiptConfigToFieldMappings()
     {
         if (_receiptConfig is null) return;
 
-        foreach (var mapping in _columnMappings)
+        void SetSource(Guid? fieldId, ReceiptFieldMappingSource source)
         {
-            Guid? targetId = mapping.SourceProperty switch
+            if (fieldId is null) return;
+            var fm = _fieldMappings.FirstOrDefault(f => f.FieldId == fieldId.Value);
+            if (fm is not null) fm.Source = source;
+        }
+
+        SetSource(_receiptConfig.TotalFieldId, ReceiptFieldMappingSource.ReceiptTotal);
+        SetSource(_receiptConfig.QuantityFieldId, ReceiptFieldMappingSource.ReceiptQuantity);
+        SetSource(_receiptConfig.UnitPriceFieldId, ReceiptFieldMappingSource.ReceiptUnitPrice);
+        SetSource(_receiptConfig.DescriptionFieldId, ReceiptFieldMappingSource.ReceiptDescription);
+        SetSource(_receiptConfig.ShopFieldId, ReceiptFieldMappingSource.MerchantName);
+
+        // Restore fixed-value mappings from JSON
+        if (!string.IsNullOrEmpty(_receiptConfig.StaticFieldValues))
+        {
+            try
             {
-                "TotalPrice" => _receiptConfig.TotalFieldId,
-                "Quantity" => _receiptConfig.QuantityFieldId,
-                "UnitPrice" => _receiptConfig.UnitPriceFieldId,
-                "Description" => _receiptConfig.DescriptionFieldId,
+                var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(_receiptConfig.StaticFieldValues);
+                if (dict is not null)
+                {
+                    foreach (var (key, val) in dict)
+                    {
+                        if (Guid.TryParse(key, out var fid))
+                        {
+                            var fm = _fieldMappings.FirstOrDefault(f => f.FieldId == fid);
+                            if (fm is not null && fm.Source == ReceiptFieldMappingSource.None)
+                            {
+                                fm.Source = ReceiptFieldMappingSource.FixedValue;
+                                fm.FixedValue = val;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { /* ignore malformed JSON */ }
+        }
+    }
+
+    /// <summary>
+    /// Auto-detects field mappings by name matching and field type when no receipt config exists.
+    /// </summary>
+    private void AutoDetectFieldMappings()
+    {
+        var numericFields = _actionFields
+            .Where(f => f.FieldType is FieldType.Decimal or FieldType.Integer)
+            .ToList();
+
+        // If exactly one numeric field, auto-map to TotalPrice
+        if (numericFields.Count == 1)
+        {
+            var fm = _fieldMappings.FirstOrDefault(f => f.FieldId == numericFields[0].Id);
+            if (fm is not null) fm.Source = ReceiptFieldMappingSource.ReceiptTotal;
+        }
+        else
+        {
+            // Try name matching for numeric fields
+            foreach (var (source, keyword) in new[] {
+                (ReceiptFieldMappingSource.ReceiptTotal, "total"),
+                (ReceiptFieldMappingSource.ReceiptQuantity, "qty"),
+                (ReceiptFieldMappingSource.ReceiptUnitPrice, "unit") })
+            {
+                var match = numericFields.FirstOrDefault(f =>
+                    f.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+                if (match is not null)
+                {
+                    var fm = _fieldMappings.FirstOrDefault(f => f.FieldId == match.Id);
+                    if (fm is not null && fm.Source == ReceiptFieldMappingSource.None)
+                        fm.Source = source;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Syncs the unified _fieldMappings to the legacy _columnMappings and _batchValues structures
+    /// used by the import logic and per-item dropdown cells.
+    /// </summary>
+    private void SyncFieldMappingsToLegacy()
+    {
+        // Rebuild column mappings
+        _columnMappings =
+        [
+            new() { ReceiptColumn = L["Receipt_Description"], SourceProperty = "Description" },
+            new() { ReceiptColumn = L["Receipt_Qty"], SourceProperty = "Quantity" },
+            new() { ReceiptColumn = L["Receipt_UnitPrice"], SourceProperty = "UnitPrice" },
+            new() { ReceiptColumn = L["Receipt_Total"], SourceProperty = "TotalPrice" },
+        ];
+
+        foreach (var fm in _fieldMappings)
+        {
+            var sourceProperty = fm.Source switch
+            {
+                ReceiptFieldMappingSource.ReceiptDescription => "Description",
+                ReceiptFieldMappingSource.ReceiptQuantity => "Quantity",
+                ReceiptFieldMappingSource.ReceiptUnitPrice => "UnitPrice",
+                ReceiptFieldMappingSource.ReceiptTotal => "TotalPrice",
                 _ => null
             };
 
-            if (targetId.HasValue && _actionFields.Any(f => f.Id == targetId.Value))
-                mapping.TargetFieldId = targetId.Value;
-        }
-
-        // Also set the shop field mapping if configured
-        if (_receiptConfig.ShopFieldId.HasValue && _scanResult is not null)
-        {
-            var shopField = _actionFields.FirstOrDefault(f => f.Id == _receiptConfig.ShopFieldId.Value);
-            if (shopField is not null && !string.IsNullOrWhiteSpace(_scanResult.MerchantName))
+            if (sourceProperty is not null)
             {
-                // Pre-fill the shop/merchant value in batch assignment
-                _batchValues[shopField.Id] = _scanResult.MerchantName;
+                var cm = _columnMappings.FirstOrDefault(c => c.SourceProperty == sourceProperty);
+                if (cm is not null) cm.TargetFieldId = fm.FieldId;
+            }
+            else if (fm.Source == ReceiptFieldMappingSource.MerchantName && _scanResult?.MerchantName is not null)
+            {
+                _batchValues[fm.FieldId] = _scanResult.MerchantName;
+                // Apply merchant to all items
+                foreach (var item in _receiptItems.Where(i => i.Include))
+                    item.SetCategoryValue(fm.FieldId, _scanResult.MerchantName);
+            }
+            else if (fm.Source == ReceiptFieldMappingSource.FixedValue && !string.IsNullOrEmpty(fm.FixedValue))
+            {
+                _batchValues[fm.FieldId] = fm.FixedValue;
+                // Apply fixed value to all items
+                foreach (var item in _receiptItems.Where(i => i.Include))
+                {
+                    item.SetCategoryValue(fm.FieldId, fm.FixedValue);
+                    ClearInvalidDependents(item, fm.FieldId);
+                }
             }
         }
     }
@@ -947,26 +1408,46 @@
     /// </summary>
     private void ApplyServerMappingRules()
     {
-        if (_mappingRules.Count == 0 || _receiptItems.Count == 0) return;
+        if (_receiptItems.Count == 0) return;
 
-        var count = 0;
+        // Dropdown fields mapped to ReceiptDescription use the item's own description as their
+        // base value — rules override it for matched items, description is kept for the rest.
+        var descMappedFieldIds = _fieldMappings
+            .Where(m => m.Source == ReceiptFieldMappingSource.ReceiptDescription &&
+                        _dropdownFields.Any(f => f.Id == m.FieldId))
+            .Select(m => m.FieldId)
+            .ToHashSet();
+
+        // Reset matched rules; restore description-based fallback values before re-evaluating
         foreach (var item in _receiptItems)
         {
-            if (!item.Include) continue;
+            item.MatchedRule = null;
+            foreach (var fieldId in descMappedFieldIds)
+                item.SetCategoryValue(fieldId, item.Description);
+        }
 
-            foreach (var rule in _mappingRules.OrderByDescending(r => r.Priority))
+        var count = 0;
+        if (_mappingRules.Count > 0)
+        {
+            foreach (var item in _receiptItems)
             {
-                if (MatchesPattern(item.Description, rule.Pattern))
+                if (!item.Include) continue;
+
+                foreach (var rule in _mappingRules.OrderByDescending(r => r.Priority))
                 {
-                    item.SetCategoryValue(rule.TargetFieldId, rule.Value);
-                    count++;
-                    break; // First matching rule wins (highest priority)
+                    if (MatchesPattern(item.Description, rule.Pattern))
+                    {
+                        item.SetCategoryValue(rule.TargetFieldId, rule.Value);
+                        item.MatchedRule = rule;
+                        count++;
+                        break; // First matching rule wins (highest priority)
+                    }
                 }
             }
         }
 
-        if (count > 0)
-            _patternsAppliedCount += count;
+        _patternsAppliedCount = count; // Set, not accumulate
+        RefreshNewValues();
     }
 
     private static bool MatchesPattern(string text, string pattern)
@@ -988,6 +1469,7 @@
     private async Task ResolveDropdownOptionsAsync()
     {
         _resolvedDropdownOptions = [];
+        _compositeRefFieldDefs = [];
 
         // Check if any composite dropdowns need field definition resolution
         var hasComposites = _dropdownFields.Any(f =>
@@ -1017,16 +1499,19 @@
                     .ToList();
 
                 var values = new List<string>();
+                var refDefs = new List<FieldDefinitionResponse>();
                 foreach (var refId in refIds)
                 {
                     if (fieldDefLookup?.TryGetValue(refId, out var fd) == true)
                     {
+                        refDefs.Add(fd);
                         var fieldValues = fd.DropdownValues!
                             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                         values.AddRange(fieldValues);
                     }
                 }
 
+                _compositeRefFieldDefs[field.Id] = refDefs;
                 _resolvedDropdownOptions[field.Id] = values
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
@@ -1049,20 +1534,24 @@
 
     private void GoBack()
     {
-        if (_currentStep > 0)
+        if (_currentStep <= 0) return;
+
+        // Skip step 1 (upload) when going back from step 2 — the file isn't
+        // persisted, so returning to the upload screen is a dead end.
+        if (_currentStep == 2)
+            _currentStep = 0;
+        else
             _currentStep--;
+
+        if (_currentStep >= 2)
+            _ = SaveDraftAsync();
     }
 
     private void ProceedToReview()
     {
         RefreshNewValues();
-
-        // Pre-select all suggested rules
-        var suggestions = GetSuggestedRules(_receiptItems.Where(i => i.Include).ToList());
-        _selectedSuggestedRules = [.. suggestions.Select(s => s.Key)];
-        _createSuggestedRules = suggestions.Count > 0;
-
         _currentStep = 3;
+        _ = SaveDraftAsync();
     }
 
     private void ToggleAllItems(ChangeEventArgs e)
@@ -1071,6 +1560,307 @@
         foreach (var item in _receiptItems)
             item.Include = isChecked;
     }
+
+    private async Task ClearItemRuleAsync(ReceiptItemRow item)
+    {
+        if (item.MatchedRule is null) return;
+
+        var rule = item.MatchedRule;
+
+        // Clear local state immediately for responsiveness
+        item.SetCategoryValue(rule.TargetFieldId, null);
+        item.MatchedRule = null;
+
+        // Determine which sub-patterns in the rule matched this item
+        var allPatterns = rule.Pattern
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+
+        var matchingPatterns = allPatterns
+            .Where(p => item.Description.Contains(p, StringComparison.OrdinalIgnoreCase))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var remainingPatterns = allPatterns
+            .Where(p => !matchingPatterns.Contains(p))
+            .ToList();
+
+        try
+        {
+            if (remainingPatterns.Count == 0)
+            {
+                // No patterns left → delete the entire rule
+                await RcptConfigService.DeleteMappingRuleAsync(_selectedActionId, rule.Id);
+            }
+            else
+            {
+                // Remove only the matching patterns, keep the rest
+                var newPattern = string.Join(",", remainingPatterns);
+                await RcptConfigService.UpdateMappingRuleAsync(
+                    _selectedActionId, rule.Id,
+                    new UpdateReceiptMappingRuleRequest(Pattern: newPattern));
+            }
+
+            // Reload rules and re-apply so other items reflect the change
+            _mappingRules = await RcptConfigService.GetMappingRulesAsync(_selectedActionId);
+            ApplyServerMappingRules();
+        }
+        catch
+        {
+            // Best effort — local state is already cleared
+        }
+
+        RefreshNewValues();
+    }
+
+    private void RemoveItem(ReceiptItemRow item)
+    {
+        _receiptItems.Remove(item);
+        RefreshNewValues();
+    }
+
+    private void ShiftPricesDown()
+    {
+        var indices = GetShiftIndices();
+        if (indices.Count < 1) return;
+
+        // Shift down: iterate from bottom to top so we don't overwrite values
+        for (var i = indices.Count - 1; i >= 0; i--)
+        {
+            var idx = indices[i];
+            var nextIdx = idx + 1;
+            if (nextIdx < _receiptItems.Count)
+            {
+                _receiptItems[nextIdx].Quantity = _receiptItems[idx].Quantity;
+                _receiptItems[nextIdx].UnitPrice = _receiptItems[idx].UnitPrice;
+                _receiptItems[nextIdx].TotalPrice = _receiptItems[idx].TotalPrice;
+            }
+        }
+        // Clear the top-most selected row
+        var first = _receiptItems[indices[0]];
+        first.Quantity = null;
+        first.UnitPrice = null;
+        first.TotalPrice = null;
+    }
+
+    private void ShiftPricesUp()
+    {
+        var indices = GetShiftIndices();
+        if (indices.Count < 1) return;
+
+        // Shift up: iterate from top to bottom
+        for (var i = 0; i < indices.Count; i++)
+        {
+            var idx = indices[i];
+            var prevIdx = idx - 1;
+            if (prevIdx >= 0)
+            {
+                _receiptItems[prevIdx].Quantity = _receiptItems[idx].Quantity;
+                _receiptItems[prevIdx].UnitPrice = _receiptItems[idx].UnitPrice;
+                _receiptItems[prevIdx].TotalPrice = _receiptItems[idx].TotalPrice;
+            }
+        }
+        // Clear the bottom-most selected row
+        var last = _receiptItems[indices[^1]];
+        last.Quantity = null;
+        last.UnitPrice = null;
+        last.TotalPrice = null;
+    }
+
+    /// <summary>Returns sorted indices of selected rows, or all rows if none selected.</summary>
+    private List<int> GetShiftIndices()
+    {
+        var selected = _receiptItems
+            .Select((item, idx) => (item, idx))
+            .Where(x => x.item.Selected)
+            .Select(x => x.idx)
+            .ToList();
+
+        if (selected.Count == 0)
+        {
+            // Fallback: all rows
+            return Enumerable.Range(0, _receiptItems.Count).ToList();
+        }
+        return selected;
+    }
+
+    private void ToggleRowSelection(ReceiptItemRow item)
+    {
+        item.Selected = !item.Selected;
+    }
+
+    private void ClearSelection()
+    {
+        foreach (var item in _receiptItems)
+            item.Selected = false;
+    }
+
+    private int SelectedCount => _receiptItems.Count(i => i.Selected);
+
+    // ── Row merge ──
+
+    private MergeRowsState? _mergeState;
+
+    private void OpenMergeModal()
+    {
+        var selected = _receiptItems.Where(i => i.Selected).ToList();
+        if (selected.Count < 2) return;
+
+        // Concatenate descriptions (in list order)
+        var description = string.Join(" ", selected.Select(i => i.Description).Where(d => !string.IsNullOrWhiteSpace(d)));
+
+        var state = new MergeRowsState
+        {
+            Items = selected,
+            Description = description
+        };
+
+        // Build conflict fields for Qty, UnitPrice, TotalPrice
+        AddConflictField(state, L["Receipt_Qty"], selected, i => i.Quantity, "qty");
+        AddConflictField(state, L["Receipt_UnitPrice"], selected, i => i.UnitPrice, "unitPrice");
+        AddConflictField(state, L["Receipt_Total"], selected, i => i.TotalPrice, "total");
+
+        _mergeState = state;
+    }
+
+    private void AddConflictField(MergeRowsState state, string label, List<ReceiptItemRow> items,
+        Func<ReceiptItemRow, decimal?> getValue, string fieldKey)
+    {
+        var values = items.Select(getValue).Where(v => v.HasValue).Select(v => v!.Value).ToList();
+        if (values.Count <= 1) return; // No conflict — 0 or 1 value, auto-resolved
+
+        var field = new MergeConflictField { Label = label, FieldKey = fieldKey };
+
+        // Add options
+        field.Options.Add(new("sum", L["Receipt_MergeSum"], values.Sum().ToString("F2")));
+        for (var i = 0; i < items.Count; i++)
+        {
+            var v = getValue(items[i]);
+            if (v.HasValue)
+            {
+                var desc = items[i].Description.Length > 20 ? items[i].Description[..20] + "…" : items[i].Description;
+                field.Options.Add(new($"row_{i}", desc, v.Value.ToString("F2")));
+            }
+        }
+        field.Options.Add(new("manual", L["Receipt_MergeManual"], ""));
+
+        // Default to sum
+        field.SelectedOption = "sum";
+        field.ResolvedValue = values.Sum();
+
+        state.ConflictFields.Add(field);
+    }
+
+    private void SelectMergeOption(MergeConflictField field, string optionKey)
+    {
+        field.SelectedOption = optionKey;
+
+        if (optionKey == "sum")
+        {
+            var values = _mergeState!.Items.Select(i => field.FieldKey switch
+            {
+                "qty" => i.Quantity,
+                "unitPrice" => i.UnitPrice,
+                "total" => i.TotalPrice,
+                _ => null
+            }).Where(v => v.HasValue).Select(v => v!.Value);
+            field.ResolvedValue = values.Sum();
+        }
+        else if (optionKey.StartsWith("row_") && int.TryParse(optionKey[4..], out var idx))
+        {
+            var item = _mergeState!.Items[idx];
+            field.ResolvedValue = field.FieldKey switch
+            {
+                "qty" => item.Quantity,
+                "unitPrice" => item.UnitPrice,
+                "total" => item.TotalPrice,
+                _ => null
+            };
+        }
+        else if (optionKey == "manual")
+        {
+            field.ResolvedValue = null; // Will use ManualValue
+        }
+    }
+
+    private void ExecuteMerge()
+    {
+        if (_mergeState is null) return;
+
+        var items = _mergeState.Items;
+        var merged = items[0]; // Keep the first item as the target
+
+        merged.Description = _mergeState.Description;
+
+        // Resolve each numeric field
+        merged.Quantity = ResolveField("qty", items, i => i.Quantity);
+        merged.UnitPrice = ResolveField("unitPrice", items, i => i.UnitPrice);
+        merged.TotalPrice = ResolveField("total", items, i => i.TotalPrice);
+
+        // Merge category values: keep first non-empty value per field
+        foreach (var field in _dropdownFields)
+        {
+            var existing = merged.GetCategoryValue(field.Id);
+            if (string.IsNullOrEmpty(existing))
+            {
+                foreach (var other in items.Skip(1))
+                {
+                    var val = other.GetCategoryValue(field.Id);
+                    if (!string.IsNullOrEmpty(val))
+                    {
+                        merged.SetCategoryValue(field.Id, val);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Keep the first matched rule if any
+        merged.MatchedRule ??= items.Skip(1).FirstOrDefault(i => i.MatchedRule is not null)?.MatchedRule;
+
+        merged.Selected = false;
+
+        // Remove all other selected items
+        foreach (var item in items.Skip(1))
+            _receiptItems.Remove(item);
+
+        RefreshNewValues();
+        CloseMergeModal();
+    }
+
+    private decimal? ResolveField(string fieldKey, List<ReceiptItemRow> items, Func<ReceiptItemRow, decimal?> getValue)
+    {
+        var conflict = _mergeState?.ConflictFields.FirstOrDefault(f => f.FieldKey == fieldKey);
+        if (conflict is not null)
+        {
+            if (conflict.SelectedOption == "manual")
+                return conflict.ManualValue;
+            return conflict.ResolvedValue;
+        }
+
+        // No conflict — return the single non-null value
+        return items.Select(getValue).FirstOrDefault(v => v.HasValue);
+    }
+
+    private void CloseMergeModal() => _mergeState = null;
+
+    private sealed class MergeRowsState
+    {
+        public List<ReceiptItemRow> Items { get; set; } = [];
+        public string Description { get; set; } = string.Empty;
+        public List<MergeConflictField> ConflictFields { get; set; } = [];
+    }
+
+    private sealed class MergeConflictField
+    {
+        public string Label { get; set; } = string.Empty;
+        public string FieldKey { get; set; } = string.Empty;
+        public List<MergeOption> Options { get; set; } = [];
+        public string SelectedOption { get; set; } = string.Empty;
+        public decimal? ResolvedValue { get; set; }
+        public decimal? ManualValue { get; set; }
+    }
+
+    private sealed record MergeOption(string Key, string Label, string DisplayValue);
 
     private List<string> GetDropdownOptions(ActionFieldResponse field) =>
         _resolvedDropdownOptions.TryGetValue(field.Id, out var options) ? options : [];
@@ -1204,6 +1994,135 @@
                 ClearInvalidDependents(item, depFieldId);
             }
         }
+    }
+
+    // ── Unified field mapping change handlers ──
+
+    /// <summary>Called by the shared ReceiptFieldMappingEditor when any mapping changes.</summary>
+    private void OnSharedMappingChanged(ReceiptFieldMapping _)
+    {
+        SyncFieldMappingsToLegacy();
+        ApplyServerMappingRules();
+    }
+
+    /// <summary>Called by the shared editor to add a new auto-categorization rule during import.</summary>
+    private async Task OnImportAddRuleAsync(CreateReceiptMappingRuleRequest request)
+    {
+        var (ok, _) = await RcptConfigService.CreateMappingRuleAsync(_selectedActionId, request);
+        if (ok)
+        {
+            _mappingRules = await RcptConfigService.GetMappingRulesAsync(_selectedActionId);
+            ApplyServerMappingRules();
+        }
+    }
+
+    /// <summary>Called by the shared editor to delete an auto-categorization rule during import.</summary>
+    private async Task OnImportDeleteRuleAsync(Guid ruleId)
+    {
+        await RcptConfigService.DeleteMappingRuleAsync(_selectedActionId, ruleId);
+        _mappingRules = await RcptConfigService.GetMappingRulesAsync(_selectedActionId);
+        ApplyServerMappingRules();
+    }
+
+    // ── Inline rule editor (Map step) ──
+
+    private void OpenRuleEditor(ReceiptItemRow item, ReceiptMappingRuleResponse? existingRule)
+    {
+        _ruleEditItem = item;
+        if (existingRule is not null)
+        {
+            _ruleEditExistingRuleId = existingRule.Id;
+            _ruleEditPattern = string.Empty; // user types the new keyword to add
+            _ruleEditFieldId = existingRule.TargetFieldId;
+            _ruleEditValue = existingRule.Value;
+        }
+        else
+        {
+            _ruleEditExistingRuleId = Guid.Empty;
+            _ruleEditPattern = item.Description;
+            // Pre-select the field mapped to ReceiptDescription — rules naturally target it.
+            // Fall back to the first uncategorized dropdown field, then any dropdown field.
+            var descMapFieldId = _fieldMappings
+                .FirstOrDefault(m => m.Source == ReceiptFieldMappingSource.ReceiptDescription)?.FieldId;
+            var targetField = descMapFieldId.HasValue
+                ? _dropdownFields.FirstOrDefault(f => f.Id == descMapFieldId.Value)
+                : _dropdownFields.FirstOrDefault(f => string.IsNullOrEmpty(item.GetCategoryValue(f.Id)))
+                  ?? _dropdownFields.FirstOrDefault();
+            _ruleEditFieldId = targetField?.Id ?? Guid.Empty;
+            _ruleEditValue = string.Empty;
+            _ruleEditNewValue = string.Empty;
+        }
+    }
+
+    private void CloseRuleEditor()
+    {
+        _ruleEditItem = null;
+        _ruleEditExistingRuleId = Guid.Empty;
+        _ruleEditPattern = string.Empty;
+        _ruleEditValue = string.Empty;
+        _ruleEditNewValue = string.Empty;
+        _ruleEditFieldId = Guid.Empty;
+    }
+
+    private void OnSelectExistingRule(string? ruleIdStr)
+    {
+        if (Guid.TryParse(ruleIdStr, out var ruleId) && ruleId != Guid.Empty)
+        {
+            var rule = _mappingRules.FirstOrDefault(r => r.Id == ruleId);
+            if (rule is not null)
+            {
+                _ruleEditExistingRuleId = rule.Id;
+                _ruleEditFieldId = rule.TargetFieldId;
+                _ruleEditValue = rule.Value;
+                // Keep the user's pattern text (the keyword to add)
+            }
+        }
+        else
+        {
+            _ruleEditExistingRuleId = Guid.Empty;
+        }
+    }
+
+    private async Task SaveInlineRuleAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_ruleEditPattern)) return;
+        var effectiveValue = _ruleEditValue == "__new__" ? _ruleEditNewValue.Trim() : _ruleEditValue;
+        _ruleEditSaving = true;
+
+        try
+        {
+            if (_ruleEditExistingRuleId != Guid.Empty)
+            {
+                // Append pattern to existing rule
+                var existing = _mappingRules.FirstOrDefault(r => r.Id == _ruleEditExistingRuleId);
+                if (existing is not null)
+                {
+                    var newPattern = string.IsNullOrWhiteSpace(existing.Pattern)
+                        ? _ruleEditPattern
+                        : $"{existing.Pattern},{_ruleEditPattern}";
+                    var updateReq = new UpdateReceiptMappingRuleRequest(Pattern: newPattern);
+                    await RcptConfigService.UpdateMappingRuleAsync(_selectedActionId, existing.Id, updateReq);
+                }
+            }
+            else
+            {
+                // Create new rule
+                var createReq = new CreateReceiptMappingRuleRequest(
+                    _ruleEditFieldId, _ruleEditPattern, effectiveValue, Priority: 0);
+                await RcptConfigService.CreateMappingRuleAsync(_selectedActionId, createReq);
+            }
+
+            // Reload rules and re-apply
+            _mappingRules = await RcptConfigService.GetMappingRulesAsync(_selectedActionId);
+            ApplyServerMappingRules();
+            CloseRuleEditor();
+        }
+        catch
+        {
+            _errors = [L["Receipt_RuleSaveFailed"]];
+        }
+
+        _ruleEditSaving = false;
     }
 
     // ── Per-item category change ──
@@ -1342,9 +2261,30 @@
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
-                foreach (var newVal in newValues)
+                if (newValues.Count == 0) continue;
+
+                if (field.FieldType == FieldType.CompositeDropdown &&
+                    _compositeRefFieldDefs.TryGetValue(field.Id, out var refDefs) && refDefs.Count > 0)
                 {
-                    await FieldDefService.AppendDropdownValueAsync(field.FieldDefinitionId, newVal!);
+                    // For CompositeDropdown fields, append new values to the FIRST referenced
+                    // field definition (the leaf dropdown that actually stores the values).
+                    // If there's a dependency rule chain, we also need to check which ref is correct
+                    // based on the source value; fall back to the first ref if undetermined.
+                    foreach (var newVal in newValues)
+                    {
+                        // Find which referenced field def already contains a matching group
+                        // (via dependency rules from the parent), or default to the first one.
+                        var targetDef = FindRefFieldDefForValue(field.Id, newVal!) ?? refDefs[0];
+                        await FieldDefService.AppendDropdownValueAsync(targetDef.Id, newVal!);
+                    }
+                }
+                else
+                {
+                    // Regular Dropdown: append directly to the action field's own field definition
+                    foreach (var newVal in newValues)
+                    {
+                        await FieldDefService.AppendDropdownValueAsync(field.FieldDefinitionId, newVal!);
+                    }
                 }
             }
 
@@ -1376,13 +2316,32 @@
                     }
                 }
 
-                // Map dropdown category values
+                // Map dropdown category values (includes fixed values applied via SyncFieldMappingsToLegacy)
                 foreach (var field in _dropdownFields)
                 {
                     var catValue = item.GetCategoryValue(field.Id);
                     if (!string.IsNullOrEmpty(catValue) && catValue != "__new__")
                     {
                         fieldValues.Add(new ActionEntryFieldValue(field.Id, catValue));
+                    }
+                }
+
+                // Map fixed/merchant values for non-dropdown fields
+                var mappedFieldIds = fieldValues.Select(fv => fv.ActionFieldId).ToHashSet();
+                foreach (var fm in _fieldMappings)
+                {
+                    if (mappedFieldIds.Contains(fm.FieldId)) continue;
+
+                    var fixedVal = fm.Source switch
+                    {
+                        ReceiptFieldMappingSource.FixedValue => fm.FixedValue,
+                        ReceiptFieldMappingSource.MerchantName => _scanResult?.MerchantName,
+                        _ => null
+                    };
+
+                    if (!string.IsNullOrEmpty(fixedVal))
+                    {
+                        fieldValues.Add(new ActionEntryFieldValue(fm.FieldId, fixedVal));
                     }
                 }
 
@@ -1395,13 +2354,8 @@
                 if (success) _importedCount++;
             }
 
-            // 4. Create server-side mapping rules for selected suggestions
-            if (_createSuggestedRules && _selectedSuggestedRules.Count > 0)
-            {
-                await CreateSuggestedRulesAsync();
-            }
-
             _currentStep = 4;
+            _ = DeleteDraftAsync();
         }
         catch
         {
@@ -1421,17 +2375,20 @@
         _actionFields = [];
         _dropdownFields = [];
         _columnMappings = [];
+        _fieldMappings = [];
         _receiptItems = [];
         _newDropdownValues = [];
         _resolvedDropdownOptions = [];
+        _compositeRefFieldDefs = [];
         _depRules = [];
         _batchValues.Clear();
         _patternsAppliedCount = 0;
-        _createSuggestedRules = true;
-        _selectedSuggestedRules = [];
+        CloseRuleEditor();
         _errors = [];
         _successMessage = null;
         _importedCount = 0;
+        _draftId = null;
+        _showDraftPicker = false;
     }
 
     private static string FormatFileSize(long bytes) => bytes switch
@@ -1441,7 +2398,316 @@
         _ => $"{bytes / (1024.0 * 1024.0):F1} MB"
     };
 
+    // ── Draft persistence ──
+
+    private ReceiptScanDraftState BuildDraftState() => new()
+    {
+        CurrentStep = _currentStep,
+        SelectedActionId = _selectedActionId,
+        SelectedActionName = _selectedActionName,
+        MerchantName = _scanResult?.MerchantName,
+        TransactionDate = _scanResult?.TransactionDate,
+        Subtotal = _scanResult?.Subtotal,
+        Tax = _scanResult?.Tax,
+        Total = _scanResult?.Total,
+        Confidence = _scanResult?.Confidence ?? 0,
+        Items = _receiptItems.Select(i => new DraftReceiptItem
+        {
+            Description = i.Description,
+            Quantity = i.Quantity,
+            UnitPrice = i.UnitPrice,
+            TotalPrice = i.TotalPrice,
+            Include = i.Include,
+            MatchedRuleId = i.MatchedRule?.Id,
+            CategoryValues = _dropdownFields
+                .Select(f => (Key: f.Id.ToString(), Val: i.GetCategoryValue(f.Id)))
+                .Where(kv => kv.Val is not null)
+                .ToDictionary(kv => kv.Key, kv => kv.Val!)
+        }).ToList(),
+        FieldMappings = _fieldMappings.Select(fm => new DraftFieldMapping
+        {
+            FieldId = fm.FieldId,
+            FieldName = fm.FieldName,
+            Source = (int)fm.Source,
+            FixedValue = fm.FixedValue
+        }).ToList()
+    };
+
+    private void RestoreFromDraft(ReceiptScanDraftState state)
+    {
+        // Never restore to step < 2 — upload (step 1) requires a file that isn't persisted
+        _currentStep = Math.Max(state.CurrentStep, 2);
+        _selectedActionId = state.SelectedActionId;
+        _selectedActionName = state.SelectedActionName;
+
+        _scanResult = new ReceiptScanResult
+        {
+            MerchantName = state.MerchantName,
+            TransactionDate = state.TransactionDate,
+            Subtotal = state.Subtotal,
+            Tax = state.Tax,
+            Total = state.Total,
+            Confidence = state.Confidence,
+            Items = state.Items.Select(i => new ReceiptLineItem
+            {
+                Description = i.Description,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                TotalPrice = i.TotalPrice
+            }).ToList()
+        };
+
+        _receiptItems = state.Items.Select(i =>
+        {
+            var row = new ReceiptItemRow
+            {
+                Description = i.Description,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                TotalPrice = i.TotalPrice,
+                Include = i.Include
+            };
+            foreach (var (key, val) in i.CategoryValues)
+            {
+                if (Guid.TryParse(key, out var fieldId))
+                    row.SetCategoryValue(fieldId, val);
+            }
+            return row;
+        }).ToList();
+
+        // Field mappings will be restored after loading action fields
+        // Store them temporarily for post-load restoration
+        _draftFieldMappings = state.FieldMappings;
+    }
+
+    // Temporary storage for draft field mappings until action fields are loaded
+    private List<DraftFieldMapping>? _draftFieldMappings;
+
+    private async Task SaveDraftAsync()
+    {
+        // Only save from step 2+ (Map) — steps 0-1 have no scan data to persist.
+        if (_currentStep < 2 || _selectedActionId == Guid.Empty) return;
+
+        try
+        {
+            var state = BuildDraftState();
+            var json = System.Text.Json.JsonSerializer.Serialize(state);
+
+            if (_draftId.HasValue)
+            {
+                await DraftService.UpdateAsync(_draftId.Value, new UpdateReceiptScanDraftRequest(
+                    json,
+                    _scanResult?.MerchantName,
+                    _scanResult?.TransactionDate,
+                    _scanResult?.Total,
+                    _currentStep));
+            }
+            else
+            {
+                var created = await DraftService.CreateAsync(new CreateReceiptScanDraftRequest(
+                    _selectedActionId,
+                    _selectedActionName,
+                    json,
+                    _scanResult?.MerchantName,
+                    _scanResult?.TransactionDate,
+                    _scanResult?.Total,
+                    _currentStep));
+
+                if (created is not null)
+                    _draftId = created.Id;
+            }
+        }
+        catch
+        {
+            // Draft save is best-effort — don't block the wizard
+        }
+    }
+
+    private async Task DeleteDraftAsync()
+    {
+        if (_draftId.HasValue)
+        {
+            try { await DraftService.DeleteAsync(_draftId.Value); } catch { }
+            _draftId = null;
+        }
+    }
+
+    private async Task ResumeDraftAsync(ReceiptScanDraftResponse draft)
+    {
+        _showDraftPicker = false;
+        _draftId = draft.Id;
+
+        try
+        {
+            var state = System.Text.Json.JsonSerializer.Deserialize<ReceiptScanDraftState>(draft.SerializedState);
+            if (state is null) return;
+
+            RestoreFromDraft(state);
+
+            // Load server-side data for the selected action
+            await LoadFieldsForRestoredDraft();
+        }
+        catch
+        {
+            _errors = [L["Receipt_DraftRestoreFailed"]];
+            Reset();
+        }
+    }
+
+    /// <summary>
+    /// Loads action fields, dropdown options, mapping rules, and dependency rules for a restored draft,
+    /// then re-applies the saved field mappings and item category values.
+    /// </summary>
+    private async Task LoadFieldsForRestoredDraft()
+    {
+        _actionFields = await FieldService.GetByTrackedActionAsync(_selectedActionId);
+
+        _dropdownFields = _actionFields
+            .Where(f => f.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
+            .ToList();
+
+        await ResolveDropdownOptionsAsync();
+
+        try { _depRules = await DepRuleService.GetByTrackedActionAsync(_selectedActionId); } catch { _depRules = []; }
+
+        try
+        {
+            _receiptConfig = await RcptConfigService.GetByActionAsync(_selectedActionId);
+            _mappingRules = _receiptConfig is not null
+                ? await RcptConfigService.GetMappingRulesAsync(_selectedActionId)
+                : [];
+        }
+        catch { _receiptConfig = null; _mappingRules = []; }
+
+        // Restore field mappings from draft
+        if (_draftFieldMappings is { Count: > 0 })
+        {
+            _fieldMappings = _actionFields.Select(f =>
+            {
+                var saved = _draftFieldMappings.FirstOrDefault(m => m.FieldId == f.Id);
+                return new ReceiptFieldMapping
+                {
+                    FieldId = f.Id,
+                    FieldName = f.Name,
+                    FieldType = f.FieldType,
+                    Source = saved is not null ? (ReceiptFieldMappingSource)saved.Source : ReceiptFieldMappingSource.None,
+                    FixedValue = saved?.FixedValue
+                };
+            }).ToList();
+            _draftFieldMappings = null;
+        }
+        else
+        {
+            _fieldMappings = _actionFields.Select(f => new ReceiptFieldMapping
+            {
+                FieldId = f.Id,
+                FieldName = f.Name,
+                FieldType = f.FieldType,
+                Source = ReceiptFieldMappingSource.None
+            }).ToList();
+
+            if (_receiptConfig is not null)
+                ApplyReceiptConfigToFieldMappings();
+            else
+                AutoDetectFieldMappings();
+        }
+
+        _batchValues.Clear();
+        SyncFieldMappingsToLegacy();
+
+        // Re-match mapping rules to items that had a matched rule
+        foreach (var item in _receiptItems)
+        {
+            if (item.MatchedRule is null)
+            {
+                // Try to re-match from server rules
+                foreach (var rule in _mappingRules.OrderByDescending(r => r.Priority))
+                {
+                    if (MatchesPattern(item.Description, rule.Pattern))
+                    {
+                        item.MatchedRule = rule;
+                        break;
+                    }
+                }
+            }
+        }
+
+        _patternsAppliedCount = _receiptItems.Count(i => i.MatchedRule is not null);
+        RefreshNewValues();
+    }
+
+    private async Task AbandonDraftAsync(ReceiptScanDraftResponse draft)
+    {
+        try { await DraftService.DeleteAsync(draft.Id); } catch { }
+        _drafts.Remove(draft);
+        if (_drafts.Count == 0)
+            _showDraftPicker = false;
+    }
+
+    private void StartNewScan()
+    {
+        _showDraftPicker = false;
+    }
+
     // ── Dependency rules for import ──
+
+    /// <summary>
+    /// For a CompositeDropdown field, determines which referenced FieldDefinition should
+    /// receive the new value. Uses dependency rules to find the parent value → group mapping.
+    /// If undetermined, returns null (caller falls back to first ref).
+    /// </summary>
+    private FieldDefinitionResponse? FindRefFieldDefForValue(Guid compositeFieldId, string newValue)
+    {
+        if (!_compositeRefFieldDefs.TryGetValue(compositeFieldId, out var refDefs) || refDefs.Count <= 1)
+            return refDefs?.FirstOrDefault();
+
+        // Look at which source value (parent) is associated with items that have this new value,
+        // then find which ref field def is governed by that source value via dependency rules.
+        var depRulesForTarget = _depRules
+            .Where(r => r.RuleType == DependencyRuleType.FilterDropdownValues && r.TargetFieldId == compositeFieldId)
+            .ToList();
+
+        if (depRulesForTarget.Count == 0) return null;
+
+        // Find the source field values that accompany items with this target value
+        var sourceFieldId = depRulesForTarget.First().SourceFieldId;
+        var sourceValue = _receiptItems
+            .Where(i => i.Include)
+            .Where(i => string.Equals(i.GetCategoryValue(compositeFieldId), newValue, StringComparison.OrdinalIgnoreCase))
+            .Select(i => i.GetCategoryValue(sourceFieldId))
+            .FirstOrDefault(v => !string.IsNullOrEmpty(v));
+
+        if (string.IsNullOrEmpty(sourceValue)) return null;
+
+        // The source value itself lives in a parent dropdown. Find which ref field def
+        // in the parent's composite refs contains this source value — that tells us the "group".
+        var sourceField = _dropdownFields.FirstOrDefault(f => f.Id == sourceFieldId);
+        if (sourceField is null) return null;
+
+        // If the source field is also composite, find which of its ref defs contains sourceValue
+        if (sourceField.FieldType == FieldType.CompositeDropdown &&
+            _compositeRefFieldDefs.TryGetValue(sourceField.Id, out var parentRefDefs))
+        {
+            var matchingParentRef = parentRefDefs.FirstOrDefault(rd =>
+                rd.DropdownValues != null &&
+                rd.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Contains(sourceValue, StringComparer.OrdinalIgnoreCase));
+
+            if (matchingParentRef is not null)
+            {
+                // The matching parent ref's Id should correspond to one of our target's refs
+                // Find the ref def whose Id matches or that is paired by convention (same index)
+                var parentIdx = parentRefDefs.IndexOf(matchingParentRef);
+                if (parentIdx >= 0 && parentIdx < refDefs.Count)
+                    return refDefs[parentIdx];
+            }
+        }
+
+        // Fallback: if the source is a plain Dropdown field, sourceValue IS the field def name.
+        // Find which ref field def has the same DefaultName as the source value.
+        return refDefs.FirstOrDefault(rd =>
+            string.Equals(rd.DefaultName, sourceValue, StringComparison.OrdinalIgnoreCase));
+    }
 
     /// <summary>
     /// After appending new dropdown values, creates or updates dependency rules
@@ -1540,72 +2806,6 @@
 
     // ── Rule Suggestion Helpers ──
 
-    private sealed record SuggestedRule(string Key, string Description, Guid FieldId, string FieldName, string Value);
-
-    private List<SuggestedRule> GetSuggestedRules(List<ReceiptItemRow> includedItems)
-    {
-        var suggestions = new List<SuggestedRule>();
-        var existingPatterns = _mappingRules
-            .SelectMany(r => r.Pattern.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(p => (r.TargetFieldId, Pattern: p.ToLowerInvariant())))
-            .ToHashSet();
-
-        foreach (var item in includedItems)
-        {
-            foreach (var field in _dropdownFields)
-            {
-                var value = item.GetCategoryValue(field.Id);
-                if (string.IsNullOrEmpty(value) || value == "__new__") continue;
-
-                // Check if there's already a server-side rule covering this item
-                var alreadyCovered = _mappingRules.Any(r =>
-                    r.TargetFieldId == field.Id &&
-                    r.Value == value &&
-                    MatchesPattern(item.Description, r.Pattern));
-                if (alreadyCovered) continue;
-
-                var key = $"{item.Description}|{field.Id}|{value}";
-                if (suggestions.Any(s => s.Key == key)) continue;
-
-                suggestions.Add(new SuggestedRule(key, item.Description, field.Id, field.Name, value));
-            }
-        }
-
-        return suggestions;
-    }
-
-    private void ToggleSuggestedRule(string key, bool isChecked)
-    {
-        if (isChecked)
-            _selectedSuggestedRules.Add(key);
-        else
-            _selectedSuggestedRules.Remove(key);
-    }
-
-    private async Task CreateSuggestedRulesAsync()
-    {
-        var includedItems = _receiptItems.Where(i => i.Include).ToList();
-        var suggestions = GetSuggestedRules(includedItems);
-
-        // Group by (fieldId, value) to merge descriptions into comma-separated patterns
-        var grouped = suggestions
-            .Where(s => _selectedSuggestedRules.Contains(s.Key))
-            .GroupBy(s => (s.FieldId, s.Value))
-            .ToList();
-
-        foreach (var group in grouped)
-        {
-            var pattern = string.Join(",", group.Select(s => s.Description).Distinct(StringComparer.OrdinalIgnoreCase));
-            var request = new CreateReceiptMappingRuleRequest(
-                group.Key.FieldId,
-                pattern,
-                group.Key.Value,
-                Priority: 0);
-
-            await RcptConfigService.CreateMappingRuleAsync(_selectedActionId, request);
-        }
-    }
-
     // ── Models ──
 
     private sealed class ColumnMapping
@@ -1622,6 +2822,12 @@
         public decimal? UnitPrice { get; set; }
         public decimal? TotalPrice { get; set; }
         public bool Include { get; set; } = true;
+
+        /// <summary>Selected for batch price-shift operations.</summary>
+        public bool Selected { get; set; }
+
+        /// <summary>The mapping rule that auto-categorized this item (null = manual / none).</summary>
+        public ReceiptMappingRuleResponse? MatchedRule { get; set; }
 
         private readonly Dictionary<Guid, string> _categoryValues = [];
 

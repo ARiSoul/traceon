@@ -1,0 +1,324 @@
+@inject IStringLocalizer<SharedResource> L
+
+<div class="card bg-light mb-3">
+    <div class="card-body py-2">
+        <h6 class="mb-2"><i class="bi bi-columns-gap me-1"></i>@L["Receipt_FieldMapping"]</h6>
+        <p class="text-muted small mb-2">@L["Receipt_FieldMappingHint"]</p>
+        <div class="table-responsive">
+            <table class="table table-sm table-borderless align-middle mb-0">
+                <tbody>
+                    @foreach (var fm in FieldMappings)
+                    {
+                        var captured = fm;
+                        var isDropdown = captured.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown;
+                        var isNumeric = captured.FieldType is FieldType.Decimal or FieldType.Integer;
+                        var isText = captured.FieldType is FieldType.Text;
+                        <tr>
+                            <td class="text-nowrap fw-semibold small" style="width: 1%; white-space: nowrap;">
+                                @captured.FieldName
+                                <span class="badge bg-secondary ms-1" style="font-size: 0.55rem;">@captured.FieldType</span>
+                            </td>
+                            <td style="min-width: 180px; max-width: 220px;">
+                                <select class="form-select form-select-sm"
+                                        value="@captured.Source"
+                                        @onchange="e => OnSourceChanged(captured, e.Value?.ToString())">
+                                    <option value="@ReceiptFieldMappingSource.None">— @L["Receipt_Skip"] —</option>
+                                    @if (isNumeric)
+                                    {
+                                        <option value="@ReceiptFieldMappingSource.ReceiptTotal">@L["Receipt_Total"]</option>
+                                        <option value="@ReceiptFieldMappingSource.ReceiptQuantity">@L["Receipt_Qty"]</option>
+                                        <option value="@ReceiptFieldMappingSource.ReceiptUnitPrice">@L["Receipt_UnitPrice"]</option>
+                                    }
+                                    @if (isDropdown || isText)
+                                    {
+                                        <option value="@ReceiptFieldMappingSource.ReceiptDescription">@L["Receipt_Description"]</option>
+                                        <option value="@ReceiptFieldMappingSource.MerchantName">@L["Receipt_MerchantName"]</option>
+                                        <option value="@ReceiptFieldMappingSource.FixedValue">@L["Receipt_FixedValue"]</option>
+                                    }
+                                </select>
+                            </td>
+                            <td>
+                                @if (captured.Source == ReceiptFieldMappingSource.FixedValue && isDropdown)
+                                {
+                                    var fixedOptions = GetDropdownOptionsForField(captured);
+                                    <select class="form-select form-select-sm"
+                                            value="@(captured.FixedValue ?? "")"
+                                            @onchange="e => OnFixedValueChanged(captured, e.Value?.ToString())">
+                                        <option value="">— @L["Common_Select"] —</option>
+                                        @foreach (var opt in fixedOptions)
+                                        {
+                                            <option value="@opt">@opt</option>
+                                        }
+                                    </select>
+                                }
+                                else if (captured.Source == ReceiptFieldMappingSource.FixedValue && isText)
+                                {
+                                    <input type="text" class="form-control form-control-sm"
+                                           value="@(captured.FixedValue ?? "")"
+                                           placeholder="@L["Receipt_TypeValue"]"
+                                           @onchange="e => OnFixedValueChanged(captured, e.Value?.ToString())" />
+                                }
+                                else if (captured.Source == ReceiptFieldMappingSource.MerchantName && !string.IsNullOrEmpty(MerchantName))
+                                {
+                                    <span class="badge bg-info-subtle text-info-emphasis text-truncate" style="max-width: 180px;" title="@MerchantName">
+                                        @MerchantName
+                                    </span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (ShowMappingRules)
+{
+    var ddFields = FieldMappings
+        .Where(f => f.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
+        .ToList();
+    <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-magic me-2"></i>@L["RcptCfg_MappingRules"]</span>
+        @if (ddFields.Count > 0)
+        {
+            <button class="btn btn-outline-primary btn-sm" @onclick="() => _showRuleForm = true" disabled="@_showRuleForm">
+                <i class="bi bi-plus-circle me-1"></i>@L["RcptCfg_AddRule"]
+            </button>
+        }
+    </div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">@L["RcptCfg_MappingRulesHint"]</p>
+
+        @if (_showRuleForm)
+        {
+            <div class="card border-primary mb-3">
+                <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>@L["RcptCfg_AddRule"]</h6>
+                    <button class="btn-close" @onclick="() => _showRuleForm = false"></button>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small">@L["RcptCfg_TargetField"]</label>
+                            <select class="form-select form-select-sm" @bind="_newRule.TargetFieldId">
+                                <option value="@Guid.Empty">— @L["Common_Select"] —</option>
+                                @foreach (var f in ddFields)
+                                {
+                                    <option value="@f.FieldId">@f.FieldName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small">@L["RcptCfg_Pattern"]</label>
+                            <input type="text" class="form-control form-control-sm" @bind="_newRule.Pattern" placeholder="@L["RcptCfg_PatternPlaceholder"]" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small">@L["RcptCfg_Value"]</label>
+                            <input type="text" class="form-control form-control-sm" @bind="_newRule.Value" />
+                        </div>
+                        <div class="col-6 col-md-1">
+                            <label class="form-label small">@L["RcptCfg_Priority"]</label>
+                            <input type="number" class="form-control form-control-sm" @bind="_newRule.Priority" />
+                        </div>
+                        <div class="col-6 col-md-2 d-flex align-items-end gap-1">
+                            <button class="btn btn-primary btn-sm" @onclick="OnAddRuleClicked"
+                                    disabled="@(string.IsNullOrWhiteSpace(_newRule.Pattern) || string.IsNullOrWhiteSpace(_newRule.Value) || _newRule.TargetFieldId == Guid.Empty)">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" @onclick="() => _showRuleForm = false">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (MappingRules.Count == 0 && !_showRuleForm)
+        {
+            <div class="text-muted text-center py-3">
+                <i class="bi bi-magic display-6 d-block mb-2 opacity-50"></i>
+                @L["RcptCfg_NoRulesYet"]
+            </div>
+        }
+        else
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var rule in MappingRules)
+                {
+                    var captured = rule;
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-secondary me-1">@rule.TargetFieldName</span>
+                            <span class="text-muted small">contains</span>
+                            <code class="mx-1">@rule.Pattern</code>
+                            <i class="bi bi-arrow-right mx-1"></i>
+                            <span class="badge bg-primary">@rule.Value</span>
+                            @if (rule.Priority > 0)
+                            {
+                                <span class="badge bg-warning text-dark ms-1">P@(rule.Priority)</span>
+                            }
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="() => OnDeleteRule.InvokeAsync(captured.Id)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+}
+
+@code {
+    /// <summary>The list of field mappings (one per action field).</summary>
+    [Parameter, EditorRequired] public List<ReceiptFieldMapping> FieldMappings { get; set; } = [];
+
+    /// <summary>Current mapping rules for auto-categorization.</summary>
+    [Parameter, EditorRequired] public List<ReceiptMappingRuleResponse> MappingRules { get; set; } = [];
+
+    /// <summary>Resolved dropdown options per field ID (handles CompositeDropdown ref: too).</summary>
+    [Parameter] public Dictionary<Guid, List<string>> DropdownOptions { get; set; } = [];
+
+    /// <summary>Dependency rules for filtering dropdown options.</summary>
+    [Parameter] public List<FieldDependencyRuleResponse> DependencyRules { get; set; } = [];
+
+    /// <summary>Merchant name from the scanned receipt (null in template mode).</summary>
+    [Parameter] public string? MerchantName { get; set; }
+
+    /// <summary>Whether to show the auto-categorization rules panel. Default true (action config). Set false for import flow.</summary>
+    [Parameter] public bool ShowMappingRules { get; set; } = true;
+
+    /// <summary>Fired when any field mapping changes (source or fixed value).</summary>
+    [Parameter] public EventCallback<ReceiptFieldMapping> OnMappingChanged { get; set; }
+
+    /// <summary>Fired when the user submits a new rule.</summary>
+    [Parameter] public EventCallback<CreateReceiptMappingRuleRequest> OnAddRule { get; set; }
+
+    /// <summary>Fired when the user deletes a rule.</summary>
+    [Parameter] public EventCallback<Guid> OnDeleteRule { get; set; }
+
+    private bool _showRuleForm;
+    private NewRuleModel _newRule = new();
+
+    private void OnSourceChanged(ReceiptFieldMapping fm, string? value)
+    {
+        if (Enum.TryParse<ReceiptFieldMappingSource>(value, out var source))
+        {
+            fm.Source = source;
+            fm.FixedValue = null;
+        }
+        else
+        {
+            fm.Source = ReceiptFieldMappingSource.None;
+            fm.FixedValue = null;
+        }
+
+        ClearInvalidDependentFixedValues(fm.FieldId);
+        OnMappingChanged.InvokeAsync(fm);
+    }
+
+    private void OnFixedValueChanged(ReceiptFieldMapping fm, string? value)
+    {
+        fm.FixedValue = value;
+        ClearInvalidDependentFixedValues(fm.FieldId);
+        OnMappingChanged.InvokeAsync(fm);
+    }
+
+    private void ClearInvalidDependentFixedValues(Guid changedFieldId)
+    {
+        if (DependencyRules.Count == 0) return;
+
+        var dependentFieldIds = DependencyRules
+            .Where(r => r.SourceFieldId == changedFieldId)
+            .Select(r => r.TargetFieldId)
+            .Distinct()
+            .ToList();
+
+        foreach (var depFieldId in dependentFieldIds)
+        {
+            var depFm = FieldMappings.FirstOrDefault(f => f.FieldId == depFieldId);
+            if (depFm is { Source: ReceiptFieldMappingSource.FixedValue, FixedValue: not null })
+            {
+                var validOptions = GetDropdownOptionsForField(depFm);
+                if (!validOptions.Contains(depFm.FixedValue, StringComparer.OrdinalIgnoreCase))
+                {
+                    depFm.FixedValue = null;
+                    OnMappingChanged.InvokeAsync(depFm);
+                }
+            }
+        }
+    }
+
+    private List<string> GetDropdownOptionsForField(ReceiptFieldMapping fm)
+    {
+        if (!DropdownOptions.TryGetValue(fm.FieldId, out var allOptions))
+            return [];
+
+        if (DependencyRules.Count == 0) return allOptions;
+
+        var rulesForTarget = DependencyRules
+            .Where(r => r.RuleType == DependencyRuleType.FilterDropdownValues && r.TargetFieldId == fm.FieldId)
+            .ToList();
+
+        if (rulesForTarget.Count == 0) return allOptions;
+
+        var matchedConstraints = new List<string>();
+        var anySourceMatched = false;
+
+        foreach (var rule in rulesForTarget)
+        {
+            var sourceFm = FieldMappings.FirstOrDefault(f => f.FieldId == rule.SourceFieldId);
+            var srcVal = sourceFm is { Source: ReceiptFieldMappingSource.FixedValue } ? sourceFm.FixedValue : null;
+
+            if (!string.IsNullOrEmpty(srcVal) &&
+                string.Equals(srcVal, rule.SourceValue, StringComparison.OrdinalIgnoreCase))
+            {
+                anySourceMatched = true;
+                if (!string.IsNullOrWhiteSpace(rule.TargetConstraint))
+                {
+                    matchedConstraints.AddRange(
+                        rule.TargetConstraint.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                }
+            }
+        }
+
+        if (anySourceMatched)
+        {
+            var allowed = matchedConstraints.Distinct(StringComparer.OrdinalIgnoreCase).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return allOptions.Where(o => allowed.Contains(o)).ToList();
+        }
+
+        var sourceFieldIds = rulesForTarget.Select(r => r.SourceFieldId).Distinct();
+        var anySourceHasValue = sourceFieldIds.Any(sfId =>
+        {
+            var sfm = FieldMappings.FirstOrDefault(f => f.FieldId == sfId);
+            return sfm is { Source: ReceiptFieldMappingSource.FixedValue, FixedValue: not null };
+        });
+
+        return anySourceHasValue ? [] : allOptions;
+    }
+
+    private async Task OnAddRuleClicked()
+    {
+        var request = new CreateReceiptMappingRuleRequest(
+            _newRule.TargetFieldId,
+            _newRule.Pattern,
+            _newRule.Value,
+            _newRule.Priority);
+
+        await OnAddRule.InvokeAsync(request);
+        _newRule = new();
+        _showRuleForm = false;
+    }
+
+    private sealed class NewRuleModel
+    {
+        public Guid TargetFieldId { get; set; }
+        public string Pattern { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public int Priority { get; set; }
+    }
+}

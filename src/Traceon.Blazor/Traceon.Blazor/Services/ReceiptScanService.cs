@@ -1,41 +1,49 @@
+using System.Net.Http.Json;
+using Traceon.Contracts.ReceiptScan;
+
 namespace Traceon.Blazor.Services;
 
 /// <summary>
 /// Client-side service for receipt OCR scanning.
-/// Currently uses a mock implementation; will be replaced with Azure Document Intelligence calls.
+/// Sends the image to the API which calls Azure Document Intelligence.
 /// </summary>
-public sealed class ReceiptScanService
+public sealed class ReceiptScanService(HttpClient http)
 {
     /// <summary>
-    /// Simulates sending an image to OCR and receiving structured receipt data.
+    /// Uploads an image to the API for OCR processing and returns structured receipt data.
     /// </summary>
     public async Task<ReceiptScanResult> ScanAsync(Stream imageStream, string fileName)
     {
-        // Simulate network/processing delay
-        await Task.Delay(1500);
+        using var content = new MultipartFormDataContent();
+        using var streamContent = new StreamContent(imageStream);
+        content.Add(streamContent, "file", fileName);
 
-        // Return realistic mock data for a grocery receipt
+        var response = await http.PostAsync("/api/receipt-scan", content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"Receipt scan failed ({response.StatusCode}): {error}");
+        }
+
+        var scanResponse = await response.Content.ReadFromJsonAsync<ReceiptScanResponse>()
+            ?? throw new InvalidOperationException("Empty response from receipt scan API.");
+
         return new ReceiptScanResult
         {
-            MerchantName = "Lidl",
-            TransactionDate = DateTime.Today,
-            Items =
-            [
-                new ReceiptLineItem { Description = "Organic Whole Milk 1L", Quantity = 2, UnitPrice = 0.99m, TotalPrice = 1.98m },
-                new ReceiptLineItem { Description = "Sourdough Bread 500g", Quantity = 1, UnitPrice = 1.49m, TotalPrice = 1.49m },
-                new ReceiptLineItem { Description = "Free Range Eggs x12", Quantity = 1, UnitPrice = 2.79m, TotalPrice = 2.79m },
-                new ReceiptLineItem { Description = "Bananas 1kg", Quantity = 1, UnitPrice = 1.19m, TotalPrice = 1.19m },
-                new ReceiptLineItem { Description = "Cherry Tomatoes 250g", Quantity = 2, UnitPrice = 1.29m, TotalPrice = 2.58m },
-                new ReceiptLineItem { Description = "Chicken Breast 500g", Quantity = 1, UnitPrice = 3.99m, TotalPrice = 3.99m },
-                new ReceiptLineItem { Description = "Olive Oil Extra Virgin 750ml", Quantity = 1, UnitPrice = 4.49m, TotalPrice = 4.49m },
-                new ReceiptLineItem { Description = "Cheddar Cheese 200g", Quantity = 1, UnitPrice = 1.89m, TotalPrice = 1.89m },
-                new ReceiptLineItem { Description = "Plastic Bag", Quantity = 1, UnitPrice = 0.10m, TotalPrice = 0.10m },
-                new ReceiptLineItem { Description = "Dishwasher Tablets x30", Quantity = 1, UnitPrice = 3.49m, TotalPrice = 3.49m },
-            ],
-            Subtotal = 23.99m,
-            Tax = 1.92m,
-            Total = 25.91m,
-            Confidence = 0.94
+            MerchantName = scanResponse.MerchantName,
+            TransactionDate = scanResponse.TransactionDate,
+            Subtotal = scanResponse.Subtotal,
+            Tax = scanResponse.Tax,
+            Total = scanResponse.Total,
+            Confidence = scanResponse.Confidence,
+            Items = scanResponse.Items.Select(i => new ReceiptLineItem
+            {
+                Description = i.Description,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                TotalPrice = i.TotalPrice
+            }).ToList()
         };
     }
 }

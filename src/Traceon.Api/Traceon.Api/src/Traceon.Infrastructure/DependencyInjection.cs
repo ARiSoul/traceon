@@ -1,4 +1,6 @@
 using System.Text;
+using Azure;
+using Azure.AI.DocumentIntelligence;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -6,9 +8,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Traceon.Application.Interfaces;
 using Traceon.Domain.Repositories;
 using Traceon.Infrastructure.Audit;
 using Traceon.Infrastructure.DataPortability;
+using Traceon.Infrastructure.DocumentIntelligence;
 using Traceon.Infrastructure.Email;
 using Traceon.Infrastructure.Identity;
 using Traceon.Infrastructure.Onboarding;
@@ -91,10 +95,20 @@ public static class DependencyInjection
         services.AddScoped<IFieldAnalyticsRuleRepository, FieldAnalyticsRuleRepository>();
         services.AddScoped<IFieldDependencyRuleRepository, FieldDependencyRuleRepository>();
         services.AddScoped<IReceiptImportConfigRepository, ReceiptImportConfigRepository>();
+        services.AddScoped<IReceiptScanDraftRepository, ReceiptScanDraftRepository>();
         services.AddScoped<AuditService>();
         services.AddScoped<DataPortabilityService>();
         services.AddScoped<TemplateInstallService>();
         services.AddScoped<TrashService>();
+
+        // Azure Document Intelligence (receipt OCR)
+        var diSettings = configuration.GetSection("Azure:DocumentIntelligence").Get<DocumentIntelligenceSettings>();
+        if (diSettings is not null && !string.IsNullOrEmpty(diSettings.Endpoint) && !string.IsNullOrEmpty(diSettings.Key))
+        {
+            services.AddSingleton(new DocumentIntelligenceClient(
+                new Uri(diSettings.Endpoint), new AzureKeyCredential(diSettings.Key)));
+            services.AddScoped<IReceiptOcrService, ReceiptOcrService>();
+        }
 
         services.Configure<PurgeSettings>(configuration.GetSection("Purge"));
         services.AddHostedService<PurgeDeletedDataService>();
