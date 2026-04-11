@@ -103,6 +103,15 @@ else
                         }
                     </button>
                 </li>
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "receipt" ? "active" : "")" @onclick="ActivateReceiptTabAsync">
+                        <i class="bi bi-receipt me-1"></i>@L["RcptCfg_Tab"]
+                        @if (_receiptConfig is not null)
+                        {
+                            <span class="badge bg-success ms-1"><i class="bi bi-check-lg"></i></span>
+                        }
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -945,6 +954,50 @@ else
                     }
                 }
             }
+            else if (_activeTab == "receipt")
+            {
+                <p class="text-muted mb-3">@L["RcptCfg_Hint"]</p>
+
+                var decimalFields = _fields.Where(f => f.FieldType is FieldType.Decimal or FieldType.Integer).ToList();
+
+                @if (decimalFields.Count == 0)
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>@L["RcptCfg_NeedsDecimalField"]
+                    </div>
+                }
+                else if (_receiptConfig is null)
+                {
+                    <div class="text-center py-4">
+                        <p class="text-muted mb-3"><i class="bi bi-receipt display-4 d-block mb-2 text-muted opacity-50"></i>@L["RcptCfg_NotConfigured"]</p>
+                        <button class="btn btn-primary" @onclick="EnableReceiptImportAsync">
+                            <i class="bi bi-plus-circle me-1"></i>@L["RcptCfg_Enable"]
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    @* ── Field Mapping & Rules via shared editor ── *@
+                    <div class="mb-3 d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveReceiptConfigAsync" disabled="@_savingRcptCfg">
+                            @if (_savingRcptCfg) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            <i class="bi bi-check-circle me-1"></i>@L["Common_Save"]
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="DisableReceiptImportAsync">
+                            <i class="bi bi-x-circle me-1"></i>@L["RcptCfg_Disable"]
+                        </button>
+                    </div>
+
+                    <ReceiptFieldMappingEditor
+                        FieldMappings="_rcptFieldMappings"
+                        MappingRules="_rcptMappingRules"
+                        DropdownOptions="_rcptDropdownOptions"
+                        DependencyRules="_dependencyRules"
+                        OnMappingChanged="OnRcptFieldMappingChanged"
+                        OnAddRule="OnRcptAddRuleAsync"
+                        OnDeleteRule="DeleteRcptRuleAsync" />
+                }
+            }
         </div>
     </div>
 }
@@ -1032,6 +1085,7 @@ else
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
     [Inject] private FieldAnalyticsRuleService AnalyticsRuleService { get; set; } = default!;
     [Inject] private FieldDependencyRuleService DependencyRuleService { get; set; } = default!;
+    [Inject] private ReceiptImportConfigService ReceiptConfigService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private EditModel? _model;
@@ -1707,5 +1761,178 @@ else
             if (!ok) { _errors = errs; break; }
         }
         await LoadDependencyRulesAsync();
+    }
+
+    // ── Receipt Import Config ──
+
+    private static readonly System.Text.Json.JsonSerializerOptions _jsonOpts = new() { PropertyNameCaseInsensitive = true };
+
+    private ReceiptImportConfigResponse? _receiptConfig;
+    private List<ReceiptMappingRuleResponse> _rcptMappingRules = [];
+    private List<ReceiptFieldMapping> _rcptFieldMappings = [];
+    private Dictionary<Guid, List<string>> _rcptDropdownOptions = [];
+    private bool _savingRcptCfg;
+
+    private async Task ActivateReceiptTabAsync()
+    {
+        _activeTab = "receipt";
+        await LoadReceiptConfigAsync();
+    }
+
+    private async Task LoadReceiptConfigAsync()
+    {
+        try
+        {
+            _receiptConfig = await ReceiptConfigService.GetByActionAsync(Id);
+            if (_receiptConfig is not null)
+            {
+                _rcptMappingRules = await ReceiptConfigService.GetMappingRulesAsync(Id);
+            }
+            else
+            {
+                _rcptMappingRules = [];
+            }
+
+            BuildRcptFieldMappings();
+        }
+        catch { _receiptConfig = null; _rcptMappingRules = []; _rcptFieldMappings = []; }
+    }
+
+    private void BuildRcptFieldMappings()
+    {
+        // Build one ReceiptFieldMapping per action field
+        _rcptFieldMappings = _fields.Select(f => new ReceiptFieldMapping
+        {
+            FieldId = f.Id,
+            FieldName = f.Name,
+            FieldType = f.FieldType,
+            Source = ReceiptFieldMappingSource.None
+        }).ToList();
+
+        // Build resolved dropdown options
+        _rcptDropdownOptions = [];
+        foreach (var f in _fields.Where(f => f.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown))
+        {
+            var values = GetFieldDropdownValues(f.Id);
+            if (values.Length > 0)
+                _rcptDropdownOptions[f.Id] = [.. values];
+        }
+
+        if (_receiptConfig is not null)
+        {
+            // Apply existing config
+            void SetSource(Guid? fieldId, ReceiptFieldMappingSource source)
+            {
+                if (fieldId is null) return;
+                var fm = _rcptFieldMappings.FirstOrDefault(f => f.FieldId == fieldId.Value);
+                if (fm is not null) fm.Source = source;
+            }
+
+            SetSource(_receiptConfig.TotalFieldId, ReceiptFieldMappingSource.ReceiptTotal);
+            SetSource(_receiptConfig.QuantityFieldId, ReceiptFieldMappingSource.ReceiptQuantity);
+            SetSource(_receiptConfig.UnitPriceFieldId, ReceiptFieldMappingSource.ReceiptUnitPrice);
+            SetSource(_receiptConfig.DescriptionFieldId, ReceiptFieldMappingSource.ReceiptDescription);
+            SetSource(_receiptConfig.ShopFieldId, ReceiptFieldMappingSource.MerchantName);
+
+            // Restore fixed-value mappings from JSON
+            if (!string.IsNullOrEmpty(_receiptConfig.StaticFieldValues))
+            {
+                try
+                {
+                    var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(_receiptConfig.StaticFieldValues, _jsonOpts);
+                    if (dict is not null)
+                    {
+                        foreach (var (key, val) in dict)
+                        {
+                            if (Guid.TryParse(key, out var fid))
+                            {
+                                var fm = _rcptFieldMappings.FirstOrDefault(f => f.FieldId == fid);
+                                if (fm is not null && fm.Source == ReceiptFieldMappingSource.None)
+                                {
+                                    fm.Source = ReceiptFieldMappingSource.FixedValue;
+                                    fm.FixedValue = val;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { /* ignore malformed JSON */ }
+            }
+        }
+        else
+        {
+            // Auto-detect: if only one numeric field, map it to Total
+            var numFields = _fields.Where(f => f.FieldType is FieldType.Decimal or FieldType.Integer).ToList();
+            if (numFields.Count == 1)
+            {
+                var fm = _rcptFieldMappings.FirstOrDefault(f => f.FieldId == numFields[0].Id);
+                if (fm is not null) fm.Source = ReceiptFieldMappingSource.ReceiptTotal;
+            }
+        }
+    }
+
+    private void OnRcptFieldMappingChanged(ReceiptFieldMapping _) => StateHasChanged();
+
+    private async Task EnableReceiptImportAsync()
+    {
+        _savingRcptCfg = true;
+        var numFields = _fields.Where(f => f.FieldType is FieldType.Decimal or FieldType.Integer).ToList();
+        var totalId = numFields.Count == 1 ? numFields[0].Id : (Guid?)null;
+
+        var (ok, _) = await ReceiptConfigService.UpsertAsync(Id, new UpdateReceiptImportConfigRequest(TotalFieldId: totalId));
+        if (ok) await LoadReceiptConfigAsync();
+        _savingRcptCfg = false;
+    }
+
+    private async Task SaveReceiptConfigAsync()
+    {
+        _savingRcptCfg = true;
+        _errors = [];
+
+        Guid? FindFieldWithSource(ReceiptFieldMappingSource source) =>
+            _rcptFieldMappings.FirstOrDefault(f => f.Source == source)?.FieldId;
+
+        // Collect fixed-value mappings into a JSON dictionary
+        var fixedDict = _rcptFieldMappings
+            .Where(f => f.Source == ReceiptFieldMappingSource.FixedValue && !string.IsNullOrEmpty(f.FixedValue))
+            .ToDictionary(f => f.FieldId.ToString(), f => f.FixedValue!);
+        var staticJson = fixedDict.Count > 0
+            ? System.Text.Json.JsonSerializer.Serialize(fixedDict)
+            : null;
+
+        var (ok, errs) = await ReceiptConfigService.UpsertAsync(Id, new UpdateReceiptImportConfigRequest(
+            ShopFieldId: FindFieldWithSource(ReceiptFieldMappingSource.MerchantName),
+            DescriptionFieldId: FindFieldWithSource(ReceiptFieldMappingSource.ReceiptDescription),
+            TotalFieldId: FindFieldWithSource(ReceiptFieldMappingSource.ReceiptTotal),
+            QuantityFieldId: FindFieldWithSource(ReceiptFieldMappingSource.ReceiptQuantity),
+            UnitPriceFieldId: FindFieldWithSource(ReceiptFieldMappingSource.ReceiptUnitPrice),
+            StaticFieldValues: staticJson));
+
+        if (!ok) _errors = errs;
+        else await LoadReceiptConfigAsync();
+        _savingRcptCfg = false;
+    }
+
+    private async Task DisableReceiptImportAsync()
+    {
+        await ReceiptConfigService.DeleteAsync(Id);
+        _receiptConfig = null;
+        _rcptMappingRules = [];
+        _rcptFieldMappings = [];
+    }
+
+    private async Task OnRcptAddRuleAsync(CreateReceiptMappingRuleRequest request)
+    {
+        var (ok, _) = await ReceiptConfigService.CreateMappingRuleAsync(Id, request);
+        if (ok)
+        {
+            _rcptMappingRules = await ReceiptConfigService.GetMappingRulesAsync(Id);
+        }
+    }
+
+    private async Task DeleteRcptRuleAsync(Guid ruleId)
+    {
+        await ReceiptConfigService.DeleteMappingRuleAsync(Id, ruleId);
+        _rcptMappingRules = await ReceiptConfigService.GetMappingRulesAsync(Id);
     }
 }

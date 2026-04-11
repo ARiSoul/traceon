@@ -547,6 +547,172 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                     b.ToTable("FieldDependencyRules", "Traceon");
                 });
 
+            modelBuilder.Entity("Traceon.Domain.Entities.ReceiptImportConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DescriptionFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DiscountFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("QuantityFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ShopFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("StaticFieldValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("TotalFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TrackedActionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UnitPriceFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DescriptionFieldId");
+
+                    b.HasIndex("DiscountFieldId");
+
+                    b.HasIndex("QuantityFieldId");
+
+                    b.HasIndex("ShopFieldId");
+
+                    b.HasIndex("TotalFieldId");
+
+                    b.HasIndex("TrackedActionId")
+                        .IsUnique();
+
+                    b.HasIndex("UnitPriceFieldId");
+
+                    b.ToTable("ReceiptImportConfigs", "Traceon");
+                });
+
+            modelBuilder.Entity("Traceon.Domain.Entities.ReceiptMappingRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Pattern")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Priority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid>("ReceiptImportConfigId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TargetFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiptImportConfigId");
+
+                    b.HasIndex("TargetFieldId");
+
+                    b.ToTable("ReceiptMappingRules", "Traceon");
+                });
+
+            modelBuilder.Entity("Traceon.Domain.Entities.ReceiptScanDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentStep")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MerchantName")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("SelectedActionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SelectedActionName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("SerializedState")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Total")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ReceiptScanDrafts", "Traceon");
+                });
+
             modelBuilder.Entity("Traceon.Domain.Entities.Tag", b =>
                 {
                     b.Property<Guid>("Id")
@@ -949,6 +1115,60 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Traceon.Domain.Entities.ReceiptImportConfig", b =>
+                {
+                    b.HasOne("Traceon.Domain.Entities.ActionField", null)
+                        .WithMany()
+                        .HasForeignKey("DescriptionFieldId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Traceon.Domain.Entities.ActionField", null)
+                        .WithMany()
+                        .HasForeignKey("DiscountFieldId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Traceon.Domain.Entities.ActionField", null)
+                        .WithMany()
+                        .HasForeignKey("QuantityFieldId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Traceon.Domain.Entities.ActionField", null)
+                        .WithMany()
+                        .HasForeignKey("ShopFieldId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Traceon.Domain.Entities.ActionField", null)
+                        .WithMany()
+                        .HasForeignKey("TotalFieldId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Traceon.Domain.Entities.TrackedAction", null)
+                        .WithOne()
+                        .HasForeignKey("Traceon.Domain.Entities.ReceiptImportConfig", "TrackedActionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Traceon.Domain.Entities.ActionField", null)
+                        .WithMany()
+                        .HasForeignKey("UnitPriceFieldId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("Traceon.Domain.Entities.ReceiptMappingRule", b =>
+                {
+                    b.HasOne("Traceon.Domain.Entities.ReceiptImportConfig", null)
+                        .WithMany("MappingRules")
+                        .HasForeignKey("ReceiptImportConfigId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Traceon.Domain.Entities.ActionField", null)
+                        .WithMany()
+                        .HasForeignKey("TargetFieldId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Traceon.Domain.Entities.TrackedActionTag", b =>
                 {
                     b.HasOne("Traceon.Domain.Entities.Tag", "Tag")
@@ -969,6 +1189,11 @@ namespace Traceon.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Traceon.Domain.Entities.ActionEntry", b =>
                 {
                     b.Navigation("Fields");
+                });
+
+            modelBuilder.Entity("Traceon.Domain.Entities.ReceiptImportConfig", b =>
+                {
+                    b.Navigation("MappingRules");
                 });
 
             modelBuilder.Entity("Traceon.Domain.Entities.TrackedAction", b =>

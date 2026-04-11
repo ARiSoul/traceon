@@ -14,6 +14,7 @@ public sealed class TrackedActionService(
     ITrackedActionRepository repository,
     ITagRepository tagRepository,
     IActionEntryRepository entryRepository,
+    IReceiptImportConfigRepository receiptConfigRepository,
     ICurrentUserService currentUser,
     ILogger<TrackedActionService> logger) : ITrackedActionService
 {
@@ -37,7 +38,8 @@ public sealed class TrackedActionService(
             EntryCount = entryRepository.Query().Count(e => e.TrackedActionId == a.Id),
             SortOrder = a.SortOrder,
             CreatedAtUtc = a.CreatedAtUtc,
-            UpdatedAtUtc = a.UpdatedAtUtc
+            UpdatedAtUtc = a.UpdatedAtUtc,
+            HasReceiptConfig = receiptConfigRepository.Query().Any(rc => rc.TrackedActionId == a.Id)
         });
     }
 
@@ -57,7 +59,9 @@ public sealed class TrackedActionService(
     public async Task<Result<IReadOnlyList<TrackedActionResponse>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var entities = await repository.GetAllByUserIdAsync(currentUser.UserId, cancellationToken);
-        return Result<IReadOnlyList<TrackedActionResponse>>.Success(entities.ToResponseList());
+        var actionIds = entities.Select(e => e.Id);
+        var receiptEnabledIds = await receiptConfigRepository.GetActionIdsWithConfigAsync(actionIds, cancellationToken);
+        return Result<IReadOnlyList<TrackedActionResponse>>.Success(entities.ToResponseList(receiptEnabledIds));
     }
 
     public async Task<Result<TrackedActionResponse>> CreateAsync(CreateTrackedActionRequest request, CancellationToken cancellationToken = default)

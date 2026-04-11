@@ -1,4 +1,6 @@
 using System.Text;
+using Azure;
+using Azure.AI.DocumentIntelligence;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -6,12 +8,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Traceon.Application.Interfaces;
 using Traceon.Domain.Repositories;
 using Traceon.Infrastructure.Audit;
 using Traceon.Infrastructure.DataPortability;
+using Traceon.Infrastructure.DocumentIntelligence;
+using Traceon.Infrastructure.Hybrid;
 using Traceon.Infrastructure.Email;
 using Traceon.Infrastructure.Identity;
 using Traceon.Infrastructure.Onboarding;
+using Traceon.Infrastructure.OpenAI;
 using Traceon.Infrastructure.Persistence;
 using Traceon.Infrastructure.Persistence.Repositories;
 
@@ -90,10 +96,41 @@ public static class DependencyInjection
         services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<IFieldAnalyticsRuleRepository, FieldAnalyticsRuleRepository>();
         services.AddScoped<IFieldDependencyRuleRepository, FieldDependencyRuleRepository>();
+        services.AddScoped<IReceiptImportConfigRepository, ReceiptImportConfigRepository>();
+        services.AddScoped<IReceiptScanDraftRepository, ReceiptScanDraftRepository>();
         services.AddScoped<AuditService>();
         services.AddScoped<DataPortabilityService>();
         services.AddScoped<TemplateInstallService>();
         services.AddScoped<TrashService>();
+
+        // Receipt OCR priority:
+        //   1. Hybrid (DI layout OCR + GPT structured extraction) — best accuracy
+        //   2. Document Intelligence only (prebuilt-receipt) — no OpenAI needed
+        //   3. OpenAI LLM vision only — no Azure needed
+        var diSettings = configuration.GetSection("Azure:DocumentIntelligence").Get<DocumentIntelligenceSettings>();
+        var hasDi = diSettings is not null && !string.IsNullOrEmpty(diSettings.Endpoint) && !string.IsNullOrEmpty(diSettings.Key);
+        var openAiKey = configuration["OpenAI:ApiKey"];
+        var hasOpenAi = !string.IsNullOrEmpty(openAiKey);
+
+        if (hasDi && hasOpenAi)
+        {
+            // Hybrid: DI for accurate OCR text → GPT for semantic extraction
+            services.AddSingleton(new DocumentIntelligenceClient(
+                new Uri(diSettings!.Endpoint), new AzureKeyCredential(diSettings.Key)));
+            services.Configure<OpenAISettings>(configuration.GetSection("OpenAI"));
+            services.AddHttpClient<IReceiptOcrService, HybridReceiptOcrService>();
+        }
+        else if (hasDi)
+        {
+            services.AddSingleton(new DocumentIntelligenceClient(
+                new Uri(diSettings!.Endpoint), new AzureKeyCredential(diSettings.Key)));
+            services.AddScoped<IReceiptOcrService, ReceiptOcrService>();
+        }
+        else if (hasOpenAi)
+        {
+            services.Configure<OpenAISettings>(configuration.GetSection("OpenAI"));
+            services.AddHttpClient<IReceiptOcrService, LlmReceiptOcrService>();
+        }
 
         services.Configure<PurgeSettings>(configuration.GetSection("Purge"));
         services.AddHostedService<PurgeDeletedDataService>();
