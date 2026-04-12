@@ -1,0 +1,178 @@
+@inject IStringLocalizer<SharedResource> L
+
+@if (_isOpen)
+{
+    <div class="searchable-select-backdrop" @onclick="Close" @onclick:stopPropagation="true"></div>
+}
+
+<div class="searchable-select position-relative">
+    <button type="button"
+            class="@ButtonCss text-start text-truncate"
+            @onclick="Toggle"
+            @onclick:stopPropagation="true">
+        @if (!string.IsNullOrEmpty(Value))
+        {
+            @Value
+        }
+        else
+        {
+            <span class="text-muted">@Placeholder</span>
+        }
+    </button>
+
+    @if (_isOpen)
+    {
+        <div class="searchable-select-menu shadow-sm border rounded bg-body position-absolute w-100 mt-1 d-flex flex-column"
+             style="z-index: 1051; max-height: 280px; min-width: 180px;"
+             @onclick:stopPropagation="true">
+
+            <div class="px-2 pt-2 pb-1 flex-shrink-0">
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="@L["Common_Search"]..."
+                       @bind="_searchText"
+                       @bind:event="oninput" />
+            </div>
+
+            <div class="px-1 py-1 overflow-y-auto flex-grow-1">
+                @if (string.IsNullOrEmpty(Value) && !string.IsNullOrWhiteSpace(_searchText))
+                {
+                    @* don't show placeholder when filtering *@
+                }
+                else if (string.IsNullOrEmpty(_searchText))
+                {
+                    <div class="searchable-select-option px-2 py-1 rounded small @(string.IsNullOrEmpty(Value) ? "fw-semibold text-primary" : "text-muted")"
+                         style="cursor: pointer;"
+                         @onclick="() => Select(null)">
+                        @Placeholder
+                    </div>
+                }
+
+                @if (Groups is { Count: > 0 })
+                {
+                    @foreach (var (groupName, groupValues) in Groups)
+                    {
+                        var filtered = Filter(groupValues);
+                        @if (filtered.Count > 0)
+                        {
+                            <div class="px-2 pt-1 text-muted small fw-semibold" style="font-size: 0.7rem;">
+                                @groupName
+                            </div>
+                            @foreach (var opt in filtered)
+                            {
+                                var isActive = string.Equals(opt, Value, StringComparison.OrdinalIgnoreCase);
+                                <div class="searchable-select-option px-2 py-1 rounded small @(isActive ? "fw-semibold text-primary" : "")"
+                                     style="cursor: pointer; padding-left: 1rem !important;"
+                                     @onclick="() => Select(opt)">
+                                    @opt
+                                </div>
+                            }
+                        }
+                    }
+
+                    @if (NoGroupResults())
+                    {
+                        <div class="px-2 py-1 text-muted small">@L["Common_NoResults"]</div>
+                    }
+                }
+                else
+                {
+                    var filtered = Filter(Options);
+                    @if (filtered.Count == 0)
+                    {
+                        <div class="px-2 py-1 text-muted small">@L["Common_NoResults"]</div>
+                    }
+                    else
+                    {
+                        @foreach (var opt in filtered)
+                        {
+                            var isActive = string.Equals(opt, Value, StringComparison.OrdinalIgnoreCase);
+                            <div class="searchable-select-option px-2 py-1 rounded small @(isActive ? "fw-semibold text-primary" : "")"
+                                 style="cursor: pointer;"
+                                 @onclick="() => Select(opt)">
+                                @opt
+                            </div>
+                        }
+                    }
+                }
+
+                @if (!string.IsNullOrEmpty(ExtraOptionLabel))
+                {
+                    <div class="border-top mt-1 pt-1">
+                        <div class="searchable-select-option px-2 py-1 rounded small text-primary"
+                             style="cursor: pointer;"
+                             @onclick="() => Select(ExtraOptionValue)">
+                            @ExtraOptionLabel
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public List<string> Options { get; set; } = [];
+    [Parameter] public List<(string GroupName, string[] Values)>? Groups { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "— Select —";
+    [Parameter] public bool Small { get; set; }
+    [Parameter] public string? ExtraOptionLabel { get; set; }
+    [Parameter] public string? ExtraOptionValue { get; set; }
+
+    private bool _isOpen;
+    private string _searchText = "";
+
+    private string ButtonCss => Small
+        ? "form-select form-select-sm"
+        : "form-select";
+
+    private void Toggle()
+    {
+        _isOpen = !_isOpen;
+        _searchText = "";
+    }
+
+    private void Close()
+    {
+        _isOpen = false;
+        _searchText = "";
+    }
+
+    private async Task Select(string? value)
+    {
+        _isOpen = false;
+        _searchText = "";
+        if (!string.Equals(Value, value, StringComparison.Ordinal))
+            await ValueChanged.InvokeAsync(value);
+    }
+
+    private List<string> Filter(List<string> options)
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+            return options;
+
+        return options
+            .Where(o => o.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private List<string> Filter(string[] options)
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+            return [..options];
+
+        return options
+            .Where(o => o.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private bool NoGroupResults()
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+            return false;
+
+        return Groups!.All(g => g.Values.All(v =>
+            !v.Contains(_searchText, StringComparison.OrdinalIgnoreCase)));
+    }
+}

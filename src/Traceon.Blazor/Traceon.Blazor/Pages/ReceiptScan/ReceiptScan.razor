@@ -532,18 +532,15 @@
                                     var fieldId = field.Id;
                                     var currentValue = item.GetCategoryValue(fieldId);
                                     var options = GetItemDropdownOptions(item, field);
-                                    <div class="mt-1">
+                                    <div class="mt-1" @onclick:stopPropagation="true">
                                         <label class="form-label small mb-0 text-muted">@field.Name</label>
-                                        <select class="form-select form-select-sm"
-                                                value="@currentValue"
-                                                @onchange="e => OnItemCategoryChanged(item, fieldId, e.Value?.ToString())">
-                                            <option value="">— @L["Receipt_Uncategorized"] —</option>
-                                            @foreach (var opt in options)
-                                            {
-                                                <option value="@opt">@opt</option>
-                                            }
-                                            <option value="__new__">+ @L["Receipt_NewValue"]...</option>
-                                        </select>
+                                        <SearchableSelect Value="@currentValue"
+                                                          ValueChanged="v => OnItemCategoryChanged(item, fieldId, v)"
+                                                          Options="options"
+                                                          Placeholder="@($"— {L["Receipt_Uncategorized"]} —")"
+                                                          ExtraOptionLabel="@($"+ {L["Receipt_NewValue"]}...")"
+                                                          ExtraOptionValue="__new__"
+                                                          Small="true" />
                                         @if (currentValue == "__new__")
                                         {
                                             <input type="text" class="form-control form-control-sm mt-1"
@@ -827,17 +824,14 @@
         var fieldId = field.Id;
         var currentValue = item.GetCategoryValue(fieldId);
         var options = GetItemDropdownOptions(item, field);
-        <td>
-            <select class="form-select form-select-sm"
-                    value="@currentValue"
-                    @onchange="e => OnItemCategoryChanged(item, fieldId, e.Value?.ToString())">
-                <option value="">— @L["Receipt_Uncategorized"] —</option>
-                @foreach (var opt in options)
-                {
-                    <option value="@opt">@opt</option>
-                }
-                <option value="__new__">+ @L["Receipt_NewValue"]...</option>
-            </select>
+        <td @onclick:stopPropagation="true">
+            <SearchableSelect Value="@currentValue"
+                              ValueChanged="v => OnItemCategoryChanged(item, fieldId, v)"
+                              Options="options"
+                              Placeholder="@($"— {L["Receipt_Uncategorized"]} —")"
+                              ExtraOptionLabel="@($"+ {L["Receipt_NewValue"]}...")"
+                              ExtraOptionValue="__new__"
+                              Small="true" />
             @if (currentValue == "__new__")
             {
                 <input type="text" class="form-control form-control-sm mt-1"

@@ -148,16 +148,14 @@ else
                                     break;
 
                                 case FieldType.Dropdown:
-                                    <div class="input-group">
-                                        <select class="form-select" value="@model.TextValue"
-                                                @onchange="e => OnDropdownChanged(model, e.Value?.ToString())">
-                                            <option value="">@L["Entry_Select"]</option>
-                                            @foreach (var opt in model.DropdownOptions)
-                                            {
-                                                <option value="@opt">@opt</option>
-                                            }
-                                        </select>
-                                        <button class="btn btn-outline-secondary" type="button"
+                                    <div class="d-flex gap-1">
+                                        <div class="flex-grow-1">
+                                            <SearchableSelect Value="@model.TextValue"
+                                                              ValueChanged="v => OnDropdownChanged(model, v)"
+                                                              Options="model.DropdownOptions.ToList()"
+                                                              Placeholder="@L["Entry_Select"]" />
+                                        </div>
+                                        <button class="btn btn-outline-secondary flex-shrink-0" type="button"
                                                 title="@L["Dropdown_AddNew"]"
                                                 @onclick="() => ToggleQuickAdd(model.Field.Id)">
                                             <i class="bi bi-plus-lg"></i>
@@ -190,24 +188,14 @@ else
                                     break;
 
                                 case FieldType.CompositeDropdown:
-                                    <div class="input-group">
-                                        <select class="form-select" value="@model.TextValue"
-                                                @onchange="e => OnDropdownChanged(model, e.Value?.ToString())">
-                                            <option value="">@L["Entry_Select"]</option>
-                                            @if (model.CompositeGroups.Count > 0)
-                                            {
-                                                @foreach (var (groupName, values) in model.CompositeGroups)
-                                                {
-                                                    <optgroup label="@groupName">
-                                                        @foreach (var val in values)
-                                                        {
-                                                            <option value="@val">@val</option>
-                                                        }
-                                                    </optgroup>
-                                                }
-                                            }
-                                        </select>
-                                        <button class="btn btn-outline-secondary" type="button"
+                                    <div class="d-flex gap-1">
+                                        <div class="flex-grow-1">
+                                            <SearchableSelect Value="@model.TextValue"
+                                                              ValueChanged="v => OnDropdownChanged(model, v)"
+                                                              Groups="model.CompositeGroups"
+                                                              Placeholder="@L["Entry_Select"]" />
+                                        </div>
+                                        <button class="btn btn-outline-secondary flex-shrink-0" type="button"
                                                 title="@L["Dropdown_AddNew"]"
                                                 @onclick="() => ToggleCompositeQuickAdd(model)">
                                             <i class="bi bi-plus-lg"></i>

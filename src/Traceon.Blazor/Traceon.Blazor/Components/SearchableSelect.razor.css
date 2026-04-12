@@ -1,0 +1,10 @@
+.searchable-select-option:hover {
+    background-color: var(--bs-tertiary-bg);
+}
+
+.searchable-select-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    background: transparent;
+}
