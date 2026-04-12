@@ -1,0 +1,158 @@
+@inject IStringLocalizer<SharedResource> L
+
+@if (_isOpen)
+{
+    <div class="multi-select-backdrop" @onclick="CloseWithoutApply" @onclick:stopPropagation="true"></div>
+}
+
+<div class="multi-select-dropdown position-relative">
+    <button type="button"
+            class="form-select form-select-sm text-start text-truncate @(_hasPendingChanges ? "border-warning" : "")"
+            @onclick="ToggleOpen"
+            @onclick:stopPropagation="true">
+        @if (_committedValues.Count == 0 && _pendingValues.Count == 0)
+        {
+            <span class="text-muted">@Placeholder</span>
+        }
+        else
+        {
+            var display = _isOpen ? _pendingValues : _committedValues;
+            @if (display.Count == 1)
+            {
+                @display.First()
+            }
+            else if (display.Count > 1)
+            {
+                <span>@display.Count @L["MultiSelect_Selected"]</span>
+            }
+            else
+            {
+                <span class="text-muted">@Placeholder</span>
+            }
+        }
+    </button>
+
+    @if (_isOpen)
+    {
+        <div class="multi-select-menu shadow-sm border rounded bg-body position-absolute w-100 mt-1 d-flex flex-column"
+             style="z-index: 1051; max-height: 300px;"
+             @onclick:stopPropagation="true">
+
+            @if (Options.Count > 8)
+            {
+                <div class="px-2 pt-2 pb-1 flex-shrink-0">
+                    <input type="text" class="form-control form-control-sm"
+                           placeholder="@L["Common_Search"]..."
+                           @bind="_searchText"
+                           @bind:event="oninput" />
+                </div>
+            }
+
+            <div class="px-1 py-1 overflow-y-auto flex-grow-1">
+                @{
+                    var filtered = GetFilteredOptions();
+                }
+                @if (filtered.Count == 0)
+                {
+                    <div class="px-2 py-1 text-muted small">@L["Common_NoResults"]</div>
+                }
+                else
+                {
+                    @foreach (var option in filtered)
+                    {
+                        var isChecked = _pendingValues.Contains(option);
+                        <label class="d-flex align-items-center gap-2 px-2 py-1 rounded multi-select-option"
+                               style="cursor: pointer;">
+                            <input type="checkbox" class="form-check-input m-0"
+                                   checked="@isChecked"
+                                   @onchange="() => TogglePendingOption(option)" />
+                            <span class="small text-truncate">@option</span>
+                        </label>
+                    }
+                }
+            </div>
+
+            <div class="border-top px-2 py-1 d-flex justify-content-between align-items-center flex-shrink-0">
+                <button type="button" class="btn btn-link btn-sm text-danger p-0"
+                        disabled="@(_pendingValues.Count == 0)"
+                        @onclick="ClearAll">
+                    <i class="bi bi-x-lg me-1"></i>@L["DataGrid_ClearSelection"]
+                </button>
+                <button type="button" class="btn btn-primary btn-sm py-0 px-2"
+                        disabled="@(!_hasPendingChanges)"
+                        @onclick="ApplyAsync">
+                    <i class="bi bi-funnel me-1"></i>@L["DataGrid_Filter"]
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<string> Options { get; set; } = [];
+    [Parameter] public string Placeholder { get; set; } = "";
+    [Parameter] public HashSet<string> SelectedValues { get; set; } = [];
+    [Parameter] public EventCallback<HashSet<string>> SelectedValuesChanged { get; set; }
+
+    private HashSet<string> _committedValues = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _pendingValues = new(StringComparer.OrdinalIgnoreCase);
+    private bool _isOpen;
+    private string _searchText = "";
+
+    private bool _hasPendingChanges => !_pendingValues.SetEquals(_committedValues);
+
+    protected override void OnParametersSet()
+    {
+        _committedValues = new HashSet<string>(SelectedValues, StringComparer.OrdinalIgnoreCase);
+        if (!_isOpen)
+            _pendingValues = new HashSet<string>(_committedValues, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private void ToggleOpen()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+            _pendingValues = new HashSet<string>(_committedValues, StringComparer.OrdinalIgnoreCase);
+        _searchText = "";
+    }
+
+    private void CloseWithoutApply()
+    {
+        _isOpen = false;
+        _pendingValues = new HashSet<string>(_committedValues, StringComparer.OrdinalIgnoreCase);
+        _searchText = "";
+    }
+
+    private void TogglePendingOption(string option)
+    {
+        if (!_pendingValues.Remove(option))
+            _pendingValues.Add(option);
+    }
+
+    private async Task ApplyAsync()
+    {
+        _committedValues = new HashSet<string>(_pendingValues, StringComparer.OrdinalIgnoreCase);
+        _isOpen = false;
+        _searchText = "";
+        await SelectedValuesChanged.InvokeAsync(_committedValues);
+    }
+
+    private async Task ClearAll()
+    {
+        _pendingValues.Clear();
+        _committedValues.Clear();
+        _isOpen = false;
+        _searchText = "";
+        await SelectedValuesChanged.InvokeAsync(_committedValues);
+    }
+
+    private List<string> GetFilteredOptions()
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+            return Options;
+
+        return Options
+            .Where(o => o.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+}

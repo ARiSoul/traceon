@@ -914,4 +914,6 @@
   <data name="Bulk_OperationFailed"><value>Bulk operation failed. Please try again.</value></data>
   <data name="DataGrid_Selected"><value>selected</value></data>
   <data name="DataGrid_ClearSelection"><value>Clear</value></data>
+  <data name="MultiSelect_Selected"><value>selected</value></data>
+  <data name="Common_NoResults"><value>No results</value></data>
 </root>

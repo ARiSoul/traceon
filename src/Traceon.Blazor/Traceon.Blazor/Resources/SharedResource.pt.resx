@@ -917,4 +917,6 @@
   <data name="Bulk_OperationFailed"><value>A operação em lote falhou. Tente novamente.</value></data>
   <data name="DataGrid_Selected"><value>selecionados</value></data>
   <data name="DataGrid_ClearSelection"><value>Limpar</value></data>
+  <data name="MultiSelect_Selected"><value>selecionados</value></data>
+  <data name="Common_NoResults"><value>Sem resultados</value></data>
 </root>

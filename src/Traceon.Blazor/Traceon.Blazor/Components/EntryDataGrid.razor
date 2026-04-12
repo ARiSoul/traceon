@@ -119,24 +119,13 @@
             var fieldId = field.Id;
             <div class="col-6 col-md-2">
                 <label class="form-label form-label-sm mb-1">@field.Name</label>
-                @if (field.FieldType == FieldType.Dropdown && field.DropdownValues is not null && !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                @if (field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
                 {
-                    <select class="form-select form-select-sm"
-                            value="@GetFieldFilter(fieldId)"
-                            @onchange="e => OnFieldFilterChangedAsync(fieldId, e)">
-                        <option value="">@L["EntryGrid_AllValues"]</option>
-                        @foreach (var opt in field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
-                        {
-                            <option value="@opt">@opt</option>
-                        }
-                    </select>
-                }
-                else if (field.FieldType == FieldType.CompositeDropdown)
-                {
-                    <input type="text" class="form-control form-control-sm"
-                           placeholder="@L["Common_Search"]"
-                           value="@GetFieldFilter(fieldId)"
-                           @onchange="e => OnFieldFilterChangedAsync(fieldId, e)" />
+                    var options = _resolvedDropdownOptions.TryGetValue(fieldId, out var opts) ? opts : [];
+                    <MultiSelectDropdown Options="options"
+                                         Placeholder="@L["EntryGrid_AllValues"]"
+                                         SelectedValues="GetFieldFilterSet(fieldId)"
+                                         SelectedValuesChanged="set => OnMultiSelectFilterChangedAsync(fieldId, set)" />
                 }
                 else if (field.FieldType == FieldType.Boolean)
                 {
@@ -399,6 +388,7 @@ else
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
+    [Inject] private FieldDefinitionService FieldDefService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
@@ -427,8 +417,11 @@ else
     // Effective field list: either externally provided or dynamically loaded
     private List<ActionFieldResponse> _activeFields = [];
 
-    // Field value filters: fieldId -> filter value
+    // Field value filters: fieldId -> filter value (pipe-delimited for multi-select)
     private Dictionary<Guid, string> _fieldFilters = [];
+
+    // Resolved dropdown options per field (handles CompositeDropdown ref: format)
+    private Dictionary<Guid, List<string>> _resolvedDropdownOptions = [];
 
     private string? _userKey;
 
@@ -490,6 +483,7 @@ else
             }
         }
 
+        await ResolveDropdownOptionsAsync();
         RebuildColumns();
 
         if (!LockActionFilter)
@@ -595,6 +589,7 @@ else
             _activeFields = [];
         }
 
+        await ResolveDropdownOptionsAsync();
         RebuildColumns();
 
         if (EntryStorageKey is not null)
@@ -755,15 +750,31 @@ else
                 var field = _activeFields.FirstOrDefault(f => f.Id == fieldId);
                 if (field is null) continue;
 
-                var escaped = value.Replace("'", "''");
-
-                if (field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown or FieldType.Boolean)
+                if (field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
                 {
+                    // Multi-select: pipe-delimited values → OR clauses
+                    var selectedValues = value.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    if (selectedValues.Length == 1)
+                    {
+                        var escaped = selectedValues[0].Replace("'", "''");
+                        clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Value eq '{escaped}')");
+                    }
+                    else if (selectedValues.Length > 1)
+                    {
+                        var orParts = selectedValues
+                            .Select(v => $"fv/Value eq '{v.Replace("'", "''")}'")
+                            .ToList();
+                        clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and ({string.Join(" or ", orParts)}))");
+                    }
+                }
+                else if (field.FieldType is FieldType.Boolean)
+                {
+                    var escaped = value.Replace("'", "''");
                     clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Value eq '{escaped}')");
                 }
                 else
                 {
-                    var lower = escaped.ToLowerInvariant();
+                    var lower = value.Replace("'", "''").ToLowerInvariant();
                     clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and contains(tolower(fv/Value),'{lower}'))");
                 }
             }
@@ -860,6 +871,7 @@ else
             _activeFields = [];
         }
 
+        await ResolveDropdownOptionsAsync();
         RebuildColumns();
         await _grid.RefreshAsync();
         await SaveEntryFiltersAsync();
@@ -934,6 +946,27 @@ else
     private string GetFieldFilter(Guid fieldId)
         => _fieldFilters.TryGetValue(fieldId, out var val) ? val : "";
 
+    private HashSet<string> GetFieldFilterSet(Guid fieldId)
+    {
+        if (!_fieldFilters.TryGetValue(fieldId, out var val) || string.IsNullOrEmpty(val))
+            return [];
+
+        return new HashSet<string>(
+            val.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task OnMultiSelectFilterChangedAsync(Guid fieldId, HashSet<string> values)
+    {
+        if (values.Count == 0)
+            _fieldFilters.Remove(fieldId);
+        else
+            _fieldFilters[fieldId] = string.Join('|', values);
+
+        await _grid.RefreshAsync();
+        await SaveEntryFiltersAsync();
+    }
+
     private async Task OnFieldFilterChangedAsync(Guid fieldId, ChangeEventArgs e)
     {
         var value = e.Value?.ToString() ?? "";
@@ -957,6 +990,78 @@ else
         _fieldFilters.Remove(fieldId);
         await _grid.RefreshAsync();
         await SaveEntryFiltersAsync();
+    }
+
+    /// <summary>
+    /// Resolves dropdown options for all Dropdown and CompositeDropdown fields,
+    /// including CompositeDropdown fields that reference FieldDefinitions via "ref:" format.
+    /// </summary>
+    private async Task ResolveDropdownOptionsAsync()
+    {
+        _resolvedDropdownOptions = [];
+
+        var dropdownFields = _activeFields
+            .Where(f => f.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
+            .ToList();
+
+        if (dropdownFields.Count == 0) return;
+
+        var hasComposites = dropdownFields.Any(f =>
+            f.FieldType == FieldType.CompositeDropdown &&
+            f.DropdownValues?.StartsWith("ref:", StringComparison.Ordinal) == true);
+
+        Dictionary<Guid, FieldDefinitionResponse>? fieldDefLookup = null;
+        if (hasComposites)
+        {
+            try
+            {
+                var allDefs = await FieldDefService.GetAllAsync();
+                fieldDefLookup = allDefs
+                    .Where(fd => fd.Type == FieldType.Dropdown && !string.IsNullOrWhiteSpace(fd.DropdownValues))
+                    .ToDictionary(fd => fd.Id);
+            }
+            catch { /* best effort */ }
+        }
+
+        foreach (var field in dropdownFields)
+        {
+            if (field.FieldType == FieldType.CompositeDropdown &&
+                field.DropdownValues?.StartsWith("ref:", StringComparison.Ordinal) == true &&
+                fieldDefLookup is not null)
+            {
+                var refIds = field.DropdownValues["ref:".Length..]
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
+                    .Where(id => id != Guid.Empty);
+
+                var values = new List<string>();
+                foreach (var refId in refIds)
+                {
+                    if (fieldDefLookup.TryGetValue(refId, out var fd) && fd.DropdownValues is not null)
+                    {
+                        values.AddRange(fd.DropdownValues
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                    }
+                }
+
+                _resolvedDropdownOptions[field.Id] = values
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+            }
+            else if (!string.IsNullOrWhiteSpace(field.DropdownValues) &&
+                     !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+            {
+                _resolvedDropdownOptions[field.Id] = field.DropdownValues
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+            }
+            else
+            {
+                _resolvedDropdownOptions[field.Id] = [];
+            }
+        }
     }
 
     // ── Bulk operations ──
