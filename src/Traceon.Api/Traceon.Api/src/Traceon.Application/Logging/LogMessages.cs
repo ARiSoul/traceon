@@ -74,6 +74,12 @@ internal static partial class LogMessages
     [LoggerMessage(Level = LogLevel.Warning, Message = "Action entry with ID '{Id}' was not found.")]
     public static partial void ActionEntryNotFound(this ILogger logger, Guid id);
 
+    [LoggerMessage(Level = LogLevel.Information, Message = "{Count} action entries bulk-deleted for tracked action '{TrackedActionId}'.")]
+    public static partial void ActionEntriesBulkDeleted(this ILogger logger, int count, Guid trackedActionId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "{Count} action entries bulk-updated for tracked action '{TrackedActionId}'.")]
+    public static partial void ActionEntriesBulkUpdated(this ILogger logger, int count, Guid trackedActionId);
+
     // Tag
     [LoggerMessage(Level = LogLevel.Information, Message = "Tag '{Name}' created with ID '{Id}'.")]
     public static partial void TagCreated(this ILogger logger, string name, Guid id);

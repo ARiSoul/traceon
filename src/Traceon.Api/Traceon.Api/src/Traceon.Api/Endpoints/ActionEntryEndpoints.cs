@@ -19,6 +19,8 @@ internal static class ActionEntryEndpoints
         group.MapPut("/{id:guid}", UpdateAsync).AddEndpointFilter<ValidationFilter<UpdateActionEntryRequest>>();
         group.MapDelete("/{id:guid}", DeleteAsync);
         group.MapPost("/{id:guid}/restore", RestoreAsync);
+        group.MapPost("/bulk-delete", BulkDeleteAsync).AddEndpointFilter<ValidationFilter<BulkDeleteEntriesRequest>>();
+        group.MapPost("/bulk-update-fields", BulkUpdateFieldsAsync).AddEndpointFilter<ValidationFilter<BulkUpdateEntryFieldsRequest>>();
 
         return group;
     }
@@ -74,4 +76,18 @@ internal static class ActionEntryEndpoints
         IActionEntryService service,
         CancellationToken cancellationToken)
         => (await service.RestoreAsync(id, cancellationToken)).ToHttpResult();
+
+    private static async Task<IResult> BulkDeleteAsync(
+        Guid trackedActionId,
+        BulkDeleteEntriesRequest request,
+        IActionEntryService service,
+        CancellationToken cancellationToken)
+        => (await service.BulkDeleteAsync(trackedActionId, request, cancellationToken)).ToHttpResult();
+
+    private static async Task<IResult> BulkUpdateFieldsAsync(
+        Guid trackedActionId,
+        BulkUpdateEntryFieldsRequest request,
+        IActionEntryService service,
+        CancellationToken cancellationToken)
+        => (await service.BulkUpdateFieldsAsync(trackedActionId, request, cancellationToken)).ToHttpResult();
 }

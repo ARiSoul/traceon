@@ -63,6 +63,25 @@ public sealed class ActionEntryService(HttpClient http)
         return await ToResultAsync(response);
     }
 
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> BulkDeleteAsync(
+        Guid trackedActionId, List<Guid> entryIds)
+    {
+        var response = await http.PostAsJsonAsync(
+            $"/api/tracked-actions/{trackedActionId}/entries/bulk-delete",
+            new BulkDeleteEntriesRequest(entryIds));
+        return await ToResultAsync(response);
+    }
+
+    public async Task<(bool Success, IReadOnlyList<string> Errors)> BulkUpdateFieldsAsync(
+        Guid trackedActionId, List<Guid> entryIds, List<ActionEntryFieldValue> fieldValues,
+        DateTime? occurredAtUtc = null, string? notes = null, bool updateNotes = false)
+    {
+        var response = await http.PostAsJsonAsync(
+            $"/api/tracked-actions/{trackedActionId}/entries/bulk-update-fields",
+            new BulkUpdateEntryFieldsRequest(entryIds, fieldValues, occurredAtUtc, notes, updateNotes));
+        return await ToResultAsync(response);
+    }
+
     private static async Task<(bool Success, IReadOnlyList<string> Errors)> ToResultAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)

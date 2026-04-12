@@ -155,6 +155,95 @@ public sealed class ActionEntryService(
         return Result.Success();
     }
 
+    public async Task<Result<BulkOperationResponse>> BulkDeleteAsync(
+        Guid trackedActionId, BulkDeleteEntriesRequest request, CancellationToken cancellationToken = default)
+    {
+        var action = await actionRepository.GetByIdAsync(trackedActionId, cancellationToken);
+
+        if (action is null || action.UserId != currentUser.UserId)
+        {
+            logger.TrackedActionNotFound(trackedActionId);
+            return Result<BulkOperationResponse>.Failure(
+                $"Tracked action with ID '{trackedActionId}' was not found.");
+        }
+
+        // Verify all entries belong to this tracked action
+        var entries = await entryRepository.GetByIdsWithFieldsAsync(request.EntryIds, cancellationToken);
+        var validIds = entries
+            .Where(e => e.TrackedActionId == trackedActionId)
+            .Select(e => e.Id)
+            .ToList();
+
+        if (validIds.Count == 0)
+            return Result<BulkOperationResponse>.Failure(
+                "None of the specified entries belong to this tracked action.", ResultErrorType.Validation);
+
+        var affected = await entryRepository.DeleteManyAsync(validIds, cancellationToken);
+
+        logger.ActionEntriesBulkDeleted(affected, trackedActionId);
+        return Result<BulkOperationResponse>.Success(new BulkOperationResponse { AffectedCount = affected });
+    }
+
+    public async Task<Result<BulkOperationResponse>> BulkUpdateFieldsAsync(
+        Guid trackedActionId, BulkUpdateEntryFieldsRequest request, CancellationToken cancellationToken = default)
+    {
+        var action = await actionRepository.GetByIdAsync(trackedActionId, cancellationToken);
+
+        if (action is null || action.UserId != currentUser.UserId)
+        {
+            logger.TrackedActionNotFound(trackedActionId);
+            return Result<BulkOperationResponse>.Failure(
+                $"Tracked action with ID '{trackedActionId}' was not found.");
+        }
+
+        var entries = await entryRepository.GetByIdsWithFieldsAsync(request.EntryIds, cancellationToken);
+        var validEntries = entries
+            .Where(e => e.TrackedActionId == trackedActionId)
+            .ToList();
+
+        if (validEntries.Count == 0)
+            return Result<BulkOperationResponse>.Failure(
+                "None of the specified entries belong to this tracked action.", ResultErrorType.Validation);
+
+        var incomingByFieldId = request.FieldValues.Count > 0
+            ? request.FieldValues.ToDictionary(fv => fv.ActionFieldId, fv => fv.Value)
+            : new Dictionary<Guid, string?>();
+
+        foreach (var entry in validEntries)
+        {
+            // Update occurred date if provided
+            if (request.OccurredAtUtc.HasValue)
+                entry.Update(request.OccurredAtUtc.Value, request.UpdateNotes ? request.Notes : entry.Notes);
+            else if (request.UpdateNotes)
+                entry.Update(entry.OccurredAtUtc, request.Notes);
+            else
+                entry.MarkUpdated();
+
+            // Merge field values: keep existing, override only the ones in the request
+            IReadOnlyList<(Guid ActionFieldId, string? Value)>? merged = null;
+            if (incomingByFieldId.Count > 0)
+            {
+                var mergedList = entry.Fields
+                    .Select(f => (f.ActionFieldId, incomingByFieldId.TryGetValue(f.ActionFieldId, out var v) ? v : f.Value))
+                    .ToList();
+
+                // Add any incoming fields that didn't exist on this entry yet
+                foreach (var fv in request.FieldValues)
+                {
+                    if (!mergedList.Any(m => m.ActionFieldId == fv.ActionFieldId))
+                        mergedList.Add((fv.ActionFieldId, fv.Value));
+                }
+
+                merged = mergedList;
+            }
+
+            await entryRepository.UpdateAsync(entry, merged, cancellationToken);
+        }
+
+        logger.ActionEntriesBulkUpdated(validEntries.Count, trackedActionId);
+        return Result<BulkOperationResponse>.Success(new BulkOperationResponse { AffectedCount = validEntries.Count });
+    }
+
     public async Task<Result> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await entryRepository.GetDeletedByIdAsync(id, cancellationToken);
