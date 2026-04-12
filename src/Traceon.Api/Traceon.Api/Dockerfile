@@ -1,5 +1,5 @@
 # ── Build stage ──────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /repo
 
 # Copy Directory.Build.props and project files first (layer cache for restore)
@@ -26,7 +26,7 @@ RUN dotnet publish src/Traceon.Api/Traceon.Api/src/Traceon.Api/Traceon.Api.cspro
     -c Release -o /app/publish --no-restore
 
 # ── Runtime stage ────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
