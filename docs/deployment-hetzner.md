@@ -227,6 +227,12 @@ SMTP_PASSWORD=SG.xxxxxxxxxxxxxxxxxxxx
 GOOGLE_CLIENT_SECRET=GOCSPX-xxxxxxxxxx
 MICROSOFT_CLIENT_SECRET=xxxxxxxxxxxxxxxx
 
+# OpenAI (from https://platform.openai.com/api-keys)
+OPENAI_API_KEY=sk-proj-xxxxxxxxxx
+
+# Azure Document Intelligence key (from Azure Portal → your DI resource → Keys and Endpoint)
+AZURE_DI_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 # Your actual domains (must match your DNS records from step 3)
 API_DOMAIN=api.traceon.yourdomain.com
 BLAZOR_DOMAIN=traceon.yourdomain.com
