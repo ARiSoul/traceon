@@ -315,7 +315,7 @@ else
                                                 <div class="col-12 col-md-4">
                                                     <label class="form-label">@L["Analytics_ValueMetrics"]</label>
                                                     @{
-                                                        var newSelectedMetrics = (_newRule.NegativeValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                        var newSelectedMetrics = DropdownValuesHelper.Split(_newRule.NegativeValues).ToHashSet(StringComparer.OrdinalIgnoreCase);
                                                     }
                                                     @foreach (var metric in new[] { "Sum", "Avg", "Min", "Max" })
                                                     {
@@ -374,7 +374,7 @@ else
                                             {
                                                 <select class="form-select" @bind="_newRule.FilterValue">
                                                     <option value="">—</option>
-                                                                @foreach (var opt in filterField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
+                                                                @foreach (var opt in DropdownValuesHelper.Split(filterField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
                                                                     {
                                                                         <option value="@opt">@opt</option>
                                                                     }
@@ -411,8 +411,8 @@ else
                                                 }
                                                 @if (signField?.DropdownValues is not null)
                                                 {
-                                                    var signOptions = signField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
-                                                    var selectedNeg = (_newRule.NegativeValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                    var signOptions = DropdownValuesHelper.Split(signField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
+                                                    var selectedNeg = DropdownValuesHelper.Split(_newRule.NegativeValues).ToHashSet(StringComparer.OrdinalIgnoreCase);
                                                     @foreach (var opt in signOptions)
                                                     {
                                                         var capturedOpt = opt;
@@ -543,7 +543,7 @@ else
                                                             {
                                                                 <select class="form-select" @bind="_editRule.FilterValue">
                                                                     <option value="">—</option>
-                                                                    @foreach (var opt in editFilterField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
+                                                                    @foreach (var opt in DropdownValuesHelper.Split(editFilterField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
                                                                         {
                                                                             <option value="@opt">@opt</option>
                                                                         }
@@ -579,7 +579,7 @@ else
                                                                 <div class="col-12 col-md-4">
                                                                     <label class="form-label">@L["Analytics_ValueMetrics"]</label>
                                                                     @{
-                                                                        var editSelectedMetrics = (_editRule.NegativeValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                                        var editSelectedMetrics = DropdownValuesHelper.Split(_editRule.NegativeValues).ToHashSet(StringComparer.OrdinalIgnoreCase);
                                                                     }
                                                                     @foreach (var metric in new[] { "Sum", "Avg", "Min", "Max" })
                                                                     {
@@ -619,8 +619,8 @@ else
                                                                 }
                                                                 @if (editSignField?.DropdownValues is not null)
                                                                 {
-                                                                    var editSignOptions = editSignField.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
-                                                                    var editSelectedNeg = (_editRule.NegativeValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                                    var editSignOptions = DropdownValuesHelper.Split(editSignField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
+                                                                    var editSelectedNeg = DropdownValuesHelper.Split(_editRule.NegativeValues).ToHashSet(StringComparer.OrdinalIgnoreCase);
                                                                     @foreach (var opt in editSignOptions)
                                                                     {
                                                                         var capturedOpt = opt;
@@ -1424,8 +1424,7 @@ else
 
     private static string? ToggleNegativeValue(string? current, string value, bool isChecked)
     {
-        var set = (current ?? "")
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        var set = DropdownValuesHelper.Split(current)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         if (isChecked)
@@ -1433,7 +1432,7 @@ else
         else
             set.Remove(value);
 
-        return set.Count > 0 ? string.Join(",", set) : null;
+        return set.Count > 0 ? DropdownValuesHelper.Join(set) : null;
     }
 
     private async Task UpdateRuleAsync()
@@ -1562,13 +1561,13 @@ else
 
             return _allFieldDefinitions
                 .Where(fd => fd.Type == FieldType.Dropdown && refIds.Contains(fd.Id) && !string.IsNullOrWhiteSpace(fd.DropdownValues))
-                .SelectMany(fd => fd.DropdownValues!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                .SelectMany(fd => DropdownValuesHelper.Split(fd.DropdownValues))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
                 .ToArray();
         }
 
-        return field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        return DropdownValuesHelper.Split(field.DropdownValues)
             .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
     }
 
@@ -1590,8 +1589,7 @@ else
                 .Where(fd => fd is not null && fd.Type == FieldType.Dropdown && !string.IsNullOrWhiteSpace(fd.DropdownValues))
                 .Select(fd => (
                     GroupName: fd!.DefaultName,
-                    Values: fd.DropdownValues!
-                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    Values: DropdownValuesHelper.Split(fd!.DropdownValues)
                         .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
                         .ToArray()))
                 .Where(g => g.Values.Length > 0)
@@ -1637,8 +1635,7 @@ else
         {
             if (rule.SourceValue is not null && rule.TargetConstraint is not null)
             {
-                var values = rule.TargetConstraint
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                var values = DropdownValuesHelper.Split(rule.TargetConstraint)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
                 _depMappings[rule.SourceValue] = values;
             }
@@ -1738,7 +1735,7 @@ else
 
         var mappingsWithValues = _depMappings
             .Where(kv => kv.Value.Count > 0)
-            .ToDictionary(kv => kv.Key, kv => string.Join(",", kv.Value), StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(kv => kv.Key, kv => DropdownValuesHelper.Join(kv.Value), StringComparer.OrdinalIgnoreCase);
 
         if (mappingsWithValues.Count == 0)
         {

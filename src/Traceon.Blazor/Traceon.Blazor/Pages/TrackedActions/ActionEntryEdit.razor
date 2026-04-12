@@ -705,14 +705,14 @@ else
         public string[] DropdownOptions => _dropdownOverride
             ?? (string.IsNullOrWhiteSpace(Field.DropdownValues) || Field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal)
                 ? []
-                : Field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                : DropdownValuesHelper.Split(Field.DropdownValues)
                     .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray());
 
         public void SetDropdownValues(string csv)
         {
             _dropdownOverride = string.IsNullOrWhiteSpace(csv)
                 ? []
-                : csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                : DropdownValuesHelper.Split(csv)
                     .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
         }
 
@@ -828,8 +828,7 @@ else
             {
                 if (fieldDefLookup.TryGetValue(refId, out var fd))
                 {
-                    var values = fd.DropdownValues!
-                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    var values = DropdownValuesHelper.Split(fd.DropdownValues)
                         .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
                         .ToArray();
                     groups.Add((fd.DefaultName, values));
@@ -878,7 +877,7 @@ else
                     if (!string.IsNullOrWhiteSpace(rule.TargetConstraint))
                     {
                         matchedConstraints.AddRange(
-                            rule.TargetConstraint.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                            DropdownValuesHelper.Split(rule.TargetConstraint));
                     }
                 }
             }
@@ -886,7 +885,7 @@ else
             if (anySourceMatched)
             {
                 var allowed = matchedConstraints.Distinct(StringComparer.OrdinalIgnoreCase).ToHashSet(StringComparer.OrdinalIgnoreCase);
-                model.SetDropdownValues(string.Join(",", allowed));
+                model.SetDropdownValues(DropdownValuesHelper.Join(allowed));
 
                 if (isComposite)
                     model.FilterCompositeGroups(allowed);
@@ -1092,14 +1091,12 @@ else
             if (existingRule is not null)
             {
                 // Append to existing constraint
-                var existingValues = existingRule.TargetConstraint?
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .ToList() ?? [];
+                var existingValues = DropdownValuesHelper.Split(existingRule.TargetConstraint).ToList();
 
                 if (!existingValues.Contains(newValue, StringComparer.OrdinalIgnoreCase))
                 {
                     existingValues.Add(newValue);
-                    var updatedConstraint = string.Join(",", existingValues);
+                    var updatedConstraint = DropdownValuesHelper.Join(existingValues);
                     await DepRuleService.UpdateAsync(TrackedActionId, existingRule.Id,
                         new UpdateFieldDependencyRuleRequest(
                             TargetConstraint: updatedConstraint));
@@ -1179,7 +1176,7 @@ else
             new CreateFieldDefinitionRequest(
                 _newFieldInline.Name.Trim(),
                 FieldType.Dropdown,
-                DropdownValues: string.Join(",", _newFieldInline.ParsedValues)));
+                DropdownValues: DropdownValuesHelper.Join(_newFieldInline.ParsedValues)));
 
         if (!fdOk || created is null)
         {
@@ -1215,7 +1212,7 @@ else
                             parentModel.TextValue,
                             newActionField.Id,
                             DependencyRuleType.FilterDropdownValues,
-                            string.Join(",", _newFieldInline.ParsedValues),
+                            DropdownValuesHelper.Join(_newFieldInline.ParsedValues),
                             _depRules.Count));
                     try { _depRules = await DepRuleService.GetByTrackedActionAsync(TrackedActionId); } catch { }
                 }
@@ -1235,8 +1232,7 @@ else
         public Guid ParentFieldId { get; set; }
         public bool Saving { get; set; }
 
-        public string[] ParsedValues => DropdownValues
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        public string[] ParsedValues => DropdownValuesHelper.SplitUserInput(DropdownValues)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 

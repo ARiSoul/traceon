@@ -1,0 +1,216 @@
+@inject IJSRuntime JS
+@inject IStringLocalizer<SharedResource> L
+
+<div class="dve-container @(_focused ? "dve-focused" : "")" @onclick="FocusMainInput">
+    @for (int i = 0; i < _chips.Count; i++)
+    {
+        var idx = i;
+        if (_editingIndex == idx)
+        {
+            <span class="dve-chip dve-chip-editing">
+                <input class="dve-chip-input"
+                       value="@_editingValue"
+                       @oninput="e => _editingValue = e.Value?.ToString() ?? string.Empty"
+                       @onkeydown="e => HandleEditKeyDown(e, idx)"
+                       @onblur="() => CommitEdit(idx)"
+                       @ref="_editRef"
+                       @onclick:stopPropagation="true" />
+            </span>
+        }
+        else
+        {
+            <span class="dve-chip">
+                <span class="dve-chip-text"
+                      @onclick:stopPropagation="true"
+                      @onclick="() => StartEdit(idx)"
+                      title="@L["DropdownEditor_ChipEditTitle"]">@_chips[idx]</span>
+                <button type="button" class="dve-chip-remove"
+                        @onclick="() => RemoveChip(idx)"
+                        @onclick:stopPropagation="true"
+                        title="@L["DropdownEditor_ChipRemoveTitle"]">
+                    <i class="bi bi-x"></i>
+                </button>
+            </span>
+        }
+    }
+    <input class="dve-input"
+           type="text"
+           placeholder="@(_chips.Count == 0 ? L["DropdownEditor_Placeholder"].Value : L["DropdownEditor_AddMorePlaceholder"].Value)"
+           value="@_inputValue"
+           @oninput="HandleInputChange"
+           @onkeydown="HandleInputKeyDown"
+           @onfocus="() => _focused = true"
+           @onblur="HandleInputBlur"
+           @ref="_inputRef" />
+</div>
+<div class="form-text mt-1">
+    <i class="bi bi-info-circle me-1"></i>
+    @if (_chips.Count > 1)
+    {
+        <text>@L["DropdownEditor_HintPlural", _chips.Count]</text>
+    }
+    else if (_chips.Count == 1)
+    {
+        <text>@L["DropdownEditor_HintSingular"]</text>
+    }
+    else
+    {
+        <text>@L["DropdownEditor_HintEmpty"]</text>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    private List<string> _chips = [];
+    private string _inputValue = string.Empty;
+    private int _editingIndex = -1;
+    private string _editingValue = string.Empty;
+    private bool _focused;
+    private string? _trackedValue;
+    private ElementReference _inputRef;
+    private ElementReference _editRef;
+    private bool _needsFocusEdit;
+    private bool _needsFocusInput;
+
+    protected override void OnParametersSet()
+    {
+        if (Value != _trackedValue)
+        {
+            _trackedValue = Value;
+            _chips = DropdownValuesHelper.Split(Value).ToList();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JS.InvokeVoidAsync("preventEnterSubmit", _inputRef);
+
+        if (_needsFocusEdit)
+        {
+            _needsFocusEdit = false;
+            await JS.InvokeVoidAsync("preventEnterSubmit", _editRef);
+            try { await _editRef.FocusAsync(); } catch { }
+        }
+        else if (_needsFocusInput)
+        {
+            _needsFocusInput = false;
+            try { await _inputRef.FocusAsync(); } catch { }
+        }
+    }
+
+    private async Task EmitChange()
+    {
+        var stored = _chips.Count > 0 ? DropdownValuesHelper.Join(_chips) : null;
+        _trackedValue = stored;
+        await ValueChanged.InvokeAsync(stored);
+    }
+
+    private void AddChip(string value)
+    {
+        var trimmed = value.Trim();
+        if (string.IsNullOrEmpty(trimmed)) return;
+        if (!_chips.Any(c => c.Equals(trimmed, StringComparison.OrdinalIgnoreCase)))
+            _chips.Add(trimmed);
+        _inputValue = string.Empty;
+    }
+
+    private async Task RemoveChip(int index)
+    {
+        if (index < 0 || index >= _chips.Count) return;
+        if (_editingIndex == index)
+        {
+            _editingIndex = -1;
+            _editingValue = string.Empty;
+        }
+        _chips.RemoveAt(index);
+        await EmitChange();
+    }
+
+    private void StartEdit(int index)
+    {
+        if (index < 0 || index >= _chips.Count) return;
+        _editingIndex = index;
+        _editingValue = _chips[index];
+        _needsFocusEdit = true;
+    }
+
+    private async Task CommitEdit(int index)
+    {
+        if (_editingIndex != index) return;
+        _editingIndex = -1;
+        var trimmed = _editingValue.Trim();
+        _editingValue = string.Empty;
+        if (!string.IsNullOrEmpty(trimmed))
+        {
+            if (index < _chips.Count)
+                _chips[index] = trimmed;
+        }
+        else if (index < _chips.Count)
+        {
+            _chips.RemoveAt(index);
+        }
+        _needsFocusInput = true;
+        await EmitChange();
+    }
+
+    private async Task HandleEditKeyDown(KeyboardEventArgs e, int index)
+    {
+        if (e.Key == "Enter")
+            await CommitEdit(index);
+        else if (e.Key == "Escape")
+        {
+            _editingIndex = -1;
+            _editingValue = string.Empty;
+            _needsFocusInput = true;
+        }
+    }
+
+    private async Task HandleInputChange(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString() ?? string.Empty;
+        if (val.Contains(',') || val.Contains('|') || val.Contains('\n'))
+        {
+            var parts = val.Split([',', '|', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            foreach (var part in parts)
+                AddChip(part);
+            _inputValue = string.Empty;
+            await EmitChange();
+        }
+        else
+        {
+            _inputValue = val;
+        }
+    }
+
+    private async Task HandleInputKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_inputValue))
+        {
+            AddChip(_inputValue);
+            await EmitChange();
+        }
+        else if (e.Key == "Backspace" && string.IsNullOrEmpty(_inputValue) && _chips.Count > 0)
+        {
+            StartEdit(_chips.Count - 1);
+        }
+    }
+
+    private async Task HandleInputBlur()
+    {
+        _focused = false;
+        if (!string.IsNullOrWhiteSpace(_inputValue))
+        {
+            AddChip(_inputValue);
+            await EmitChange();
+        }
+    }
+
+    private void FocusMainInput()
+    {
+        if (_editingIndex == -1)
+            _needsFocusInput = true;
+    }
+}

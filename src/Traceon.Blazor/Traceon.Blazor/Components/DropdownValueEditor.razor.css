@@ -1,0 +1,102 @@
+.dve-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background-color: var(--bs-body-bg);
+    min-height: calc(2.5rem + 2px);
+    cursor: text;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.dve-container.dve-focused {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.dve-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.1rem 0 0.1rem 0.5rem;
+    background-color: var(--bs-secondary-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 50em;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    max-width: 100%;
+    user-select: none;
+}
+
+.dve-chip-text {
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 14rem;
+    padding-right: 0.1rem;
+}
+
+.dve-chip-text:hover {
+    text-decoration: underline dotted;
+}
+
+.dve-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 1.35rem;
+    height: 1.35rem;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.55;
+    cursor: pointer;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: opacity 0.1s ease, background-color 0.1s ease;
+}
+
+.dve-chip-remove:hover {
+    opacity: 1;
+    background-color: rgba(var(--bs-danger-rgb), 0.2);
+    color: var(--bs-danger);
+}
+
+.dve-chip-editing {
+    background-color: rgba(var(--bs-primary-rgb), 0.15);
+    border-color: var(--bs-primary);
+    padding: 0.1rem 0.35rem;
+}
+
+.dve-chip-input {
+    border: none;
+    background: transparent;
+    outline: none;
+    color: inherit;
+    font-size: 0.8125rem;
+    min-width: 4rem;
+    max-width: 14rem;
+    padding: 0 0.1rem;
+}
+
+.dve-input {
+    border: none;
+    background: transparent;
+    outline: none;
+    color: inherit;
+    font-size: 0.875rem;
+    flex: 1 1 8rem;
+    min-width: 6rem;
+    padding: 0.1rem 0.15rem;
+}
+
+.dve-input::placeholder {
+    font-style: italic;
+    opacity: 0.6;
+}

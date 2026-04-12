@@ -106,6 +106,13 @@
                 }
             });
         };
+        window.preventEnterSubmit = function (element) {
+            if (!element || element._enterPrevented) return;
+            element._enterPrevented = true;
+            element.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') e.preventDefault();
+            });
+        };
     </script>
 </body>
 

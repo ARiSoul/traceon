@@ -281,7 +281,7 @@
                 if (!string.IsNullOrWhiteSpace(rule.TargetConstraint))
                 {
                     matchedConstraints.AddRange(
-                        rule.TargetConstraint.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                        DropdownValuesHelper.Split(rule.TargetConstraint));
                 }
             }
         }

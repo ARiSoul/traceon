@@ -1518,8 +1518,7 @@
                     if (fieldDefLookup?.TryGetValue(refId, out var fd) == true)
                     {
                         refDefs.Add(fd);
-                        var fieldValues = fd.DropdownValues!
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        var fieldValues = DropdownValuesHelper.Split(fd.DropdownValues);
                         values.AddRange(fieldValues);
                     }
                 }
@@ -1532,9 +1531,8 @@
             }
             else if (!string.IsNullOrWhiteSpace(field.DropdownValues))
             {
-                // Regular dropdown: split comma-separated values
-                _resolvedDropdownOptions[field.Id] = field.DropdownValues
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                // Regular dropdown: split stored values
+                _resolvedDropdownOptions[field.Id] = DropdownValuesHelper.Split(field.DropdownValues)
                     .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
                     .ToList();
             }
@@ -1915,7 +1913,7 @@
                 if (!string.IsNullOrWhiteSpace(rule.TargetConstraint))
                 {
                     matchedConstraints.AddRange(
-                        rule.TargetConstraint.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                        DropdownValuesHelper.Split(rule.TargetConstraint));
                 }
             }
         }
@@ -1967,7 +1965,7 @@
                 if (!string.IsNullOrWhiteSpace(rule.TargetConstraint))
                 {
                     matchedConstraints.AddRange(
-                        rule.TargetConstraint.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                        DropdownValuesHelper.Split(rule.TargetConstraint));
                 }
             }
         }
@@ -2721,7 +2719,7 @@
         {
             var matchingParentRef = parentRefDefs.FirstOrDefault(rd =>
                 rd.DropdownValues != null &&
-                rd.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                DropdownValuesHelper.Split(rd.DropdownValues)
                     .Contains(sourceValue, StringComparer.OrdinalIgnoreCase));
 
             if (matchingParentRef is not null)
@@ -2794,8 +2792,7 @@
                 if (existingRule is not null)
                 {
                     // Parse existing constraints and check if new values are missing
-                    var existingConstraints = (existingRule.TargetConstraint ?? "")
-                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    var existingConstraints = DropdownValuesHelper.Split(existingRule.TargetConstraint)
                         .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
                     var newTargets = targetValues
@@ -2805,7 +2802,7 @@
                     if (newTargets.Count > 0)
                     {
                         foreach (var t in newTargets) existingConstraints.Add(t);
-                        var updatedConstraint = string.Join(",",
+                        var updatedConstraint = DropdownValuesHelper.Join(
                             existingConstraints.OrderBy(v => v, StringComparer.OrdinalIgnoreCase));
 
                         await DepRuleService.UpdateAsync(
@@ -2817,7 +2814,7 @@
                 else
                 {
                     // Create a new rule for this source value
-                    var constraint = string.Join(",",
+                    var constraint = DropdownValuesHelper.Join(
                         targetValues.OrderBy(v => v, StringComparer.OrdinalIgnoreCase));
                     var maxSort = rulesForChain.Count > 0 ? rulesForChain.Max(r => r.SortOrder) + 1 : 0;
 

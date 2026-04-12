@@ -1,4 +1,5 @@
 using System.Globalization;
+using Traceon.Blazor.Helpers;
 using Traceon.Blazor.Components;
 using Traceon.Contracts.ActionEntries;
 using Traceon.Contracts.ActionFields;
@@ -261,8 +262,7 @@ public sealed class DashboardService(
             HashSet<string>? negativeValueSet = null;
             if (rule.Aggregation == AnalyticsAggregation.SignedSum && rule.NegativeValues is not null)
             {
-                negativeValueSet = rule.NegativeValues
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                negativeValueSet = DropdownValuesHelper.Split(rule.NegativeValues)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
 
@@ -273,9 +273,8 @@ public sealed class DashboardService(
             if (rule.Aggregation == AnalyticsAggregation.CountByValue && isDropdownMeasure)
             {
                 // Parse requested metrics (stored in NegativeValues for CountByValue)
-                var requestedMetrics = rule.NegativeValues?
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+                var requestedMetrics = DropdownValuesHelper.Split(rule.NegativeValues)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
                 var hasValueField = rule.SignFieldId.HasValue;
 
@@ -394,9 +393,8 @@ public sealed class DashboardService(
                     valueFieldName = valField.Name;
                     valueFieldUnit = valField.Unit is not null && valField.Unit != "UN" ? valField.Unit : null;
                 }
-                valueMetrics = rule.NegativeValues?
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+                valueMetrics = DropdownValuesHelper.Split(rule.NegativeValues)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
 
             results.Add(new CrossFieldResult
@@ -440,8 +438,7 @@ public sealed class DashboardService(
             HashSet<string>? negativeValueSet = null;
             if (rule.NegativeValues is not null)
             {
-                negativeValueSet = rule.NegativeValues
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                negativeValueSet = DropdownValuesHelper.Split(rule.NegativeValues)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
 
@@ -511,8 +508,7 @@ public sealed class DashboardService(
             HashSet<string>? negativeValueSet = null;
             if (rule.NegativeValues is not null)
             {
-                negativeValueSet = rule.NegativeValues
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                negativeValueSet = DropdownValuesHelper.Split(rule.NegativeValues)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
 

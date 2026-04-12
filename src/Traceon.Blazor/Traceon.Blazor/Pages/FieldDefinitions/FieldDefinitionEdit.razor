@@ -125,9 +125,7 @@ else
                     <div class="row g-3 mt-1">
                         <div class="col-12">
                             <label class="form-label">@L["Fields_DropdownValues"] <span class="text-danger">*</span></label>
-                            <InputText @bind-Value="_model.DropdownValues" class="form-control"
-                                       placeholder="@L["Fields_DropdownPlaceholder"]" />
-                            <div class="form-text">@L["Fields_DropdownHint"]</div>
+                            <DropdownValueEditor @bind-Value="_model.DropdownValues" />
                         </div>
                     </div>
                 }
@@ -151,9 +149,7 @@ else
                                     {
                                         var fieldId = field.Id;
                                         var isSelected = _model.SourceFieldIds.Contains(fieldId);
-                                        var valuesPreview = string.IsNullOrWhiteSpace(field.DropdownValues)
-                                            ? ""
-                                            : string.Join(", ", field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(4));
+                                        var valuesPreview = DropdownValuesHelper.FormatForDisplay(field.DropdownValues, 4);
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" id="@($"src-{fieldId}")"
                                                    checked="@isSelected"
@@ -162,7 +158,7 @@ else
                                                 <span class="fw-semibold">@field.DefaultName</span>
                                                 @if (!string.IsNullOrEmpty(valuesPreview))
                                                 {
-                                                    <small class="text-muted ms-1">(@valuesPreview@(field.DropdownValues!.Split(',').Length > 4 ? ", ..." : ""))</small>
+                                                    <small class="text-muted ms-1">(@valuesPreview@(DropdownValuesHelper.Split(field.DropdownValues).Length > 4 ? ", ..." : ""))</small>
                                                 }
                                             </label>
                                         </div>
@@ -327,7 +323,13 @@ else
 
         var defaultValue = _model.ResolveDefaultValue();
         var (minValue, maxValue) = _model.ResolveMinMax();
-        var dropdownValues = _model.Type is FieldType.Dropdown or FieldType.CompositeDropdown ? _model.DropdownValues : null;
+        var dropdownValues = _model.Type switch
+        {
+            FieldType.Dropdown when !string.IsNullOrWhiteSpace(_model.DropdownValues)
+                => _model.DropdownValues,
+            FieldType.CompositeDropdown => _model.DropdownValues,
+            _ => null
+        };
 
         bool success;
         IReadOnlyList<string> errors;

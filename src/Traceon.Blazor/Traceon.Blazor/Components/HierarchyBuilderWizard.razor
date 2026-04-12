@@ -349,7 +349,7 @@
                 new CreateFieldDefinitionRequest(
                     _levels[0].Trim(),
                     FieldType.Dropdown,
-                    DropdownValues: string.Join(",", rootValues)));
+                    DropdownValues: DropdownValuesHelper.Join(rootValues)));
 
             if (!rootOk || rootDef is null)
             {
@@ -396,7 +396,7 @@
                         new CreateFieldDefinitionRequest(
                             sourceName,
                             FieldType.Dropdown,
-                            DropdownValues: string.Join(",", childValues)));
+                            DropdownValues: DropdownValuesHelper.Join(childValues)));
 
                     if (!sOk || sDef is null)
                     {
@@ -407,7 +407,7 @@
                     sourceDefIds.Add(sDef.Id);
                 }
 
-                // Create composite referencing all source dropdowns
+                // Create composite referencing all source dropdowns (GUIDs stay comma-separated)
                 var refValue = "ref:" + string.Join(",", sourceDefIds);
                 var (cOk, cDef, cErrs) = await FieldDefService.CreateWithResultAsync(
                     new CreateFieldDefinitionRequest(
@@ -452,7 +452,7 @@
                             parent.Value.Trim(),
                             targetActionFieldId,
                             DependencyRuleType.FilterDropdownValues,
-                            string.Join(",", childValues)));
+                            DropdownValuesHelper.Join(childValues)));
 
                     if (!dOk)
                     {

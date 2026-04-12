@@ -204,8 +204,8 @@ public sealed class TemplateInstallService(TraceonDbContext db)
             return value;
 
         var localizedDropdown = L(field.DropdownValuesKey, field.DropdownValues ?? "");
-        var originalValues = (field.DropdownValues ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var localizedValues = localizedDropdown.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var originalValues = Traceon.Contracts.Helpers.DropdownValuesHelper.Split(field.DropdownValues);
+        var localizedValues = Traceon.Contracts.Helpers.DropdownValuesHelper.Split(localizedDropdown);
 
         if (originalValues.Length != localizedValues.Length)
             return value;
@@ -214,8 +214,8 @@ public sealed class TemplateInstallService(TraceonDbContext db)
         for (var i = 0; i < originalValues.Length; i++)
             map[originalValues[i]] = localizedValues[i];
 
-        var parts = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return string.Join(",", parts.Select(p => map.GetValueOrDefault(p, p)));
+        var parts = Traceon.Contracts.Helpers.DropdownValuesHelper.Split(value);
+        return Traceon.Contracts.Helpers.DropdownValuesHelper.Join(parts.Select(p => map.GetValueOrDefault(p, p)));
     }
 }
 

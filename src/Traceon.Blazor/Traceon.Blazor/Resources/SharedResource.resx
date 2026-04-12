@@ -211,6 +211,13 @@
   <data name="Fields_DropdownValues"><value>Dropdown Values</value></data>
   <data name="Fields_DropdownHint"><value>Enter comma-separated values for the dropdown options.</value></data>
   <data name="Fields_DropdownPlaceholder"><value>Comma-separated values, e.g.: Low, Medium, High</value></data>
+  <data name="DropdownEditor_Placeholder"><value>Type a value and press Enter…</value></data>
+  <data name="DropdownEditor_AddMorePlaceholder"><value>Add another…</value></data>
+  <data name="DropdownEditor_ChipEditTitle"><value>Click to edit</value></data>
+  <data name="DropdownEditor_ChipRemoveTitle"><value>Remove</value></data>
+  <data name="DropdownEditor_HintEmpty"><value>Type a value and press Enter to add it. Paste a comma-separated list to add multiple at once.</value></data>
+  <data name="DropdownEditor_HintSingular"><value>1 value — click/tap to edit, × to remove</value></data>
+  <data name="DropdownEditor_HintPlural"><value>{0} values — click/tap to edit, × to remove</value></data>
   <data name="Fields_CheckedByDefault"><value>Checked by default</value></data>
   <data name="Fields_CreateField"><value>Create Field</value></data>
   <data name="Fields_SelectDefault"><value>— Select a default —</value></data>

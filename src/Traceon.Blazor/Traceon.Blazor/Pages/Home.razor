@@ -435,8 +435,7 @@
                     HashSet<string>? negativeValueSet = null;
                     if (rule.NegativeValues is not null)
                     {
-                        negativeValueSet = rule.NegativeValues
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        negativeValueSet = DropdownValuesHelper.Split(rule.NegativeValues)
                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
                     }
 

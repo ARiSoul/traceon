@@ -278,7 +278,7 @@
                                             value="@GetBulkFieldValue(fieldId)"
                                             @onchange="e => SetBulkFieldValue(fieldId, e.Value?.ToString())">
                                         <option value="">— @L["Common_Select"] —</option>
-                                        @foreach (var opt in field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
+                                        @foreach (var opt in DropdownValuesHelper.Split(field.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
                                         {
                                             <option value="@opt">@opt</option>
                                         }
@@ -1039,8 +1039,7 @@ else
                 {
                     if (fieldDefLookup.TryGetValue(refId, out var fd) && fd.DropdownValues is not null)
                     {
-                        values.AddRange(fd.DropdownValues
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                        values.AddRange(DropdownValuesHelper.Split(fd.DropdownValues));
                     }
                 }
 
@@ -1052,8 +1051,7 @@ else
             else if (!string.IsNullOrWhiteSpace(field.DropdownValues) &&
                      !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
             {
-                _resolvedDropdownOptions[field.Id] = field.DropdownValues
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                _resolvedDropdownOptions[field.Id] = DropdownValuesHelper.Split(field.DropdownValues)
                     .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
                     .ToList();
             }

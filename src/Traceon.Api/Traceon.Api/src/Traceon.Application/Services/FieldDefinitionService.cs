@@ -158,14 +158,12 @@ public sealed class FieldDefinitionService(
 
         var existing = string.IsNullOrWhiteSpace(entity.DropdownValues)
             ? []
-            : entity.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            : Traceon.Contracts.Helpers.DropdownValuesHelper.Split(entity.DropdownValues);
 
         if (existing.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
             return Result<string>.Success(entity.DropdownValues!);
 
-        var updated = existing.Length > 0
-            ? $"{entity.DropdownValues},{trimmed}"
-            : trimmed;
+        var updated = Traceon.Contracts.Helpers.DropdownValuesHelper.Append(entity.DropdownValues, trimmed);
 
         entity.Update(
             entity.DefaultName, entity.Type, entity.DefaultDescription,

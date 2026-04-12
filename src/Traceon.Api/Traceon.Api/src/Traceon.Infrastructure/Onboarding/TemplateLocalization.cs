@@ -1,4 +1,4 @@
-namespace Traceon.Infrastructure.Onboarding;
+﻿namespace Traceon.Infrastructure.Onboarding;
 
 /// <summary>
 /// Provides localized text for template names, descriptions, tags, and dropdown values
@@ -75,13 +75,13 @@ public static class TemplateLocalization
             ["Template_Field_TransactionType"] = "Tipo",
 
             // Dropdown values
-            ["Template_Dropdown_Meal"] = "Jejum,Antes da refeição,Após a refeição,Hora de dormir",
-            ["Template_Dropdown_WorkoutType"] = "Força,Cardio,HIIT,Yoga,Natação,Ciclismo,Outro",
-            ["Template_Dropdown_Quality"] = "Fraco,Razoável,Bom,Excelente",
-            ["Template_Dropdown_TransactionType"] = "Receita,Despesa",
-            ["Template_Dropdown_FinanceCategory"] = "Salário,Freelance,Alimentação,Transporte,Habitação,Saúde,Entretenimento,Compras,Investimento,Presente,Outro",
-            ["Template_Dropdown_ExpenseCategory"] = "Alimentação,Transporte,Habitação,Saúde,Entretenimento,Compras,Outro",
-            ["Template_Dropdown_IncomeSource"] = "Salário,Freelance,Investimento,Presente,Outro",
+            ["Template_Dropdown_Meal"] = "Jejum|Antes da refeição|Após a refeição|Hora de dormir",
+            ["Template_Dropdown_WorkoutType"] = "Força|Cardio|HIIT|Yoga|Natação|Ciclismo|Outro",
+            ["Template_Dropdown_Quality"] = "Fraco|Razoável|Bom|Excelente",
+            ["Template_Dropdown_TransactionType"] = "Receita|Despesa",
+            ["Template_Dropdown_FinanceCategory"] = "Salário|Freelance|Alimentação|Transporte|Habitação|Saúde|Entretenimento|Compras|Investimento|Presente|Outro",
+            ["Template_Dropdown_ExpenseCategory"] = "Alimentação|Transporte|Habitação|Saúde|Entretenimento|Compras|Outro",
+            ["Template_Dropdown_IncomeSource"] = "Salário|Freelance|Investimento|Presente|Outro",
 
             // Analytics Rule Labels
             ["Template_Rule_BalanceByCategory"] = "Saldo por Categoria",
@@ -157,13 +157,13 @@ public static class TemplateLocalization
             ["Template_Field_TransactionType"] = "Tipo",
 
             // Dropdown values
-            ["Template_Dropdown_Meal"] = "Ayuno,Antes de comer,Después de comer,Hora de dormir",
-            ["Template_Dropdown_WorkoutType"] = "Fuerza,Cardio,HIIT,Yoga,Natación,Ciclismo,Otro",
-            ["Template_Dropdown_Quality"] = "Malo,Regular,Bueno,Excelente",
-            ["Template_Dropdown_TransactionType"] = "Ingreso,Gasto",
-            ["Template_Dropdown_FinanceCategory"] = "Salario,Freelance,Alimentación,Transporte,Vivienda,Salud,Entretenimiento,Compras,Inversión,Regalo,Otro",
-            ["Template_Dropdown_ExpenseCategory"] = "Alimentación,Transporte,Vivienda,Salud,Entretenimiento,Compras,Otro",
-            ["Template_Dropdown_IncomeSource"] = "Salario,Freelance,Inversión,Regalo,Otro",
+            ["Template_Dropdown_Meal"] = "Ayuno|Antes de comer|Después de comer|Hora de dormir",
+            ["Template_Dropdown_WorkoutType"] = "Fuerza|Cardio|HIIT|Yoga|Natación|Ciclismo|Otro",
+            ["Template_Dropdown_Quality"] = "Malo|Regular|Bueno|Excelente",
+            ["Template_Dropdown_TransactionType"] = "Ingreso|Gasto",
+            ["Template_Dropdown_FinanceCategory"] = "Salario|Freelance|Alimentación|Transporte|Vivienda|Salud|Entretenimiento|Compras|Inversión|Regalo|Otro",
+            ["Template_Dropdown_ExpenseCategory"] = "Alimentación|Transporte|Vivienda|Salud|Entretenimiento|Compras|Otro",
+            ["Template_Dropdown_IncomeSource"] = "Salario|Freelance|Inversión|Regalo|Otro",
 
             // Analytics Rule Labels
             ["Template_Rule_BalanceByCategory"] = "Saldo por Categoría",

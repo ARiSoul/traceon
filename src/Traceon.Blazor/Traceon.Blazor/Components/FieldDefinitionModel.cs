@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using Microsoft.Extensions.Localization;
+using Traceon.Blazor.Helpers;
 using Traceon.Contracts.FieldDefinitions;
 using Traceon.Contracts.Enums;
 
@@ -38,7 +39,7 @@ public sealed class FieldDefinitionModel
     public string[] ParsedDropdownValues =>
         string.IsNullOrWhiteSpace(DropdownValues) || IsCompositeRef
             ? Array.Empty<string>()
-            : DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            : DropdownValuesHelper.Split(DropdownValues)
                 .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
 
     // Composite dropdown helpers

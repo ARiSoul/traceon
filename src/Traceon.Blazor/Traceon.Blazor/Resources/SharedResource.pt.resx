@@ -212,6 +212,13 @@
   <data name="Fields_DropdownValues"><value>Valores do Dropdown</value></data>
   <data name="Fields_DropdownHint"><value>Introduza valores separados por vírgula para as opções do dropdown.</value></data>
   <data name="Fields_DropdownPlaceholder"><value>Valores separados por vírgula, ex.: Baixo, Médio, Alto</value></data>
+  <data name="DropdownEditor_Placeholder"><value>Digite um valor e prima Enter…</value></data>
+  <data name="DropdownEditor_AddMorePlaceholder"><value>Adicionar outro…</value></data>
+  <data name="DropdownEditor_ChipEditTitle"><value>Clique para editar</value></data>
+  <data name="DropdownEditor_ChipRemoveTitle"><value>Remover</value></data>
+  <data name="DropdownEditor_HintEmpty"><value>Digite um valor e prima Enter para adicionar. Cole uma lista separada por vírgulas para adicionar vários de uma vez.</value></data>
+  <data name="DropdownEditor_HintSingular"><value>1 valor — clique/toque para editar, × para remover</value></data>
+  <data name="DropdownEditor_HintPlural"><value>{0} valores — clique/toque para editar, × para remover</value></data>
   <data name="Fields_CheckedByDefault"><value>Seleccionado por predefinição</value></data>
   <data name="Fields_CreateField"><value>Criar Campo</value></data>
   <data name="Fields_SelectDefault"><value>— Seleccionar predefinição —</value></data>

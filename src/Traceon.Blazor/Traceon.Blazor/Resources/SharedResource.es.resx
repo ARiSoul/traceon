@@ -212,6 +212,13 @@
   <data name="Fields_DropdownValues"><value>Valores del Desplegable</value></data>
   <data name="Fields_DropdownHint"><value>Introduce valores separados por comas para las opciones del desplegable.</value></data>
   <data name="Fields_DropdownPlaceholder"><value>Valores separados por comas, ej.: Bajo, Medio, Alto</value></data>
+  <data name="DropdownEditor_Placeholder"><value>Escribe un valor y pulsa Enter…</value></data>
+  <data name="DropdownEditor_AddMorePlaceholder"><value>Añadir otro…</value></data>
+  <data name="DropdownEditor_ChipEditTitle"><value>Haz clic para editar</value></data>
+  <data name="DropdownEditor_ChipRemoveTitle"><value>Eliminar</value></data>
+  <data name="DropdownEditor_HintEmpty"><value>Escribe un valor y pulsa Enter para añadirlo. Pega una lista separada por comas para añadir varios a la vez.</value></data>
+  <data name="DropdownEditor_HintSingular"><value>1 valor — clic/toque para editar, × para eliminar</value></data>
+  <data name="DropdownEditor_HintPlural"><value>{0} valores — clic/toque para editar, × para eliminar</value></data>
   <data name="Fields_CheckedByDefault"><value>Marcado por defecto</value></data>
   <data name="Fields_CreateField"><value>Crear Campo</value></data>
   <data name="Fields_SelectDefault"><value>— Seleccionar predeterminado —</value></data>

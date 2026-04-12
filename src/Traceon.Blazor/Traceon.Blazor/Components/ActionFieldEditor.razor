@@ -378,7 +378,7 @@
     private string[] ParsedDropdownValues =>
         string.IsNullOrWhiteSpace(Field.DropdownValues)
             ? []
-            : Field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            : DropdownValuesHelper.Split(Field.DropdownValues)
                 .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
 
     private void ToggleExpand()

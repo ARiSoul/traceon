@@ -859,7 +859,7 @@
         public string[] ParsedDropdownValues =>
             string.IsNullOrWhiteSpace(DropdownValues)
                 ? []
-                : DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                : DropdownValuesHelper.Split(DropdownValues);
     }
     private sealed class PendingEntry
     {
