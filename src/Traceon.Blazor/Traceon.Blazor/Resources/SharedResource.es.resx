@@ -598,6 +598,7 @@
   <data name="Feedback_Success"><value>¡Gracias! Tu feedback ha sido enviado.</value></data>
   <data name="Feedback_SendAnother"><value>Enviar otro</value></data>
   <data name="Feedback_Failed"><value>Error al enviar feedback. Inténtalo de nuevo.</value></data>
+  <data name="Feedback_ViewIssues"><value>Ver o seguir issues existentes en GitHub</value></data>
   <data name="Audit_FeedbackSent"><value>Feedback Enviado</value></data>
 
   <!-- ═══ Onboarding ═══ -->

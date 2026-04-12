@@ -38,6 +38,7 @@ services:
       ExternalAuth__Microsoft__ClientSecret: "${MICROSOFT_CLIENT_SECRET}"
       OpenAI__ApiKey: "${OPENAI_API_KEY}"
       Azure__DocumentIntelligence__Key: "${AZURE_DI_KEY}"
+      GitHub__Token: "${GITHUB_TOKEN}"
       AllowedOrigins__0: "https://${BLAZOR_DOMAIN}"
     ports:
       - "8080:8080"

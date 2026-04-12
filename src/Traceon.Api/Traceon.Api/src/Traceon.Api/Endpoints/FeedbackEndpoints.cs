@@ -4,6 +4,7 @@ using MailKit.Security;
 using Microsoft.AspNetCore.Identity;
 using MimeKit;
 using Traceon.Infrastructure.Audit;
+using Traceon.Infrastructure.GitHub;
 using Traceon.Infrastructure.Email;
 using Traceon.Infrastructure.Identity;
 
@@ -26,6 +27,7 @@ internal static class FeedbackEndpoints
         UserManager<ApplicationUser> userManager,
         EmailSettings emailSettings,
         AuditService audit,
+        GitHubIssueService gitHubIssueService,
         ILogger<Program> logger)
     {
         if (string.IsNullOrWhiteSpace(request.Message))
@@ -86,6 +88,9 @@ internal static class FeedbackEndpoints
         }
 
         await audit.LogAsync(userId, user.Email!, AuditActions.FeedbackSent, new { category });
+
+        // Create GitHub issue (fire-and-forget, don't fail feedback on GitHub errors)
+        _ = gitHubIssueService.CreateIssueAsync(category, request.Message, user.Email!);
 
         return TypedResults.Ok();
     }
