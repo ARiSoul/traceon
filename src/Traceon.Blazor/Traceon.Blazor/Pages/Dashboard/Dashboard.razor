@@ -583,8 +583,8 @@ else if (_data is not null)
         {
             Chart = new Chart
             {
-                Toolbar = new Toolbar { Show = true },
-                Zoom = new Zoom { Enabled = true }
+                Toolbar = new Toolbar { Show = true, AutoSelected = AutoSelected.Pan },
+                Zoom = new Zoom { Enabled = true, AllowMouseWheelZoom = false }
             },
             Xaxis = new XAxis
             {
