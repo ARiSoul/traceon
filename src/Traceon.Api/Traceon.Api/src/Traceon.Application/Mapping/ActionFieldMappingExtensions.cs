@@ -13,6 +13,7 @@ public static class ActionFieldMappingExtensions
             DefaultValue = entity.DefaultValue,
             Description = entity.Description,
             FieldDefinitionId = fieldDefinition.Id,
+            FieldDefinitionName = fieldDefinition.DefaultName,
             FieldType = fieldDefinition.Type,
             Id = entity.Id,
             IsRequired = entity.IsRequired,

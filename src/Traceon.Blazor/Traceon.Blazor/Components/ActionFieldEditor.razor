@@ -17,6 +17,12 @@
             </div>
             <i class="bi bi-@(_isExpanded ? "chevron-down" : "chevron-right") text-muted"></i>
             <strong class="text-truncate">@Field.Name</strong>
+            @if (!string.IsNullOrEmpty(Field.FieldDefinitionName) && !string.Equals(Field.Name, Field.FieldDefinitionName, StringComparison.OrdinalIgnoreCase))
+            {
+                <span class="text-muted small" title="@L["FieldEditor_SourceFieldDef"]">
+                    <i class="bi bi-link-45deg"></i>@Field.FieldDefinitionName
+                </span>
+            }
             <span class="badge bg-secondary">@Field.FieldType</span>
             @if (Field.FieldType is FieldType.Integer or FieldType.Decimal && Field.Unit != "UN")
             {

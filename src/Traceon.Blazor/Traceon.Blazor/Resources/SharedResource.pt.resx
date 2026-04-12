@@ -246,6 +246,7 @@
   <data name="FieldEditor_IV_Max"><value>Máximo</value></data>
   <data name="FieldEditor_IV_Avg"><value>Média</value></data>
   <data name="FieldEditor_IV_Period"><value>Período</value></data>
+  <data name="FieldEditor_SourceFieldDef"><value>Campo personalizado de origem</value></data>
 
   <!-- ═══ Definições ═══ -->
   <data name="Settings_Title"><value>Definições</value></data>

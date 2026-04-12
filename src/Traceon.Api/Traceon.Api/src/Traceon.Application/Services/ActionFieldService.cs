@@ -38,6 +38,7 @@ public sealed class ActionFieldService(
                             CreatedAtUtc = af.CreatedAtUtc,
                             DefaultValue = af.DefaultValue,
                             Description = af.Description,
+                            FieldDefinitionName = fd.DefaultName,
                             FieldDefinitionId = fd.Id,
                             FieldType = fd.Type,
                             Id = af.Id,
