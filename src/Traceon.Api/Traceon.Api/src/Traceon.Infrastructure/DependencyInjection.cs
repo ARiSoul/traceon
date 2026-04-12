@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Azure;
 using Azure.AI.DocumentIntelligence;
 using Microsoft.AspNetCore.Authentication;
@@ -98,15 +98,16 @@ public static class DependencyInjection
         services.AddScoped<IFieldDependencyRuleRepository, FieldDependencyRuleRepository>();
         services.AddScoped<IReceiptImportConfigRepository, ReceiptImportConfigRepository>();
         services.AddScoped<IReceiptScanDraftRepository, ReceiptScanDraftRepository>();
+        services.AddScoped<IConnectedActionRuleRepository, ConnectedActionRuleRepository>();
         services.AddScoped<AuditService>();
         services.AddScoped<DataPortabilityService>();
         services.AddScoped<TemplateInstallService>();
         services.AddScoped<TrashService>();
 
         // Receipt OCR priority:
-        //   1. Hybrid (DI layout OCR + GPT structured extraction) — best accuracy
-        //   2. Document Intelligence only (prebuilt-receipt) — no OpenAI needed
-        //   3. OpenAI LLM vision only — no Azure needed
+        //   1. Hybrid (DI layout OCR + GPT structured extraction) â€” best accuracy
+        //   2. Document Intelligence only (prebuilt-receipt) â€” no OpenAI needed
+        //   3. OpenAI LLM vision only â€” no Azure needed
         var diSettings = configuration.GetSection("Azure:DocumentIntelligence").Get<DocumentIntelligenceSettings>();
         var hasDi = diSettings is not null && !string.IsNullOrEmpty(diSettings.Endpoint) && !string.IsNullOrEmpty(diSettings.Key);
         var openAiKey = configuration["OpenAI:ApiKey"];
@@ -114,7 +115,7 @@ public static class DependencyInjection
 
         if (hasDi && hasOpenAi)
         {
-            // Hybrid: DI for accurate OCR text → GPT for semantic extraction
+            // Hybrid: DI for accurate OCR text â†’ GPT for semantic extraction
             services.AddSingleton(new DocumentIntelligenceClient(
                 new Uri(diSettings!.Endpoint), new AzureKeyCredential(diSettings.Key)));
             services.Configure<OpenAISettings>(configuration.GetSection("OpenAI"));

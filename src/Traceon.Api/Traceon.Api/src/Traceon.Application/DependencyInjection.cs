@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Traceon.Application.Services;
 
@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<IFieldDependencyRuleService, FieldDependencyRuleService>();
         services.AddScoped<IReceiptImportConfigService, ReceiptImportConfigService>();
         services.AddScoped<IReceiptScanDraftService, ReceiptScanDraftService>();
+        services.AddScoped<IConnectedActionRuleService, ConnectedActionRuleService>();
 
         return services;
     }

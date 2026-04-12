@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace Traceon.Application.Logging;
 
@@ -121,4 +121,18 @@ internal static partial class LogMessages
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Dependency rule with ID '{Id}' was not found.")]
     public static partial void FieldDependencyRuleNotFound(this ILogger logger, Guid id);
+
+
+    // ConnectedActionRule
+    [LoggerMessage(Level = LogLevel.Information, Message = "Connected action rule created with ID '{Id}' for tracked action '{TrackedActionId}'.")]
+    public static partial void ConnectedActionRuleCreated(this ILogger logger, Guid id, Guid trackedActionId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Connected action rule '{Id}' updated.")]
+    public static partial void ConnectedActionRuleUpdated(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Connected action rule '{Id}' deleted.")]
+    public static partial void ConnectedActionRuleDeleted(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Connected action rule with ID '{Id}' was not found.")]
+    public static partial void ConnectedActionRuleNotFound(this ILogger logger, Guid id);
 }

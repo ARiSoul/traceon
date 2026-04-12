@@ -112,6 +112,15 @@ else
                         }
                     </button>
                 </li>
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "connected" ? "active" : "")" @onclick="ActivateConnectedTabAsync">
+                        <i class="bi bi-link-45deg me-1"></i>@L["ConnAct_Tab"]
+                        @if (_connectedRules.Count > 0)
+                        {
+                            <span class="badge bg-primary ms-1">@_connectedRules.Count</span>
+                        }
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -1026,11 +1035,394 @@ else
                         OnDeleteRule="DeleteRcptRuleAsync" />
                 }
             }
+            else if (_activeTab == "connected")
+            {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="text-muted mb-0">@L["ConnAct_Hint"]</p>
+                    <button class="btn btn-outline-primary btn-sm" @onclick="() => OpenConnectedRuleForm(null)" disabled="@(_connRuleEditing is not null)">
+                        <i class="bi bi-plus-circle me-1"></i>@L["ConnAct_AddRule"]
+                    </button>
+                </div>
+
+                @if (_connRuleEditing is not null)
+                {
+                    <div class="card border-primary mb-3">
+                        <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="bi bi-@(_connRuleEditing.Id.HasValue ? "pencil" : "plus-circle") me-2"></i>
+                                @(_connRuleEditing.Id.HasValue ? L["ConnAct_EditRule"] : L["ConnAct_NewRule"])
+                            </h6>
+                            <button class="btn-close" @onclick="() => _connRuleEditing = null"></button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <!-- Name -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">@L["ConnAct_RuleName"] <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" @bind="_connRuleEditing.Name" placeholder="@L["ConnAct_RuleNamePlaceholder"]" />
+                                </div>
+                                <!-- Target action -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">@L["ConnAct_TargetAction"] <span class="text-danger">*</span></label>
+                                    <select class="form-select" value="@_connRuleEditing.TargetTrackedActionId" @onchange="OnConnTargetActionChanged">
+                                        <option value="@Guid.Empty">— @L["Common_Select"] —</option>
+                                        @foreach (var a in _allActions.Where(a => a.Id != Id))
+                                        {
+                                            <option value="@a.Id">@a.Name</option>
+                                        }
+                                    </select>
+                                    <div class="form-text">@L["ConnAct_TargetActionHint"]</div>
+                                </div>
+                                <!-- Toggles -->
+                                <div class="col-12">
+                                    <div class="d-flex gap-4 flex-wrap">
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" id="conn-enabled" @bind="_connRuleEditing.IsEnabled" />
+                                            <label class="form-check-label" for="conn-enabled">@L["ConnAct_Enabled"]</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" id="conn-copydate" @bind="_connRuleEditing.CopyDate" />
+                                            <label class="form-check-label" for="conn-copydate">@L["ConnAct_CopyDate"]</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" id="conn-copynotes" @bind="_connRuleEditing.CopyNotes" />
+                                            <label class="form-check-label" for="conn-copynotes">@L["ConnAct_CopyNotes"]</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Conditions -->
+                                <div class="col-12">
+                                    <hr />
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0"><i class="bi bi-funnel me-1"></i>@L["ConnAct_Conditions"]</h6>
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="AddConnCondition">
+                                            <i class="bi bi-plus-lg me-1"></i>@L["ConnAct_AddCondition"]
+                                        </button>
+                                    </div>
+                                    <p class="text-muted small mb-2">@L["ConnAct_ConditionsHint"]</p>
+                                    @for (var ci = 0; ci < _connRuleEditing.Conditions.Count; ci++)
+                                    {
+                                        var idx = ci;
+                                        var cond = _connRuleEditing.Conditions[idx];
+                                        <div class="row g-2 mb-2 align-items-end">
+                                            <div class="col-12 col-md-4">
+                                                <label class="form-label form-label-sm mb-1">@L["ConnAct_ConditionField"]</label>
+                                                <select class="form-select form-select-sm" @bind="cond.SourceFieldId">
+                                                    <option value="@Guid.Empty">@L["ConnAct_SelectField"]</option>
+                                                    @foreach (var f in _fields)
+                                                    {
+                                                        <option value="@f.Id">@f.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <label class="form-label form-label-sm mb-1">@L["ConnAct_ConditionOperator"]</label>
+                                                <select class="form-select form-select-sm" @bind="cond.Operator">
+                                                    <option value="Equals">@L["ConnAct_OpEquals"]</option>
+                                                    <option value="Contains">@L["ConnAct_OpContains"]</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6 col-md-4">
+                                                <label class="form-label form-label-sm mb-1">@L["ConnAct_ConditionValue"]</label>
+                                                @{
+                                                    var condField = _fields.FirstOrDefault(f => f.Id == cond.SourceFieldId);
+                                                }
+                                                @if (condField?.FieldType == FieldType.Dropdown
+                                                    && !string.IsNullOrWhiteSpace(condField.DropdownValues)
+                                                    && !condField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                {
+                                                    <SearchableSelect Value="@cond.Value"
+                                                                      ValueChanged="v => cond.Value = v ?? string.Empty"
+                                                                      Options="@(DropdownValuesHelper.Split(condField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToList())"
+                                                                      Placeholder="@L["Entry_Select"]"
+                                                                      Small="true" />
+                                                }
+                                                else if (condField?.FieldType == FieldType.CompositeDropdown
+                                                    && !string.IsNullOrWhiteSpace(condField.DropdownValues)
+                                                    && condField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                {
+                                                    <SearchableSelect Value="@cond.Value"
+                                                                      ValueChanged="v => cond.Value = v ?? string.Empty"
+                                                                      Groups="@ResolveCompositeGroupsForCondition(condField)"
+                                                                      Placeholder="@L["Entry_Select"]"
+                                                                      Small="true" />
+                                                }
+                                                else
+                                                {
+                                                    <input type="text" class="form-control form-control-sm" @bind="cond.Value" />
+                                                }
+                                            </div>
+                                            <div class="col-auto">
+                                                <button class="btn btn-outline-danger btn-sm" type="button" @onclick="() => _connRuleEditing.Conditions.RemoveAt(idx)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Field Mappings -->
+                                <div class="col-12">
+                                    <hr />
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0"><i class="bi bi-arrow-left-right me-1"></i>@L["ConnAct_FieldMappings"]</h6>
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="AddConnMapping"
+                                                disabled="@(_connRuleEditing.TargetTrackedActionId == Guid.Empty)">
+                                            <i class="bi bi-plus-lg me-1"></i>@L["ConnAct_AddMapping"]
+                                        </button>
+                                    </div>
+                                    <p class="text-muted small mb-2">@L["ConnAct_FieldMappingsHint"]</p>
+                                    @if (_connTargetFields.Count == 0 && _connRuleEditing.TargetTrackedActionId != Guid.Empty)
+                                    {
+                                        <div class="alert alert-info py-2">
+                                            <i class="bi bi-info-circle me-1"></i>@L["ConnAct_NoTargetFields"]
+                                        </div>
+                                    }
+                                    @for (var mi = 0; mi < _connRuleEditing.Mappings.Count; mi++)
+                                    {
+                                        var mIdx = mi;
+                                        var mapping = _connRuleEditing.Mappings[mIdx];
+                                        <div class="card card-body p-2 mb-2">
+                                            <div class="row g-2 align-items-end">
+                                                <div class="col-12 col-md-3">
+                                                    <label class="form-label form-label-sm mb-1">@L["ConnAct_TargetField"]</label>
+                                                    <select class="form-select form-select-sm" @bind="mapping.TargetFieldId">
+                                                        <option value="@Guid.Empty">@L["ConnAct_SelectField"]</option>
+                                                        @foreach (var f in _connTargetFields)
+                                                        {
+                                                            <option value="@f.Id">@f.Name (@f.FieldType)</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="col-6 col-md-2">
+                                                    <label class="form-label form-label-sm mb-1">&nbsp;</label>
+                                                    <select class="form-select form-select-sm" @bind="mapping.Mode">
+                                                        <option value="Source">@L["ConnAct_ModeSource"]</option>
+                                                        <option value="Static">@L["ConnAct_ModeStatic"]</option>
+                                                        <option value="Conditional">@L["ConnAct_ModeConditional"]</option>
+                                                    </select>
+                                                </div>
+                                                @if (mapping.Mode == "Source")
+                                                {
+                                                    <div class="col-6 col-md-4">
+                                                        <label class="form-label form-label-sm mb-1">@L["ConnAct_SourceField"]</label>
+                                                        <select class="form-select form-select-sm" @bind="mapping.SourceFieldId">
+                                                            <option value="@Guid.Empty">@L["ConnAct_SelectField"]</option>
+                                                            @foreach (var f in _fields)
+                                                            {
+                                                                <option value="@f.Id">@f.Name (@f.FieldType)</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                }
+                                                else if (mapping.Mode == "Static")
+                                                {
+                                                    <div class="col-6 col-md-4">
+                                                        <label class="form-label form-label-sm mb-1">@L["ConnAct_StaticValue"]</label>
+                                                        @{
+                                                            var targetField = _connTargetFields.FirstOrDefault(f => f.Id == mapping.TargetFieldId);
+                                                        }
+                                                        @if (targetField?.FieldType == FieldType.Dropdown
+                                                            && !string.IsNullOrWhiteSpace(targetField.DropdownValues)
+                                                            && !targetField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                        {
+                                                            <SearchableSelect Value="@mapping.StaticValue"
+                                                                              ValueChanged="v => mapping.StaticValue = v"
+                                                                              Options="@(DropdownValuesHelper.Split(targetField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToList())"
+                                                                              Placeholder="@L["Entry_Select"]"
+                                                                              Small="true" />
+                                                        }
+                                                        else if (targetField?.FieldType == FieldType.CompositeDropdown
+                                                            && !string.IsNullOrWhiteSpace(targetField.DropdownValues)
+                                                            && targetField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                        {
+                                                            <SearchableSelect Value="@mapping.StaticValue"
+                                                                              ValueChanged="v => mapping.StaticValue = v"
+                                                                              Groups="@ResolveCompositeGroupsForCondition(targetField)"
+                                                                              Placeholder="@L["Entry_Select"]"
+                                                                              Small="true" />
+                                                        }
+                                                        else
+                                                        {
+                                                            <input type="text" class="form-control form-control-sm" @bind="mapping.StaticValue" />
+                                                        }
+                                                    </div>
+                                                }
+                                                else @* Conditional *@
+                                                {
+                                                    <div class="col-6 col-md-4">
+                                                        <label class="form-label form-label-sm mb-1">@L["ConnAct_SourceField"]</label>
+                                                        <select class="form-select form-select-sm" @bind="mapping.SourceFieldId">
+                                                            <option value="@Guid.Empty">@L["ConnAct_SelectField"]</option>
+                                                            @foreach (var f in _fields)
+                                                            {
+                                                                <option value="@f.Id">@f.Name (@f.FieldType)</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                }
+                                                <div class="col-auto">
+                                                    <button class="btn btn-outline-danger btn-sm" type="button" @onclick="() => _connRuleEditing.Mappings.RemoveAt(mIdx)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            @* ── Conditional value pairs ── *@
+                                            @if (mapping.Mode == "Conditional")
+                                            {
+                                                var srcField = _fields.FirstOrDefault(f => f.Id == mapping.SourceFieldId);
+                                                var tgtField = _connTargetFields.FirstOrDefault(f => f.Id == mapping.TargetFieldId);
+
+                                                <div class="mt-2 ps-3 border-start border-primary border-2">
+                                                    @for (var vi = 0; vi < mapping.ValueMappings.Count; vi++)
+                                                    {
+                                                        var vIdx = vi;
+                                                        var pair = mapping.ValueMappings[vIdx];
+                                                        <div class="row g-2 mb-1 align-items-center">
+                                                            <div class="col-5">
+                                                                @if (srcField is not null && IsDropdownLike(srcField))
+                                                                {
+                                                                    @if (srcField.FieldType == FieldType.CompositeDropdown
+                                                                        && !string.IsNullOrWhiteSpace(srcField.DropdownValues)
+                                                                        && srcField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                                    {
+                                                                        <SearchableSelect Value="@pair.WhenValue"
+                                                                                          ValueChanged="v => pair.WhenValue = v ?? string.Empty"
+                                                                                          Groups="@ResolveCompositeGroupsForCondition(srcField)"
+                                                                                          Placeholder="@L["ConnAct_WhenValue"]"
+                                                                                          Small="true" />
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <SearchableSelect Value="@pair.WhenValue"
+                                                                                          ValueChanged="v => pair.WhenValue = v ?? string.Empty"
+                                                                                          Options="@(GetDropdownOptions(srcField))"
+                                                                                          Placeholder="@L["ConnAct_WhenValue"]"
+                                                                                          Small="true" />
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    <input type="text" class="form-control form-control-sm" placeholder="@L["ConnAct_WhenValue"]" @bind="pair.WhenValue" />
+                                                                }
+                                                            </div>
+                                                            <div class="col-auto text-muted"><i class="bi bi-arrow-right"></i></div>
+                                                            <div class="col-5">
+                                                                @if (tgtField is not null && IsDropdownLike(tgtField))
+                                                                {
+                                                                    @if (tgtField.FieldType == FieldType.CompositeDropdown
+                                                                        && !string.IsNullOrWhiteSpace(tgtField.DropdownValues)
+                                                                        && tgtField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                                    {
+                                                                        <SearchableSelect Value="@pair.ThenValue"
+                                                                                          ValueChanged="v => pair.ThenValue = v ?? string.Empty"
+                                                                                          Groups="@ResolveCompositeGroupsForCondition(tgtField)"
+                                                                                          Placeholder="@L["ConnAct_ThenValue"]"
+                                                                                          Small="true" />
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <SearchableSelect Value="@pair.ThenValue"
+                                                                                          ValueChanged="v => pair.ThenValue = v ?? string.Empty"
+                                                                                          Options="@(GetDropdownOptions(tgtField))"
+                                                                                          Placeholder="@L["ConnAct_ThenValue"]"
+                                                                                          Small="true" />
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    <input type="text" class="form-control form-control-sm" placeholder="@L["ConnAct_ThenValue"]" @bind="pair.ThenValue" />
+                                                                }
+                                                            </div>
+                                                            <div class="col-auto">
+                                                                <button class="btn btn-outline-danger btn-sm py-0" type="button" @onclick="() => mapping.ValueMappings.RemoveAt(vIdx)">
+                                                                    <i class="bi bi-x-lg"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    <button class="btn btn-outline-secondary btn-sm mt-1" type="button"
+                                                            @onclick="() => mapping.ValueMappings.Add(new ConnValuePairModel())">
+                                                        <i class="bi bi-plus-lg me-1"></i>@L["ConnAct_AddValuePair"]
+                                                    </button>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            @if (_connRuleErrors.Count > 0)
+                            {
+                                <div class="text-danger small mt-2">@string.Join(", ", _connRuleErrors)</div>
+                            }
+
+                            <div class="d-flex justify-content-end gap-2 mt-3">
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="() => _connRuleEditing = null">
+                                    @L["Common_Cancel"]
+                                </button>
+                                <button class="btn btn-success btn-sm" @onclick="SaveConnectedRuleAsync" disabled="@_savingConnRule">
+                                    @if (_savingConnRule) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                    <i class="bi bi-check-circle me-1"></i>@L["Common_Save"]
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (_connectedRules.Count == 0 && _connRuleEditing is null)
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-link-45deg fs-3 d-block mb-2"></i>
+                        <p>@L["ConnAct_NoRulesYet"]</p>
+                        <button class="btn btn-primary" @onclick="() => OpenConnectedRuleForm(null)">
+                            <i class="bi bi-plus-circle me-1"></i>@L["ConnAct_AddRule"]
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="list-group">
+                        @foreach (var rule in _connectedRules)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge @(rule.IsEnabled ? "bg-success" : "bg-secondary")">
+                                            @(rule.IsEnabled ? L["ConnAct_Enabled"] : L["Common_No"])
+                                        </span>
+                                        <strong>@rule.Name</strong>
+                                        <i class="bi bi-arrow-right text-muted"></i>
+                                        <span class="text-primary">@rule.TargetTrackedActionName</span>
+                                    </div>
+                                    <small class="text-muted">
+                                        @{
+                                            var condCount = DeserializeConditions(rule.ConditionsJson).Count;
+                                            var mapCount = DeserializeMappings(rule.FieldMappingsJson).Count;
+                                        }
+                                        @condCount @L["ConnAct_Conditions"].ToString().ToLower() · @mapCount @L["ConnAct_FieldMappings"].ToString().ToLower()
+                                        @if (rule.CopyDate) { <span class="ms-1">· 📅</span> }
+                                        @if (rule.CopyNotes) { <span class="ms-1">· 📝</span> }
+                                    </small>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => OpenConnectedRuleForm(rule)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteConnectedRuleAsync(rule)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
         </div>
     </div>
 }
-
-<!-- Hierarchy Builder Wizard -->
 <HierarchyBuilderWizard IsVisible="_showHierarchyWizard"
                         TrackedActionId="Id"
                         NextFieldOrder="_fields.Count"
@@ -1114,6 +1506,8 @@ else
     [Inject] private FieldAnalyticsRuleService AnalyticsRuleService { get; set; } = default!;
     [Inject] private FieldDependencyRuleService DependencyRuleService { get; set; } = default!;
     [Inject] private ReceiptImportConfigService ReceiptConfigService { get; set; } = default!;
+    [Inject] private ConnectedActionRuleService ConnRuleService { get; set; } = default!;
+    [Inject] private ActionEntryService EntryService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private EditModel? _model;
@@ -1148,6 +1542,15 @@ else
     private NewRuleModel _newRule = new();
     private Guid? _editingRuleId;
     private EditRuleModel _editRule = new();
+
+    // Connected Actions
+    private List<ConnectedActionRuleResponse> _connectedRules = [];
+    private List<TrackedActionResponse> _allActions = [];
+    private List<ActionFieldResponse> _connTargetFields = [];
+    private ConnRuleEditModel? _connRuleEditing;
+    private bool _savingConnRule;
+    private IReadOnlyList<string> _connRuleErrors = [];
+    private bool _connTabLoaded;
 
     protected override async Task OnInitializedAsync()
     {
@@ -1975,5 +2378,298 @@ else
     {
         await ReceiptConfigService.DeleteMappingRuleAsync(Id, ruleId);
         _rcptMappingRules = await ReceiptConfigService.GetMappingRulesAsync(Id);
+    }
+
+    // ── Connected Actions ──
+
+    private async Task ActivateConnectedTabAsync()
+    {
+        _activeTab = "connected";
+
+        if (!_connTabLoaded)
+        {
+            _connTabLoaded = true;
+            var rulesTask = ConnRuleService.GetByTrackedActionAsync(Id);
+            var actionsTask = Service.GetAllAsync();
+            await Task.WhenAll(rulesTask, actionsTask);
+            _connectedRules = rulesTask.Result;
+            _allActions = actionsTask.Result;
+        }
+    }
+
+    private void OpenConnectedRuleForm(ConnectedActionRuleResponse? existing)
+    {
+        _connRuleErrors = [];
+        if (existing is not null)
+        {
+            _connRuleEditing = new ConnRuleEditModel
+            {
+                Id = existing.Id,
+                Name = existing.Name,
+                TargetTrackedActionId = existing.TargetTrackedActionId,
+                IsEnabled = existing.IsEnabled,
+                CopyDate = existing.CopyDate,
+                CopyNotes = existing.CopyNotes,
+                Conditions = DeserializeConditions(existing.ConditionsJson),
+                Mappings = DeserializeMappings(existing.FieldMappingsJson)
+            };
+            _ = LoadConnTargetFieldsAsync(existing.TargetTrackedActionId);
+        }
+        else
+        {
+            _connRuleEditing = new ConnRuleEditModel();
+            _connTargetFields = [];
+        }
+    }
+
+    private async Task OnConnTargetActionChanged(ChangeEventArgs e)
+    {
+        if (_connRuleEditing is null) return;
+
+        _connRuleEditing.TargetTrackedActionId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : Guid.Empty;
+        _connRuleEditing.Mappings.Clear();
+        await LoadConnTargetFieldsAsync(_connRuleEditing.TargetTrackedActionId);
+    }
+
+    private async Task LoadConnTargetFieldsAsync(Guid targetActionId)
+    {
+        if (targetActionId == Guid.Empty)
+        {
+            _connTargetFields = [];
+            return;
+        }
+        try { _connTargetFields = await ActionFieldService.GetByTrackedActionAsync(targetActionId); }
+        catch { _connTargetFields = []; }
+    }
+
+    private void AddConnCondition()
+    {
+        _connRuleEditing?.Conditions.Add(new ConnConditionModel());
+    }
+
+    private List<(string GroupName, string[] Values)> ResolveCompositeGroupsForCondition(ActionFieldResponse field)
+    {
+        if (string.IsNullOrWhiteSpace(field.DropdownValues)
+            || !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+            return [];
+
+        var refIds = field.DropdownValues["ref:".Length..]
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
+            .Where(id => id != Guid.Empty)
+            .ToList();
+
+        var groups = new List<(string GroupName, string[] Values)>();
+        foreach (var refId in refIds)
+        {
+            var fd = _allFieldDefinitions.FirstOrDefault(d => d.Id == refId);
+            if (fd is not null && !string.IsNullOrWhiteSpace(fd.DropdownValues))
+            {
+                var values = DropdownValuesHelper.Split(fd.DropdownValues)
+                    .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                    .ToArray();
+                groups.Add((fd.DefaultName, values));
+            }
+        }
+
+        return groups.OrderBy(g => g.GroupName, StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
+
+    private static bool IsDropdownLike(ActionFieldResponse field)
+        => field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown
+           && !string.IsNullOrWhiteSpace(field.DropdownValues);
+
+    private static List<string> GetDropdownOptions(ActionFieldResponse field)
+        => string.IsNullOrWhiteSpace(field.DropdownValues) || field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal)
+            ? []
+            : DropdownValuesHelper.Split(field.DropdownValues)
+                .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+    private void AddConnMapping()
+    {
+        _connRuleEditing?.Mappings.Add(new ConnMappingModel());
+    }
+
+    private async Task SaveConnectedRuleAsync()
+    {
+        if (_connRuleEditing is null) return;
+
+        _connRuleErrors = [];
+
+        if (string.IsNullOrWhiteSpace(_connRuleEditing.Name))
+        {
+            _connRuleErrors = [L["Wizard_NameRequired"]];
+            return;
+        }
+        if (_connRuleEditing.TargetTrackedActionId == Guid.Empty)
+        {
+            _connRuleErrors = [L["ConnAct_TargetAction"]];
+            return;
+        }
+
+        _savingConnRule = true;
+
+        var conditionsJson = SerializeConditions(_connRuleEditing.Conditions);
+        var mappingsJson = SerializeMappings(_connRuleEditing.Mappings);
+
+        bool success;
+        IReadOnlyList<string> errors;
+
+        if (_connRuleEditing.Id.HasValue)
+        {
+            (success, errors) = await ConnRuleService.UpdateAsync(Id, _connRuleEditing.Id.Value,
+                new UpdateConnectedActionRuleRequest(
+                    Name: _connRuleEditing.Name,
+                    IsEnabled: _connRuleEditing.IsEnabled,
+                    ConditionsJson: conditionsJson,
+                    FieldMappingsJson: mappingsJson,
+                    CopyNotes: _connRuleEditing.CopyNotes,
+                    CopyDate: _connRuleEditing.CopyDate));
+        }
+        else
+        {
+            (success, errors) = await ConnRuleService.CreateAsync(Id,
+                new CreateConnectedActionRuleRequest(
+                    TargetTrackedActionId: _connRuleEditing.TargetTrackedActionId,
+                    Name: _connRuleEditing.Name,
+                    IsEnabled: _connRuleEditing.IsEnabled,
+                    ConditionsJson: conditionsJson,
+                    FieldMappingsJson: mappingsJson,
+                    CopyNotes: _connRuleEditing.CopyNotes,
+                    CopyDate: _connRuleEditing.CopyDate));
+        }
+
+        if (success)
+        {
+            _connectedRules = await ConnRuleService.GetByTrackedActionAsync(Id);
+            _connRuleEditing = null;
+        }
+        else
+        {
+            _connRuleErrors = errors.Count > 0 ? errors : [L["Common_ErrorOccurred"]];
+        }
+
+        _savingConnRule = false;
+    }
+
+    private async Task DeleteConnectedRuleAsync(ConnectedActionRuleResponse rule)
+    {
+        var (success, _) = await ConnRuleService.DeleteAsync(Id, rule.Id);
+        if (success)
+            _connectedRules = await ConnRuleService.GetByTrackedActionAsync(Id);
+    }
+
+    // JSON helpers for conditions/mappings
+    private static string? SerializeConditions(List<ConnConditionModel> conditions)
+    {
+        var valid = conditions.Where(c => c.SourceFieldId != Guid.Empty && !string.IsNullOrWhiteSpace(c.Value)).ToList();
+        if (valid.Count == 0) return null;
+        return System.Text.Json.JsonSerializer.Serialize(valid.Select(c => new
+        {
+            sourceFieldId = c.SourceFieldId,
+            @operator = c.Operator,
+            value = c.Value
+        }));
+    }
+
+    private static string? SerializeMappings(List<ConnMappingModel> mappings)
+    {
+        var valid = mappings.Where(m => m.TargetFieldId != Guid.Empty).ToList();
+        if (valid.Count == 0) return null;
+        return System.Text.Json.JsonSerializer.Serialize(valid.Select(m => new
+        {
+            targetFieldId = m.TargetFieldId,
+            mode = m.Mode,
+            sourceFieldId = m.SourceFieldId,
+            staticValue = m.StaticValue,
+            valueMappings = m.Mode == "Conditional" && m.ValueMappings.Count > 0
+                ? m.ValueMappings
+                    .Where(vm => !string.IsNullOrWhiteSpace(vm.WhenValue))
+                    .Select(vm => new { when = vm.WhenValue, then = vm.ThenValue })
+                    .ToList()
+                : null
+        }));
+    }
+
+    private static List<ConnConditionModel> DeserializeConditions(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return [];
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            return doc.RootElement.EnumerateArray().Select(el => new ConnConditionModel
+            {
+                SourceFieldId = el.TryGetProperty("sourceFieldId", out var sf) && Guid.TryParse(sf.GetString(), out var sfId) ? sfId : Guid.Empty,
+                Operator = el.TryGetProperty("operator", out var op) ? op.GetString() ?? "Equals" : "Equals",
+                Value = el.TryGetProperty("value", out var v) ? v.GetString() ?? "" : ""
+            }).ToList();
+        }
+        catch { return []; }
+    }
+
+    private static List<ConnMappingModel> DeserializeMappings(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return [];
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            return doc.RootElement.EnumerateArray().Select(el =>
+            {
+                var model = new ConnMappingModel
+                {
+                    TargetFieldId = el.TryGetProperty("targetFieldId", out var tf) && Guid.TryParse(tf.GetString(), out var tfId) ? tfId : Guid.Empty,
+                    Mode = el.TryGetProperty("mode", out var m) ? m.GetString() ?? "Source" : "Source",
+                    SourceFieldId = el.TryGetProperty("sourceFieldId", out var sf) && Guid.TryParse(sf.GetString(), out var sfId) ? sfId : Guid.Empty,
+                    StaticValue = el.TryGetProperty("staticValue", out var sv) ? sv.GetString() : null
+                };
+
+                if (el.TryGetProperty("valueMappings", out var vmArr) && vmArr.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    model.ValueMappings = vmArr.EnumerateArray().Select(vm => new ConnValuePairModel
+                    {
+                        WhenValue = vm.TryGetProperty("when", out var w) ? w.GetString() ?? "" : "",
+                        ThenValue = vm.TryGetProperty("then", out var t) ? t.GetString() ?? "" : ""
+                    }).ToList();
+                }
+
+                return model;
+            }).ToList();
+        }
+        catch { return []; }
+    }
+
+    private sealed class ConnRuleEditModel
+    {
+        public Guid? Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public Guid TargetTrackedActionId { get; set; }
+        public bool IsEnabled { get; set; } = true;
+        public bool CopyDate { get; set; } = true;
+        public bool CopyNotes { get; set; } = true;
+        public List<ConnConditionModel> Conditions { get; set; } = [];
+        public List<ConnMappingModel> Mappings { get; set; } = [];
+    }
+
+    private sealed class ConnConditionModel
+    {
+        public Guid SourceFieldId { get; set; }
+        public string Operator { get; set; } = "Equals";
+        public string Value { get; set; } = string.Empty;
+    }
+
+    private sealed class ConnMappingModel
+    {
+        public Guid TargetFieldId { get; set; }
+        public string Mode { get; set; } = "Source";
+        public Guid SourceFieldId { get; set; }
+        public string? StaticValue { get; set; }
+        public List<ConnValuePairModel> ValueMappings { get; set; } = [];
+    }
+
+    private sealed class ConnValuePairModel
+    {
+        public string WhenValue { get; set; } = string.Empty;
+        public string ThenValue { get; set; } = string.Empty;
     }
 }

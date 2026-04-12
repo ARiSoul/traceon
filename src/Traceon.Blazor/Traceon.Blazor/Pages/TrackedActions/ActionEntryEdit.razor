@@ -354,6 +354,49 @@ else
                 </div>
             }
             </div>
+
+            @* ── Connected Actions ── *@
+            @if (!_isEdit && _connRules.Count > 0)
+            {
+                <hr />
+                <div class="mb-2">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" class="form-check-input" id="create-linked"
+                               @bind="_createLinkedEntries" />
+                        <label class="form-check-label fw-semibold" for="create-linked">
+                            <i class="bi bi-link-45deg me-1"></i>@L["ConnAct_CreateLinked"]
+                        </label>
+                    </div>
+                    <div class="form-text">@L["ConnAct_CreateLinkedHint"]</div>
+                </div>
+
+                @if (_createLinkedEntries)
+                {
+                    <div class="alert alert-info py-2 mb-0">
+                        <i class="bi bi-info-circle me-1"></i>@L["ConnAct_LinkedInfo"]
+                        <ul class="mb-0 mt-1">
+                            @foreach (var rule in _connRules)
+                            {
+                                <li>
+                                    <strong>@rule.TargetTrackedActionName</strong>
+                                    <small class="text-muted ms-1">(@rule.Name)</small>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                @if (_linkedMessages.Count > 0)
+                {
+                    <div class="mt-2">
+                        @foreach (var msg in _linkedMessages)
+                        {
+                            <div class="small @(msg.StartsWith("✓") ? "text-success" : msg.StartsWith("⚠") ? "text-warning" : "text-danger")">@msg</div>
+                        }
+                    </div>
+                }
+            }
+
             <div class="card-footer bg-light">
             <div class="d-flex justify-content-between">
                 <a href="@_returnUrl" class="btn btn-outline-secondary">
@@ -384,6 +427,7 @@ else
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
     [Inject] private FieldDefinitionService FieldDefService { get; set; } = default!;
     [Inject] private FieldDependencyRuleService DepRuleService { get; set; } = default!;
+    [Inject] private ConnectedActionRuleService ConnRuleService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     [SupplyParameterFromQuery(Name = "returnUrl")]
@@ -402,6 +446,11 @@ else
 
     // Dependency rules
     private List<FieldDependencyRuleResponse> _depRules = [];
+
+    // Connected action rules
+    private List<ConnectedActionRuleResponse> _connRules = [];
+    private bool _createLinkedEntries = true;
+    private List<string> _linkedMessages = [];
 
     private string _returnUrl = "/";
     private DateTime _occurredLocal;
@@ -449,6 +498,12 @@ else
         try { _depRules = await DepRuleService.GetByTrackedActionAsync(TrackedActionId); } catch { _depRules = []; }
         await ResolveCompositeDropdownsAsync();
         EvaluateDependencyRules();
+
+        if (!_isEdit)
+        {
+            try { _connRules = (await ConnRuleService.GetByTrackedActionAsync(TrackedActionId)).Where(r => r.IsEnabled).ToList(); }
+            catch { _connRules = []; }
+        }
 
         _loading = false;
     }
@@ -597,6 +652,12 @@ else
 
         if (success)
         {
+            // Create linked entries in connected actions
+            if (!_isEdit && _createLinkedEntries && _connRules.Count > 0 && fieldValues is not null)
+            {
+                await CreateLinkedEntriesAsync(occurredUtc, fieldValues);
+            }
+
             Nav.NavigateTo(_returnUrl);
             return;
         }
@@ -1237,5 +1298,132 @@ else
             .ToArray();
 
         public bool IsValid => !string.IsNullOrWhiteSpace(Name) && ParsedValues.Length > 0;
+    }
+
+    // ── Connected Action Linked Entries ──
+
+    private async Task CreateLinkedEntriesAsync(DateTime occurredUtc, List<ActionEntryFieldValue> sourceFieldValues)
+    {
+        _linkedMessages = [];
+        var sourceValues = sourceFieldValues.ToDictionary(fv => fv.ActionFieldId, fv => fv.Value);
+
+        foreach (var rule in _connRules)
+        {
+            try
+            {
+                // Check conditions
+                if (!EvaluateConnConditions(rule.ConditionsJson, sourceValues))
+                {
+                    _linkedMessages.Add(string.Format("⚠ " + L["ConnAct_NoConditionsMatch"], rule.TargetTrackedActionName));
+                    continue;
+                }
+
+                // Build target field values from mappings
+                var targetFieldValues = BuildTargetFieldValues(rule.FieldMappingsJson, sourceValues);
+
+                var targetOccurredUtc = rule.CopyDate ? occurredUtc : DateTime.UtcNow;
+                var targetNotes = rule.CopyNotes ? _notes : null;
+
+                var request = new CreateActionEntryRequest(
+                    targetOccurredUtc,
+                    targetNotes,
+                    targetFieldValues.Count > 0 ? targetFieldValues : null);
+
+                var (ok, _) = await EntryService.CreateAsync(rule.TargetTrackedActionId, request);
+
+                _linkedMessages.Add(ok
+                    ? string.Format("✓ " + L["ConnAct_LinkedCreated"], rule.TargetTrackedActionName)
+                    : string.Format("✗ " + L["ConnAct_LinkedFailed"], rule.TargetTrackedActionName));
+            }
+            catch
+            {
+                _linkedMessages.Add(string.Format("✗ " + L["ConnAct_LinkedFailed"], rule.TargetTrackedActionName));
+            }
+        }
+    }
+
+    private bool EvaluateConnConditions(string? conditionsJson, Dictionary<Guid, string?> sourceValues)
+    {
+        if (string.IsNullOrWhiteSpace(conditionsJson)) return true;
+
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(conditionsJson);
+            foreach (var el in doc.RootElement.EnumerateArray())
+            {
+                var fieldId = el.TryGetProperty("sourceFieldId", out var sf) && Guid.TryParse(sf.GetString(), out var sfId) ? sfId : Guid.Empty;
+                var op = el.TryGetProperty("operator", out var opProp) ? opProp.GetString() ?? "Equals" : "Equals";
+                var expected = el.TryGetProperty("value", out var v) ? v.GetString() ?? "" : "";
+
+                sourceValues.TryGetValue(fieldId, out var actual);
+                actual ??= "";
+
+                var match = op switch
+                {
+                    "Contains" => actual.Contains(expected, StringComparison.OrdinalIgnoreCase),
+                    _ => string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase)
+                };
+
+                if (!match) return false;
+            }
+        }
+        catch { return false; }
+
+        return true;
+    }
+
+    private List<ActionEntryFieldValue> BuildTargetFieldValues(string? mappingsJson, Dictionary<Guid, string?> sourceValues)
+    {
+        if (string.IsNullOrWhiteSpace(mappingsJson)) return [];
+
+        var result = new List<ActionEntryFieldValue>();
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(mappingsJson);
+            foreach (var el in doc.RootElement.EnumerateArray())
+            {
+                var targetFieldId = el.TryGetProperty("targetFieldId", out var tf) && Guid.TryParse(tf.GetString(), out var tfId) ? tfId : Guid.Empty;
+                if (targetFieldId == Guid.Empty) continue;
+
+                var mode = el.TryGetProperty("mode", out var m) ? m.GetString() ?? "Source" : "Source";
+
+                string? value;
+                if (mode == "Static")
+                {
+                    value = el.TryGetProperty("staticValue", out var sv) ? sv.GetString() : null;
+                }
+                else if (mode == "Conditional")
+                {
+                    var sourceFieldId = el.TryGetProperty("sourceFieldId", out var sfProp) && Guid.TryParse(sfProp.GetString(), out var sfId) ? sfId : Guid.Empty;
+                    sourceValues.TryGetValue(sourceFieldId, out var srcVal);
+                    value = null;
+
+                    if (srcVal is not null && el.TryGetProperty("valueMappings", out var vmArr) && vmArr.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    {
+                        foreach (var vm in vmArr.EnumerateArray())
+                        {
+                            var whenVal = vm.TryGetProperty("when", out var w) ? w.GetString() : null;
+                            if (whenVal is not null && string.Equals(srcVal, whenVal, StringComparison.OrdinalIgnoreCase))
+                            {
+                                value = vm.TryGetProperty("then", out var t) ? t.GetString() : null;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (value is null) continue;
+                }
+                else
+                {
+                    var sourceFieldId = el.TryGetProperty("sourceFieldId", out var sfProp) && Guid.TryParse(sfProp.GetString(), out var sfId) ? sfId : Guid.Empty;
+                    sourceValues.TryGetValue(sourceFieldId, out value);
+                }
+
+                result.Add(new ActionEntryFieldValue(targetFieldId, value));
+            }
+        }
+        catch { }
+
+        return result;
     }
 }

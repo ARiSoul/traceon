@@ -42,6 +42,7 @@ builder.Services.AddScoped<ActionEntryService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<FieldAnalyticsRuleService>();
 builder.Services.AddScoped<FieldDependencyRuleService>();
+builder.Services.AddScoped<ConnectedActionRuleService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<DataPortabilityService>();
 builder.Services.AddScoped<ReceiptScanService>();

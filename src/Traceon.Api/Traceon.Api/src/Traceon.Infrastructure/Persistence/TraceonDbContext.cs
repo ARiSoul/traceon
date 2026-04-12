@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Traceon.Domain.Entities;
@@ -22,6 +22,7 @@ public sealed class TraceonDbContext(DbContextOptions<TraceonDbContext> options)
     public DbSet<ReceiptImportConfig> ReceiptImportConfigs => Set<ReceiptImportConfig>();
     public DbSet<ReceiptMappingRule> ReceiptMappingRules => Set<ReceiptMappingRule>();
     public DbSet<ReceiptScanDraft> ReceiptScanDrafts => Set<ReceiptScanDraft>();
+    public DbSet<ConnectedActionRule> ConnectedActionRules => Set<ConnectedActionRule>();
     public DbSet<UserAuditLog> UserAuditLogs => Set<UserAuditLog>();
     public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
 

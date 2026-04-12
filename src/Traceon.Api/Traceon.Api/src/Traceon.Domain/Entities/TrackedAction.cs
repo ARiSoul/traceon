@@ -18,6 +18,9 @@ public sealed class TrackedAction : OwnedEntity
     private readonly List<FieldDependencyRule> _dependencyRules = [];
     public IReadOnlyCollection<FieldDependencyRule> DependencyRules => _dependencyRules.AsReadOnly();
 
+    private readonly List<ConnectedActionRule> _connectedActionRules = [];
+    public IReadOnlyCollection<ConnectedActionRule> ConnectedActionRules => _connectedActionRules.AsReadOnly();
+
     private TrackedAction(string name, string? description, int sortOrder)
     {
         Name = name;

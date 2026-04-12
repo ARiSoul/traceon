@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.HttpOverrides;
+﻿using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OData.Edm;
 using Scalar.AspNetCore;
 using Serilog;
@@ -41,7 +41,7 @@ var forwardedHeadersOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
 };
-// Trust the Docker network proxy (Caddy) — required because Caddy's IP is not 127.0.0.1
+// Trust the Docker network proxy (Caddy) â€” required because Caddy's IP is not 127.0.0.1
 #pragma warning disable ASPDEPR005
 forwardedHeadersOptions.KnownNetworks.Clear();
 #pragma warning restore ASPDEPR005
@@ -73,6 +73,7 @@ app.MapFieldDefinitionEndpoints().RequireAuthorization();
 app.MapActionFieldEndpoints().RequireAuthorization();
 app.MapFieldAnalyticsRuleEndpoints().RequireAuthorization();
 app.MapFieldDependencyRuleEndpoints().RequireAuthorization();
+app.MapConnectedActionRuleEndpoints().RequireAuthorization();
 app.MapReceiptImportEndpoints().RequireAuthorization();
 app.MapReceiptScanEndpoints().RequireAuthorization();
 app.MapReceiptScanDraftEndpoints().RequireAuthorization();
