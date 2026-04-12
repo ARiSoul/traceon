@@ -59,12 +59,36 @@
     }
     else
     {
+        @if (SelectionEnabled && _selectedIds.Count > 0)
+        {
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                <span class="badge bg-primary py-1 px-2">
+                    <i class="bi bi-check2-square me-1"></i>@_selectedIds.Count @L["DataGrid_Selected"]
+                </span>
+                @if (BulkActions is not null)
+                {
+                    @BulkActions
+                }
+                <button class="btn btn-outline-secondary btn-sm py-0" @onclick="ClearSelection">
+                    <i class="bi bi-x-lg me-1"></i>@L["DataGrid_ClearSelection"]
+                </button>
+            </div>
+        }
+
         @* ── Desktop table ── *@
         <div class="data-grid-table d-none d-md-block">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
+                            @if (SelectionEnabled)
+                            {
+                                <th style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input"
+                                           checked="@_allPageSelected"
+                                           @onchange="ToggleAllPageSelection" />
+                                </th>
+                            }
                             @for (var i = 0; i < Columns.Count; i++)
                             {
                                 var colIndex = i;
@@ -120,7 +144,17 @@
                     <tbody>
                         @foreach (var item in _items)
                         {
-                            <tr>
+                            var itemId = ItemKey?.Invoke(item);
+                            var isSelected = itemId is not null && _selectedIds.Contains(itemId.Value);
+                            <tr class="@(isSelected ? "table-primary" : "")">
+                                @if (SelectionEnabled)
+                                {
+                                    <td @onclick:stopPropagation="true">
+                                        <input type="checkbox" class="form-check-input"
+                                               checked="@isSelected"
+                                               @onchange="() => ToggleItemSelection(itemId)" />
+                                    </td>
+                                }
                                 @for (var i = 0; i < Columns.Count; i++)
                                 {
                                     var col = Columns[i];
@@ -146,6 +180,10 @@
                     {
                         <tfoot>
                             <tr class="summary-row">
+                                @if (SelectionEnabled)
+                                {
+                                    <td></td>
+                                }
                                 @for (var i = 0; i < Columns.Count; i++)
                                 {
                                     var col = Columns[i];
@@ -252,11 +290,31 @@
                 </div>
             }
 
+            @if (SelectionEnabled)
+            {
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <input type="checkbox" class="form-check-input"
+                           checked="@_allPageSelected"
+                           @onchange="ToggleAllPageSelection" />
+                    <small class="text-muted">@L["DataGrid_SelectAll"]</small>
+                </div>
+            }
+
             @foreach (var item in _items)
             {
-                <div class="card mb-2">
+                var mobileItemId = ItemKey?.Invoke(item);
+                var mobileIsSelected = mobileItemId is not null && _selectedIds.Contains(mobileItemId.Value);
+                <div class="card mb-2 @(mobileIsSelected ? "border-primary" : "")">
                     <div class="card-body py-2 px-3">
                         @{ var titleCol = Columns.FirstOrDefault(c => c.IsMobileTitle); }
+                        <div class="d-flex align-items-start gap-2">
+                            @if (SelectionEnabled)
+                            {
+                                <input type="checkbox" class="form-check-input mt-1"
+                                       checked="@mobileIsSelected"
+                                       @onchange="() => ToggleItemSelection(mobileItemId)" />
+                            }
+                            <div class="flex-grow-1 min-w-0">
                         @if (titleCol is not null)
                         {
                             <div class="fw-semibold mb-1">
@@ -292,6 +350,8 @@
                                 @RowActions(item)
                             </div>
                         }
+                            </div>
+                        </div>
                     </div>
                 </div>
             }
@@ -389,12 +449,19 @@
 
     [Parameter] public RenderFragment? Toolbar { get; set; }
     [Parameter] public RenderFragment<TItem>? RowActions { get; set; }
+    [Parameter] public RenderFragment? BulkActions { get; set; }
     [Parameter] public string? FilterPlaceholder { get; set; }
     [Parameter] public string? EmptyText { get; set; }
     [Parameter] public int PageSize { get; set; } = 10;
     [Parameter] public int[] PageSizeOptions { get; set; } = [10, 25, 50, 100];
     [Parameter] public string? DefaultSortField { get; set; }
     [Parameter] public bool DefaultSortDescending { get; set; }
+
+    /// <summary>When true, rows can be selected via checkboxes. Requires <see cref="ItemKey"/> to be set.</summary>
+    [Parameter] public bool SelectionEnabled { get; set; }
+
+    /// <summary>Function that returns a unique <see cref="Guid"/> key for each item. Required when <see cref="SelectionEnabled"/> is true.</summary>
+    [Parameter] public Func<TItem, Guid>? ItemKey { get; set; }
 
     /// <summary>
     /// When set, grid state (sort, filter, page size, summaries) is persisted
@@ -419,6 +486,11 @@
     private bool _sortDescending;
     private string? _filterInput;
     private string? _appliedFilter;
+
+    // Selection state
+    private HashSet<Guid> _selectedIds = [];
+    private bool _allPageSelected => SelectionEnabled && _items.Count > 0 && ItemKey is not null
+        && _items.All(i => _selectedIds.Contains(ItemKey(i)));
 
     // Summary state
     private int _summaryDropdownIndex = -1;
@@ -452,8 +524,42 @@
 
     public async Task RefreshAsync()
     {
+        _selectedIds.Clear();
         await LoadDataInternalAsync();
     }
+
+    /// <summary>Returns the set of currently selected item IDs.</summary>
+    public IReadOnlySet<Guid> SelectedIds => _selectedIds;
+
+    /// <summary>Returns the currently selected items from the loaded page.</summary>
+    public IReadOnlyList<TItem> SelectedItems => SelectionEnabled && ItemKey is not null
+        ? _items.Where(i => _selectedIds.Contains(ItemKey(i))).ToList()
+        : [];
+
+    private void ToggleItemSelection(Guid? id)
+    {
+        if (id is null) return;
+        if (!_selectedIds.Remove(id.Value))
+            _selectedIds.Add(id.Value);
+    }
+
+    private void ToggleAllPageSelection(ChangeEventArgs e)
+    {
+        if (ItemKey is null) return;
+        var check = (bool)(e.Value ?? false);
+        if (check)
+        {
+            foreach (var item in _items)
+                _selectedIds.Add(ItemKey(item));
+        }
+        else
+        {
+            foreach (var item in _items)
+                _selectedIds.Remove(ItemKey(item));
+        }
+    }
+
+    private void ClearSelection() => _selectedIds.Clear();
 
     // ── Persistence ──
 

@@ -904,4 +904,13 @@
   <data name="RcptCfg_NeedsDecimalField"><value>This action needs at least one Decimal field to enable receipt import.</value></data>
   <data name="RcptCfg_NotConfigured"><value>Receipt import not configured for this action.</value></data>
   <data name="RcptCfg_ConfiguredAction"><value>configured for receipt import</value></data>
+
+  <!-- ═══ Bulk Operations ═══ -->
+  <data name="Bulk_Edit"><value>Edit</value></data>
+  <data name="Bulk_Delete"><value>Delete</value></data>
+  <data name="Bulk_EditHint"><value>Check the properties you want to update and set the new values. Only checked properties will be changed.</value></data>
+  <data name="Bulk_Apply"><value>Apply Changes</value></data>
+  <data name="Bulk_OperationFailed"><value>Bulk operation failed. Please try again.</value></data>
+  <data name="DataGrid_Selected"><value>selected</value></data>
+  <data name="DataGrid_ClearSelection"><value>Clear</value></data>
 </root>

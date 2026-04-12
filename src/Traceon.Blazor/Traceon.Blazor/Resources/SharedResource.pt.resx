@@ -907,4 +907,13 @@
   <data name="RcptCfg_NeedsDecimalField"><value>Esta ação precisa de pelo menos um campo Decimal para ativar a importação de recibos.</value></data>
   <data name="RcptCfg_NotConfigured"><value>Importação de recibos não configurada para esta ação.</value></data>
   <data name="RcptCfg_ConfiguredAction"><value>configurada para importação de recibos</value></data>
+
+  <!-- ═══ Bulk Operations ═══ -->
+  <data name="Bulk_Edit"><value>Editar</value></data>
+  <data name="Bulk_Delete"><value>Eliminar</value></data>
+  <data name="Bulk_EditHint"><value>Selecione as propriedades que deseja atualizar e defina os novos valores. Apenas as propriedades selecionadas serão alteradas.</value></data>
+  <data name="Bulk_Apply"><value>Aplicar Alterações</value></data>
+  <data name="Bulk_OperationFailed"><value>A operação em lote falhou. Tente novamente.</value></data>
+  <data name="DataGrid_Selected"><value>selecionados</value></data>
+  <data name="DataGrid_ClearSelection"><value>Limpar</value></data>
 </root>

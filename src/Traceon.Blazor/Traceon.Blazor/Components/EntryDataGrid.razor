@@ -180,7 +180,9 @@
               EmptyText="@L["EntryGrid_Empty"]"
               StorageKey="@UserScopedStorageKey"
               HasExternalFilters="_hasExternalFilters"
-              OnReset="OnGridResetAsync">
+              OnReset="OnGridResetAsync"
+              SelectionEnabled="true"
+              ItemKey="e => e.Id">
         <Toolbar>
               @if (_createActionId != Guid.Empty)
               {
@@ -190,6 +192,25 @@
                   </a>
               }
     </Toolbar>
+    <BulkActions>
+        @if (HasActionFilter)
+        {
+            <button class="btn btn-outline-primary btn-sm" @onclick="OpenBulkEditModal" disabled="@_bulkBusy">
+                <i class="bi bi-pencil-square me-1"></i>@L["Bulk_Edit"]
+            </button>
+        }
+        <button class="btn btn-outline-danger btn-sm" @onclick="BulkDeleteAsync" disabled="@_bulkBusy">
+            @if (_bulkBusy)
+            {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            else
+            {
+                <i class="bi bi-trash3 me-1"></i>
+            }
+            @L["Bulk_Delete"]
+        </button>
+    </BulkActions>
     <RowActions>
         <ListActionsDropdown PrimaryText="@L["Common_Edit"]"
                              PrimaryIcon="pencil-square"
@@ -199,6 +220,133 @@
                              OnAfterAction="StateHasChanged" />
     </RowActions>
 </DataGrid>
+
+@* ── Bulk Edit Modal ── *@
+@if (_showBulkEditModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title mb-0">
+                        <i class="bi bi-pencil-square me-1"></i>@L["Bulk_Edit"]
+                        <span class="badge bg-primary ms-1">@_grid.SelectedIds.Count</span>
+                    </h6>
+                    <button type="button" class="btn-close" @onclick="CloseBulkEditModal"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p class="text-muted small mb-3">@L["Bulk_EditHint"]</p>
+
+                    @* ── Occurred date ── *@
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <input type="checkbox" class="form-check-input"
+                                   checked="@_bulkEditOccurredAt"
+                                   @onchange="e => _bulkEditOccurredAt = (bool)(e.Value ?? false)" />
+                            <label class="form-label mb-0 small fw-semibold">@L["EntryGrid_Date"]</label>
+                        </div>
+                        @if (_bulkEditOccurredAt)
+                        {
+                            <input type="datetime-local" class="form-control form-control-sm"
+                                   value="@_bulkOccurredAt?.ToString("yyyy-MM-ddTHH:mm")"
+                                   @onchange="e => _bulkOccurredAt = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null" />
+                        }
+                    </div>
+
+                    @* ── Notes ── *@
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <input type="checkbox" class="form-check-input"
+                                   checked="@_bulkEditNotes"
+                                   @onchange="e => _bulkEditNotes = (bool)(e.Value ?? false)" />
+                            <label class="form-label mb-0 small fw-semibold">@L["EntryGrid_Notes"]</label>
+                        </div>
+                        @if (_bulkEditNotes)
+                        {
+                            <textarea class="form-control form-control-sm" rows="2"
+                                      @onchange="e => _bulkNotes = e.Value?.ToString()"
+                                      placeholder="@L["EntryGrid_Notes"]">@_bulkNotes</textarea>
+                        }
+                    </div>
+
+                    @* ── Field values ── *@
+                    @foreach (var field in _activeFields.OrderBy(f => f.Order))
+                    {
+                        var fieldId = field.Id;
+                        var hasValue = _bulkFieldValues.ContainsKey(fieldId);
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <input type="checkbox" class="form-check-input"
+                                       checked="@hasValue"
+                                       @onchange="e => ToggleBulkField(fieldId, (bool)(e.Value ?? false))" />
+                                <label class="form-label mb-0 small fw-semibold">@field.Name</label>
+                            </div>
+                            @if (hasValue)
+                            {
+                                @if (field.FieldType == FieldType.Dropdown && field.DropdownValues is not null && !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                {
+                                    <select class="form-select form-select-sm"
+                                            value="@GetBulkFieldValue(fieldId)"
+                                            @onchange="e => SetBulkFieldValue(fieldId, e.Value?.ToString())">
+                                        <option value="">— @L["Common_Select"] —</option>
+                                        @foreach (var opt in field.DropdownValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
+                                        {
+                                            <option value="@opt">@opt</option>
+                                        }
+                                    </select>
+                                }
+                                else if (field.FieldType == FieldType.Boolean)
+                                {
+                                    <select class="form-select form-select-sm"
+                                            value="@GetBulkFieldValue(fieldId)"
+                                            @onchange="e => SetBulkFieldValue(fieldId, e.Value?.ToString())">
+                                        <option value="">— @L["Common_Select"] —</option>
+                                        <option value="true">@L["Common_Yes"]</option>
+                                        <option value="false">@L["Common_No"]</option>
+                                    </select>
+                                }
+                                else
+                                {
+                                    <input type="text" class="form-control form-control-sm"
+                                           value="@GetBulkFieldValue(fieldId)"
+                                           @onchange="e => SetBulkFieldValue(fieldId, e.Value?.ToString())"
+                                           placeholder="@field.Name" />
+                                }
+                            }
+                        </div>
+                    }
+
+                    @if (_bulkErrors.Count > 0)
+                    {
+                        <div class="alert alert-danger py-2 mt-2">
+                            @foreach (var err in _bulkErrors)
+                            {
+                                <div>@err</div>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer py-2">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CloseBulkEditModal">
+                        <i class="bi bi-x-lg me-1"></i>@L["Common_Cancel"]
+                    </button>
+                    <button class="btn btn-primary btn-sm" @onclick="ApplyBulkEditAsync"
+                            disabled="@(_bulkBusy || !HasBulkChanges)">
+                        @if (_bulkBusy)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-lg me-1"></i>
+                        }
+                        @L["Bulk_Apply"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 }
 else
 {
@@ -809,5 +957,142 @@ else
         _fieldFilters.Remove(fieldId);
         await _grid.RefreshAsync();
         await SaveEntryFiltersAsync();
+    }
+
+    // ── Bulk operations ──
+
+    private bool _bulkBusy;
+    private bool _showBulkEditModal;
+    private Dictionary<Guid, string> _bulkFieldValues = [];
+    private List<string> _bulkErrors = [];
+
+    // Bulk edit: entry-level properties
+    private bool _bulkEditOccurredAt;
+    private DateTime? _bulkOccurredAt;
+    private bool _bulkEditNotes;
+    private string? _bulkNotes;
+
+    private bool HasBulkChanges =>
+        (_bulkEditOccurredAt && _bulkOccurredAt.HasValue)
+        || _bulkEditNotes
+        || _bulkFieldValues.Any(kv => !string.IsNullOrEmpty(kv.Value));
+
+    private Guid _bulkActionId =>
+        Guid.TryParse(_selectedActionId, out var id) ? id : Guid.Empty;
+
+    private async Task BulkDeleteAsync()
+    {
+        if (_grid.SelectedIds.Count == 0) return;
+
+        _bulkBusy = true;
+        _bulkErrors = [];
+        StateHasChanged();
+
+        try
+        {
+            if (_bulkActionId != Guid.Empty)
+            {
+                // All entries belong to the filtered action
+                var (success, errors) = await EntryService.BulkDeleteAsync(_bulkActionId, _grid.SelectedIds.ToList());
+                if (!success)
+                    _bulkErrors.AddRange(errors);
+            }
+            else
+            {
+                // Entries may span multiple actions — group by TrackedActionId
+                var selectedItems = _grid.SelectedItems;
+                foreach (var group in selectedItems.GroupBy(e => e.TrackedActionId))
+                {
+                    var (success, errors) = await EntryService.BulkDeleteAsync(group.Key, group.Select(e => e.Id).ToList());
+                    if (!success)
+                        _bulkErrors.AddRange(errors);
+                }
+            }
+        }
+        catch
+        {
+            _bulkErrors = [L["Bulk_OperationFailed"]];
+        }
+
+        _bulkBusy = false;
+        await _grid.RefreshAsync();
+    }
+
+    private void OpenBulkEditModal()
+    {
+        if (_grid.SelectedIds.Count == 0) return;
+        _bulkFieldValues = [];
+        _bulkErrors = [];
+        _bulkEditOccurredAt = false;
+        _bulkOccurredAt = null;
+        _bulkEditNotes = false;
+        _bulkNotes = null;
+        _showBulkEditModal = true;
+    }
+
+    private void CloseBulkEditModal()
+    {
+        _showBulkEditModal = false;
+        _bulkFieldValues = [];
+        _bulkErrors = [];
+        _bulkEditOccurredAt = false;
+        _bulkOccurredAt = null;
+        _bulkEditNotes = false;
+        _bulkNotes = null;
+    }
+
+    private void ToggleBulkField(Guid fieldId, bool enabled)
+    {
+        if (enabled)
+            _bulkFieldValues[fieldId] = "";
+        else
+            _bulkFieldValues.Remove(fieldId);
+    }
+
+    private string GetBulkFieldValue(Guid fieldId) =>
+        _bulkFieldValues.TryGetValue(fieldId, out var v) ? v : "";
+
+    private void SetBulkFieldValue(Guid fieldId, string? value) =>
+        _bulkFieldValues[fieldId] = value ?? "";
+
+    private async Task ApplyBulkEditAsync()
+    {
+        var ids = _grid.SelectedIds.ToList();
+        if (ids.Count == 0 || _bulkActionId == Guid.Empty) return;
+        if (!HasBulkChanges) return;
+
+        var fieldValues = _bulkFieldValues
+            .Where(kv => !string.IsNullOrEmpty(kv.Value))
+            .Select(kv => new ActionEntryFieldValue(kv.Key, kv.Value))
+            .ToList();
+
+        var occurredAtUtc = _bulkEditOccurredAt && _bulkOccurredAt.HasValue
+            ? _bulkOccurredAt.Value.ToUniversalTime()
+            : (DateTime?)null;
+
+        _bulkBusy = true;
+        _bulkErrors = [];
+        StateHasChanged();
+
+        try
+        {
+            var (success, errors) = await EntryService.BulkUpdateFieldsAsync(
+                _bulkActionId, ids, fieldValues, occurredAtUtc, _bulkNotes, _bulkEditNotes);
+            if (success)
+            {
+                CloseBulkEditModal();
+                await _grid.RefreshAsync();
+            }
+            else
+            {
+                _bulkErrors = [.. errors];
+            }
+        }
+        catch
+        {
+            _bulkErrors = [L["Bulk_OperationFailed"]];
+        }
+
+        _bulkBusy = false;
     }
 }
