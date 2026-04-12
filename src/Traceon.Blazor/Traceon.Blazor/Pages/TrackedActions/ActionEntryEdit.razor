@@ -218,15 +218,40 @@ else
                                         <div class="card card-body mt-2 p-2 border-primary">
                                             <div class="mb-2">
                                                 <label class="form-label form-label-sm mb-1">@L["CompositeQuickAdd_Source"]</label>
-                                                <select class="form-select form-select-sm"
-                                                        value="@_compositeQuickAdd.SelectedSourceId"
-                                                        @onchange="e => _compositeQuickAdd.SelectedSourceId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : Guid.Empty">
-                                                    <option value="@Guid.Empty">@L["Entry_Select"]</option>
-                                                    @foreach (var src in _compositeQuickAdd.SourceOptions)
-                                                    {
-                                                        <option value="@src.Id">@src.Name</option>
-                                                    }
-                                                </select>
+                                                @if (!_compositeQuickAdd.IsCreatingNewSource)
+                                                {
+                                                    <div class="d-flex gap-1">
+                                                        <select class="form-select form-select-sm"
+                                                                value="@_compositeQuickAdd.SelectedSourceId"
+                                                                @onchange="e => _compositeQuickAdd.SelectedSourceId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : Guid.Empty">
+                                                            <option value="@Guid.Empty">@L["Entry_Select"]</option>
+                                                            @foreach (var src in _compositeQuickAdd.SourceOptions)
+                                                            {
+                                                                <option value="@src.Id">@src.Name</option>
+                                                            }
+                                                        </select>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap"
+                                                                @onclick="() => _compositeQuickAdd.IsCreatingNewSource = true">
+                                                            <i class="bi bi-plus-lg me-1"></i>@L["CompositeQuickAdd_NewSource"]
+                                                        </button>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="d-flex gap-1">
+                                                        <input type="text" class="form-control form-control-sm"
+                                                               placeholder="@L["CompositeQuickAdd_NewSourceName"]"
+                                                               @bind="_compositeQuickAdd.NewSourceName"
+                                                               @bind:event="oninput" />
+                                                        @if (_compositeQuickAdd.SourceOptions.Count > 0)
+                                                        {
+                                                            <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap"
+                                                                    @onclick="() => _compositeQuickAdd.IsCreatingNewSource = false">
+                                                                @L["Common_Cancel"]
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                }
                                             </div>
                                             <div class="mb-2">
                                                 <label class="form-label form-label-sm mb-1">@L["Dropdown_NewValue"]</label>
@@ -273,8 +298,75 @@ else
                     }
                 </div>
             }
-        </div>
-        <div class="card-footer bg-light">
+            @* ── Inline new dropdown field ── *@
+            @if (_newFieldInline is not null)
+            {
+                <div class="card border-success mt-3">
+                    <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>@L["NewField_Title"]</h6>
+                        <button class="btn-close" @onclick="CloseNewFieldInline"></button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-5">
+                                <label class="form-label">@L["Common_Name"] <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm"
+                                       @bind="_newFieldInline.Name"
+                                       placeholder="@L["Common_Name"]" />
+                            </div>
+                            <div class="col-12 col-md-7">
+                                <label class="form-label">@L["Fields_DropdownValues"] <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm"
+                                       @bind="_newFieldInline.DropdownValues"
+                                       placeholder="@L["Fields_DropdownPlaceholder"]" />
+                                <div class="form-text">@L["Fields_DropdownHint"]</div>
+                            </div>
+                            @{
+                                var newFieldParents = _fieldModels
+                                    .Where(m => m.Field.FieldType == FieldType.Dropdown && !string.IsNullOrEmpty(m.TextValue))
+                                    .ToList();
+                            }
+                            @if (newFieldParents.Count > 0)
+                            {
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">@L["NewField_LinkParent"]</label>
+                                    <select class="form-select form-select-sm" @bind="_newFieldInline.ParentFieldId">
+                                        <option value="@Guid.Empty">— @L["Common_None"] —</option>
+                                        @foreach (var p in newFieldParents)
+                                        {
+                                            <option value="@p.Field.Id">@p.Field.Name = @p.TextValue</option>
+                                        }
+                                    </select>
+                                    <div class="form-text">@L["NewField_LinkParentHint"]</div>
+                                </div>
+                            }
+                        </div>
+                        @if (_newFieldErrors.Count > 0)
+                        {
+                            <div class="text-danger small mt-2">@string.Join(", ", _newFieldErrors)</div>
+                        }
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button class="btn btn-outline-secondary btn-sm" @onclick="CloseNewFieldInline">
+                                @L["Common_Cancel"]
+                            </button>
+                            <button class="btn btn-success btn-sm" @onclick="SaveNewFieldInlineAsync"
+                                    disabled="@(!_newFieldInline.IsValid || _newFieldInline.Saving)">
+                                @if (_newFieldInline.Saving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-check-circle me-1"></i>
+                                }
+                                @L["Common_Save"]
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+            </div>
+            <div class="card-footer bg-light">
             <div class="d-flex justify-content-between">
                 <a href="@_returnUrl" class="btn btn-outline-secondary">
                     <i class="bi bi-x-circle me-1"></i>@L["Common_Cancel"]
@@ -573,6 +665,22 @@ else
         public bool BoolValue { get; set; }
 
         private string[]? _dropdownOverride;
+        private string? _dropdownValuesOverride;
+
+        public string? EffectiveDropdownValues => _dropdownValuesOverride ?? Field.DropdownValues;
+
+        public void AppendCompositeSource(string sourceId)
+        {
+            var current = _dropdownValuesOverride ?? Field.DropdownValues ?? "ref:";
+            if (!current.StartsWith("ref:", StringComparison.Ordinal))
+                current = "ref:";
+            var refs = current["ref:".Length..]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
+            if (!refs.Contains(sourceId, StringComparer.OrdinalIgnoreCase))
+                refs.Add(sourceId);
+            _dropdownValuesOverride = "ref:" + string.Join(",", refs);
+        }
 
         // Composite dropdown: grouped options resolved from sibling fields
         private List<(string GroupName, string[] Values)>? _originalCompositeGroups;
@@ -686,6 +794,7 @@ else
             model.TextValue = _quickAddValue.Trim();
             _quickAddFieldId = null;
             _quickAddValue = string.Empty;
+            EvaluateDependencyRules();
         }
 
         _quickAddSaving = false;
@@ -717,10 +826,10 @@ else
         foreach (var model in _fieldModels)
         {
             if (model.Field.FieldType != FieldType.CompositeDropdown) continue;
-            if (string.IsNullOrWhiteSpace(model.Field.DropdownValues)) continue;
-            if (!model.Field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal)) continue;
+            if (string.IsNullOrWhiteSpace(model.EffectiveDropdownValues)) continue;
+            if (!model.EffectiveDropdownValues.StartsWith("ref:", StringComparison.Ordinal)) continue;
 
-            var refIds = model.Field.DropdownValues["ref:".Length..]
+            var refIds = model.EffectiveDropdownValues["ref:".Length..]
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
                 .Where(id => id != Guid.Empty)
@@ -819,7 +928,7 @@ else
                 else
                 {
                     // No source value selected yet → show all original values
-                    model.SetDropdownValues(model.Field.DropdownValues ?? "");
+                    model.SetDropdownValues(model.EffectiveDropdownValues ?? "");
 
                     if (isComposite)
                         model.ResetCompositeGroups();
@@ -842,10 +951,11 @@ else
 
         // Parse the ref: IDs to find which source field definitions this composite pulls from
         var sourceOptions = new List<CompositeSourceOption>();
-        if (!string.IsNullOrWhiteSpace(model.Field.DropdownValues)
-            && model.Field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+        var effectiveRefs = model.EffectiveDropdownValues;
+        if (!string.IsNullOrWhiteSpace(effectiveRefs)
+            && effectiveRefs.StartsWith("ref:", StringComparison.Ordinal))
         {
-            var refIds = model.Field.DropdownValues["ref:".Length..]
+            var refIds = effectiveRefs["ref:".Length..]
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
                 .Where(id => id != Guid.Empty)
@@ -879,11 +989,29 @@ else
             }
         }
 
+        // Fallback: infer parent from the closest preceding dropdown/composite field that has a value.
+        // This covers the case where no dep rules exist yet for this field (first-time chain setup).
+        if (parentCtx is null)
+        {
+            var idx = _fieldModels.IndexOf(model);
+            for (var i = idx - 1; i >= 0; i--)
+            {
+                var candidate = _fieldModels[i];
+                if ((candidate.Field.FieldType == FieldType.Dropdown || candidate.Field.FieldType == FieldType.CompositeDropdown)
+                    && !string.IsNullOrEmpty(candidate.TextValue))
+                {
+                    parentCtx = (candidate.Field.Id, candidate.Field.Name, candidate.TextValue);
+                    break;
+                }
+            }
+        }
+
         _compositeQuickAdd = new CompositeQuickAddState
         {
             Model = model,
             SourceOptions = sourceOptions,
             SelectedSourceId = sourceOptions.Count == 1 ? sourceOptions[0].Id : Guid.Empty,
+            IsCreatingNewSource = sourceOptions.Count == 0,
             ParentContext = parentCtx,
             LinkDependency = parentCtx is not null
         };
@@ -902,14 +1030,62 @@ else
         _compositeQuickAdd.Saving = true;
         var newValue = _compositeQuickAdd.NewValue.Trim();
 
-        // 1. Add value to the source field definition
-        var (addSuccess, _) = await FieldDefService.AppendDropdownValueAsync(
-            _compositeQuickAdd.SelectedSourceId, newValue);
-
-        if (!addSuccess)
+        if (_compositeQuickAdd.IsCreatingNewSource)
         {
-            _compositeQuickAdd.Saving = false;
-            return;
+            // 1a. Create the new source FieldDefinition with the value as its first item
+            var (fdOk, created, _) = await FieldDefService.CreateWithResultAsync(
+                new CreateFieldDefinitionRequest(
+                    _compositeQuickAdd.NewSourceName.Trim(),
+                    FieldType.Dropdown,
+                    DropdownValues: newValue));
+
+            if (!fdOk || created is null)
+            {
+                _compositeQuickAdd.Saving = false;
+                return;
+            }
+
+            // 1b. Append the new source ID to the CompositeDropdown FieldDefinition's ref list
+            var compositeFieldDef = _cachedFieldDefinitions.FirstOrDefault(fd => fd.Id == _compositeQuickAdd.Model.Field.FieldDefinitionId)
+                ?? await FieldDefService.GetByIdAsync(_compositeQuickAdd.Model.Field.FieldDefinitionId);
+
+            if (compositeFieldDef is not null)
+            {
+                var currentRefs = compositeFieldDef.DropdownValues is not null
+                    && compositeFieldDef.DropdownValues.StartsWith("ref:", StringComparison.Ordinal)
+                    ? compositeFieldDef.DropdownValues["ref:".Length..]
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList()
+                    : new List<string>();
+
+                currentRefs.Add(created.Id.ToString());
+
+                await FieldDefService.UpdateAsync(compositeFieldDef.Id, new UpdateFieldDefinitionRequest(
+                    compositeFieldDef.DefaultName,
+                    FieldType.CompositeDropdown,
+                    compositeFieldDef.DefaultDescription,
+                    "ref:" + string.Join(",", currentRefs),
+                    compositeFieldDef.DefaultMaxValue,
+                    compositeFieldDef.DefaultMinValue,
+                    compositeFieldDef.DefaultIsRequired,
+                    compositeFieldDef.DefaultValue,
+                    compositeFieldDef.Unit));
+            }
+
+            // 1c. Update the model's local ref list so ResolveCompositeDropdownsAsync picks it up
+            _compositeQuickAdd.Model.AppendCompositeSource(created.Id.ToString());
+        }
+        else
+        {
+            // 1. Add value to the existing source field definition
+            var (addSuccess, _) = await FieldDefService.AppendDropdownValueAsync(
+                _compositeQuickAdd.SelectedSourceId, newValue);
+
+            if (!addSuccess)
+            {
+                _compositeQuickAdd.Saving = false;
+                return;
+            }
         }
 
         // 2. If "link dependency" is checked, create or update the dependency rule
@@ -979,7 +1155,103 @@ else
         public string NewValue { get; set; } = string.Empty;
         public bool LinkDependency { get; set; }
         public bool Saving { get; set; }
+        public bool IsCreatingNewSource { get; set; }
+        public string NewSourceName { get; set; } = string.Empty;
         public (Guid ParentFieldId, string ParentFieldName, string ParentValue)? ParentContext { get; init; }
-        public bool IsValid => SelectedSourceId != Guid.Empty && !string.IsNullOrWhiteSpace(NewValue);
+        public bool IsValid =>
+            (IsCreatingNewSource ? !string.IsNullOrWhiteSpace(NewSourceName) : SelectedSourceId != Guid.Empty)
+            && !string.IsNullOrWhiteSpace(NewValue);
+    }
+
+    // ── Inline new dropdown field ──
+
+    private NewFieldInlineState? _newFieldInline;
+    private IReadOnlyList<string> _newFieldErrors = [];
+
+    private void OpenNewFieldInline()
+    {
+        _newFieldInline = new NewFieldInlineState();
+        _newFieldErrors = [];
+    }
+
+    private void CloseNewFieldInline()
+    {
+        _newFieldInline = null;
+        _newFieldErrors = [];
+    }
+
+    private async Task SaveNewFieldInlineAsync()
+    {
+        if (_newFieldInline is null || !_newFieldInline.IsValid) return;
+
+        _newFieldInline.Saving = true;
+        _newFieldErrors = [];
+
+        var (fdOk, created, fdErrs) = await FieldDefService.CreateWithResultAsync(
+            new CreateFieldDefinitionRequest(
+                _newFieldInline.Name.Trim(),
+                FieldType.Dropdown,
+                DropdownValues: string.Join(",", _newFieldInline.ParsedValues)));
+
+        if (!fdOk || created is null)
+        {
+            _newFieldErrors = fdErrs.Count > 0 ? fdErrs : [L["Common_ErrorOccurred"]];
+            _newFieldInline.Saving = false;
+            return;
+        }
+
+        var nextOrder = _fieldModels.Count;
+        var (afOk, afErrs) = await FieldService.CreateAsync(TrackedActionId,
+            new CreateActionFieldRequest(created.Id, created.DefaultName, Order: nextOrder));
+
+        if (!afOk)
+        {
+            _newFieldErrors = afErrs.Count > 0 ? afErrs : [L["Common_ErrorOccurred"]];
+            _newFieldInline.Saving = false;
+            return;
+        }
+
+        var allFields = await FieldService.GetByTrackedActionAsync(TrackedActionId);
+        var newActionField = allFields.FirstOrDefault(f => f.FieldDefinitionId == created.Id);
+
+        if (newActionField is not null)
+        {
+            if (_newFieldInline.ParentFieldId != Guid.Empty)
+            {
+                var parentModel = _fieldModels.FirstOrDefault(m => m.Field.Id == _newFieldInline.ParentFieldId);
+                if (parentModel is not null && !string.IsNullOrEmpty(parentModel.TextValue))
+                {
+                    await DepRuleService.CreateAsync(TrackedActionId,
+                        new CreateFieldDependencyRuleRequest(
+                            _newFieldInline.ParentFieldId,
+                            parentModel.TextValue,
+                            newActionField.Id,
+                            DependencyRuleType.FilterDropdownValues,
+                            string.Join(",", _newFieldInline.ParsedValues),
+                            _depRules.Count));
+                    try { _depRules = await DepRuleService.GetByTrackedActionAsync(TrackedActionId); } catch { }
+                }
+            }
+
+            _fieldModels.Add(new EntryFieldModel { Field = newActionField });
+            EvaluateDependencyRules();
+        }
+
+        _newFieldInline = null;
+    }
+
+    private sealed class NewFieldInlineState
+    {
+        public string Name { get; set; } = string.Empty;
+        public string DropdownValues { get; set; } = string.Empty;
+        public Guid ParentFieldId { get; set; }
+        public bool Saving { get; set; }
+
+        public string[] ParsedValues => DropdownValues
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        public bool IsValid => !string.IsNullOrWhiteSpace(Name) && ParsedValues.Length > 0;
     }
 }

@@ -790,16 +790,25 @@ else
                                     {
                                         <div class="row g-0 border rounded" style="min-height: 250px;">
                                             @* Left panel: source values *@
-                                            <div class="col-12 col-md-4 border-end" style="max-height: 350px; overflow-y: auto;">
-                                                <div class="list-group list-group-flush">
-                                                    @foreach (var srcVal in srcOptions)
+                                            <div class="col-12 col-md-4 border-end d-flex flex-column" style="max-height: 350px;">
+                                                @if (srcOptions.Length > 8)
+                                                {
+                                                    <div class="p-2 border-bottom flex-shrink-0">
+                                                        <input type="text" class="form-control form-control-sm"
+                                                               placeholder="@L["Common_Search"]..."
+                                                               @bind="_depSourceSearch"
+                                                               @bind:event="oninput" />
+                                                    </div>
+                                                }
+                                                <div class="list-group list-group-flush overflow-y-auto flex-grow-1">
+                                                    @foreach (var srcVal in srcOptions.Where(v => string.IsNullOrEmpty(_depSourceSearch) || v.Contains(_depSourceSearch, StringComparison.OrdinalIgnoreCase)))
                                                     {
                                                         var captured = srcVal;
                                                         var isActive = captured == _depActiveSourceValue;
                                                         var hasMapping = _depMappings.TryGetValue(captured, out var m) && m.Count > 0;
                                                         <button type="button"
                                                                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isActive ? "active" : "")"
-                                                                @onclick="() => _depActiveSourceValue = captured">
+                                                                @onclick="() => SelectDepSourceValue(captured)">
                                                             <span>@captured</span>
                                                             @if (hasMapping)
                                                             {
@@ -811,33 +820,51 @@ else
                                             </div>
 
                                             @* Right panel: target checkboxes *@
-                                            <div class="col-12 col-md-8 p-3" style="max-height: 350px; overflow-y: auto;">
+                                            <div class="col-12 col-md-8 d-flex flex-column" style="max-height: 350px;">
                                                 @if (_depActiveSourceValue is null)
                                                 {
-                                                    <div class="text-center text-muted py-4">
+                                                    <div class="text-center text-muted py-4 flex-grow-1">
                                                         <i class="bi bi-arrow-left-circle fs-3 d-block mb-2"></i>
                                                         <p class="mb-0">@L["Dep_PickSourceValue"]</p>
                                                     </div>
                                                 }
                                                 else
                                                 {
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                                        <span class="fw-semibold">
-                                                            @L["Dep_WhenValueIs"] <span class="badge bg-secondary">@_depActiveSourceValue</span>
-                                                            → @L["Dep_AllowedValues"]:
-                                                        </span>
-                                                        <div class="btn-group btn-group-sm">
-                                                            <button class="btn btn-outline-secondary" @onclick="() => DepSelectAll(tgtOptions)">@L["Common_All"]</button>
-                                                            <button class="btn btn-outline-secondary" @onclick="DepSelectNone">@L["Common_None"]</button>
+                                                    <div class="p-3 pb-0 flex-shrink-0">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <span class="fw-semibold">
+                                                                @L["Dep_WhenValueIs"] <span class="badge bg-secondary">@_depActiveSourceValue</span>
+                                                                → @L["Dep_AllowedValues"]:
+                                                            </span>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <button class="btn btn-outline-secondary" @onclick="() => DepSelectAll(tgtOptions)">@L["Common_All"]</button>
+                                                                <button class="btn btn-outline-secondary" @onclick="DepSelectNone">@L["Common_None"]</button>
                                                         </div>
                                                     </div>
-
-                                                    var compositeGroups = GetGroupedFieldDropdownValues(_depTargetFieldId);
-                                                    if (compositeGroups.Count > 0)
+                                                    @if (tgtOptions.Length > 8)
                                                     {
-                                                         @foreach (var (groupName, groupValues) in compositeGroups)
+                                                        <div class="px-3 pb-2 flex-shrink-0">
+                                                            <input type="text" class="form-control form-control-sm"
+                                                                   placeholder="@L["Common_Search"]..."
+                                                                   @bind="_depTargetSearch"
+                                                                   @bind:event="oninput" />
+                                                        </div>
+                                                    }
+                                                    </div>
+
+                                                    <div class="px-3 pb-3 overflow-y-auto flex-grow-1">
+                                                    @{
+                                                        var compositeGroups = GetGroupedFieldDropdownValues(_depTargetFieldId);
+                                                    }
+                                                    @if (compositeGroups.Count > 0)
+                                                    {
+                                                        @foreach (var (groupName, groupValues) in compositeGroups)
                                                         {
-                                                            var capturedGroup = groupValues;
+                                                            var filteredGroupValues = string.IsNullOrEmpty(_depTargetSearch)
+                                                                ? groupValues
+                                                                : groupValues.Where(v => v.Contains(_depTargetSearch, StringComparison.OrdinalIgnoreCase)).ToArray();
+                                                            if (filteredGroupValues.Length == 0) continue;
+                                                            var capturedGroup = filteredGroupValues;
                                                             var depSetForGroup = _depMappings.GetValueOrDefault(_depActiveSourceValue!) ?? [];
                                                             var allGroupChecked = capturedGroup.All(v => depSetForGroup.Contains(v, StringComparer.OrdinalIgnoreCase));
                                                             <div class="mb-2">
@@ -853,7 +880,7 @@ else
                                                                     </button>
                                                                 </div>
                                                                 <div class="row row-cols-1 row-cols-sm-2 g-1">
-                                                                    @foreach (var tgtVal in groupValues)
+                                                                    @foreach (var tgtVal in filteredGroupValues)
                                                                     {
                                                                         var capturedTgt = tgtVal;
                                                                         var depSet = _depMappings.GetValueOrDefault(_depActiveSourceValue!) ?? [];
@@ -874,7 +901,7 @@ else
                                                     else
                                                     {
                                                     <div class="row row-cols-1 row-cols-sm-2 g-1">
-                                                        @foreach (var tgtVal in tgtOptions)
+                                                        @foreach (var tgtVal in tgtOptions.Where(v => string.IsNullOrEmpty(_depTargetSearch) || v.Contains(_depTargetSearch, StringComparison.OrdinalIgnoreCase)))
                                                         {
                                                             var capturedTgt = tgtVal;
                                                             var depSet = _depMappings.GetValueOrDefault(_depActiveSourceValue!) ?? [];
@@ -890,6 +917,7 @@ else
                                                         }
                                                     </div>
                                                     }
+                                                    </div>
                                                 }
                                             </div>
                                         </div>
@@ -1494,6 +1522,8 @@ else
     private Guid _depTargetFieldId;
     private string? _depActiveSourceValue;
     private Dictionary<string, HashSet<string>> _depMappings = new(StringComparer.OrdinalIgnoreCase);
+    private string _depSourceSearch = "";
+    private string _depTargetSearch = "";
 
     private async Task ActivateDependenciesTabAsync()
     {
@@ -1587,6 +1617,8 @@ else
         _depActiveSourceValue = null;
         _depMappings = new(StringComparer.OrdinalIgnoreCase);
         _depErrors = [];
+        _depSourceSearch = "";
+        _depTargetSearch = "";
     }
 
     private void OpenEditDepEditor(List<FieldDependencyRuleResponse> group)
@@ -1597,6 +1629,8 @@ else
         _depSourceFieldId = first.SourceFieldId;
         _depTargetFieldId = first.TargetFieldId;
         _depErrors = [];
+        _depSourceSearch = "";
+        _depTargetSearch = "";
 
         _depMappings = new(StringComparer.OrdinalIgnoreCase);
         foreach (var rule in group)
@@ -1614,6 +1648,12 @@ else
         _depActiveSourceValue = srcOptions.FirstOrDefault();
     }
 
+    private void SelectDepSourceValue(string value)
+    {
+        _depActiveSourceValue = value;
+        _depTargetSearch = string.Empty;
+    }
+
     private void CloseDepEditor()
     {
         _depEditorOpen = false;
@@ -1621,6 +1661,8 @@ else
         _depActiveSourceValue = null;
         _depMappings = new(StringComparer.OrdinalIgnoreCase);
         _depErrors = [];
+        _depSourceSearch = "";
+        _depTargetSearch = "";
     }
 
     private void OnDepSourceFieldChanged(ChangeEventArgs e)
@@ -1628,6 +1670,8 @@ else
         _depSourceFieldId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : Guid.Empty;
         _depActiveSourceValue = null;
         _depMappings = new(StringComparer.OrdinalIgnoreCase);
+        _depSourceSearch = "";
+        _depTargetSearch = "";
         if (_depTargetFieldId == _depSourceFieldId)
             _depTargetFieldId = Guid.Empty;
     }

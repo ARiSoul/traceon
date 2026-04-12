@@ -305,6 +305,12 @@
   <data name="Dropdown_NewValue"><value>New value…</value></data>
   <data name="CompositeQuickAdd_Source"><value>Add to which list?</value></data>
   <data name="CompositeQuickAdd_Link"><value>Allow when {0} = {1}</value></data>
+  <data name="CompositeQuickAdd_NewSource"><value>New list</value></data>
+  <data name="CompositeQuickAdd_NewSourceName"><value>New list name</value></data>
+  <data name="NewField_AddDropdown"><value>Add new dropdown field</value></data>
+  <data name="NewField_Title"><value>New Dropdown Field</value></data>
+  <data name="NewField_LinkParent"><value>Link as child of (optional)</value></data>
+  <data name="NewField_LinkParentHint"><value>Creates a dependency rule for the currently selected value.</value></data>
 
   <!-- ═══ Action Edit Tabs ═══ -->
   <data name="ActionEdit_BasicInfo"><value>Basic Info</value></data>
