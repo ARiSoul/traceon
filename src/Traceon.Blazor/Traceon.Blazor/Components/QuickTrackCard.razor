@@ -51,10 +51,26 @@
         }
 
         <div class="mt-auto pt-2">
-            <button class="btn btn-success btn-sm w-100 mb-2"
-                    @onclick="HandleTrack">
-                <i class="bi bi-bullseye me-1"></i>@L["Common_Track"]
-            </button>
+            @if (Action.HasReceiptConfig)
+            {
+                <div class="d-flex gap-2 mb-2">
+                    <button class="btn btn-outline-success btn-sm flex-fill"
+                            @onclick="HandleTrack">
+                        <i class="bi bi-bullseye me-1"></i>@L["Common_Track"]
+                    </button>
+                    <a href="/receipt-scan?actionId=@Action.Id"
+                       class="btn btn-success btn-sm flex-fill">
+                        <i class="bi bi-receipt me-1"></i>@L["Receipt_ScanNow"]
+                    </a>
+                </div>
+            }
+            else
+            {
+                <button class="btn btn-success btn-sm w-100 mb-2"
+                        @onclick="HandleTrack">
+                    <i class="bi bi-bullseye me-1"></i>@L["Common_Track"]
+                </button>
+            }
             <div class="d-flex justify-content-end gap-2">
                 <a href="/tracked-actions/@Action.Id/edit"
                    class="btn btn-outline-secondary btn-sm py-0 px-2"

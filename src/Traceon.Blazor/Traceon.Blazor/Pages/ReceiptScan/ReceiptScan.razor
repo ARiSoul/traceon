@@ -1036,6 +1036,9 @@
         (4, "Receipt_StepDone", "check-circle"),
     ];
 
+    [SupplyParameterFromQuery(Name = "actionId")]
+    public string? ActionIdParam { get; set; }
+
     private int _currentStep;
     private IReadOnlyList<string> _errors = [];
     private string? _successMessage;
@@ -1124,6 +1127,18 @@
         _loadingDrafts = false;
 
         await LoadActionsAsync();
+
+        // Auto-select action from query parameter
+        if (Guid.TryParse(ActionIdParam, out var preselectedId))
+        {
+            var match = _actions.FirstOrDefault(a => a.Id == preselectedId);
+            if (match is not null)
+            {
+                SelectAction(match);
+                _showDraftPicker = false;
+                ProceedToUpload();
+            }
+        }
     }
 
     private void OnFileSelected(InputFileChangeEventArgs e)
