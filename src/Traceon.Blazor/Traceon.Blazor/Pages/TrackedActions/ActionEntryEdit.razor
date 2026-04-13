@@ -501,7 +501,7 @@ else
 
         if (!_isEdit)
         {
-            try { _connRules = (await ConnRuleService.GetByTrackedActionAsync(TrackedActionId)).Where(r => r.IsEnabled).ToList(); }
+            try { _connRules = (await ConnRuleService.GetByTrackedActionAsync(TrackedActionId)).Where(r => r.IsEnabled && r.SourceTrackedActionId == TrackedActionId).ToList(); }
             catch { _connRules = []; }
         }
 

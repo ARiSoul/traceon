@@ -1040,7 +1040,7 @@ else
             {
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <p class="text-muted mb-0">@L["ConnAct_Hint"]</p>
-                    <button class="btn btn-outline-primary btn-sm" @onclick="() => OpenConnectedRuleForm(null)" disabled="@(_connRuleEditing is not null)">
+                    <button class="btn btn-outline-primary btn-sm" @onclick="() => OpenConnectedRuleFormAsync(null)" disabled="@(_connRuleEditing is not null)">
                         <i class="bi bi-plus-circle me-1"></i>@L["ConnAct_AddRule"]
                     </button>
                 </div>
@@ -1067,7 +1067,7 @@ else
                                     <label class="form-label">@L["ConnAct_TargetAction"] <span class="text-danger">*</span></label>
                                     <select class="form-select" value="@_connRuleEditing.TargetTrackedActionId" @onchange="OnConnTargetActionChanged">
                                         <option value="@Guid.Empty">— @L["Common_Select"] —</option>
-                                        @foreach (var a in _allActions.Where(a => a.Id != Id))
+                                        @foreach (var a in _allActions.Where(a => a.Id != _connRuleEditing.SourceTrackedActionId))
                                         {
                                             <option value="@a.Id">@a.Name</option>
                                         }
@@ -1089,91 +1089,98 @@ else
                                             <input type="checkbox" class="form-check-input" id="conn-copynotes" @bind="_connRuleEditing.CopyNotes" />
                                             <label class="form-check-label" for="conn-copynotes">@L["ConnAct_CopyNotes"]</label>
                                         </div>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" id="conn-bidi" @bind="_connRuleEditing.IsBidirectional" />
+                                            <label class="form-check-label" for="conn-bidi">
+                                                <i class="bi bi-arrow-left-right me-1"></i>@L["ConnAct_Bidirectional"]
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <!-- Conditions -->
                                 <div class="col-12">
-                                    <hr />
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0"><i class="bi bi-funnel me-1"></i>@L["ConnAct_Conditions"]</h6>
-                                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="AddConnCondition">
-                                            <i class="bi bi-plus-lg me-1"></i>@L["ConnAct_AddCondition"]
-                                        </button>
-                                    </div>
-                                    <p class="text-muted small mb-2">@L["ConnAct_ConditionsHint"]</p>
-                                    @for (var ci = 0; ci < _connRuleEditing.Conditions.Count; ci++)
-                                    {
-                                        var idx = ci;
-                                        var cond = _connRuleEditing.Conditions[idx];
-                                        <div class="row g-2 mb-2 align-items-end">
-                                            <div class="col-12 col-md-4">
-                                                <label class="form-label form-label-sm mb-1">@L["ConnAct_ConditionField"]</label>
-                                                <select class="form-select form-select-sm" @bind="cond.SourceFieldId">
-                                                    <option value="@Guid.Empty">@L["ConnAct_SelectField"]</option>
-                                                    @foreach (var f in _fields)
-                                                    {
-                                                        <option value="@f.Id">@f.Name</option>
-                                                    }
-                                                </select>
-                                            </div>
-                                            <div class="col-6 col-md-3">
-                                                <label class="form-label form-label-sm mb-1">@L["ConnAct_ConditionOperator"]</label>
-                                                <select class="form-select form-select-sm" @bind="cond.Operator">
-                                                    <option value="Equals">@L["ConnAct_OpEquals"]</option>
-                                                    <option value="Contains">@L["ConnAct_OpContains"]</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-6 col-md-4">
-                                                <label class="form-label form-label-sm mb-1">@L["ConnAct_ConditionValue"]</label>
-                                                @{
-                                                    var condField = _fields.FirstOrDefault(f => f.Id == cond.SourceFieldId);
-                                                }
-                                                @if (condField?.FieldType == FieldType.Dropdown
-                                                    && !string.IsNullOrWhiteSpace(condField.DropdownValues)
-                                                    && !condField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
-                                                {
-                                                    <SearchableSelect Value="@cond.Value"
-                                                                      ValueChanged="v => cond.Value = v ?? string.Empty"
-                                                                      Options="@(DropdownValuesHelper.Split(condField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToList())"
-                                                                      Placeholder="@L["Entry_Select"]"
-                                                                      Small="true" />
-                                                }
-                                                else if (condField?.FieldType == FieldType.CompositeDropdown
-                                                    && !string.IsNullOrWhiteSpace(condField.DropdownValues)
-                                                    && condField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
-                                                {
-                                                    <SearchableSelect Value="@cond.Value"
-                                                                      ValueChanged="v => cond.Value = v ?? string.Empty"
-                                                                      Groups="@ResolveCompositeGroupsForCondition(condField)"
-                                                                      Placeholder="@L["Entry_Select"]"
-                                                                      Small="true" />
-                                                }
-                                                else
-                                                {
-                                                    <input type="text" class="form-control form-control-sm" @bind="cond.Value" />
-                                                }
-                                            </div>
-                                            <div class="col-auto">
-                                                <button class="btn btn-outline-danger btn-sm" type="button" @onclick="() => _connRuleEditing.Conditions.RemoveAt(idx)">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </div>
+                                    <details open>
+                                        <summary class="fw-semibold mb-2"><i class="bi bi-funnel me-1"></i>@L["ConnAct_Conditions"]</summary>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted small">@L["ConnAct_ConditionsHint"]</span>
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="AddConnCondition">
+                                                <i class="bi bi-plus-lg me-1"></i>@L["ConnAct_AddCondition"]
+                                            </button>
                                         </div>
-                                    }
+                                        @for (var ci = 0; ci < _connRuleEditing.Conditions.Count; ci++)
+                                        {
+                                            var idx = ci;
+                                            var cond = _connRuleEditing.Conditions[idx];
+                                            <div class="row g-2 mb-2 align-items-end">
+                                                <div class="col-12 col-md-4">
+                                                    <label class="form-label form-label-sm mb-1">@L["ConnAct_ConditionField"]</label>
+                                                    <select class="form-select form-select-sm" @bind="cond.SourceFieldId">
+                                                        <option value="@Guid.Empty">@L["ConnAct_SelectField"]</option>
+                                                        @foreach (var f in _connSourceFields)
+                                                        {
+                                                            <option value="@f.Id">@f.Name</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="col-6 col-md-3">
+                                                    <label class="form-label form-label-sm mb-1">@L["ConnAct_ConditionOperator"]</label>
+                                                    <select class="form-select form-select-sm" @bind="cond.Operator">
+                                                        <option value="Equals">@L["ConnAct_OpEquals"]</option>
+                                                        <option value="Contains">@L["ConnAct_OpContains"]</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-6 col-md-4">
+                                                    <label class="form-label form-label-sm mb-1">@L["ConnAct_ConditionValue"]</label>
+                                                    @{
+                                                        var condField = _connSourceFields.FirstOrDefault(f => f.Id == cond.SourceFieldId);
+                                                    }
+                                                    @if (condField?.FieldType == FieldType.Dropdown
+                                                        && !string.IsNullOrWhiteSpace(condField.DropdownValues)
+                                                        && !condField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                    {
+                                                        <SearchableSelect Value="@cond.Value"
+                                                                          ValueChanged="v => cond.Value = v ?? string.Empty"
+                                                                          Options="@(DropdownValuesHelper.Split(condField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToList())"
+                                                                          Placeholder="@L["Entry_Select"]"
+                                                                          Small="true" />
+                                                    }
+                                                    else if (condField?.FieldType == FieldType.CompositeDropdown
+                                                        && !string.IsNullOrWhiteSpace(condField.DropdownValues)
+                                                        && condField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                    {
+                                                        <SearchableSelect Value="@cond.Value"
+                                                                          ValueChanged="v => cond.Value = v ?? string.Empty"
+                                                                          Groups="@ResolveCompositeGroupsForCondition(condField)"
+                                                                          Placeholder="@L["Entry_Select"]"
+                                                                          Small="true" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <input type="text" class="form-control form-control-sm" @bind="cond.Value" />
+                                                    }
+                                                </div>
+                                                <div class="col-auto">
+                                                    <button class="btn btn-outline-danger btn-sm" type="button" @onclick="() => _connRuleEditing.Conditions.RemoveAt(idx)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </details>
                                 </div>
 
                                 <!-- Field Mappings -->
                                 <div class="col-12">
-                                    <hr />
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0"><i class="bi bi-arrow-left-right me-1"></i>@L["ConnAct_FieldMappings"]</h6>
-                                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="AddConnMapping"
-                                                disabled="@(_connRuleEditing.TargetTrackedActionId == Guid.Empty)">
-                                            <i class="bi bi-plus-lg me-1"></i>@L["ConnAct_AddMapping"]
-                                        </button>
-                                    </div>
-                                    <p class="text-muted small mb-2">@L["ConnAct_FieldMappingsHint"]</p>
+                                    <details open>
+                                        <summary class="fw-semibold mb-2"><i class="bi bi-arrow-left-right me-1"></i>@L["ConnAct_FieldMappings"]</summary>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted small">@L["ConnAct_FieldMappingsHint"]</span>
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="AddConnMapping"
+                                                    disabled="@(_connRuleEditing.TargetTrackedActionId == Guid.Empty)">
+                                                <i class="bi bi-plus-lg me-1"></i>@L["ConnAct_AddMapping"]
+                                            </button>
+                                        </div>
                                     @if (_connTargetFields.Count == 0 && _connRuleEditing.TargetTrackedActionId != Guid.Empty)
                                     {
                                         <div class="alert alert-info py-2">
@@ -1210,7 +1217,7 @@ else
                                                         <label class="form-label form-label-sm mb-1">@L["ConnAct_SourceField"]</label>
                                                         <select class="form-select form-select-sm" @bind="mapping.SourceFieldId">
                                                             <option value="@Guid.Empty">@L["ConnAct_SelectField"]</option>
-                                                            @foreach (var f in _fields)
+                                                        @foreach (var f in _connSourceFields)
                                                             {
                                                                 <option value="@f.Id">@f.Name (@f.FieldType)</option>
                                                             }
@@ -1256,7 +1263,7 @@ else
                                                         <label class="form-label form-label-sm mb-1">@L["ConnAct_SourceField"]</label>
                                                         <select class="form-select form-select-sm" @bind="mapping.SourceFieldId">
                                                             <option value="@Guid.Empty">@L["ConnAct_SelectField"]</option>
-                                                            @foreach (var f in _fields)
+                                                        @foreach (var f in _connSourceFields)
                                                             {
                                                                 <option value="@f.Id">@f.Name (@f.FieldType)</option>
                                                             }
@@ -1273,7 +1280,7 @@ else
                                             @* ── Conditional value pairs ── *@
                                             @if (mapping.Mode == "Conditional")
                                             {
-                                                var srcField = _fields.FirstOrDefault(f => f.Id == mapping.SourceFieldId);
+                                                var srcField = _connSourceFields.FirstOrDefault(f => f.Id == mapping.SourceFieldId);
                                                 var tgtField = _connTargetFields.FirstOrDefault(f => f.Id == mapping.TargetFieldId);
 
                                                 <div class="mt-2 ps-3 border-start border-primary border-2">
@@ -1352,6 +1359,7 @@ else
                                             }
                                         </div>
                                     }
+                                    </details>
                                 </div>
                             </div>
 
@@ -1378,7 +1386,7 @@ else
                     <div class="text-center text-muted py-4">
                         <i class="bi bi-link-45deg fs-3 d-block mb-2"></i>
                         <p>@L["ConnAct_NoRulesYet"]</p>
-                        <button class="btn btn-primary" @onclick="() => OpenConnectedRuleForm(null)">
+                        <button class="btn btn-primary" @onclick="() => OpenConnectedRuleFormAsync(null)">
                             <i class="bi bi-plus-circle me-1"></i>@L["ConnAct_AddRule"]
                         </button>
                     </div>
@@ -1388,17 +1396,38 @@ else
                     <div class="list-group">
                         @foreach (var rule in _connectedRules)
                         {
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="d-flex align-items-center gap-2">
+                            var isInbound = rule.SourceTrackedActionId != Id;
+                            var isPaired = rule.PairedRuleId.HasValue;
+                            <details class="list-group-item">
+                                <summary class="d-flex justify-content-between align-items-center" style="cursor:pointer;">
+                                    <div>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
                                         <span class="badge @(rule.IsEnabled ? "bg-success" : "bg-secondary")">
                                             @(rule.IsEnabled ? L["ConnAct_Enabled"] : L["Common_No"])
                                         </span>
-                                        <strong>@rule.Name</strong>
-                                        <i class="bi bi-arrow-right text-muted"></i>
-                                        <span class="text-primary">@rule.TargetTrackedActionName</span>
+                                        @if (isPaired)
+                                        {
+                                            <span class="badge bg-info-subtle text-info-emphasis">
+                                                <i class="bi bi-arrow-left-right me-1"></i>@L["ConnAct_Bidirectional"]
+                                            </span>
+                                        }
+                                        @if (isInbound)
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning-emphasis">
+                                                <i class="bi bi-arrow-left me-1"></i>@L["ConnAct_Inbound"]
+                                            </span>
+                                            <span class="text-primary">@rule.SourceTrackedActionName</span>
+                                            <i class="bi bi-arrow-right text-muted"></i>
+                                            <strong>@rule.TargetTrackedActionName</strong>
+                                        }
+                                        else
+                                        {
+                                            <strong>@rule.Name</strong>
+                                            <i class="bi bi-arrow-right text-muted"></i>
+                                            <span class="text-primary">@rule.TargetTrackedActionName</span>
+                                        }
                                     </div>
-                                    <small class="text-muted">
+                                    <small class="text-muted d-block mt-1">
                                         @{
                                             var condCount = DeserializeConditions(rule.ConditionsJson).Count;
                                             var mapCount = DeserializeMappings(rule.FieldMappingsJson).Count;
@@ -1407,16 +1436,18 @@ else
                                         @if (rule.CopyDate) { <span class="ms-1">· 📅</span> }
                                         @if (rule.CopyNotes) { <span class="ms-1">· 📝</span> }
                                     </small>
-                                </div>
-                                <div class="d-flex gap-1">
-                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => OpenConnectedRuleForm(rule)">
-                                        <i class="bi bi-pencil"></i>
+                                    </div>
+                                    <span class="badge bg-light text-dark border">@L["Common_Edit"]</span>
+                                </summary>
+                                <div class="pt-2 d-flex gap-2 justify-content-end">
+                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => OpenConnectedRuleFormAsync(rule)">
+                                        <i class="bi bi-pencil me-1"></i>@L["Common_Edit"]
                                     </button>
                                     <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteConnectedRuleAsync(rule)">
-                                        <i class="bi bi-trash"></i>
+                                        <i class="bi bi-trash me-1"></i>@L["Common_Delete"]
                                     </button>
                                 </div>
-                            </div>
+                            </details>
                         }
                     </div>
                 }
@@ -1547,11 +1578,13 @@ else
     // Connected Actions
     private List<ConnectedActionRuleResponse> _connectedRules = [];
     private List<TrackedActionResponse> _allActions = [];
+    private List<ActionFieldResponse> _connSourceFields = [];
     private List<ActionFieldResponse> _connTargetFields = [];
     private ConnRuleEditModel? _connRuleEditing;
     private bool _savingConnRule;
     private IReadOnlyList<string> _connRuleErrors = [];
     private bool _connTabLoaded;
+    private int _connEditorLoadVersion;
 
     protected override async Task OnInitializedAsync()
     {
@@ -2408,7 +2441,7 @@ else
         }
     }
 
-    private void OpenConnectedRuleForm(ConnectedActionRuleResponse? existing)
+    private async Task OpenConnectedRuleFormAsync(ConnectedActionRuleResponse? existing)
     {
         _connRuleErrors = [];
         if (existing is not null)
@@ -2416,19 +2449,22 @@ else
             _connRuleEditing = new ConnRuleEditModel
             {
                 Id = existing.Id,
+                SourceTrackedActionId = existing.SourceTrackedActionId,
                 Name = existing.Name,
                 TargetTrackedActionId = existing.TargetTrackedActionId,
                 IsEnabled = existing.IsEnabled,
                 CopyDate = existing.CopyDate,
                 CopyNotes = existing.CopyNotes,
+                IsBidirectional = existing.PairedRuleId.HasValue,
                 Conditions = DeserializeConditions(existing.ConditionsJson),
                 Mappings = DeserializeMappings(existing.FieldMappingsJson)
             };
-            _ = LoadConnTargetFieldsAsync(existing.TargetTrackedActionId);
+            await LoadConnEditorFieldsAsync(existing.SourceTrackedActionId, existing.TargetTrackedActionId);
         }
         else
         {
-            _connRuleEditing = new ConnRuleEditModel();
+            _connRuleEditing = new ConnRuleEditModel { SourceTrackedActionId = Id };
+            _connSourceFields = _fields.ToList();
             _connTargetFields = [];
         }
     }
@@ -2439,18 +2475,62 @@ else
 
         _connRuleEditing.TargetTrackedActionId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : Guid.Empty;
         _connRuleEditing.Mappings.Clear();
-        await LoadConnTargetFieldsAsync(_connRuleEditing.TargetTrackedActionId);
+        await LoadConnEditorFieldsAsync(_connRuleEditing.SourceTrackedActionId, _connRuleEditing.TargetTrackedActionId);
     }
 
-    private async Task LoadConnTargetFieldsAsync(Guid targetActionId)
+    private async Task LoadConnEditorFieldsAsync(Guid sourceActionId, Guid targetActionId)
     {
-        if (targetActionId == Guid.Empty)
+        var loadVersion = ++_connEditorLoadVersion;
+
+        var sourceTask = sourceActionId == Id
+            ? Task.FromResult(_fields.ToList())
+            : ActionFieldService.GetByTrackedActionAsync(sourceActionId);
+
+        var targetTask = targetActionId == Guid.Empty
+            ? Task.FromResult(new List<ActionFieldResponse>())
+            : targetActionId == Id
+                ? Task.FromResult(_fields.ToList())
+                : ActionFieldService.GetByTrackedActionAsync(targetActionId);
+
+        try
         {
-            _connTargetFields = [];
-            return;
+            await Task.WhenAll(sourceTask, targetTask);
+            if (loadVersion != _connEditorLoadVersion) return;
+
+            _connSourceFields = sourceTask.Result;
+            _connTargetFields = targetTask.Result;
+            NormalizeConnEditorMappings();
         }
-        try { _connTargetFields = await ActionFieldService.GetByTrackedActionAsync(targetActionId); }
-        catch { _connTargetFields = []; }
+        catch
+        {
+            if (loadVersion != _connEditorLoadVersion) return;
+            _connSourceFields = sourceActionId == Id ? _fields.ToList() : [];
+            _connTargetFields = [];
+            NormalizeConnEditorMappings();
+        }
+    }
+
+    private void NormalizeConnEditorMappings()
+    {
+        if (_connRuleEditing is null) return;
+
+        var sourceIds = _connSourceFields.Select(f => f.Id).ToHashSet();
+        var targetIds = _connTargetFields.Select(f => f.Id).ToHashSet();
+
+        foreach (var cond in _connRuleEditing.Conditions)
+        {
+            if (cond.SourceFieldId != Guid.Empty && !sourceIds.Contains(cond.SourceFieldId))
+                cond.SourceFieldId = Guid.Empty;
+        }
+
+        foreach (var mapping in _connRuleEditing.Mappings)
+        {
+            if (mapping.TargetFieldId != Guid.Empty && !targetIds.Contains(mapping.TargetFieldId))
+                mapping.TargetFieldId = Guid.Empty;
+
+            if (mapping.SourceFieldId != Guid.Empty && !sourceIds.Contains(mapping.SourceFieldId))
+                mapping.SourceFieldId = Guid.Empty;
+        }
     }
 
     private void AddConnCondition()
@@ -2529,18 +2609,19 @@ else
 
         if (_connRuleEditing.Id.HasValue)
         {
-            (success, errors) = await ConnRuleService.UpdateAsync(Id, _connRuleEditing.Id.Value,
+            (success, errors) = await ConnRuleService.UpdateAsync(_connRuleEditing.SourceTrackedActionId, _connRuleEditing.Id.Value,
                 new UpdateConnectedActionRuleRequest(
                     Name: _connRuleEditing.Name,
                     IsEnabled: _connRuleEditing.IsEnabled,
                     ConditionsJson: conditionsJson,
                     FieldMappingsJson: mappingsJson,
                     CopyNotes: _connRuleEditing.CopyNotes,
-                    CopyDate: _connRuleEditing.CopyDate));
+                    CopyDate: _connRuleEditing.CopyDate,
+                    IsBidirectional: _connRuleEditing.IsBidirectional));
         }
         else
         {
-            (success, errors) = await ConnRuleService.CreateAsync(Id,
+            (success, errors) = await ConnRuleService.CreateAsync(_connRuleEditing.SourceTrackedActionId,
                 new CreateConnectedActionRuleRequest(
                     TargetTrackedActionId: _connRuleEditing.TargetTrackedActionId,
                     Name: _connRuleEditing.Name,
@@ -2548,7 +2629,8 @@ else
                     ConditionsJson: conditionsJson,
                     FieldMappingsJson: mappingsJson,
                     CopyNotes: _connRuleEditing.CopyNotes,
-                    CopyDate: _connRuleEditing.CopyDate));
+                    CopyDate: _connRuleEditing.CopyDate,
+                    IsBidirectional: _connRuleEditing.IsBidirectional));
         }
 
         if (success)
@@ -2566,7 +2648,7 @@ else
 
     private async Task DeleteConnectedRuleAsync(ConnectedActionRuleResponse rule)
     {
-        var (success, _) = await ConnRuleService.DeleteAsync(Id, rule.Id);
+        var (success, _) = await ConnRuleService.DeleteAsync(rule.SourceTrackedActionId, rule.Id);
         if (success)
             _connectedRules = await ConnRuleService.GetByTrackedActionAsync(Id);
     }
@@ -2653,11 +2735,13 @@ else
     private sealed class ConnRuleEditModel
     {
         public Guid? Id { get; set; }
+        public Guid SourceTrackedActionId { get; set; }
         public string Name { get; set; } = string.Empty;
         public Guid TargetTrackedActionId { get; set; }
         public bool IsEnabled { get; set; } = true;
         public bool CopyDate { get; set; } = true;
         public bool CopyNotes { get; set; } = true;
+        public bool IsBidirectional { get; set; }
         public List<ConnConditionModel> Conditions { get; set; } = [];
         public List<ConnMappingModel> Mappings { get; set; } = [];
     }

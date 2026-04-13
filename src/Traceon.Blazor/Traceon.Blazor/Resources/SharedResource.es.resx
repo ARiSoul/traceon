@@ -948,6 +948,9 @@
   <data name="ConnAct_Enabled"><value>Activa</value></data>
   <data name="ConnAct_CopyNotes"><value>Copiar Notas</value></data>
   <data name="ConnAct_CopyDate"><value>Copiar Fecha</value></data>
+  <data name="ConnAct_Bidirectional"><value>Bidireccional</value></data>
+  <data name="ConnAct_Inbound"><value>Entrante</value></data>
+  <data name="ConnAct_EditAtSource"><value>Editar en la acción origen</value></data>
   <data name="ConnAct_Conditions"><value>Condiciones</value></data>
   <data name="ConnAct_ConditionsHint"><value>La entrada solo se crea en la acción destino cuando TODAS las condiciones coinciden. Deje vacío para crear siempre.</value></data>
   <data name="ConnAct_AddCondition"><value>Añadir Condición</value></data>

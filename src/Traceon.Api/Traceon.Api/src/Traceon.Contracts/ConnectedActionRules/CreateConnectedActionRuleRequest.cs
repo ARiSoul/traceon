@@ -1,4 +1,4 @@
-﻿namespace Traceon.Contracts.ConnectedActionRules;
+namespace Traceon.Contracts.ConnectedActionRules;
 
 public sealed record CreateConnectedActionRuleRequest(
     Guid TargetTrackedActionId,
@@ -8,4 +8,5 @@ public sealed record CreateConnectedActionRuleRequest(
     string? FieldMappingsJson = null,
     bool CopyNotes = true,
     bool CopyDate = true,
-    int SortOrder = 0);
+    int SortOrder = 0,
+    bool IsBidirectional = false);

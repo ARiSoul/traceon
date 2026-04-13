@@ -1,4 +1,4 @@
-﻿namespace Traceon.Contracts.ConnectedActionRules;
+namespace Traceon.Contracts.ConnectedActionRules;
 
 public sealed record ConnectedActionRuleResponse
 {
@@ -16,4 +16,5 @@ public sealed record ConnectedActionRuleResponse
     public required int SortOrder { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime? UpdatedAtUtc { get; init; }
+    public required Guid? PairedRuleId { get; init; }
 }

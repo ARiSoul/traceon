@@ -951,6 +951,9 @@
   <data name="ConnAct_Enabled"><value>Enabled</value></data>
   <data name="ConnAct_CopyNotes"><value>Copy Notes</value></data>
   <data name="ConnAct_CopyDate"><value>Copy Date</value></data>
+  <data name="ConnAct_Bidirectional"><value>Bidirectional</value></data>
+  <data name="ConnAct_Inbound"><value>Inbound</value></data>
+  <data name="ConnAct_EditAtSource"><value>Edit at source action</value></data>
   <data name="ConnAct_Conditions"><value>Conditions</value></data>
   <data name="ConnAct_ConditionsHint"><value>Entry is only created in the target action when ALL conditions match. Leave empty to always create.</value></data>
   <data name="ConnAct_AddCondition"><value>Add Condition</value></data>
