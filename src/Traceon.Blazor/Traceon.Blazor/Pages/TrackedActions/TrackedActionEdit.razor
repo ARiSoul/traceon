@@ -1032,7 +1032,8 @@ else
                         DependencyRules="_dependencyRules"
                         OnMappingChanged="OnRcptFieldMappingChanged"
                         OnAddRule="OnRcptAddRuleAsync"
-                        OnDeleteRule="DeleteRcptRuleAsync" />
+                        OnDeleteRule="DeleteRcptRuleAsync"
+                        OnUpdateRule="UpdateRcptRuleAsync" />
                 }
             }
             else if (_activeTab == "connected")
@@ -2378,6 +2379,16 @@ else
     {
         await ReceiptConfigService.DeleteMappingRuleAsync(Id, ruleId);
         _rcptMappingRules = await ReceiptConfigService.GetMappingRulesAsync(Id);
+    }
+
+    private async Task UpdateRcptRuleAsync((Guid Id, string Pattern, string? Value, int? Priority) args)
+    {
+        var request = new UpdateReceiptMappingRuleRequest(Pattern: args.Pattern, Value: args.Value, Priority: args.Priority);
+        var (ok, _) = await ReceiptConfigService.UpdateMappingRuleAsync(Id, args.Id, request);
+        if (ok)
+        {
+            _rcptMappingRules = await ReceiptConfigService.GetMappingRulesAsync(Id);
+        }
     }
 
     // ── Connected Actions ──

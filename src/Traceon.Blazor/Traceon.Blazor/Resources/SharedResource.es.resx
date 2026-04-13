@@ -846,6 +846,7 @@
   <data name="Receipt_FieldMapping"><value>Mapeo de Campos</value></data>
   <data name="Receipt_FieldMappingHint"><value>Para cada campo de la acción, elija una fuente del ticket o defina un valor fijo. Puede modificar valores individuales abajo.</value></data>
   <data name="Receipt_MerchantName"><value>Nombre del Comercio</value></data>
+  <data name="Receipt_MerchantShortName"><value>Nombre corto…</value></data>
   <data name="Receipt_FixedValue"><value>Valor Fijo</value></data>
   <data name="Receipt_TypeValue"><value>Escriba el valor…</value></data>
   <data name="Receipt_Skip"><value>Omitir</value></data>

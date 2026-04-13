@@ -274,10 +274,14 @@
                                        DropdownOptions="_resolvedDropdownOptions"
                                        DependencyRules="_depRules"
                                        MerchantName="@_scanResult?.MerchantName"
+                                       ResolvedMerchantName="@_resolvedMerchantName"
+                                       MerchantMatchedRule="@_merchantMatchedRule"
                                        ShowMappingRules="false"
                                        OnMappingChanged="OnSharedMappingChanged"
                                        OnAddRule="OnImportAddRuleAsync"
-                                       OnDeleteRule="OnImportDeleteRuleAsync" />
+                                       OnDeleteRule="OnImportDeleteRuleAsync"
+                                       OnCreateMerchantRule="OnCreateMerchantRuleAsync"
+                                       OnClearMerchantRule="OnClearMerchantRuleAsync" />
 
             @* Auto-categorization summary & uncategorized items *@
             @{
@@ -1094,6 +1098,8 @@
 
     // Auto-categorization
     private int _patternsAppliedCount;
+    private string? _resolvedMerchantName;
+    private ReceiptMappingRuleResponse? _merchantMatchedRule;
 
     // Inline rule editing (Map step)
     private ReceiptItemRow? _ruleEditItem;
@@ -1475,6 +1481,37 @@
         }
 
         _patternsAppliedCount = count; // Set, not accumulate
+
+        // Apply rules to merchant name for merchant-mapped fields
+        _resolvedMerchantName = null;
+        _merchantMatchedRule = null;
+
+        if (!string.IsNullOrEmpty(_scanResult?.MerchantName) && _mappingRules.Count > 0)
+        {
+            var merchantFieldIds = _fieldMappings
+                .Where(m => m.Source == ReceiptFieldMappingSource.MerchantName)
+                .Select(m => m.FieldId)
+                .ToHashSet();
+
+            if (merchantFieldIds.Count > 0)
+            {
+                foreach (var rule in _mappingRules.OrderByDescending(r => r.Priority))
+                {
+                    if (merchantFieldIds.Contains(rule.TargetFieldId) &&
+                        MatchesPattern(_scanResult.MerchantName, rule.Pattern))
+                    {
+                        _resolvedMerchantName = rule.Value;
+                        _merchantMatchedRule = rule;
+
+                        foreach (var item in _receiptItems.Where(i => i.Include))
+                            item.SetCategoryValue(rule.TargetFieldId, rule.Value);
+                        _batchValues[rule.TargetFieldId] = rule.Value;
+                        break;
+                    }
+                }
+            }
+        }
+
         RefreshNewValues();
     }
 
@@ -2059,6 +2096,32 @@
         ApplyServerMappingRules();
     }
 
+    /// <summary>Called by the editor to create a merchant name rule.</summary>
+    private async Task OnCreateMerchantRuleAsync((string Pattern, string Value, Guid FieldId) args)
+    {
+        var request = new CreateReceiptMappingRuleRequest(args.FieldId, args.Pattern, args.Value, Priority: 10);
+        var (ok, _) = await RcptConfigService.CreateMappingRuleAsync(_selectedActionId, request);
+        if (ok)
+        {
+            _mappingRules = await RcptConfigService.GetMappingRulesAsync(_selectedActionId);
+            ApplyServerMappingRules();
+        }
+    }
+
+    /// <summary>Called by the editor to clear the matched merchant name rule.</summary>
+    private async Task OnClearMerchantRuleAsync()
+    {
+        if (_merchantMatchedRule is null) return;
+
+        try
+        {
+            await RcptConfigService.DeleteMappingRuleAsync(_selectedActionId, _merchantMatchedRule.Id);
+            _mappingRules = await RcptConfigService.GetMappingRulesAsync(_selectedActionId);
+            ApplyServerMappingRules();
+        }
+        catch { /* best effort */ }
+    }
+
     // ── Inline rule editor (Map step) ──
 
     private void OpenRuleEditor(ReceiptItemRow item, ReceiptMappingRuleResponse? existingRule)
@@ -2373,7 +2436,7 @@
                     var fixedVal = fm.Source switch
                     {
                         ReceiptFieldMappingSource.FixedValue => fm.FixedValue,
-                        ReceiptFieldMappingSource.MerchantName => _scanResult?.MerchantName,
+                        ReceiptFieldMappingSource.MerchantName => _resolvedMerchantName ?? _scanResult?.MerchantName,
                         _ => null
                     };
 
@@ -2421,6 +2484,8 @@
         _depRules = [];
         _batchValues.Clear();
         _patternsAppliedCount = 0;
+        _resolvedMerchantName = null;
+        _merchantMatchedRule = null;
         CloseRuleEditor();
         _errors = [];
         _successMessage = null;

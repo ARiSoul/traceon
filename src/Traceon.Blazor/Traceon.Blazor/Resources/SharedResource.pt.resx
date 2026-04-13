@@ -846,6 +846,7 @@
   <data name="Receipt_FieldMapping"><value>Mapeamento de Campos</value></data>
   <data name="Receipt_FieldMappingHint"><value>Para cada campo da ação, escolha uma origem do recibo ou defina um valor fixo. Pode substituir valores individuais abaixo.</value></data>
   <data name="Receipt_MerchantName"><value>Nome do Comerciante</value></data>
+  <data name="Receipt_MerchantShortName"><value>Nome curto…</value></data>
   <data name="Receipt_FixedValue"><value>Valor Fixo</value></data>
   <data name="Receipt_TypeValue"><value>Escreva o valor…</value></data>
   <data name="Receipt_Skip"><value>Ignorar</value></data>

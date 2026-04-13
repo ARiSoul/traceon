@@ -63,6 +63,10 @@
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
 
+    /// <summary>Storage delimiter character. Defaults to pipe (|) for dropdown values.
+    /// Set to ',' for comma-separated data like mapping rule patterns.</summary>
+    [Parameter] public char Delimiter { get; set; } = DropdownValuesHelper.Delimiter;
+
     private List<string> _chips = [];
     private string _inputValue = string.Empty;
     private int _editingIndex = -1;
@@ -79,7 +83,9 @@
         if (Value != _trackedValue)
         {
             _trackedValue = Value;
-            _chips = DropdownValuesHelper.Split(Value).ToList();
+            _chips = string.IsNullOrWhiteSpace(Value)
+                ? []
+                : Value.Split(Delimiter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         }
     }
 
@@ -103,7 +109,7 @@
 
     private async Task EmitChange()
     {
-        var stored = _chips.Count > 0 ? DropdownValuesHelper.Join(_chips) : null;
+        var stored = _chips.Count > 0 ? string.Join(Delimiter, _chips) : null;
         _trackedValue = stored;
         await ValueChanged.InvokeAsync(stored);
     }

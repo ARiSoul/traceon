@@ -849,6 +849,7 @@
   <data name="Receipt_FieldMapping"><value>Field Mapping</value></data>
   <data name="Receipt_FieldMappingHint"><value>For each action field, choose a receipt source or set a fixed value. You can still override individual items below.</value></data>
   <data name="Receipt_MerchantName"><value>Merchant Name</value></data>
+  <data name="Receipt_MerchantShortName"><value>Short name…</value></data>
   <data name="Receipt_FixedValue"><value>Fixed Value</value></data>
   <data name="Receipt_TypeValue"><value>Type value…</value></data>
   <data name="Receipt_Skip"><value>Skip</value></data>

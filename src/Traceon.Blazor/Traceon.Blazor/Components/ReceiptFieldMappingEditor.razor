@@ -4,7 +4,9 @@
     <div class="card-body py-2">
         <h6 class="mb-2"><i class="bi bi-columns-gap me-1"></i>@L["Receipt_FieldMapping"]</h6>
         <p class="text-muted small mb-2">@L["Receipt_FieldMappingHint"]</p>
-        <div class="table-responsive">
+
+        @* ── Desktop: compact inline rows ── *@
+        <div class="d-none d-md-block">
             <table class="table table-sm table-borderless align-middle mb-0">
                 <tbody>
                     @foreach (var fm in FieldMappings)
@@ -19,57 +21,38 @@
                                 <span class="badge bg-secondary ms-1" style="font-size: 0.55rem;">@captured.FieldType</span>
                             </td>
                             <td style="min-width: 180px; max-width: 220px;">
-                                <select class="form-select form-select-sm"
-                                        value="@captured.Source"
-                                        @onchange="e => OnSourceChanged(captured, e.Value?.ToString())">
-                                    <option value="@ReceiptFieldMappingSource.None">— @L["Receipt_Skip"] —</option>
-                                    @if (isNumeric)
-                                    {
-                                        <option value="@ReceiptFieldMappingSource.ReceiptTotal">@L["Receipt_Total"]</option>
-                                        <option value="@ReceiptFieldMappingSource.ReceiptQuantity">@L["Receipt_Qty"]</option>
-                                        <option value="@ReceiptFieldMappingSource.ReceiptUnitPrice">@L["Receipt_UnitPrice"]</option>
-                                        <option value="@ReceiptFieldMappingSource.ReceiptDiscount">@L["Receipt_Discount"]</option>
-                                    }
-                                    @if (isDropdown || isText)
-                                    {
-                                        <option value="@ReceiptFieldMappingSource.ReceiptDescription">@L["Receipt_Description"]</option>
-                                        <option value="@ReceiptFieldMappingSource.MerchantName">@L["Receipt_MerchantName"]</option>
-                                        <option value="@ReceiptFieldMappingSource.FixedValue">@L["Receipt_FixedValue"]</option>
-                                    }
-                                </select>
+                                @RenderSourceSelect(captured, isNumeric, isDropdown, isText)
                             </td>
                             <td>
-                                @if (captured.Source == ReceiptFieldMappingSource.FixedValue && isDropdown)
-                                {
-                                    var fixedOptions = GetDropdownOptionsForField(captured);
-                                    <select class="form-select form-select-sm"
-                                            value="@(captured.FixedValue ?? "")"
-                                            @onchange="e => OnFixedValueChanged(captured, e.Value?.ToString())">
-                                        <option value="">— @L["Common_Select"] —</option>
-                                        @foreach (var opt in fixedOptions)
-                                        {
-                                            <option value="@opt">@opt</option>
-                                        }
-                                    </select>
-                                }
-                                else if (captured.Source == ReceiptFieldMappingSource.FixedValue && isText)
-                                {
-                                    <input type="text" class="form-control form-control-sm"
-                                           value="@(captured.FixedValue ?? "")"
-                                           placeholder="@L["Receipt_TypeValue"]"
-                                           @onchange="e => OnFixedValueChanged(captured, e.Value?.ToString())" />
-                                }
-                                else if (captured.Source == ReceiptFieldMappingSource.MerchantName && !string.IsNullOrEmpty(MerchantName))
-                                {
-                                    <span class="badge bg-info-subtle text-info-emphasis text-truncate" style="max-width: 180px;" title="@MerchantName">
-                                        @MerchantName
-                                    </span>
-                                }
+                                @RenderValueCell(captured, isDropdown, isText)
                             </td>
                         </tr>
                     }
                 </tbody>
             </table>
+        </div>
+
+        @* ── Mobile: stacked card list ── *@
+        <div class="d-md-none d-flex flex-column gap-2">
+            @foreach (var fm in FieldMappings)
+            {
+                var captured = fm;
+                var isDropdown = captured.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown;
+                var isNumeric = captured.FieldType is FieldType.Decimal or FieldType.Integer;
+                var isText = captured.FieldType is FieldType.Text;
+                <div class="card border bg-body">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="fw-semibold small">@captured.FieldName</span>
+                            <span class="badge bg-secondary" style="font-size: 0.55rem;">@captured.FieldType</span>
+                        </div>
+                        <div class="mb-1">
+                            @RenderSourceSelect(captured, isNumeric, isDropdown, isText)
+                        </div>
+                        @RenderValueCell(captured, isDropdown, isText)
+                    </div>
+                </div>
+            }
         </div>
     </div>
 </div>
@@ -150,21 +133,63 @@
                 @foreach (var rule in MappingRules)
                 {
                     var captured = rule;
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="badge bg-secondary me-1">@rule.TargetFieldName</span>
-                            <span class="text-muted small">contains</span>
-                            <code class="mx-1">@rule.Pattern</code>
-                            <i class="bi bi-arrow-right mx-1"></i>
-                            <span class="badge bg-primary">@rule.Value</span>
-                            @if (rule.Priority > 0)
-                            {
-                                <span class="badge bg-warning text-dark ms-1">P@(rule.Priority)</span>
-                            }
-                        </div>
-                        <button class="btn btn-outline-danger btn-sm" @onclick="() => OnDeleteRule.InvokeAsync(captured.Id)">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                    var isEditing = _editingRuleId == captured.Id;
+                    <div class="list-group-item">
+                        @if (isEditing)
+                        {
+                            <div class="mb-2">
+                                <label class="form-label small mb-1">@L["RcptCfg_Pattern"]</label>
+                                <DropdownValueEditor @bind-Value="_editPatternValue" Delimiter="','" />
+                            </div>
+                            <div class="row g-2 align-items-end">
+                                <div class="col">
+                                    <label class="form-label small mb-1">@L["RcptCfg_Value"]</label>
+                                    <input type="text" class="form-control form-control-sm" @bind="_editValueValue" />
+                                </div>
+                                <div class="col-auto">
+                                    <label class="form-label small mb-1">@L["RcptCfg_Priority"]</label>
+                                    <input type="number" class="form-control form-control-sm" style="width: 70px;" @bind="_editPriorityValue" />
+                                </div>
+                                <div class="col-auto d-flex gap-1">
+                                    <button class="btn btn-primary btn-sm" @onclick="SaveEditAsync"
+                                            disabled="@(string.IsNullOrWhiteSpace(_editPatternValue) || string.IsNullOrWhiteSpace(_editValueValue) || _editSaving)">
+                                        @if (_editSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-lg"></i>
+                                        }
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center flex-wrap gap-1"
+                                     style="cursor: pointer;"
+                                     @onclick="() => StartEdit(captured)">
+                                    <span class="badge bg-secondary">@rule.TargetFieldName</span>
+                                    <span class="text-muted small">contains</span>
+                                    <code>@rule.Pattern</code>
+                                    <i class="bi bi-arrow-right text-muted"></i>
+                                    <span class="badge bg-primary">@rule.Value</span>
+                                    @if (rule.Priority > 0)
+                                    {
+                                        <span class="badge bg-warning text-dark">P@(rule.Priority)</span>
+                                    }
+                                    <i class="bi bi-pencil text-muted ms-1" style="font-size: 0.65rem;"></i>
+                                </div>
+                                <button class="btn btn-outline-danger btn-sm" @onclick="() => OnDeleteRule.InvokeAsync(captured.Id)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        }
                     </div>
                 }
             </div>
@@ -201,8 +226,182 @@
     /// <summary>Fired when the user deletes a rule.</summary>
     [Parameter] public EventCallback<Guid> OnDeleteRule { get; set; }
 
+    /// <summary>Fired when the user updates a rule (Id, Pattern, Value, Priority).</summary>
+    [Parameter] public EventCallback<(Guid Id, string Pattern, string? Value, int? Priority)> OnUpdateRule { get; set; }
+
+    /// <summary>Resolved merchant name after rule application (null if no rule matched).</summary>
+    [Parameter] public string? ResolvedMerchantName { get; set; }
+
+    /// <summary>The mapping rule that matched the merchant name (null if none).</summary>
+    [Parameter] public ReceiptMappingRuleResponse? MerchantMatchedRule { get; set; }
+
+    /// <summary>Fired to create a merchant name rule (Pattern, Value, FieldId).</summary>
+    [Parameter] public EventCallback<(string Pattern, string Value, Guid FieldId)> OnCreateMerchantRule { get; set; }
+
+    /// <summary>Fired to clear/delete the matched merchant name rule.</summary>
+    [Parameter] public EventCallback OnClearMerchantRule { get; set; }
+
     private bool _showRuleForm;
     private NewRuleModel _newRule = new();
+
+    // Merchant name rule inline form
+    private bool _showMerchantRuleForm;
+    private string _merchantRuleValue = string.Empty;
+    private Guid _merchantRuleFieldId;
+
+    // Rule inline editing
+    private Guid _editingRuleId;
+    private string? _editPatternValue;
+    private string _editValueValue = string.Empty;
+    private int _editPriorityValue;
+    private bool _editSaving;
+
+    private RenderFragment RenderSourceSelect(ReceiptFieldMapping captured, bool isNumeric, bool isDropdown, bool isText) => __builder =>
+    {
+        <select class="form-select form-select-sm"
+                value="@captured.Source"
+                @onchange="e => OnSourceChanged(captured, e.Value?.ToString())">
+            <option value="@ReceiptFieldMappingSource.None">— @L["Receipt_Skip"] —</option>
+            @if (isNumeric)
+            {
+                <option value="@ReceiptFieldMappingSource.ReceiptTotal">@L["Receipt_Total"]</option>
+                <option value="@ReceiptFieldMappingSource.ReceiptQuantity">@L["Receipt_Qty"]</option>
+                <option value="@ReceiptFieldMappingSource.ReceiptUnitPrice">@L["Receipt_UnitPrice"]</option>
+                <option value="@ReceiptFieldMappingSource.ReceiptDiscount">@L["Receipt_Discount"]</option>
+            }
+            @if (isDropdown || isText)
+            {
+                <option value="@ReceiptFieldMappingSource.ReceiptDescription">@L["Receipt_Description"]</option>
+                <option value="@ReceiptFieldMappingSource.MerchantName">@L["Receipt_MerchantName"]</option>
+                <option value="@ReceiptFieldMappingSource.FixedValue">@L["Receipt_FixedValue"]</option>
+            }
+        </select>
+    };
+
+    private RenderFragment RenderValueCell(ReceiptFieldMapping captured, bool isDropdown, bool isText) => __builder =>
+    {
+        if (captured.Source == ReceiptFieldMappingSource.FixedValue && isDropdown)
+        {
+            var fixedOptions = GetDropdownOptionsForField(captured);
+            <select class="form-select form-select-sm"
+                    value="@(captured.FixedValue ?? "")"
+                    @onchange="e => OnFixedValueChanged(captured, e.Value?.ToString())">
+                <option value="">— @L["Common_Select"] —</option>
+                @foreach (var opt in fixedOptions)
+                {
+                    <option value="@opt">@opt</option>
+                }
+            </select>
+        }
+        else if (captured.Source == ReceiptFieldMappingSource.FixedValue && isText)
+        {
+            <input type="text" class="form-control form-control-sm"
+                   value="@(captured.FixedValue ?? "")"
+                   placeholder="@L["Receipt_TypeValue"]"
+                   @onchange="e => OnFixedValueChanged(captured, e.Value?.ToString())" />
+        }
+        else if (captured.Source == ReceiptFieldMappingSource.MerchantName && !string.IsNullOrEmpty(MerchantName))
+        {
+            @if (ResolvedMerchantName is not null && MerchantMatchedRule is not null)
+            {
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                    <span class="badge bg-success-subtle text-success-emphasis" title="@MerchantMatchedRule.Pattern → @ResolvedMerchantName">
+                        <i class="bi bi-magic me-1"></i>@ResolvedMerchantName
+                    </span>
+                    <button class="btn btn-link btn-sm text-danger p-0" style="font-size: 0.7rem;"
+                            title="@L["Receipt_ClearRule"]"
+                            @onclick="() => OnClearMerchantRule.InvokeAsync()">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                </div>
+                <small class="text-muted text-truncate d-block" style="max-width: 200px;" title="@MerchantName">
+                    @MerchantName
+                </small>
+            }
+            else
+            {
+                <span class="badge bg-info-subtle text-info-emphasis text-truncate d-inline-block" style="max-width: 100%;" title="@MerchantName">
+                    @MerchantName
+                </span>
+                @if (OnCreateMerchantRule.HasDelegate)
+                {
+                    @if (_showMerchantRuleForm && _merchantRuleFieldId == captured.FieldId)
+                    {
+                        <div class="d-flex gap-1 mt-1">
+                            <input type="text" class="form-control form-control-sm"
+                                   @bind="_merchantRuleValue"
+                                   placeholder="@L["Receipt_MerchantShortName"]" />
+                            <button class="btn btn-primary btn-sm px-2" @onclick="SaveMerchantRuleAsync"
+                                    disabled="@string.IsNullOrWhiteSpace(_merchantRuleValue)">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm px-2" @onclick="() => _showMerchantRuleForm = false">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-warning btn-sm py-0 px-1 mt-1" style="font-size: 0.7rem;"
+                                @onclick="() => OpenMerchantRuleForm(captured.FieldId)">
+                            <i class="bi bi-pencil me-1"></i>@L["RcptCfg_Rule"]
+                        </button>
+                    }
+                }
+            }
+        }
+    };
+
+    private void OpenMerchantRuleForm(Guid fieldId)
+    {
+        _merchantRuleFieldId = fieldId;
+        _merchantRuleValue = SuggestShortName(MerchantName!);
+        _showMerchantRuleForm = true;
+    }
+
+    private async Task SaveMerchantRuleAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_merchantRuleValue) || string.IsNullOrEmpty(MerchantName)) return;
+        await OnCreateMerchantRule.InvokeAsync((MerchantName, _merchantRuleValue.Trim(), _merchantRuleFieldId));
+        _showMerchantRuleForm = false;
+        _merchantRuleValue = string.Empty;
+    }
+
+    private static string SuggestShortName(string merchantName)
+    {
+        ReadOnlySpan<string> separators = [" - ", " — ", " – ", ", S.A.", ", Lda", ", SA", ",S.A.", " S.A.", " Lda."];
+        foreach (var sep in separators)
+        {
+            var idx = merchantName.IndexOf(sep, StringComparison.OrdinalIgnoreCase);
+            if (idx > 0) return merchantName[..idx].Trim();
+        }
+        return merchantName;
+    }
+
+    private void StartEdit(ReceiptMappingRuleResponse rule)
+    {
+        _editingRuleId = rule.Id;
+        _editPatternValue = rule.Pattern;
+        _editValueValue = rule.Value;
+        _editPriorityValue = rule.Priority;
+    }
+
+    private void CancelEdit()
+    {
+        _editingRuleId = Guid.Empty;
+        _editPatternValue = null;
+        _editValueValue = string.Empty;
+        _editPriorityValue = 0;
+    }
+
+    private async Task SaveEditAsync()
+    {
+        if (_editingRuleId == Guid.Empty || string.IsNullOrWhiteSpace(_editPatternValue) || string.IsNullOrWhiteSpace(_editValueValue)) return;
+        _editSaving = true;
+        await OnUpdateRule.InvokeAsync((_editingRuleId, _editPatternValue, _editValueValue.Trim(), _editPriorityValue));
+        _editSaving = false;
+        CancelEdit();
+    }
 
     private void OnSourceChanged(ReceiptFieldMapping fm, string? value)
     {
