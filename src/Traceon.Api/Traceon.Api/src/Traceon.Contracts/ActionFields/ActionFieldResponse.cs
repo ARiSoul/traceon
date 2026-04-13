@@ -22,6 +22,7 @@ public sealed record ActionFieldResponse
     public required TrendAggregation TrendAggregation { get; init; }
     public required TrendChartType TrendChartType { get; init; }
     public required decimal? TargetValue { get; init; }
+    public required TargetValueMode TargetValueMode { get; init; }
     public required InitialValueBehavior InitialValueBehavior { get; init; }
     public required InitialValuePeriodUnit InitialValuePeriodUnit { get; init; }
     public required int InitialValuePeriodCount { get; init; }

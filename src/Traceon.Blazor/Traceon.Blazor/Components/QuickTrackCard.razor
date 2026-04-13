@@ -27,10 +27,25 @@
             <div class="d-flex flex-wrap gap-1 mb-2">
                 @foreach (var bal in Balances)
                 {
-                    <span class="badge @(bal.CurrentBalance >= 0 ? "bg-success" : "bg-danger") rounded-pill"
-                          title="@bal.Label">
-                        <i class="bi bi-wallet2 me-1"></i>@FormatBalance(bal.CurrentBalance) @bal.Unit
-                    </span>
+                    @if (bal.GoalValue.HasValue)
+                    {
+                        var remaining = bal.GoalValue.Value - bal.CurrentBalance;
+                        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill"
+                              title="@bal.Label — @L["Analytics_Goal"]">
+                            <i class="bi bi-bullseye me-1"></i>@FormatNumeric(bal.CurrentBalance) / @FormatNumeric(bal.GoalValue.Value) @bal.Unit
+                        </span>
+                        <span class="badge @(remaining > 0 ? "bg-info" : "bg-success") rounded-pill"
+                              title="@L["Analytics_Remaining"]">
+                            <i class="bi bi-@(remaining > 0 ? "hourglass-split" : "check-circle") me-1"></i>@FormatNumeric(remaining) @bal.Unit
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge @(bal.CurrentBalance >= 0 ? "bg-success" : "bg-danger") rounded-pill"
+                              title="@bal.Label">
+                            <i class="bi bi-wallet2 me-1"></i>@FormatBalance(bal.CurrentBalance) @bal.Unit
+                        </span>
+                    }
                 }
             </div>
         }
@@ -93,5 +108,12 @@
         return value == Math.Truncate(value)
             ? $"{prefix}{value:F0}"
             : $"{prefix}{value:F2}";
+    }
+
+    private static string FormatNumeric(decimal value)
+    {
+        return value == Math.Truncate(value)
+            ? $"{value:F0}"
+            : $"{value:F2}";
     }
 }

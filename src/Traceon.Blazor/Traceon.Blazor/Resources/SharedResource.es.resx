@@ -691,6 +691,11 @@
   <data name="Analytics_Total"><value>Total</value></data>
   <data name="Analytics_NoCrossFieldRules"><value>No hay reglas de análisis configuradas para esta acción.</value></data>
   <data name="Analytics_Balance"><value>Saldo</value></data>
+  <data name="Analytics_Goal"><value>Meta</value></data>
+  <data name="Analytics_Remaining"><value>Restante</value></data>
+  <data name="FieldEditor_TargetValueMode"><value>Comportamiento del Objetivo</value></data>
+  <data name="TargetMode_PerEntry"><value>Por Entrada (línea en gráfico)</value></data>
+  <data name="TargetMode_Goal"><value>Meta Acumulativa (meta en saldo)</value></data>
   <data name="Aggregation_Sum"><value>Suma</value></data>
   <data name="Aggregation_Avg"><value>Promedio</value></data>
   <data name="Aggregation_Min"><value>Mínimo</value></data>

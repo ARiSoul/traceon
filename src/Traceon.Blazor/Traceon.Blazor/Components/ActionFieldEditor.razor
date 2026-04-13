@@ -218,6 +218,18 @@
                         <input type="number" class="form-control form-control-sm" @bind="_targetValue" />
                     </div>
                 </div>
+                @if (_targetValue.HasValue)
+                {
+                    <div class="row g-2 mt-1">
+                        <div class="col-md-4">
+                            <label class="form-label form-label-sm mb-1">@L["FieldEditor_TargetValueMode"]</label>
+                            <select class="form-select form-select-sm" @bind="_targetValueMode">
+                                <option value="@TargetValueMode.PerEntry">@L["TargetMode_PerEntry"]</option>
+                                <option value="@TargetValueMode.Goal">@L["TargetMode_Goal"]</option>
+                            </select>
+                        </div>
+                    </div>
+                }
             }
 
             @if (Field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
@@ -356,6 +368,7 @@
     private TrendAggregation _trendAggregation = TrendAggregation.AllPoints;
     private TrendChartType _trendChartType = TrendChartType.Line;
     private decimal? _targetValue;
+    private TargetValueMode _targetValueMode = TargetValueMode.PerEntry;
     private InitialValueBehavior _initialValueBehavior = InitialValueBehavior.DefaultValue;
     private InitialValuePeriodUnit _initialValuePeriodUnit = InitialValuePeriodUnit.AllTime;
     private int _initialValuePeriodCount;
@@ -406,6 +419,7 @@
         _trendAggregation = Field.TrendAggregation;
         _trendChartType = Field.TrendChartType;
         _targetValue = Field.TargetValue;
+        _targetValueMode = Field.TargetValueMode;
         _initialValueBehavior = Field.InitialValueBehavior;
         _initialValuePeriodUnit = Field.InitialValuePeriodUnit;
         _initialValuePeriodCount = Field.InitialValuePeriodCount;
@@ -472,6 +486,7 @@
         var request = new UpdateActionFieldRequest(
             _name, _description, maxValue, minValue, _isRequired, defaultVal, _unit, _order,
             _summaryMetrics, _trendAggregation, _trendChartType, _targetValue,
+            _targetValueMode,
             _initialValueBehavior, _initialValuePeriodUnit, _initialValuePeriodCount,
             _dropdownTrendValueFieldId, _dropdownTrendAggregation, _dropdownTrendChartType);
 

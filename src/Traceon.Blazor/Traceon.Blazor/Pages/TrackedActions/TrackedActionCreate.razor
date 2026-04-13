@@ -428,7 +428,7 @@
         if (_redirectToEntryForm)
             Nav.NavigateTo($"/tracked-actions/{actionId}/entries/new?returnUrl=%2Ftracked-actions");
         else
-            Nav.NavigateTo("/tracked-actions");
+            Nav.NavigateTo($"/tracked-actions/{actionId}/edit");
     }
 
     private RenderFragment RenderBasicInfoStep() => __builder =>

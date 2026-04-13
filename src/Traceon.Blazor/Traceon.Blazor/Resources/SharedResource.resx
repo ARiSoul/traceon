@@ -694,6 +694,11 @@
   <data name="Analytics_Total"><value>Total</value></data>
   <data name="Analytics_NoCrossFieldRules"><value>No analytics rules configured for this action.</value></data>
   <data name="Analytics_Balance"><value>Balance</value></data>
+  <data name="Analytics_Goal"><value>Goal</value></data>
+  <data name="Analytics_Remaining"><value>Remaining</value></data>
+  <data name="FieldEditor_TargetValueMode"><value>Target Behavior</value></data>
+  <data name="TargetMode_PerEntry"><value>Per Entry (chart line)</value></data>
+  <data name="TargetMode_Goal"><value>Cumulative Goal (balance goal)</value></data>
   <data name="Aggregation_Sum"><value>Sum</value></data>
   <data name="Aggregation_Avg"><value>Average</value></data>
   <data name="Aggregation_Min"><value>Minimum</value></data>

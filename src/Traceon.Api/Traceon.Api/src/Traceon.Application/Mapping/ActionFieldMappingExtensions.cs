@@ -25,6 +25,7 @@ public static class ActionFieldMappingExtensions
             TrendAggregation = (TrendAggregation)entity.TrendAggregation,
             TrendChartType = (TrendChartType)entity.TrendChartType,
             TargetValue = entity.TargetValue,
+            TargetValueMode = (TargetValueMode)entity.TargetValueMode,
             TrackedActionId = entity.TrackedActionId,
             UpdatedAtUtc = entity.UpdatedAtUtc,
             Unit = entity.Unit,

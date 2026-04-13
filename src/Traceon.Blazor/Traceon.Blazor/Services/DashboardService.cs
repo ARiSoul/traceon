@@ -67,6 +67,30 @@ public sealed class DashboardService(
                     }
                 }
                 catch { /* analytics are optional */ }
+
+                // Also add balance summaries for goal-based numeric fields without SignedSum rules
+                var coveredIds = stats.Balances.Select(b => b.MeasureFieldId).Where(id => id.HasValue).Select(id => id!.Value).ToHashSet();
+                foreach (var field in fields.Where(f =>
+                    f.FieldType is FieldType.Integer or FieldType.Decimal &&
+                    f.TargetValueMode == TargetValueMode.Goal &&
+                    f.TargetValue.HasValue &&
+                    !coveredIds.Contains(f.Id)))
+                {
+                    var total = entries
+                        .Select(e => e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value)
+                        .Where(v => decimal.TryParse(v, CultureInfo.InvariantCulture, out _))
+                        .Sum(v => decimal.Parse(v!, CultureInfo.InvariantCulture));
+
+                    var unit = field.Unit is not null && field.Unit != "UN" ? field.Unit : "";
+                    stats.Balances.Add(new BalanceSummary
+                    {
+                        Label = field.Name,
+                        Unit = unit,
+                        CurrentBalance = total,
+                        GoalValue = field.TargetValue,
+                        MeasureFieldId = field.Id
+                    });
+                }
             }
 
             actionStats.Add(stats);
@@ -141,7 +165,8 @@ public sealed class DashboardService(
                             IsInteger = field.FieldType == FieldType.Integer,
                             Points = numPoints,
                             ChartType = field.TrendChartType,
-                            TargetValue = field.TargetValue
+                            TargetValue = field.TargetValue,
+                            TargetValueMode = field.TargetValueMode
                         });
                     }
                     break;
@@ -210,6 +235,46 @@ public sealed class DashboardService(
         catch
         {
             // Analytics rules are optional; don't fail the whole detail load
+        }
+
+        // Build goal-based running balances for numeric fields with TargetValueMode == Goal
+        // that aren't already covered by a SignedSum analytics rule
+        var coveredFieldIds = detail.RunningBalances.Count > 0
+            ? detail.RunningBalances.Select(b => b.MeasureFieldId).Where(id => id.HasValue).Select(id => id!.Value).ToHashSet()
+            : new HashSet<Guid>();
+
+        foreach (var field in fields.Where(f =>
+            f.FieldType is FieldType.Integer or FieldType.Decimal &&
+            f.TargetValueMode == TargetValueMode.Goal &&
+            f.TargetValue.HasValue &&
+            !coveredFieldIds.Contains(f.Id)))
+        {
+            var chronoEntries = entries
+                .OrderBy(e => e.OccurredAtUtc)
+                .Select(e => (Date: e.OccurredAtUtc, Val: e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value))
+                .Where(x => decimal.TryParse(x.Val, CultureInfo.InvariantCulture, out _))
+                .ToList();
+
+            if (chronoEntries.Count == 0) continue;
+
+            var points = new List<NumericDataPoint>();
+            decimal runningTotal = 0;
+            foreach (var entry in chronoEntries)
+            {
+                runningTotal += decimal.Parse(entry.Val!, CultureInfo.InvariantCulture);
+                points.Add(new NumericDataPoint(entry.Date, runningTotal));
+            }
+
+            var unit = field.Unit is not null && field.Unit != "UN" ? field.Unit : "";
+            detail.RunningBalances.Add(new RunningBalanceSeries
+            {
+                Label = field.Name,
+                Unit = unit,
+                CurrentBalance = runningTotal,
+                GoalValue = field.TargetValue,
+                MeasureFieldId = field.Id,
+                Points = points
+            });
         }
 
         return detail;
@@ -479,11 +544,17 @@ public sealed class DashboardService(
 
             var label = rule.Label ?? measureField.Name;
 
+            var goalValue = measureField.TargetValueMode == TargetValueMode.Goal
+                ? measureField.TargetValue
+                : null;
+
             balances.Add(new RunningBalanceSeries
             {
                 Label = label,
                 Unit = unit,
                 CurrentBalance = runningTotal,
+                GoalValue = goalValue,
+                MeasureFieldId = rule.MeasureFieldId,
                 Points = points
             });
         }
@@ -537,7 +608,9 @@ public sealed class DashboardService(
             {
                 Label = rule.Label ?? measureField.Name,
                 Unit = unit,
-                CurrentBalance = total
+                CurrentBalance = total,
+                GoalValue = measureField.TargetValueMode == TargetValueMode.Goal ? measureField.TargetValue : null,
+                MeasureFieldId = rule.MeasureFieldId
             });
         }
 
@@ -649,6 +722,7 @@ public sealed class DashboardService(
                     IsInteger = field.FieldType == FieldType.Integer,
                     ChartType = field.TrendChartType,
                     TargetValue = field.TargetValue,
+                    TargetValueMode = field.TargetValueMode,
                     Points = points
                 });
             }
@@ -889,6 +963,8 @@ public sealed class BalanceSummary
     public required string Label { get; init; }
     public required string Unit { get; init; }
     public required decimal CurrentBalance { get; init; }
+    public decimal? GoalValue { get; init; }
+    public Guid? MeasureFieldId { get; init; }
 }
 
 public sealed record WeekBucket(DateTime WeekStart, int Count);
@@ -946,6 +1022,8 @@ public sealed class RunningBalanceSeries
     public required string Label { get; init; }
     public required string Unit { get; init; }
     public decimal CurrentBalance { get; init; }
+    public decimal? GoalValue { get; init; }
+    public Guid? MeasureFieldId { get; init; }
     public List<NumericDataPoint> Points { get; init; } = [];
 }
 
@@ -958,6 +1036,7 @@ public sealed class NumericFieldSeries
     public bool IsInteger { get; init; }
     public TrendChartType ChartType { get; init; } = TrendChartType.Line;
     public decimal? TargetValue { get; init; }
+    public TargetValueMode TargetValueMode { get; init; } = TargetValueMode.PerEntry;
     public List<NumericDataPoint> Points { get; init; } = [];
 }
 

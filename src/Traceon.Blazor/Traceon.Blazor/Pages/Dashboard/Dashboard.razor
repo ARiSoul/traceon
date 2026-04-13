@@ -298,10 +298,25 @@ else if (_data is not null)
                         }
                         @foreach (var bal in action.Balances)
                         {
-                            <span class="badge @(bal.CurrentBalance >= 0 ? "bg-success" : "bg-danger") rounded-pill"
-                                  title="@bal.Label">
-                                <i class="bi bi-wallet2 me-1"></i>@FormatBalance(bal.CurrentBalance) @bal.Unit
-                            </span>
+                            @if (bal.GoalValue.HasValue)
+                            {
+                                var remaining = bal.GoalValue.Value - bal.CurrentBalance;
+                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill"
+                                      title="@bal.Label — @L["Analytics_Goal"]">
+                                    <i class="bi bi-bullseye me-1"></i>@FormatNumericValue(bal.CurrentBalance, false) / @FormatNumericValue(bal.GoalValue.Value, false) @bal.Unit
+                                </span>
+                                <span class="badge @(remaining > 0 ? "bg-info" : "bg-success") rounded-pill"
+                                      title="@L["Analytics_Remaining"]">
+                                    <i class="bi bi-@(remaining > 0 ? "hourglass-split" : "check-circle") me-1"></i>@FormatNumericValue(remaining, false) @bal.Unit
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge @(bal.CurrentBalance >= 0 ? "bg-success" : "bg-danger") rounded-pill"
+                                      title="@bal.Label">
+                                    <i class="bi bi-wallet2 me-1"></i>@FormatBalance(bal.CurrentBalance) @bal.Unit
+                                </span>
+                            }
                         }
                     </div>
                 </div>
@@ -420,7 +435,7 @@ else if (_data is not null)
                                                 <div class="card-header py-1 px-2 d-flex justify-content-between align-items-center">
                                                     <small class="fw-bold text-truncate">@series.Name</small>
                                                     <div class="d-flex gap-1">
-                                                        @if (series.TargetValue.HasValue)
+                                                        @if (series.TargetValue.HasValue && series.TargetValueMode == TargetValueMode.PerEntry)
                                                         {
                                                             <span class="badge bg-warning" style="font-size: 0.55rem;">T: @FormatNumericValue(series.TargetValue, series.IsInteger)</span>
                                                         }
@@ -524,7 +539,7 @@ else if (_data is not null)
             options.Fill = new Fill { Opacity = new Opacity(0.3) };
         }
 
-        if (series.TargetValue.HasValue)
+        if (series.TargetValue.HasValue && series.TargetValueMode == TargetValueMode.PerEntry)
         {
             options.Annotations = new Annotations
             {

@@ -408,15 +408,21 @@
             var actionsWithFields = _actions.Where(a => a.FieldCount > 0).ToList();
             foreach (var action in actionsWithFields)
             {
+                var fields = await FieldService.GetByTrackedActionAsync(action.Id);
+                var fieldMap = fields.ToDictionary(f => f.Id);
+
                 var rules = await AnalyticsRuleService.GetByTrackedActionAsync(action.Id);
                 var signedSumRules = rules
                     .Where(r => r.Aggregation == AnalyticsAggregation.SignedSum)
                     .ToList();
 
-                if (signedSumRules.Count == 0) continue;
+                // Check if we need entries (SignedSum rules or goal fields)
+                var goalFields = fields.Where(f =>
+                    f.FieldType is FieldType.Integer or FieldType.Decimal &&
+                    f.TargetValueMode == TargetValueMode.Goal &&
+                    f.TargetValue.HasValue).ToList();
 
-                var fields = await FieldService.GetByTrackedActionAsync(action.Id);
-                var fieldMap = fields.ToDictionary(f => f.Id);
+                if (signedSumRules.Count == 0 && goalFields.Count == 0) continue;
 
                 var entryRequest = new DataGridRequest(1, 10_000, "OccurredAtUtc", false, null);
                 var entryResult = await EntryService.QueryAsync(entryRequest, null,
@@ -425,6 +431,8 @@
                 if (entries.Count == 0) continue;
 
                 var actionBalances = new List<BalanceSummary>();
+
+                // SignedSum analytics rules
                 foreach (var rule in signedSumRules)
                 {
                     if (!fieldMap.TryGetValue(rule.MeasureFieldId, out var measureField))
@@ -464,7 +472,29 @@
                     {
                         Label = rule.Label ?? measureField.Name,
                         Unit = unit,
-                        CurrentBalance = total
+                        CurrentBalance = total,
+                        GoalValue = measureField.TargetValueMode == TargetValueMode.Goal ? measureField.TargetValue : null,
+                        MeasureFieldId = rule.MeasureFieldId
+                    });
+                }
+
+                // Goal-based numeric fields not already covered by SignedSum rules
+                var coveredIds = actionBalances.Select(b => b.MeasureFieldId).Where(id => id.HasValue).Select(id => id!.Value).ToHashSet();
+                foreach (var field in goalFields.Where(f => !coveredIds.Contains(f.Id)))
+                {
+                    var total = entries
+                        .Select(e => e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value)
+                        .Where(v => decimal.TryParse(v, CultureInfo.InvariantCulture, out _))
+                        .Sum(v => decimal.Parse(v!, CultureInfo.InvariantCulture));
+
+                    var unit = field.Unit is not null && field.Unit != "UN" ? field.Unit : "";
+                    actionBalances.Add(new BalanceSummary
+                    {
+                        Label = field.Name,
+                        Unit = unit,
+                        CurrentBalance = total,
+                        GoalValue = field.TargetValue,
+                        MeasureFieldId = field.Id
                     });
                 }
 

@@ -216,7 +216,7 @@ else
                     {
                         <span class="badge bg-info ms-1">@series.Unit</span>
                     }
-                    @if (series.TargetValue.HasValue)
+                    @if (series.TargetValue.HasValue && series.TargetValueMode == TargetValueMode.PerEntry)
                     {
                         <span class="badge bg-warning ms-1">@L["Metric_Target"]: @FormatNumeric(series.TargetValue, series.IsInteger)</span>
                     }
@@ -510,9 +510,21 @@ else
                         <span class="badge bg-info ms-1">@balance.Unit</span>
                     }
                 </h6>
-                <span class="badge @(balance.CurrentBalance >= 0 ? "bg-success" : "bg-danger") fs-6">
-                    @L["Analytics_Balance"]: @FormatNumeric(balance.CurrentBalance, false) @balance.Unit
-                </span>
+                <div class="d-flex gap-2 align-items-center">
+                    @if (balance.GoalValue.HasValue)
+                    {
+                        var remaining = balance.GoalValue.Value - balance.CurrentBalance;
+                        <span class="badge bg-warning-subtle text-warning-emphasis fs-6">
+                            <i class="bi bi-bullseye me-1"></i>@L["Analytics_Goal"]: @FormatNumeric(balance.GoalValue.Value, false) @balance.Unit
+                        </span>
+                        <span class="badge @(remaining > 0 ? "bg-info" : "bg-success") fs-6">
+                            <i class="bi bi-@(remaining > 0 ? "hourglass-split" : "check-circle") me-1"></i>@L["Analytics_Remaining"]: @FormatNumeric(remaining, false) @balance.Unit
+                        </span>
+                    }
+                    <span class="badge @(balance.CurrentBalance >= 0 ? "bg-success" : "bg-danger") fs-6">
+                        @L["Analytics_Balance"]: @FormatNumeric(balance.CurrentBalance, false) @balance.Unit
+                    </span>
+                </div>
             </div>
             <div class="card-body">
                 <ApexChart TItem="NumericDataPoint"
@@ -706,7 +718,7 @@ else
             options.Fill = new Fill { Opacity = new Opacity(0.3) };
         }
 
-        if (series.TargetValue.HasValue)
+        if (series.TargetValue.HasValue && series.TargetValueMode == TargetValueMode.PerEntry)
         {
             var targetLabel = series.IsInteger
                 ? ((int)Math.Round(series.TargetValue.Value)).ToString()
@@ -932,7 +944,7 @@ else
     private ApexChartOptions<NumericDataPoint> BuildBalanceOptions(RunningBalanceSeries balance)
     {
         var yTitle = !string.IsNullOrEmpty(balance.Unit) ? balance.Unit : L["Analytics_Balance"].Value;
-        return new ApexChartOptions<NumericDataPoint>
+        var options = new ApexChartOptions<NumericDataPoint>
         {
             Chart = new Chart
             {
@@ -950,6 +962,30 @@ else
             Colors = [balance.CurrentBalance >= 0 ? "#198754" : "#dc3545"],
             Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy HH:mm" } }
         };
+
+        if (balance.GoalValue.HasValue)
+        {
+            var goalLabel = balance.GoalValue.Value.ToString("G");
+            options.Annotations = new Annotations
+            {
+                Yaxis =
+                [
+                    new AnnotationsYAxis
+                    {
+                        Y = balance.GoalValue.Value,
+                        BorderColor = "#ff9800",
+                        StrokeDashArray = 4,
+                        Label = new Label
+                        {
+                            Text = $"{L["Analytics_Goal"]}: {goalLabel}",
+                            Style = new Style { Background = "#ff9800", Color = "#fff" }
+                        }
+                    }
+                ]
+            };
+        }
+
+        return options;
     }
 
     private static string FormatNumeric(decimal value, bool isInteger)
