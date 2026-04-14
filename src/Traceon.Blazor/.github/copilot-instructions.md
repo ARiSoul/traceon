@@ -2,3 +2,6 @@
 
 ## Project Guidelines
 - Traceon workspace layout: The VS workspace root is the Blazor project at C:\Users\rjrso\source\repos\traceon\src\Traceon.Blazor\. The API project lives OUTSIDE at C:\Users\rjrso\source\repos\traceon\src\Traceon.Api\Traceon.Api\src\ (referenced as ..\Traceon.Api\... relative paths). NEVER use create_file for API-side files — it creates them inside the Blazor folder instead. For editing API-side files: write a temporary C# console program (.cs file in a temp directory with a .csproj), use File.ReadAllText/Replace/WriteAllText with ABSOLUTE paths to the API project, run it with 'dotnet run --project', then delete the temp project. For Blazor-side files (within workspace root), use replace_string_in_file or multi_replace_string_in_file normally. Always verify file locations after changes with Test-Path using absolute paths.
+
+## Entity Framework Core Guidelines
+- Do NOT create EF Core migrations automatically — they commonly fail. Instead, provide the migration command or note for the user to create manually.

@@ -377,9 +377,22 @@ else
                         <ul class="mb-0 mt-1">
                             @foreach (var rule in _connRules)
                             {
+                                var hasConditions = !string.IsNullOrWhiteSpace(rule.ConditionsJson);
                                 <li>
                                     <strong>@rule.TargetTrackedActionName</strong>
                                     <small class="text-muted ms-1">(@rule.Name)</small>
+                                    @if (hasConditions)
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning-emphasis ms-1" style="font-size:.7rem;">
+                                            <i class="bi bi-funnel-fill me-1"></i>@L["ConnAct_LinkedHasConditions"]
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success-subtle text-success-emphasis ms-1" style="font-size:.7rem;">
+                                            <i class="bi bi-check-circle me-1"></i>@L["ConnAct_LinkedAlwaysCreated"]
+                                        </span>
+                                    }
                                 </li>
                             }
                         </ul>
@@ -501,7 +514,7 @@ else
 
         if (!_isEdit)
         {
-            try { _connRules = (await ConnRuleService.GetByTrackedActionAsync(TrackedActionId)).Where(r => r.IsEnabled).ToList(); }
+            try { _connRules = (await ConnRuleService.GetByTrackedActionAsync(TrackedActionId)).Where(r => r.IsEnabled && r.SourceTrackedActionId == TrackedActionId).ToList(); }
             catch { _connRules = []; }
         }
 
@@ -1321,6 +1334,9 @@ else
                 // Build target field values from mappings
                 var targetFieldValues = BuildTargetFieldValues(rule.FieldMappingsJson, sourceValues);
 
+                // Auto-create missing dropdown values in target fields
+                await EnsureDropdownValuesExistAsync(rule.TargetTrackedActionId, targetFieldValues);
+
                 var targetOccurredUtc = rule.CopyDate ? occurredUtc : DateTime.UtcNow;
                 var targetNotes = rule.CopyNotes ? _notes : null;
 
@@ -1342,6 +1358,90 @@ else
         }
     }
 
+    private async Task EnsureDropdownValuesExistAsync(Guid targetActionId, List<ActionEntryFieldValue> fieldValues)
+    {
+        if (fieldValues.Count == 0) return;
+
+        List<ActionFieldResponse>? targetFields = null;
+
+        foreach (var fv in fieldValues)
+        {
+            if (string.IsNullOrWhiteSpace(fv.Value)) continue;
+
+            targetFields ??= await FieldService.GetByTrackedActionAsync(targetActionId);
+
+            var field = targetFields.FirstOrDefault(f => f.Id == fv.ActionFieldId);
+            if (field is null) continue;
+
+            if (field.FieldType == FieldType.Dropdown
+                && !string.IsNullOrWhiteSpace(field.DropdownValues)
+                && !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+            {
+                var existing = DropdownValuesHelper.Split(field.DropdownValues);
+                if (!existing.Contains(fv.Value, StringComparer.OrdinalIgnoreCase))
+                {
+                    await FieldDefService.AppendDropdownValueAsync(field.FieldDefinitionId, fv.Value);
+                }
+            }
+            else if (field.FieldType == FieldType.CompositeDropdown
+                     && !string.IsNullOrWhiteSpace(field.DropdownValues)
+                     && field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+            {
+                // For composite dropdowns, check if value exists in any source dropdown
+                var allValues = await GetCompositeDropdownValuesAsync(field);
+                if (!allValues.Contains(fv.Value, StringComparer.OrdinalIgnoreCase))
+                {
+                    // Append to the first source dropdown
+                    var firstRefId = GetFirstCompositeRefId(field);
+                    if (firstRefId != Guid.Empty)
+                    {
+                        await FieldDefService.AppendDropdownValueAsync(firstRefId, fv.Value);
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task<HashSet<string>> GetCompositeDropdownValuesAsync(ActionFieldResponse field)
+    {
+        var values = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(field.DropdownValues)
+            || !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+            return values;
+
+        var refIds = field.DropdownValues["ref:".Length..]
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        List<FieldDefinitionResponse>? defs = null;
+
+        foreach (var refIdStr in refIds)
+        {
+            if (!Guid.TryParse(refIdStr, out var refId)) continue;
+            defs ??= await FieldDefService.GetAllAsync();
+            var fd = defs.FirstOrDefault(d => d.Id == refId);
+            if (fd is not null && !string.IsNullOrWhiteSpace(fd.DropdownValues))
+            {
+                foreach (var v in DropdownValuesHelper.Split(fd.DropdownValues))
+                    values.Add(v);
+            }
+        }
+
+        return values;
+    }
+
+    private static Guid GetFirstCompositeRefId(ActionFieldResponse field)
+    {
+        if (string.IsNullOrWhiteSpace(field.DropdownValues)
+            || !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+            return Guid.Empty;
+
+        var first = field.DropdownValues["ref:".Length..]
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault();
+
+        return first is not null && Guid.TryParse(first, out var id) ? id : Guid.Empty;
+    }
+
     private bool EvaluateConnConditions(string? conditionsJson, Dictionary<Guid, string?> sourceValues)
     {
         if (string.IsNullOrWhiteSpace(conditionsJson)) return true;
@@ -1354,13 +1454,28 @@ else
                 var fieldId = el.TryGetProperty("sourceFieldId", out var sf) && Guid.TryParse(sf.GetString(), out var sfId) ? sfId : Guid.Empty;
                 var op = el.TryGetProperty("operator", out var opProp) ? opProp.GetString() ?? "Equals" : "Equals";
                 var expected = el.TryGetProperty("value", out var v) ? v.GetString() ?? "" : "";
+                var expected2 = el.TryGetProperty("value2", out var v2) ? v2.GetString() ?? "" : "";
 
                 sourceValues.TryGetValue(fieldId, out var actual);
                 actual ??= "";
 
                 var match = op switch
                 {
+                    "Equals" => string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase),
+                    "NotEquals" => !string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase),
+                    "In" => expected.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Any(v => string.Equals(actual, v, StringComparison.OrdinalIgnoreCase)),
+                    "NotIn" => !expected.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Any(v => string.Equals(actual, v, StringComparison.OrdinalIgnoreCase)),
                     "Contains" => actual.Contains(expected, StringComparison.OrdinalIgnoreCase),
+                    "NotContains" => !actual.Contains(expected, StringComparison.OrdinalIgnoreCase),
+                    "GreaterThan" => decimal.TryParse(actual, out var aGt) && decimal.TryParse(expected, out var eGt) && aGt > eGt,
+                    "GreaterThanOrEqual" => decimal.TryParse(actual, out var aGte) && decimal.TryParse(expected, out var eGte) && aGte >= eGte,
+                    "LessThan" => decimal.TryParse(actual, out var aLt) && decimal.TryParse(expected, out var eLt) && aLt < eLt,
+                    "LessThanOrEqual" => decimal.TryParse(actual, out var aLte) && decimal.TryParse(expected, out var eLte) && aLte <= eLte,
+                    "Between" => decimal.TryParse(actual, out var aBtw) && decimal.TryParse(expected, out var eBtw1) && decimal.TryParse(expected2, out var eBtw2) && aBtw >= eBtw1 && aBtw <= eBtw2,
+                    "IsEmpty" => string.IsNullOrWhiteSpace(actual),
+                    "IsNotEmpty" => !string.IsNullOrWhiteSpace(actual),
                     _ => string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase)
                 };
 

@@ -1,4 +1,4 @@
-﻿namespace Traceon.Domain.Entities;
+namespace Traceon.Domain.Entities;
 
 public sealed class ConnectedActionRule : Entity
 {
@@ -11,6 +11,7 @@ public sealed class ConnectedActionRule : Entity
     public bool CopyNotes { get; private set; }
     public bool CopyDate { get; private set; }
     public int SortOrder { get; private set; }
+    public Guid? PairedRuleId { get; private set; }
 
     private ConnectedActionRule(
         Guid sourceTrackedActionId,
@@ -21,7 +22,8 @@ public sealed class ConnectedActionRule : Entity
         string? fieldMappingsJson,
         bool copyNotes,
         bool copyDate,
-        int sortOrder)
+        int sortOrder,
+        Guid? pairedRuleId = null)
     {
         SourceTrackedActionId = sourceTrackedActionId;
         TargetTrackedActionId = targetTrackedActionId;
@@ -32,6 +34,7 @@ public sealed class ConnectedActionRule : Entity
         CopyNotes = copyNotes;
         CopyDate = copyDate;
         SortOrder = sortOrder;
+        PairedRuleId = pairedRuleId;
     }
 
     public static ConnectedActionRule Create(
@@ -43,7 +46,8 @@ public sealed class ConnectedActionRule : Entity
         string? fieldMappingsJson = null,
         bool copyNotes = true,
         bool copyDate = true,
-        int sortOrder = 0)
+        int sortOrder = 0,
+        Guid? pairedRuleId = null)
     {
         if (sourceTrackedActionId == Guid.Empty)
             throw new ArgumentException("Source tracked action ID is required.", nameof(sourceTrackedActionId));
@@ -65,7 +69,8 @@ public sealed class ConnectedActionRule : Entity
             fieldMappingsJson?.Trim(),
             copyNotes,
             copyDate,
-            sortOrder);
+            sortOrder,
+            pairedRuleId);
     }
 
     public void Update(
@@ -107,6 +112,18 @@ public sealed class ConnectedActionRule : Entity
         if (sortOrder.HasValue)
             SortOrder = sortOrder.Value;
 
+        MarkUpdated();
+    }
+
+    public void SetPairedRuleId(Guid pairedId)
+    {
+        PairedRuleId = pairedId;
+        MarkUpdated();
+    }
+
+    public void ClearPairedRuleId()
+    {
+        PairedRuleId = null;
         MarkUpdated();
     }
 }

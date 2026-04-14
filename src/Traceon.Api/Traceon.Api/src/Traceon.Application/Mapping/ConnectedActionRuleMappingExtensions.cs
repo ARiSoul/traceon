@@ -1,4 +1,4 @@
-﻿using Traceon.Contracts.ConnectedActionRules;
+using Traceon.Contracts.ConnectedActionRules;
 using Traceon.Domain.Entities;
 
 namespace Traceon.Application.Mapping;
@@ -24,6 +24,7 @@ public static class ConnectedActionRuleMappingExtensions
             CopyDate = entity.CopyDate,
             SortOrder = entity.SortOrder,
             CreatedAtUtc = entity.CreatedAtUtc,
-            UpdatedAtUtc = entity.UpdatedAtUtc
+            UpdatedAtUtc = entity.UpdatedAtUtc,
+            PairedRuleId = entity.PairedRuleId
         };
 }

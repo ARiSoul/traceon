@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Traceon.Domain.Entities;
 
@@ -38,7 +38,10 @@ internal sealed class ConnectedActionRuleConfiguration : IEntityTypeConfiguratio
             .IsRequired()
             .HasDefaultValue(0);
 
+        builder.Property(e => e.PairedRuleId);
+
         builder.HasIndex(e => e.SourceTrackedActionId);
+        builder.HasIndex(e => e.TargetTrackedActionId);
 
         builder.HasOne<TrackedAction>()
             .WithMany(a => a.ConnectedActionRules)

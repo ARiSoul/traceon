@@ -1,4 +1,4 @@
-﻿namespace Traceon.Contracts.ConnectedActionRules;
+namespace Traceon.Contracts.ConnectedActionRules;
 
 public sealed record UpdateConnectedActionRuleRequest(
     string? Name = null,
@@ -9,4 +9,6 @@ public sealed record UpdateConnectedActionRuleRequest(
     bool? CopyDate = null,
     int? SortOrder = null,
     bool ClearConditions = false,
-    bool ClearMappings = false);
+    bool ClearMappings = false,
+    bool? IsBidirectional = null,
+    string? ReverseExtraMappingsJson = null);

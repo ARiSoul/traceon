@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Traceon.Domain.Entities;
 using Traceon.Domain.Repositories;
 
@@ -16,6 +16,15 @@ internal sealed class ConnectedActionRuleRepository(TraceonDbContext context) : 
         return await context.ConnectedActionRules
             .AsNoTracking()
             .Where(r => r.SourceTrackedActionId == sourceTrackedActionId)
+            .OrderBy(r => r.SortOrder)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ConnectedActionRule>> GetByTargetTrackedActionIdAsync(Guid targetTrackedActionId, CancellationToken cancellationToken = default)
+    {
+        return await context.ConnectedActionRules
+            .AsNoTracking()
+            .Where(r => r.TargetTrackedActionId == targetTrackedActionId)
             .OrderBy(r => r.SortOrder)
             .ToListAsync(cancellationToken);
     }
