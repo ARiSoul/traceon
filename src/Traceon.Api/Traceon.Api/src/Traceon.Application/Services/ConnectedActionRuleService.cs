@@ -102,7 +102,9 @@ public sealed class ConnectedActionRuleService(
         if (request.IsBidirectional)
         {
             var reverseName = $"{request.Name} ↩";
-            var reverseMappingsJson = BuildReverseMappingsJson(request.FieldMappingsJson);
+            var reverseMappingsJson = MergeReverseMappingsJson(
+                BuildReverseMappingsJson(request.FieldMappingsJson),
+                request.ReverseExtraMappingsJson);
             var reverseConditionsJson = BuildReverseConditionsJson(request.ConditionsJson, request.FieldMappingsJson);
             var reverseEntity = ConnectedActionRule.Create(
                 request.TargetTrackedActionId,
@@ -152,6 +154,29 @@ public sealed class ConnectedActionRuleService(
 
         await repository.UpdateAsync(entity, cancellationToken);
 
+        // Update reverse rule extra mappings if already bidirectional and extra mappings provided
+        if (request.ReverseExtraMappingsJson is not null && entity.PairedRuleId.HasValue)
+        {
+            var pairedForUpdate = await repository.GetByIdAsync(entity.PairedRuleId.Value, cancellationToken);
+            if (pairedForUpdate is not null)
+            {
+                var updatedReverseMappings = MergeReverseMappingsJson(
+                    BuildReverseMappingsJson(entity.FieldMappingsJson),
+                    request.ReverseExtraMappingsJson);
+                pairedForUpdate.Update(
+                    pairedForUpdate.Name,
+                    pairedForUpdate.IsEnabled,
+                    pairedForUpdate.ConditionsJson,
+                    updatedReverseMappings,
+                    pairedForUpdate.CopyNotes,
+                    pairedForUpdate.CopyDate,
+                    pairedForUpdate.SortOrder,
+                    clearConditions: false,
+                    clearMappings: false);
+                await repository.UpdateAsync(pairedForUpdate, cancellationToken);
+            }
+        }
+
         // Handle bidirectional toggle changes
         if (request.IsBidirectional.HasValue)
         {
@@ -159,7 +184,9 @@ public sealed class ConnectedActionRuleService(
             {
                 // Turning ON bidirectional — create the reverse rule
                 var reverseName = $"{entity.Name} ↩";
-                var reverseMappingsJson = BuildReverseMappingsJson(entity.FieldMappingsJson);
+                var reverseMappingsJson = MergeReverseMappingsJson(
+                    BuildReverseMappingsJson(entity.FieldMappingsJson),
+                    request.ReverseExtraMappingsJson);
                 var reverseConditionsJson = BuildReverseConditionsJson(entity.ConditionsJson, entity.FieldMappingsJson);
                 var reverseEntity = ConnectedActionRule.Create(
                     entity.TargetTrackedActionId,
@@ -246,6 +273,28 @@ public sealed class ConnectedActionRuleService(
             : JsonSerializer.Serialize(reverseMappings, JsonOpts);
     }
 
+    private static string? MergeReverseMappingsJson(string? reversedMappingsJson, string? extraMappingsJson)
+    {
+        var reversed = DeserializeMappings(reversedMappingsJson);
+        var extras = DeserializeMappings(extraMappingsJson);
+
+        if (extras.Count == 0) return reversedMappingsJson;
+
+        // Only add extras for target fields not already covered by reversed mappings
+        var coveredTargetIds = reversed.Select(m => m.TargetFieldId).ToHashSet();
+        foreach (var extra in extras)
+        {
+            if (extra.TargetFieldId != Guid.Empty && !coveredTargetIds.Contains(extra.TargetFieldId))
+            {
+                reversed.Add(extra);
+            }
+        }
+
+        return reversed.Count == 0
+            ? null
+            : JsonSerializer.Serialize(reversed, JsonOpts);
+    }
+
     private static string? BuildReverseConditionsJson(string? conditionsJson, string? mappingsJson)
     {
         var forwardConditions = DeserializeConditions(conditionsJson);
@@ -277,7 +326,8 @@ public sealed class ConnectedActionRuleService(
             {
                 SourceFieldId = mapped.TargetFieldId,
                 Operator = string.IsNullOrWhiteSpace(cond.Operator) ? "Equals" : cond.Operator,
-                Value = reversedValue
+                Value = reversedValue,
+                Value2 = cond.Value2
             });
         }
 
@@ -362,6 +412,7 @@ public sealed class ConnectedActionRuleService(
         public Guid SourceFieldId { get; set; }
         public string Operator { get; set; } = "Equals";
         public string Value { get; set; } = string.Empty;
+        public string? Value2 { get; set; }
     }
 
     private sealed class RuleMappingDto

@@ -10,4 +10,5 @@ public sealed record UpdateConnectedActionRuleRequest(
     int? SortOrder = null,
     bool ClearConditions = false,
     bool ClearMappings = false,
-    bool? IsBidirectional = null);
+    bool? IsBidirectional = null,
+    string? ReverseExtraMappingsJson = null);

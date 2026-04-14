@@ -9,4 +9,5 @@ public sealed record CreateConnectedActionRuleRequest(
     bool CopyNotes = true,
     bool CopyDate = true,
     int SortOrder = 0,
-    bool IsBidirectional = false);
+    bool IsBidirectional = false,
+    string? ReverseExtraMappingsJson = null);
