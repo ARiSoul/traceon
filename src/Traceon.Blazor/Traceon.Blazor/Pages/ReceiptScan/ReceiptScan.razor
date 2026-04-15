@@ -947,14 +947,13 @@
                                     @{
                                         var valueOptions = _ruleEditFieldId != Guid.Empty && _resolvedDropdownOptions.TryGetValue(_ruleEditFieldId, out var opts) ? opts : [];
                                     }
-                                    <select class="form-select form-select-sm" @bind="_ruleEditValue">
-                                        <option value="">— @L["Common_Select"] —</option>
-                                        @foreach (var o in valueOptions)
-                                        {
-                                            <option value="@o">@o</option>
-                                        }
-                                        <option value="__new__">+ @L["Receipt_NewValue"]...</option>
-                                    </select>
+                                    <SearchableSelect Value="@_ruleEditValue"
+                                                      ValueChanged="v => _ruleEditValue = v ?? string.Empty"
+                                                      Options="valueOptions"
+                                                      Placeholder="@($"— {L["Common_Select"]} —")"
+                                                      ExtraOptionLabel="@($"+ {L["Receipt_NewValue"]}...")"
+                                                      ExtraOptionValue="__new__"
+                                                      Small="true" />
                                     @if (_ruleEditValue == "__new__")
                                     {
                                         <input type="text" class="form-control form-control-sm mt-1"
@@ -967,14 +966,12 @@
                                 {
                                     <div class="mb-3">
                                         <label class="form-label small mb-1">@L["RcptCfg_OrAddToExisting"]</label>
-                                        <select class="form-select form-select-sm"
-                                                @onchange="e => OnSelectExistingRule(e.Value?.ToString())">
-                                            <option value="">— @L["RcptCfg_NewRule"] —</option>
-                                            @foreach (var r in _mappingRules)
-                                            {
-                                                <option value="@r.Id">@r.TargetFieldName → @r.Value</option>
-                                            }
-                                        </select>
+                                        <SearchableSelect Value="@(_ruleEditExistingRuleId != Guid.Empty ? _ruleEditExistingRuleId.ToString() : null)"
+                                                          ValueChanged="v => OnSelectExistingRule(v)"
+                                                          Options="@(_mappingRules.Select(r => r.Id.ToString()).ToList())"
+                                                          DisplaySelector="@(id => { var rule = _mappingRules.FirstOrDefault(x => x.Id.ToString() == id); return rule is not null ? $"{rule.TargetFieldName} → {rule.Value}" : id; })"
+                                                          Placeholder="@($"— {L["RcptCfg_NewRule"]} —")"
+                                                          Small="true" />
                                     </div>
                                 }
                             }

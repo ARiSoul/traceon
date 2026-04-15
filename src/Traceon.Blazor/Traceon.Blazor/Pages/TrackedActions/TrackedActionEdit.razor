@@ -425,13 +425,10 @@ else
                                             }
                                             else if (filterField?.FieldType == FieldType.Dropdown && filterField.DropdownValues is not null)
                                             {
-                                                <select class="form-select" @bind="_newRule.FilterValue">
-                                                    <option value="">—</option>
-                                                                @foreach (var opt in DropdownValuesHelper.Split(filterField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
-                                                                    {
-                                                                        <option value="@opt">@opt</option>
-                                                                    }
-                                                                </select>
+                                                <SearchableSelect Value="@_newRule.FilterValue"
+                                                                  ValueChanged="v => _newRule.FilterValue = v"
+                                                                  Options="@(DropdownValuesHelper.Split(filterField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToList())"
+                                                                  Placeholder="—" />
                                                             }
                                                             else
                                                             {
@@ -635,13 +632,10 @@ else
                                                             }
                                                             else if (editFilterField?.FieldType == FieldType.Dropdown && editFilterField.DropdownValues is not null)
                                                             {
-                                                                <select class="form-select" @bind="_editRule.FilterValue">
-                                                                    <option value="">—</option>
-                                                                    @foreach (var opt in DropdownValuesHelper.Split(editFilterField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
-                                                                        {
-                                                                            <option value="@opt">@opt</option>
-                                                                        }
-                                                                </select>
+                                                                <SearchableSelect Value="@_editRule.FilterValue"
+                                                                                  ValueChanged="v => _editRule.FilterValue = v"
+                                                                                  Options="@(DropdownValuesHelper.Split(editFilterField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToList())"
+                                                                                  Placeholder="—" />
                                                             }
                                                             else
                                                             {
@@ -2096,13 +2090,10 @@ else
                 break;
 
             case FieldType.Dropdown when !string.IsNullOrWhiteSpace(meta.DropdownValues):
-                <select class="form-select" value="@value" @onchange="e => setValue(e.Value?.ToString())">
-                    <option value="">—</option>
-                    @foreach (var opt in DropdownValuesHelper.Split(meta.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
-                    {
-                        <option value="@opt">@opt</option>
-                    }
-                </select>
+                <SearchableSelect Value="@value"
+                                  ValueChanged="v => setValue(v)"
+                                  Options="@(DropdownValuesHelper.Split(meta.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToList())"
+                                  Placeholder="—" />
                 break;
 
             case FieldType.Integer:

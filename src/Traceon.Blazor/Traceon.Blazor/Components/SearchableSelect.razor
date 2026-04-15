@@ -12,7 +12,7 @@
             @onclick:stopPropagation="true">
         @if (!string.IsNullOrEmpty(Value))
         {
-            @Value
+            @Display(Value!)
         }
         else
         {
@@ -63,7 +63,7 @@
                                 <div class="searchable-select-option px-2 py-1 rounded small @(isActive ? "fw-semibold text-primary" : "")"
                                      style="cursor: pointer; padding-left: 1rem !important;"
                                      @onclick="() => Select(opt)">
-                                    @opt
+                                    @Display(opt)
                                 </div>
                             }
                         }
@@ -89,7 +89,7 @@
                             <div class="searchable-select-option px-2 py-1 rounded small @(isActive ? "fw-semibold text-primary" : "")"
                                  style="cursor: pointer;"
                                  @onclick="() => Select(opt)">
-                                @opt
+                                @Display(opt)
                             </div>
                         }
                     }
@@ -119,6 +119,7 @@
     [Parameter] public bool Small { get; set; }
     [Parameter] public string? ExtraOptionLabel { get; set; }
     [Parameter] public string? ExtraOptionValue { get; set; }
+    [Parameter] public Func<string, string>? DisplaySelector { get; set; }
 
     private bool _isOpen;
     private string _searchText = "";
@@ -126,6 +127,8 @@
     private string ButtonCss => Small
         ? "form-select form-select-sm"
         : "form-select";
+
+    private string Display(string option) => DisplaySelector?.Invoke(option) ?? option;
 
     private void Toggle()
     {
@@ -153,7 +156,7 @@
             return options;
 
         return options
-            .Where(o => o.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+            .Where(o => Display(o).Contains(_searchText, StringComparison.OrdinalIgnoreCase))
             .ToList();
     }
 
@@ -163,7 +166,7 @@
             return [..options];
 
         return options
-            .Where(o => o.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+            .Where(o => Display(o).Contains(_searchText, StringComparison.OrdinalIgnoreCase))
             .ToList();
     }
 
@@ -173,6 +176,6 @@
             return false;
 
         return Groups!.All(g => g.Values.All(v =>
-            !v.Contains(_searchText, StringComparison.OrdinalIgnoreCase)));
+            !Display(v).Contains(_searchText, StringComparison.OrdinalIgnoreCase)));
     }
 }

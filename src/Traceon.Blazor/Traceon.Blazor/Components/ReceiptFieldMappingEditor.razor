@@ -100,7 +100,21 @@
                         </div>
                         <div class="col-12 col-md-3">
                             <label class="form-label small">@L["RcptCfg_Value"]</label>
-                            <input type="text" class="form-control form-control-sm" @bind="_newRule.Value" />
+                            @{
+                                var newRuleOptions = _newRule.TargetFieldId != Guid.Empty && DropdownOptions.TryGetValue(_newRule.TargetFieldId, out var nro) ? nro : [];
+                            }
+                            @if (newRuleOptions.Count > 0)
+                            {
+                                <SearchableSelect Value="@_newRule.Value"
+                                                  ValueChanged="v => _newRule.Value = v ?? string.Empty"
+                                                  Options="newRuleOptions"
+                                                  Placeholder="@($"\u2014 {L["Common_Select"]} \u2014")"
+                                                  Small="true" />
+                            }
+                            else
+                            {
+                                <input type="text" class="form-control form-control-sm" @bind="_newRule.Value" />
+                            }
                         </div>
                         <div class="col-6 col-md-1">
                             <label class="form-label small">@L["RcptCfg_Priority"]</label>
@@ -144,7 +158,22 @@
                             <div class="row g-2 align-items-end">
                                 <div class="col">
                                     <label class="form-label small mb-1">@L["RcptCfg_Value"]</label>
-                                    <input type="text" class="form-control form-control-sm" @bind="_editValueValue" />
+                                    @{
+                                        var editRule = MappingRules.FirstOrDefault(r => r.Id == _editingRuleId);
+                                        var editRuleOptions = editRule is not null && DropdownOptions.TryGetValue(editRule.TargetFieldId, out var ero) ? ero : [];
+                                    }
+                                    @if (editRuleOptions.Count > 0)
+                                    {
+                                        <SearchableSelect Value="@_editValueValue"
+                                                          ValueChanged="v => _editValueValue = v ?? string.Empty"
+                                                          Options="editRuleOptions"
+                                                          Placeholder="@($"\u2014 {L["Common_Select"]} \u2014")"
+                                                          Small="true" />
+                                    }
+                                    else
+                                    {
+                                        <input type="text" class="form-control form-control-sm" @bind="_editValueValue" />
+                                    }
                                 </div>
                                 <div class="col-auto">
                                     <label class="form-label small mb-1">@L["RcptCfg_Priority"]</label>
@@ -283,15 +312,11 @@
         if (captured.Source == ReceiptFieldMappingSource.FixedValue && isDropdown)
         {
             var fixedOptions = GetDropdownOptionsForField(captured);
-            <select class="form-select form-select-sm"
-                    value="@(captured.FixedValue ?? "")"
-                    @onchange="e => OnFixedValueChanged(captured, e.Value?.ToString())">
-                <option value="">— @L["Common_Select"] —</option>
-                @foreach (var opt in fixedOptions)
-                {
-                    <option value="@opt">@opt</option>
-                }
-            </select>
+            <SearchableSelect Value="@captured.FixedValue"
+                              ValueChanged="v => OnFixedValueChanged(captured, v)"
+                              Options="fixedOptions"
+                              Placeholder="@($"\u2014 {L["Common_Select"]} \u2014")"
+                              Small="true" />
         }
         else if (captured.Source == ReceiptFieldMappingSource.FixedValue && isText)
         {
