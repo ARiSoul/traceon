@@ -179,6 +179,8 @@
   <data name="Analytics_DeepDive"><value>Deep dive into</value></data>
   <data name="Analytics_BackToDashboard"><value>Back to Dashboard</value></data>
   <data name="Analytics_EntryFrequency"><value>Entry Frequency</value></data>
+  <data name="Analytics_ChartVisibility"><value>Chart visibility</value></data>
+  <data name="Analytics_ChartVisibilityHint"><value>Uncheck a chart to hide it. Your choice is saved per action.</value></data>
   <data name="Analytics_ActionNotFound"><value>Action not found.</value></data>
   <data name="Analytics_ValuesRecorded"><value>values recorded</value></data>
 

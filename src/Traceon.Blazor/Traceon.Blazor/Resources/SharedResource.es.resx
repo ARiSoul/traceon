@@ -180,6 +180,8 @@
   <data name="Analytics_DeepDive"><value>Análisis detallado de</value></data>
   <data name="Analytics_BackToDashboard"><value>Volver al Dashboard</value></data>
   <data name="Analytics_EntryFrequency"><value>Frecuencia de Registros</value></data>
+  <data name="Analytics_ChartVisibility"><value>Visibilidad de gráficos</value></data>
+  <data name="Analytics_ChartVisibilityHint"><value>Desmarca un gráfico para ocultarlo. Tu elección se guarda por acción.</value></data>
   <data name="Analytics_ActionNotFound"><value>Acción no encontrada.</value></data>
   <data name="Analytics_ValuesRecorded"><value>valores registrados</value></data>
 

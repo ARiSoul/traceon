@@ -362,7 +362,7 @@ public sealed class DashboardService(
                     .ToList();
             }
 
-            // Extract (groupKey, measureValue) pairs from each entry
+            // Extract (date, groupKey, measureValue) tuples from each entry
             var pairs = filteredEntries
                 .Select(e =>
                 {
@@ -376,7 +376,7 @@ public sealed class DashboardService(
                     var signVal = rule.SignFieldId.HasValue
                         ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.SignFieldId.Value)?.Value
                         : null;
-                    return (GroupKey: groupVal, MeasureValue: measureVal, SignValue: signVal);
+                    return (Date: e.OccurredAtUtc, GroupKey: groupVal, MeasureValue: measureVal, SignValue: signVal);
                 })
                 .Where(p => !string.IsNullOrWhiteSpace(p.GroupKey))
                 .ToList();
@@ -523,6 +523,13 @@ public sealed class DashboardService(
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
 
+            // Build time-series data when DisplayType is TimeSeries
+            var timeSeriesData = new List<CrossFieldTimeSeries>();
+            if (rule.DisplayType == AnalyticsDisplayType.TimeSeries)
+            {
+                timeSeriesData = BuildCrossFieldTimeSeries(pairs, rule.Aggregation, isNumericMeasure, negativeValueSet);
+            }
+
             results.Add(new CrossFieldResult
             {
                 RuleId = rule.Id,
@@ -538,11 +545,83 @@ public sealed class DashboardService(
                 ValueFieldName = valueFieldName,
                 ValueFieldUnit = valueFieldUnit,
                 ValueMetrics = valueMetrics,
-                Groups = groups
+                Groups = groups,
+                TimeSeriesData = timeSeriesData
             });
         }
 
         return results;
+    }
+
+    /// <summary>Build time-series for cross-field analytics: one line per group-by value, aggregated per day.</summary>
+    private static List<CrossFieldTimeSeries> BuildCrossFieldTimeSeries(
+        List<(DateTime Date, string? GroupKey, string? MeasureValue, string? SignValue)> pairs,
+        AnalyticsAggregation aggregation,
+        bool isNumericMeasure,
+        HashSet<string>? negativeValueSet)
+    {
+        return pairs
+            .Where(p => !string.IsNullOrWhiteSpace(p.GroupKey))
+            .GroupBy(p => p.GroupKey!, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(g => g.Count())
+            .Take(15)
+            .Select(grp =>
+            {
+                List<NumericDataPoint> points;
+
+                if (aggregation == AnalyticsAggregation.Count || !isNumericMeasure)
+                {
+                    // Count entries per day for this group value
+                    points = grp
+                        .GroupBy(p => p.Date.Date)
+                        .OrderBy(dg => dg.Key)
+                        .Select(dg => new NumericDataPoint(dg.Key, dg.Count()))
+                        .ToList();
+                }
+                else
+                {
+                    // Aggregate numeric values per day
+                    points = grp
+                        .Where(p => decimal.TryParse(p.MeasureValue, CultureInfo.InvariantCulture, out _))
+                        .GroupBy(p => p.Date.Date)
+                        .OrderBy(dg => dg.Key)
+                        .Select(dg =>
+                        {
+                            var nums = dg.Select(p =>
+                            {
+                                var val = decimal.Parse(p.MeasureValue!, CultureInfo.InvariantCulture);
+                                if (aggregation == AnalyticsAggregation.SignedSum &&
+                                    negativeValueSet is not null &&
+                                    p.SignValue is not null &&
+                                    negativeValueSet.Contains(p.SignValue))
+                                {
+                                    val = -val;
+                                }
+                                return val;
+                            }).ToList();
+
+                            var value = aggregation switch
+                            {
+                                AnalyticsAggregation.Sum or AnalyticsAggregation.SignedSum => nums.Sum(),
+                                AnalyticsAggregation.Avg => nums.Average(),
+                                AnalyticsAggregation.Min => nums.Min(),
+                                AnalyticsAggregation.Max => nums.Max(),
+                                _ => nums.Sum()
+                            };
+
+                            return new NumericDataPoint(dg.Key, value);
+                        })
+                        .ToList();
+                }
+
+                return new CrossFieldTimeSeries
+                {
+                    SeriesLabel = grp.Key,
+                    Points = points
+                };
+            })
+            .Where(s => s.Points.Count > 0)
+            .ToList();
     }
 
     private static List<RunningBalanceSeries> BuildRunningBalances(
@@ -1157,8 +1236,15 @@ public sealed class CrossFieldResult
     public string? ValueFieldUnit { get; init; }
     public HashSet<string> ValueMetrics { get; init; } = [];
     public List<CrossFieldGroup> Groups { get; init; } = [];
+    public List<CrossFieldTimeSeries> TimeSeriesData { get; init; } = [];
 
     public decimal Total => Groups.Sum(g => g.Value);
+}
+
+public sealed class CrossFieldTimeSeries
+{
+    public required string SeriesLabel { get; init; }
+    public List<NumericDataPoint> Points { get; init; } = [];
 }
 
 public sealed record CrossFieldGroup(string Key, decimal Value)

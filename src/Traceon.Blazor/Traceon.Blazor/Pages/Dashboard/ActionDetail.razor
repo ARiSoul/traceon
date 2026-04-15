@@ -110,7 +110,138 @@
             </button>
         </div>
     }
+    <div class="col-auto ms-auto">
+        <button class="btn btn-outline-secondary btn-sm" @onclick="() => _showChartVisibility = !_showChartVisibility">
+            <i class="bi bi-@(_showChartVisibility ? "eye-slash" : "eye") me-1"></i>
+            @L["Analytics_ChartVisibility"]
+        </button>
+    </div>
 </div>
+
+@if (_showChartVisibility && _data is not null)
+{
+    <div class="card border-secondary mb-4">
+        <div class="card-header bg-secondary bg-opacity-10 d-flex justify-content-between align-items-center py-2">
+            <h6 class="mb-0"><i class="bi bi-eye me-2"></i>@L["Analytics_ChartVisibility"]</h6>
+            <button class="btn-close" @onclick="() => _showChartVisibility = false"></button>
+        </div>
+        <div class="card-body py-2">
+            <small class="text-muted d-block mb-2">@L["Analytics_ChartVisibilityHint"]</small>
+            <div class="row g-2">
+                @* Entry Frequency *@
+                @if (_data.DailyEntries.Count > 0)
+                {
+                    const string freqKey = "freq";
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="cv-freq"
+                                   checked="@(!_hiddenCharts.Contains(freqKey))"
+                                   @onchange="e => ToggleChartVisibility(freqKey, !(bool)(e.Value ?? true))" />
+                            <label class="form-check-label small" for="cv-freq">
+                                <i class="bi bi-bar-chart me-1"></i>@L["Analytics_EntryFrequency"]
+                            </label>
+                        </div>
+                    </div>
+                }
+                @* Numeric field charts *@
+                @foreach (var series in _data.NumericSeries)
+                {
+                    var key = $"num-{series.Name}";
+                    var capturedKey = key;
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="cv-@capturedKey"
+                                   checked="@(!_hiddenCharts.Contains(capturedKey))"
+                                   @onchange="e => ToggleChartVisibility(capturedKey, !(bool)(e.Value ?? true))" />
+                            <label class="form-check-label small" for="cv-@capturedKey">
+                                <i class="bi bi-graph-up me-1"></i>@series.Name
+                            </label>
+                        </div>
+                    </div>
+                }
+                @* Boolean field charts *@
+                @foreach (var series in _data.BooleanSeries)
+                {
+                    var key = $"bool-{series.Name}";
+                    var capturedKey = key;
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="cv-@capturedKey"
+                                   checked="@(!_hiddenCharts.Contains(capturedKey))"
+                                   @onchange="e => ToggleChartVisibility(capturedKey, !(bool)(e.Value ?? true))" />
+                            <label class="form-check-label small" for="cv-@capturedKey">
+                                <i class="bi bi-toggles me-1"></i>@series.Name
+                            </label>
+                        </div>
+                    </div>
+                }
+                @* Dropdown distribution charts *@
+                @foreach (var series in _data.DropdownSeries)
+                {
+                    var key = $"dd-{series.Name}";
+                    var capturedKey = key;
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="cv-@capturedKey"
+                                   checked="@(!_hiddenCharts.Contains(capturedKey))"
+                                   @onchange="e => ToggleChartVisibility(capturedKey, !(bool)(e.Value ?? true))" />
+                            <label class="form-check-label small" for="cv-@capturedKey">
+                                <i class="bi bi-pie-chart me-1"></i>@series.Name @L["Analytics_Distribution"]
+                            </label>
+                        </div>
+                    </div>
+                }
+                @* Dropdown value trend charts *@
+                @foreach (var trend in _data.DropdownValueTrends)
+                {
+                    var key = $"ddt-{trend.FieldName}";
+                    var capturedKey = key;
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="cv-@capturedKey"
+                                   checked="@(!_hiddenCharts.Contains(capturedKey))"
+                                   @onchange="e => ToggleChartVisibility(capturedKey, !(bool)(e.Value ?? true))" />
+                            <label class="form-check-label small" for="cv-@capturedKey">
+                                <i class="bi bi-graph-up me-1"></i>@trend.FieldName — @trend.ValueFieldName
+                            </label>
+                        </div>
+                    </div>
+                }
+                @* Running balance charts *@
+                @foreach (var balance in _data.RunningBalances)
+                {
+                    var key = $"bal-{balance.Label}";
+                    var capturedKey = key;
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="cv-@capturedKey"
+                                   checked="@(!_hiddenCharts.Contains(capturedKey))"
+                                   @onchange="e => ToggleChartVisibility(capturedKey, !(bool)(e.Value ?? true))" />
+                            <label class="form-check-label small" for="cv-@capturedKey">
+                                <i class="bi bi-graph-up-arrow me-1"></i>@balance.Label — @L["Analytics_Balance"]
+                            </label>
+                        </div>
+                    </div>
+                }
+                @* Field summary *@
+                @if (_data.Stats.FieldStats.Count > 0)
+                {
+                    const string summaryKey = "summary";
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="cv-summary"
+                                   checked="@(!_hiddenCharts.Contains(summaryKey))"
+                                   @onchange="e => ToggleChartVisibility(summaryKey, !(bool)(e.Value ?? true))" />
+                            <label class="form-check-label small" for="cv-summary">
+                                <i class="bi bi-sliders me-1"></i>@L["Dashboard_FieldSummary"]
+                            </label>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
 
 @if (_loading)
 {
@@ -182,7 +313,7 @@ else
     </div>
 
     <!-- Entry Frequency Chart -->
-    @if (_data.DailyEntries.Count > 0)
+    @if (_data.DailyEntries.Count > 0 && !_hiddenCharts.Contains("freq"))
     {
         <div class="card mb-4" @key="@($"freq-{_loadKey}")">
             <div class="card-header">
@@ -208,6 +339,7 @@ else
     <!-- Numeric Field Trend Charts -->
     @foreach (var series in _data.NumericSeries)
     {
+        if (_hiddenCharts.Contains($"num-{series.Name}")) continue;
         <div class="card mb-4" @key="@($"num-{series.Name}-{_loadKey}")">
             <div class="card-header">
                 <h6 class="mb-0">
@@ -241,6 +373,7 @@ else
     <!-- Boolean Field Charts -->
     @foreach (var series in _data.BooleanSeries)
     {
+        if (_hiddenCharts.Contains($"bool-{series.Name}")) continue;
         <div class="card mb-4" @key="@($"bool-{series.Name}-{_loadKey}")">
             <div class="card-header">
                 <h6 class="mb-0"><i class="bi bi-toggles me-2"></i>@series.Name</h6>
@@ -271,6 +404,7 @@ else
     <!-- Dropdown Distribution Charts -->
     @foreach (var series in _data.DropdownSeries)
     {
+        if (_hiddenCharts.Contains($"dd-{series.Name}")) continue;
         <div class="card mb-4" @key="@($"dd-{series.Name}-{_loadKey}")">
             <div class="card-header">
                 <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>@series.Name @L["Analytics_Distribution"]</h6>
@@ -295,6 +429,7 @@ else
     @foreach (var trend in _data.DropdownValueTrends)
     {
         var chartKey = $"ddt-{trend.FieldName}";
+        if (_hiddenCharts.Contains(chartKey)) continue;
         _selectedSeries.TryGetValue(chartKey, out var selected);
         var hasFilter = selected is { Count: > 0 };
         var visibleSeries = hasFilter
@@ -378,13 +513,17 @@ else
         <div class="row g-4 mb-4" @key="@($"cross-{_loadKey}")">
             @foreach (var result in _data.CrossFieldResults)
             {
-                <div class="col-12 col-lg-6">
+                <div class="@(result.DisplayType == AnalyticsDisplayType.TimeSeries ? "col-12" : "col-12 col-lg-6")">
                     <div class="card h-100">
                         <div class="card-header">
                             <h6 class="mb-0">
                                 @if (result.Aggregation == AnalyticsAggregation.CountByValue && result.IsDropdownMeasure)
                                 {
                                     <i class="bi bi-diagram-3 me-2"></i>
+                                }
+                                else if (result.DisplayType == AnalyticsDisplayType.TimeSeries)
+                                {
+                                    <i class="bi bi-graph-up me-2"></i>
                                 }
                                 else if (result.DisplayType is AnalyticsDisplayType.PieChart)
                                 {
@@ -429,6 +568,10 @@ else
                             @if (result.Aggregation == AnalyticsAggregation.CountByValue && result.IsDropdownMeasure && result.Groups.Any(g => g.SubGroups.Count > 0))
                             {
                                 @RenderCountByValueResult(result)
+                            }
+                            else if (result.DisplayType == AnalyticsDisplayType.TimeSeries && result.TimeSeriesData.Count > 0)
+                            {
+                                @RenderCrossFieldTimeSeries(result)
                             }
                             else if (result.DisplayType is AnalyticsDisplayType.BarChart or AnalyticsDisplayType.StackedBar)
                             {
@@ -501,6 +644,7 @@ else
     <!-- Running Balance Charts -->
     @foreach (var balance in _data.RunningBalances)
     {
+        if (_hiddenCharts.Contains($"bal-{balance.Label}")) continue;
         <div class="card mb-4" @key="@($"bal-{balance.Label}-{_loadKey}")">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
@@ -543,7 +687,7 @@ else
     }
 
     <!-- Field Summary Stats (reuse existing pattern) -->
-    @if (_data.Stats.FieldStats.Count > 0)
+    @if (_data.Stats.FieldStats.Count > 0 && !_hiddenCharts.Contains("summary"))
     {
         <h5 class="mb-3"><i class="bi bi-sliders me-2"></i>@L["Dashboard_FieldSummary"]</h5>
         <div class="row g-3 mb-4">
@@ -622,6 +766,10 @@ else
     private ApexChart<DailyCount>? _frequencyChart;
     private readonly Dictionary<string, HashSet<string>> _selectedSeries = [];
 
+    // Chart visibility
+    private bool _showChartVisibility;
+    private HashSet<string> _hiddenCharts = [];
+
     private string _periodMode = "all";
     private int _periodValue = 90;
     private DateTime? _customFrom;
@@ -633,10 +781,12 @@ else
     private ApexChartOptions<DailyCount> _frequencyOptions = new();
 
     private string DetailStorageKey => $"traceon_actiondetail_{ActionId}";
+    private string ChartVisibilityKey => $"traceon_chartviz_{ActionId}";
 
     protected override async Task OnInitializedAsync()
     {
         BuildFrequencyOptions();
+        await RestoreHiddenChartsAsync();
 
         // If navigated with explicit period params, use them; otherwise restore from storage
         if (!string.IsNullOrEmpty(PeriodParam))
@@ -939,6 +1089,138 @@ else
                 DropShadow = new DropShadow { Enabled = false }
             }
         };
+    }
+
+    private RenderFragment RenderCrossFieldTimeSeries(CrossFieldResult result) => __builder =>
+    {
+        var chartKey = $"cfts-{result.RuleId}";
+        _selectedSeries.TryGetValue(chartKey, out var selected);
+        var hasFilter = selected is { Count: > 0 };
+        var visibleSeries = hasFilter
+            ? result.TimeSeriesData.Where(s => selected!.Contains(s.SeriesLabel)).ToList()
+            : result.TimeSeriesData;
+
+        var visibleColors = hasFilter
+            ? result.TimeSeriesData
+                .Select((s, i) => (s, i))
+                .Where(x => selected!.Contains(x.s.SeriesLabel))
+                .Select(x => x.i < CrossFieldPalette.Count ? CrossFieldPalette[x.i] : "#999")
+                .ToList()
+            : CrossFieldPalette;
+
+        <div class="d-flex flex-wrap gap-1 mb-2">
+            @for (var i = 0; i < result.TimeSeriesData.Count; i++)
+            {
+                var s = result.TimeSeriesData[i];
+                var isActive = !hasFilter || selected!.Contains(s.SeriesLabel);
+                var color = i < CrossFieldPalette.Count ? CrossFieldPalette[i] : "#999";
+                var idx = i;
+                <button class="btn btn-sm px-2 py-0 border @(isActive ? "" : "opacity-25")"
+                        style="font-size:.75rem; color:@color; border-color:@color !important;"
+                        @onclick="() => ToggleCrossFieldTimeSeriesSeries(chartKey, result.TimeSeriesData[idx].SeriesLabel, result.TimeSeriesData.Count)">
+                    <i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>@s.SeriesLabel
+                </button>
+            }
+            @if (hasFilter)
+            {
+                <button class="btn btn-outline-secondary btn-sm px-2 py-0" style="font-size:.75rem;"
+                        @onclick="() => InvertCrossFieldTimeSeriesSeries(chartKey, result.TimeSeriesData)">
+                    <i class="bi bi-arrow-left-right me-1"></i>@L["Common_Invert"]
+                </button>
+                <button class="btn btn-outline-secondary btn-sm px-2 py-0" style="font-size:.75rem;"
+                        @onclick="() => { _selectedSeries.Remove(chartKey); }">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>@L["DataGrid_ResetAll"]
+                </button>
+            }
+        </div>
+        <div @key="@($"{chartKey}-{(hasFilter ? string.Join(',', selected!) : "all")}-{_loadKey}")">
+            <ApexChart TItem="NumericDataPoint"
+                       Options="BuildCrossFieldTimeSeriesOptions(result, visibleColors)"
+                       Height="300">
+                @foreach (var series in visibleSeries)
+                {
+                    <ApexPointSeries TItem="NumericDataPoint"
+                                    Items="series.Points"
+                                    SeriesType="SeriesType.Line"
+                                    Name="@series.SeriesLabel"
+                                    XValue="p => p.Date"
+                                    YValue="p => p.Value"
+                                    OrderBy="p => p.X" />
+                }
+            </ApexChart>
+        </div>
+    };
+
+    private ApexChartOptions<NumericDataPoint> BuildCrossFieldTimeSeriesOptions(CrossFieldResult result, List<string> colors)
+    {
+        var yTitle = result.Unit is not null && result.Unit != "UN"
+            ? result.Unit
+            : FormatAggregationLabel(result.Aggregation);
+
+        return new ApexChartOptions<NumericDataPoint>
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = true, AutoSelected = AutoSelected.Pan },
+                Zoom = new Zoom { Enabled = true, AllowMouseWheelZoom = false }
+            },
+            Xaxis = new XAxis
+            {
+                Type = XAxisType.Datetime,
+                Labels = new XAxisLabels
+                {
+                    DatetimeFormatter = new DatetimeFormatter
+                    {
+                        Day = "dd MMM",
+                        Month = "MMM yyyy"
+                    }
+                }
+            },
+            Yaxis = [new YAxis { Title = new AxisTitle { Text = yTitle } }],
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Colors = colors,
+            Legend = new Legend { Position = LegendPosition.Bottom, Show = false },
+            Tooltip = new Tooltip { X = new TooltipX { Format = "dd MMM yyyy" } }
+        };
+    }
+
+    private void ToggleCrossFieldTimeSeriesSeries(string chartKey, string seriesName, int totalCount)
+    {
+        if (!_selectedSeries.TryGetValue(chartKey, out var selected))
+        {
+            _selectedSeries[chartKey] = [seriesName];
+            return;
+        }
+
+        if (selected.Contains(seriesName))
+        {
+            if (selected.Count > 1)
+                selected.Remove(seriesName);
+            else
+                _selectedSeries.Remove(chartKey);
+        }
+        else
+        {
+            selected.Add(seriesName);
+            if (selected.Count >= totalCount)
+                _selectedSeries.Remove(chartKey);
+        }
+    }
+
+    private void InvertCrossFieldTimeSeriesSeries(string chartKey, IReadOnlyList<CrossFieldTimeSeries> allSeries)
+    {
+        if (!_selectedSeries.TryGetValue(chartKey, out var selected))
+            return;
+
+        var inverted = allSeries
+            .Where(s => !selected.Contains(s.SeriesLabel))
+            .Select(s => s.SeriesLabel)
+            .ToHashSet();
+
+        if (inverted.Count == 0 || inverted.Count == allSeries.Count)
+            _selectedSeries.Remove(chartKey);
+        else
+            _selectedSeries[chartKey] = inverted;
     }
 
     private ApexChartOptions<NumericDataPoint> BuildBalanceOptions(RunningBalanceSeries balance)
@@ -1245,6 +1527,40 @@ else
         public DateTime? CustomFrom { get; set; }
         public DateTime? CustomTo { get; set; }
         public DateTime? SelectedMonth { get; set; }
+    }
+
+    // ── Chart visibility persistence ──
+
+    private async void ToggleChartVisibility(string chartKey, bool hide)
+    {
+        if (hide)
+            _hiddenCharts.Add(chartKey);
+        else
+            _hiddenCharts.Remove(chartKey);
+        await SaveHiddenChartsAsync();
+    }
+
+    private async Task RestoreHiddenChartsAsync()
+    {
+        try
+        {
+            var hidden = await LocalStorage.GetItemAsync<List<string>>(ChartVisibilityKey);
+            if (hidden is { Count: > 0 })
+                _hiddenCharts = new HashSet<string>(hidden, StringComparer.Ordinal);
+        }
+        catch { /* best effort */ }
+    }
+
+    private async Task SaveHiddenChartsAsync()
+    {
+        try
+        {
+            if (_hiddenCharts.Count > 0)
+                await LocalStorage.SetItemAsync(ChartVisibilityKey, _hiddenCharts.ToList());
+            else
+                await LocalStorage.RemoveItemAsync(ChartVisibilityKey);
+        }
+        catch { /* best effort */ }
     }
 
     private string BuildEntriesUrl()

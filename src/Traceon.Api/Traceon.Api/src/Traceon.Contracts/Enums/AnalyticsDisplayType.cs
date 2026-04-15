@@ -5,5 +5,6 @@ public enum AnalyticsDisplayType
     Table = 0,
     BarChart = 1,
     PieChart = 2,
-    StackedBar = 3
+    StackedBar = 3,
+    TimeSeries = 4
 }
