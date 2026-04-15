@@ -12,4 +12,6 @@ public sealed record CreateFieldAnalyticsRuleRequest(
     string? Label = null,
     int SortOrder = 0,
     Guid? SignFieldId = null,
-    string? NegativeValues = null);
+    string? NegativeValues = null,
+    Guid? GroupByMetadataFieldId = null,
+    Guid? FilterMetadataFieldId = null);

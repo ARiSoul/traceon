@@ -23,6 +23,9 @@ public sealed class TraceonDbContext(DbContextOptions<TraceonDbContext> options)
     public DbSet<ReceiptMappingRule> ReceiptMappingRules => Set<ReceiptMappingRule>();
     public DbSet<ReceiptScanDraft> ReceiptScanDrafts => Set<ReceiptScanDraft>();
     public DbSet<ConnectedActionRule> ConnectedActionRules => Set<ConnectedActionRule>();
+    public DbSet<DropdownValue> DropdownValues => Set<DropdownValue>();
+    public DbSet<DropdownValueMetadataField> DropdownValueMetadataFields => Set<DropdownValueMetadataField>();
+    public DbSet<DropdownValueMetadataValue> DropdownValueMetadataValues => Set<DropdownValueMetadataValue>();
     public DbSet<UserAuditLog> UserAuditLogs => Set<UserAuditLog>();
     public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
 

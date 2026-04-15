@@ -5,7 +5,9 @@ public sealed class FieldAnalyticsRule : Entity
     public Guid TrackedActionId { get; private set; }
     public Guid MeasureFieldId { get; private set; }
     public Guid GroupByFieldId { get; private set; }
+    public Guid? GroupByMetadataFieldId { get; private set; }
     public Guid? FilterFieldId { get; private set; }
+    public Guid? FilterMetadataFieldId { get; private set; }
     public string? FilterValue { get; private set; }
     public int Aggregation { get; private set; }
     public int DisplayType { get; private set; }
@@ -18,7 +20,9 @@ public sealed class FieldAnalyticsRule : Entity
         Guid trackedActionId,
         Guid measureFieldId,
         Guid groupByFieldId,
+        Guid? groupByMetadataFieldId,
         Guid? filterFieldId,
+        Guid? filterMetadataFieldId,
         string? filterValue,
         int aggregation,
         int displayType,
@@ -30,7 +34,9 @@ public sealed class FieldAnalyticsRule : Entity
         TrackedActionId = trackedActionId;
         MeasureFieldId = measureFieldId;
         GroupByFieldId = groupByFieldId;
+        GroupByMetadataFieldId = groupByMetadataFieldId;
         FilterFieldId = filterFieldId;
+        FilterMetadataFieldId = filterMetadataFieldId;
         FilterValue = filterValue;
         Aggregation = aggregation;
         DisplayType = displayType;
@@ -51,7 +57,9 @@ public sealed class FieldAnalyticsRule : Entity
         string? label = null,
         int sortOrder = 0,
         Guid? signFieldId = null,
-        string? negativeValues = null)
+        string? negativeValues = null,
+        Guid? groupByMetadataFieldId = null,
+        Guid? filterMetadataFieldId = null)
     {
         if (trackedActionId == Guid.Empty)
             throw new ArgumentException("Tracked action ID is required.", nameof(trackedActionId));
@@ -62,14 +70,19 @@ public sealed class FieldAnalyticsRule : Entity
         if (groupByFieldId == Guid.Empty)
             throw new ArgumentException("Group-by field ID is required.", nameof(groupByFieldId));
 
-        if (measureFieldId == groupByFieldId)
+        if (measureFieldId == groupByFieldId && !groupByMetadataFieldId.HasValue)
             throw new ArgumentException("Measure and group-by fields must be different.", nameof(groupByFieldId));
+
+        if (filterMetadataFieldId.HasValue && !filterFieldId.HasValue)
+            throw new ArgumentException("Filter field must be set when a filter metadata field is specified.", nameof(filterMetadataFieldId));
 
         return new FieldAnalyticsRule(
             trackedActionId,
             measureFieldId,
             groupByFieldId,
+            groupByMetadataFieldId,
             filterFieldId,
+            filterMetadataFieldId,
             filterValue?.Trim(),
             aggregation,
             displayType,
@@ -88,7 +101,11 @@ public sealed class FieldAnalyticsRule : Entity
         int? sortOrder = null,
         Guid? signFieldId = null,
         string? negativeValues = null,
-        bool clearSignField = false)
+        bool clearSignField = false,
+        Guid? groupByMetadataFieldId = null,
+        bool clearGroupByMetadataField = false,
+        Guid? filterMetadataFieldId = null,
+        bool clearFilterMetadataField = false)
     {
         if (aggregation.HasValue)
             Aggregation = aggregation.Value;
@@ -104,6 +121,14 @@ public sealed class FieldAnalyticsRule : Entity
             SignFieldId = signFieldId;
         else if (clearSignField)
             SignFieldId = null;
+        if (groupByMetadataFieldId.HasValue)
+            GroupByMetadataFieldId = groupByMetadataFieldId;
+        else if (clearGroupByMetadataField)
+            GroupByMetadataFieldId = null;
+        if (filterMetadataFieldId.HasValue)
+            FilterMetadataFieldId = filterMetadataFieldId;
+        else if (clearFilterMetadataField)
+            FilterMetadataFieldId = null;
         NegativeValues = negativeValues?.Trim();
         MarkUpdated();
     }

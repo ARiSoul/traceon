@@ -265,7 +265,7 @@ else
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <label class="form-label">@L["Analytics_GroupByField"] <span class="text-danger">*</span></label>
-                                        <select class="form-select" @bind="_newRule.GroupByFieldId">
+                                        <select class="form-select" @bind="_newRule.GroupByFieldId" @bind:after="() => _newRule.GroupByMetadataFieldId = Guid.Empty">
                                             <option value="@Guid.Empty">— @L["Common_Select"] —</option>
                                             @foreach (var f in _fields.Where(f => f.Id != _newRule.MeasureFieldId).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
                                             {
@@ -273,6 +273,25 @@ else
                                             }
                                         </select>
                                     </div>
+                                    @{
+                                        var newGroupMetaSchema = GetMetadataSchemaForField(_newRule.GroupByFieldId);
+                                    }
+                                    @if (newGroupMetaSchema is { Count: > 0 })
+                                    {
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label">@L["Analytics_GroupByMetadataField"]</label>
+                                            <select class="form-select" @bind="_newRule.GroupByMetadataFieldId">
+                                                <option value="@Guid.Empty">— @L["Analytics_GroupByMetadataField_None"] —</option>
+                                                @foreach (var m in newGroupMetaSchema)
+                                                {
+                                                    <option value="@m.Id">@m.Name (@m.Type)</option>
+                                                }
+                                            </select>
+                                            <div class="form-text small">
+                                                <i class="bi bi-info-circle me-1"></i>@L["Analytics_GroupByMetadataField_Hint"]
+                                            </div>
+                                        </div>
+                                    }
                                     <div class="col-12 col-md-4">
                                         <label class="form-label">@L["Analytics_Aggregation"]</label>
                                         @{
@@ -357,7 +376,7 @@ else
                                     </div>
                                     <div class="col-12 col-md-4">
                                         <label class="form-label">@L["Analytics_FilterField"]</label>
-                                        <select class="form-select" @bind="_newRule.FilterFieldId">
+                                        <select class="form-select" @bind="_newRule.FilterFieldId" @bind:after="() => _newRule.FilterMetadataFieldId = Guid.Empty">
                                             <option value="">— @L["Common_None"] —</option>
                                             @foreach (var f in _fields.Where(f => f.Id != _newRule.MeasureFieldId && f.Id != _newRule.GroupByFieldId).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
                                             {
@@ -365,14 +384,39 @@ else
                                             }
                                         </select>
                                     </div>
+                                    @{
+                                        var newFilterMetaSchema = _newRule.FilterFieldId != Guid.Empty
+                                            ? GetMetadataSchemaForField(_newRule.FilterFieldId)
+                                            : null;
+                                    }
+                                    @if (newFilterMetaSchema is { Count: > 0 })
+                                    {
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label">@L["Analytics_FilterMetadataField"]</label>
+                                            <select class="form-select" @bind="_newRule.FilterMetadataFieldId" @bind:after="() => _newRule.FilterValue = null">
+                                                <option value="@Guid.Empty">— @L["Analytics_FilterMetadataField_None"] —</option>
+                                                @foreach (var m in newFilterMetaSchema)
+                                                {
+                                                    <option value="@m.Id">@m.Name (@m.Type)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    }
                                     @if (_newRule.FilterFieldId != Guid.Empty)
                                     {
                                         <div class="col-12 col-md-4">
                                             <label class="form-label">@L["Analytics_FilterValue"]</label>
                                             @{
                                                 var filterField = _fields.FirstOrDefault(f => f.Id == _newRule.FilterFieldId);
+                                                var newFilterMeta = _newRule.FilterMetadataFieldId != Guid.Empty && newFilterMetaSchema is not null
+                                                    ? newFilterMetaSchema.FirstOrDefault(m => m.Id == _newRule.FilterMetadataFieldId)
+                                                    : null;
                                             }
-                                            @if (filterField?.FieldType == FieldType.Boolean)
+                                            @if (newFilterMeta is not null)
+                                            {
+                                                @RenderMetadataFilterInput(newFilterMeta, _newRule.FilterValue, v => _newRule.FilterValue = v, "new")
+                                            }
+                                            else if (filterField?.FieldType == FieldType.Boolean)
                                             {
                                                 <select class="form-select" @bind="_newRule.FilterValue">
                                                     <option value="true">True</option>
@@ -487,6 +531,22 @@ else
                                                         <label class="form-label">@L["Analytics_GroupByField"]</label>
                                                         <input type="text" class="form-control" value="@rule.GroupByFieldName" disabled />
                                                     </div>
+                                                    @{
+                                                        var editGroupMetaSchema = GetMetadataSchemaForField(rule.GroupByFieldId);
+                                                    }
+                                                    @if (editGroupMetaSchema is { Count: > 0 })
+                                                    {
+                                                        <div class="col-12 col-md-6">
+                                                            <label class="form-label">@L["Analytics_GroupByMetadataField"]</label>
+                                                            <select class="form-select" @bind="_editRule.GroupByMetadataFieldId">
+                                                                <option value="@Guid.Empty">— @L["Analytics_GroupByMetadataField_None"] —</option>
+                                                                @foreach (var m in editGroupMetaSchema)
+                                                                {
+                                                                    <option value="@m.Id">@m.Name (@m.Type)</option>
+                                                                }
+                                                            </select>
+                                                        </div>
+                                                    }
                                                     <div class="col-12 col-md-4">
                                                         <label class="form-label">@L["Analytics_Aggregation"]</label>
                                                         @{
@@ -526,7 +586,7 @@ else
                                                     </div>
                                                     <div class="col-12 col-md-4">
                                                         <label class="form-label">@L["Analytics_FilterField"]</label>
-                                                        <select class="form-select" @bind="_editRule.FilterFieldId">
+                                                        <select class="form-select" @bind="_editRule.FilterFieldId" @bind:after="() => _editRule.FilterMetadataFieldId = Guid.Empty">
                                                             <option value="">— @L["Common_None"] —</option>
                                                             @foreach (var f in _fields.Where(f => f.Id != rule.MeasureFieldId && f.Id != rule.GroupByFieldId).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
                                                             {
@@ -534,14 +594,39 @@ else
                                                             }
                                                         </select>
                                                     </div>
+                                                    @{
+                                                        var editFilterMetaSchema = _editRule.FilterFieldId != Guid.Empty
+                                                            ? GetMetadataSchemaForField(_editRule.FilterFieldId)
+                                                            : null;
+                                                    }
+                                                    @if (editFilterMetaSchema is { Count: > 0 })
+                                                    {
+                                                        <div class="col-12 col-md-4">
+                                                            <label class="form-label">@L["Analytics_FilterMetadataField"]</label>
+                                                            <select class="form-select" @bind="_editRule.FilterMetadataFieldId" @bind:after="() => _editRule.FilterValue = null">
+                                                                <option value="@Guid.Empty">— @L["Analytics_FilterMetadataField_None"] —</option>
+                                                                @foreach (var m in editFilterMetaSchema)
+                                                                {
+                                                                    <option value="@m.Id">@m.Name (@m.Type)</option>
+                                                                }
+                                                            </select>
+                                                        </div>
+                                                    }
                                                     @if (_editRule.FilterFieldId != Guid.Empty)
                                                     {
                                                         <div class="col-12 col-md-4">
                                                             <label class="form-label">@L["Analytics_FilterValue"]</label>
                                                             @{
                                                                 var editFilterField = _fields.FirstOrDefault(f => f.Id == _editRule.FilterFieldId);
+                                                                var editFilterMeta = _editRule.FilterMetadataFieldId != Guid.Empty && editFilterMetaSchema is not null
+                                                                    ? editFilterMetaSchema.FirstOrDefault(m => m.Id == _editRule.FilterMetadataFieldId)
+                                                                    : null;
                                                             }
-                                                            @if (editFilterField?.FieldType == FieldType.Boolean)
+                                                            @if (editFilterMeta is not null)
+                                                            {
+                                                                @RenderMetadataFilterInput(editFilterMeta, _editRule.FilterValue, v => _editRule.FilterValue = v, "edit")
+                                                            }
+                                                            else if (editFilterField?.FieldType == FieldType.Boolean)
                                                             {
                                                                 <select class="form-select" @bind="_editRule.FilterValue">
                                                                     <option value="true">True</option>
@@ -689,11 +774,11 @@ else
                                                     <span class="badge bg-info">@rule.Aggregation</span>
                                                     @rule.MeasureFieldName
                                                     <i class="bi bi-arrow-right mx-1"></i>
-                                                    @L["Analytics_GroupBy"] @rule.GroupByFieldName
+                                                    @L["Analytics_GroupBy"] @rule.GroupByFieldName@(rule.GroupByMetadataFieldName is not null ? $" → {rule.GroupByMetadataFieldName}" : "")
                                                     @if (rule.FilterFieldName is not null)
                                                     {
                                                         <span class="ms-2">
-                                                            <i class="bi bi-funnel me-1"></i>@rule.FilterFieldName = @rule.FilterValue
+                                                            <i class="bi bi-funnel me-1"></i>@rule.FilterFieldName@(rule.FilterMetadataFieldName is not null ? $" → {rule.FilterMetadataFieldName}" : "") = @rule.FilterValue
                                                         </span>
                                                     }
                                                     @if (rule.SignFieldName is not null)
@@ -1634,6 +1719,7 @@ else
     [Inject] private FieldDefinitionService FieldDefinitionService { get; set; } = default!;
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
     [Inject] private FieldAnalyticsRuleService AnalyticsRuleService { get; set; } = default!;
+    [Inject] private DropdownValueMetadataService MetadataService { get; set; } = default!;
     [Inject] private FieldDependencyRuleService DependencyRuleService { get; set; } = default!;
     [Inject] private ReceiptImportConfigService ReceiptConfigService { get; set; } = default!;
     [Inject] private ConnectedActionRuleService ConnRuleService { get; set; } = default!;
@@ -1673,6 +1759,7 @@ else
     private NewRuleModel _newRule = new();
     private Guid? _editingRuleId;
     private EditRuleModel _editRule = new();
+    private Dictionary<Guid, List<DropdownValueMetadataFieldResponse>> _dropdownMetadataSchemas = new();
 
     // Connected Actions
     private List<ConnectedActionRuleResponse> _connectedRules = [];
@@ -1705,9 +1792,37 @@ else
             _tags = tagsTask.Result;
             _fields = fieldsTask.Result;
             _allFieldDefinitions = fieldDefsTask.Result;
+
+            await LoadDropdownMetadataSchemasAsync();
         }
 
         _loading = false;
+    }
+
+    private async Task LoadDropdownMetadataSchemasAsync()
+    {
+        var dropdownFieldDefIds = _fields
+            .Where(f => f.FieldType == FieldType.Dropdown)
+            .Select(f => f.FieldDefinitionId)
+            .Distinct()
+            .ToList();
+
+        if (dropdownFieldDefIds.Count == 0) return;
+
+        var tasks = dropdownFieldDefIds.Select(async id =>
+            (id, schema: await MetadataService.GetFieldsAsync(id)));
+
+        var results = await Task.WhenAll(tasks);
+        _dropdownMetadataSchemas = results
+            .Where(r => r.schema.Count > 0)
+            .ToDictionary(r => r.id, r => r.schema.OrderBy(s => s.SortOrder).ToList());
+    }
+
+    private List<DropdownValueMetadataFieldResponse>? GetMetadataSchemaForField(Guid actionFieldId)
+    {
+        var af = _fields.FirstOrDefault(f => f.Id == actionFieldId);
+        if (af is null || af.FieldType != FieldType.Dropdown) return null;
+        return _dropdownMetadataSchemas.GetValueOrDefault(af.FieldDefinitionId);
     }
 
     private async Task SaveBasicInfoAsync()
@@ -1900,7 +2015,9 @@ else
             string.IsNullOrWhiteSpace(_newRule.Label) ? null : _newRule.Label,
             _analyticsRules.Count,
             _newRule.SignFieldId != Guid.Empty ? _newRule.SignFieldId : null,
-            string.IsNullOrWhiteSpace(_newRule.NegativeValues) ? null : _newRule.NegativeValues);
+            string.IsNullOrWhiteSpace(_newRule.NegativeValues) ? null : _newRule.NegativeValues,
+            _newRule.GroupByMetadataFieldId != Guid.Empty ? _newRule.GroupByMetadataFieldId : null,
+            _newRule.FilterMetadataFieldId != Guid.Empty ? _newRule.FilterMetadataFieldId : null);
 
         var (ok, errs) = await AnalyticsRuleService.CreateAsync(Id, request);
 
@@ -1945,7 +2062,9 @@ else
             FilterFieldId = rule.FilterFieldId ?? Guid.Empty,
             FilterValue = rule.FilterValue,
             SignFieldId = rule.SignFieldId ?? Guid.Empty,
-            NegativeValues = rule.NegativeValues
+            NegativeValues = rule.NegativeValues,
+            GroupByMetadataFieldId = rule.GroupByMetadataFieldId ?? Guid.Empty,
+            FilterMetadataFieldId = rule.FilterMetadataFieldId ?? Guid.Empty
         };
         _ruleErrors = [];
         _showRuleForm = false;
@@ -1957,6 +2076,56 @@ else
         _editRule = new();
         _ruleErrors = [];
     }
+
+    private RenderFragment RenderMetadataFilterInput(
+        DropdownValueMetadataFieldResponse meta,
+        string? currentValue,
+        Action<string?> setValue,
+        string prefix) => __builder =>
+    {
+        var value = currentValue ?? string.Empty;
+
+        switch (meta.Type)
+        {
+            case FieldType.Boolean:
+                <select class="form-select" value="@value" @onchange="e => setValue(e.Value?.ToString())">
+                    <option value="">—</option>
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+                break;
+
+            case FieldType.Dropdown when !string.IsNullOrWhiteSpace(meta.DropdownValues):
+                <select class="form-select" value="@value" @onchange="e => setValue(e.Value?.ToString())">
+                    <option value="">—</option>
+                    @foreach (var opt in DropdownValuesHelper.Split(meta.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
+                    {
+                        <option value="@opt">@opt</option>
+                    }
+                </select>
+                break;
+
+            case FieldType.Integer:
+                <input type="number" step="1" class="form-control" value="@value"
+                       @onchange="e => setValue(e.Value?.ToString())" />
+                break;
+
+            case FieldType.Decimal:
+                <input type="number" step="any" class="form-control" value="@value"
+                       @onchange="e => setValue(e.Value?.ToString())" />
+                break;
+
+            case FieldType.Date:
+                <input type="date" class="form-control" value="@value"
+                       @onchange="e => setValue(e.Value?.ToString())" />
+                break;
+
+            default:
+                <input type="text" class="form-control" value="@value"
+                       @onchange="e => setValue(e.Value?.ToString())" />
+                break;
+        }
+    };
 
     private static string? ToggleNegativeValue(string? current, string value, bool isChecked)
     {
@@ -1986,7 +2155,11 @@ else
             string.IsNullOrWhiteSpace(_editRule.Label) ? null : _editRule.Label,
             SignFieldId: _editRule.SignFieldId != Guid.Empty ? _editRule.SignFieldId : null,
             NegativeValues: string.IsNullOrWhiteSpace(_editRule.NegativeValues) ? null : _editRule.NegativeValues,
-            ClearSignField: _editRule.SignFieldId == Guid.Empty);
+            ClearSignField: _editRule.SignFieldId == Guid.Empty,
+            GroupByMetadataFieldId: _editRule.GroupByMetadataFieldId != Guid.Empty ? _editRule.GroupByMetadataFieldId : null,
+            ClearGroupByMetadataField: _editRule.GroupByMetadataFieldId == Guid.Empty,
+            FilterMetadataFieldId: _editRule.FilterMetadataFieldId != Guid.Empty ? _editRule.FilterMetadataFieldId : null,
+            ClearFilterMetadataField: _editRule.FilterMetadataFieldId == Guid.Empty);
 
         var (ok, errs) = await AnalyticsRuleService.UpdateAsync(Id, _editingRuleId.Value, request);
 
@@ -2021,6 +2194,8 @@ else
         public string? Label { get; set; }
         public Guid SignFieldId { get; set; }
         public string? NegativeValues { get; set; }
+        public Guid GroupByMetadataFieldId { get; set; }
+        public Guid FilterMetadataFieldId { get; set; }
     }
 
     private sealed class EditRuleModel
@@ -2032,6 +2207,8 @@ else
         public string? Label { get; set; }
         public Guid SignFieldId { get; set; }
         public string? NegativeValues { get; set; }
+        public Guid GroupByMetadataFieldId { get; set; }
+        public Guid FilterMetadataFieldId { get; set; }
     }
 
     // ── Dependency rules ──

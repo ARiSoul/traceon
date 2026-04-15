@@ -1,0 +1,378 @@
+@inject IStringLocalizer<SharedResource> L
+@inject DropdownValueMetadataService MetadataService
+@inject IJSRuntime JS
+
+<div class="metadata-fields-editor">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <strong>@L["MetadataFields_Title"]</strong>
+            <div class="form-text mb-0"><i class="bi bi-info-circle me-1"></i>@L["MetadataFields_Hint"]</div>
+        </div>
+        @if (_editingId is null && !_adding)
+        {
+            <div class="d-flex gap-2">
+                @if (_fields.Count > 0)
+                {
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="@($"/dropdown-catalog?fieldId={FieldDefinitionId}")"
+                       title="@L["MetadataFields_OpenCatalog"]">
+                        <i class="bi bi-collection me-1"></i>@L["MetadataFields_OpenCatalog"]
+                    </a>
+                }
+                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="StartAdd">
+                    <i class="bi bi-plus-circle me-1"></i>@L["MetadataFields_AddButton"]
+                </button>
+            </div>
+        }
+    </div>
+
+    @if (_loading)
+    {
+        <div class="text-muted small"><span class="spinner-border spinner-border-sm me-1"></span>@L["Common_Loading"]</div>
+    }
+    else
+    {
+        @if (_fields.Count == 0 && !_adding)
+        {
+            <div class="alert alert-light py-2 mb-2 border">
+                <i class="bi bi-info-circle me-1"></i>@L["MetadataFields_Empty"]
+            </div>
+        }
+        else
+        {
+            <div class="list-group mb-2">
+                @for (int i = 0; i < _fields.Count; i++)
+                {
+                    var idx = i;
+                    var field = _fields[idx];
+                    if (_editingId == field.Id)
+                    {
+                        <div class="list-group-item">
+                            @RenderForm(_form, isEdit: true)
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="list-group-item d-flex align-items-center gap-2">
+                            <div class="btn-group-vertical btn-group-sm" role="group">
+                                <button type="button" class="btn btn-link p-0" disabled="@(idx == 0)"
+                                        @onclick="() => MoveAsync(idx, -1)" title="@L["Common_MoveUp"]">
+                                    <i class="bi bi-caret-up-fill"></i>
+                                </button>
+                                <button type="button" class="btn btn-link p-0" disabled="@(idx == _fields.Count - 1)"
+                                        @onclick="() => MoveAsync(idx, 1)" title="@L["Common_MoveDown"]">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div>
+                                    <strong>@field.Name</strong>
+                                    <span class="badge bg-secondary ms-1">@field.Type</span>
+                                    @if (field.DisplayStyle != MetadataDisplayStyle.Default)
+                                    {
+                                        <span class="badge bg-info ms-1" title="@L["MetadataFields_DisplayStyle"]">
+                                            <i class="bi bi-@DisplayStyleIcon(field.DisplayStyle) me-1"></i>@L[$"MetadataFields_DisplayStyle_{field.DisplayStyle}"]
+                                        </span>
+                                    }
+                                    @if (field.IsRequired)
+                                    {
+                                        <span class="badge bg-warning text-dark ms-1">@L["Common_Required"]</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(field.Description))
+                                {
+                                    <div class="small text-muted">@field.Description</div>
+                                }
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    @onclick="() => StartEdit(field)" title="@L["Common_Edit"]">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    @onclick="() => DeleteAsync(field)" title="@L["Common_Delete"]">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+        }
+
+        @if (_adding)
+        {
+            <div class="border rounded p-2 mb-2">
+                @RenderForm(_form, isEdit: false)
+            </div>
+        }
+
+        @if (_errors.Count > 0)
+        {
+            <div class="alert alert-danger py-2 small">
+                @foreach (var err in _errors)
+                {
+                    <div>@err</div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Guid FieldDefinitionId { get; set; }
+
+    private List<DropdownValueMetadataFieldResponse> _fields = [];
+    private bool _loading = true;
+    private bool _adding;
+    private Guid? _editingId;
+    private FormModel _form = new();
+    private IReadOnlyList<string> _errors = [];
+    private bool _saving;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (FieldDefinitionId == Guid.Empty) { _loading = false; return; }
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _fields = await MetadataService.GetFieldsAsync(FieldDefinitionId);
+        _fields = _fields.OrderBy(f => f.SortOrder).ToList();
+        _loading = false;
+    }
+
+    private void StartAdd()
+    {
+        _adding = true;
+        _editingId = null;
+        _form = new FormModel { Type = FieldType.Text };
+        _errors = [];
+    }
+
+    private void StartEdit(DropdownValueMetadataFieldResponse field)
+    {
+        _editingId = field.Id;
+        _adding = false;
+        _form = FormModel.FromResponse(field);
+        _errors = [];
+    }
+
+    private void CancelForm()
+    {
+        _adding = false;
+        _editingId = null;
+        _errors = [];
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving) return;
+        _saving = true;
+        _errors = [];
+
+        if (string.IsNullOrWhiteSpace(_form.Name))
+        {
+            _errors = [L["MetadataFields_NameRequired"]];
+            _saving = false;
+            return;
+        }
+
+        if (_editingId is Guid id)
+        {
+            var (success, _, errors) = await MetadataService.UpdateFieldAsync(id, new UpdateDropdownValueMetadataFieldRequest(
+                _form.Name.Trim(),
+                _form.Type,
+                _form.Description,
+                _form.IsRequired,
+                _form.MinValue,
+                _form.MaxValue,
+                _form.DefaultValue,
+                _form.Unit,
+                _form.DropdownValues,
+                _form.DisplayStyle));
+            if (!success) { _errors = errors; _saving = false; return; }
+        }
+        else
+        {
+            var sortOrder = _fields.Count > 0 ? _fields.Max(f => f.SortOrder) + 1 : 0;
+            var (success, _, errors) = await MetadataService.CreateFieldAsync(new CreateDropdownValueMetadataFieldRequest(
+                FieldDefinitionId,
+                _form.Name.Trim(),
+                _form.Type,
+                _form.Description,
+                _form.IsRequired,
+                _form.MinValue,
+                _form.MaxValue,
+                _form.DefaultValue,
+                _form.Unit,
+                _form.DropdownValues,
+                sortOrder,
+                _form.DisplayStyle));
+            if (!success) { _errors = errors; _saving = false; return; }
+        }
+
+        _adding = false;
+        _editingId = null;
+        await LoadAsync();
+        _saving = false;
+    }
+
+    private async Task DeleteAsync(DropdownValueMetadataFieldResponse field)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", L["MetadataFields_ConfirmDelete"].Value);
+        if (!confirmed) return;
+
+        var (success, errors) = await MetadataService.DeleteFieldAsync(field.Id);
+        if (!success) { _errors = errors; return; }
+        await LoadAsync();
+    }
+
+    private async Task MoveAsync(int index, int direction)
+    {
+        var newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= _fields.Count) return;
+
+        (_fields[index], _fields[newIndex]) = (_fields[newIndex], _fields[index]);
+        var orderedIds = _fields.Select(f => f.Id).ToList();
+
+        var (success, errors) = await MetadataService.ReorderFieldsAsync(FieldDefinitionId, orderedIds);
+        if (!success)
+        {
+            (_fields[index], _fields[newIndex]) = (_fields[newIndex], _fields[index]);
+            _errors = errors;
+            return;
+        }
+        await LoadAsync();
+    }
+
+    private static string DisplayStyleIcon(MetadataDisplayStyle style) => style switch
+    {
+        MetadataDisplayStyle.Stars => "star-fill",
+        MetadataDisplayStyle.ProgressBar => "bar-chart-steps",
+        MetadataDisplayStyle.Badge => "bookmark-fill",
+        _ => "circle"
+    };
+
+    private static List<MetadataDisplayStyle> GetAllowedDisplayStyles(FieldType type) => type switch
+    {
+        FieldType.Integer or FieldType.Decimal =>
+            [MetadataDisplayStyle.Default, MetadataDisplayStyle.Stars, MetadataDisplayStyle.ProgressBar],
+        FieldType.Boolean or FieldType.Dropdown or FieldType.Text =>
+            [MetadataDisplayStyle.Default, MetadataDisplayStyle.Badge],
+        _ => [MetadataDisplayStyle.Default]
+    };
+
+    private RenderFragment RenderForm(FormModel form, bool isEdit) => __builder =>
+    {
+        <div class="row g-2">
+            <div class="col-md-5">
+                <label class="form-label small mb-0">@L["Common_Name"] <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" @bind="form.Name" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small mb-0">@L["Common_Type"]</label>
+                <select class="form-select form-select-sm" @bind="form.Type" disabled="@isEdit">
+                    @foreach (var t in Enum.GetValues<FieldType>())
+                    {
+                        if (t == FieldType.CompositeDropdown) continue;
+                        <option value="@t">@t</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="@($"meta-req-{(isEdit ? _editingId : "new")}")" @bind="form.IsRequired" />
+                    <label class="form-check-label small" for="@($"meta-req-{(isEdit ? _editingId : "new")}")">@L["Common_Required"]</label>
+                </div>
+            </div>
+            <div class="col-12">
+                <label class="form-label small mb-0">@L["Common_Description"]</label>
+                <input type="text" class="form-control form-control-sm" @bind="form.Description" />
+            </div>
+
+            @if (form.Type is FieldType.Integer or FieldType.Decimal)
+            {
+                <div class="col-md-4">
+                    <label class="form-label small mb-0">@L["MetadataFields_MinLabel"]</label>
+                    <input type="number" step="any" class="form-control form-control-sm" @bind="form.MinValue" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small mb-0">@L["MetadataFields_MaxLabel"]</label>
+                    <input type="number" step="any" class="form-control form-control-sm" @bind="form.MaxValue" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small mb-0">@L["Fields_Unit"]</label>
+                    <input type="text" class="form-control form-control-sm" @bind="form.Unit" />
+                </div>
+            }
+
+            @if (form.Type == FieldType.Dropdown)
+            {
+                <div class="col-12">
+                    <label class="form-label small mb-0">@L["Fields_DropdownValues"]</label>
+                    <DropdownValueEditor @bind-Value="form.DropdownValues" />
+                </div>
+            }
+
+            <div class="col-12">
+                <label class="form-label small mb-0">@L["Fields_DefaultValue"]</label>
+                <input type="text" class="form-control form-control-sm" @bind="form.DefaultValue" />
+            </div>
+
+            @{
+                var allowedStyles = GetAllowedDisplayStyles(form.Type);
+            }
+            @if (allowedStyles.Count > 1)
+            {
+                <div class="col-md-6">
+                    <label class="form-label small mb-0">@L["MetadataFields_DisplayStyle"]</label>
+                    <select class="form-select form-select-sm" @bind="form.DisplayStyle">
+                        @foreach (var style in allowedStyles)
+                        {
+                            <option value="@style">@L[$"MetadataFields_DisplayStyle_{style}"]</option>
+                        }
+                    </select>
+                    <div class="form-text">@L["MetadataFields_DisplayStyle_Hint"]</div>
+                </div>
+            }
+
+            <div class="col-12 d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-success" @onclick="SaveAsync" disabled="@_saving">
+                    <i class="bi bi-check-circle me-1"></i>@L["Common_Save"]
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="CancelForm" disabled="@_saving">
+                    <i class="bi bi-x-circle me-1"></i>@L["Common_Cancel"]
+                </button>
+            </div>
+        </div>
+    };
+
+    private sealed class FormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public FieldType Type { get; set; } = FieldType.Text;
+        public string? Description { get; set; }
+        public bool IsRequired { get; set; }
+        public decimal? MinValue { get; set; }
+        public decimal? MaxValue { get; set; }
+        public string? DefaultValue { get; set; }
+        public string? Unit { get; set; }
+        public string? DropdownValues { get; set; }
+        public MetadataDisplayStyle DisplayStyle { get; set; } = MetadataDisplayStyle.Default;
+
+        public static FormModel FromResponse(DropdownValueMetadataFieldResponse r) => new()
+        {
+            Name = r.Name,
+            Type = r.Type,
+            Description = r.Description,
+            IsRequired = r.IsRequired,
+            MinValue = r.MinValue,
+            MaxValue = r.MaxValue,
+            DefaultValue = r.DefaultValue,
+            Unit = r.Unit,
+            DropdownValues = r.DropdownValues,
+            DisplayStyle = r.DisplayStyle
+        };
+    }
+}

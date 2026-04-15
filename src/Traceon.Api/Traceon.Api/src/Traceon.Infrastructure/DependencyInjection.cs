@@ -104,6 +104,9 @@ public static class DependencyInjection
         services.AddScoped<IReceiptImportConfigRepository, ReceiptImportConfigRepository>();
         services.AddScoped<IReceiptScanDraftRepository, ReceiptScanDraftRepository>();
         services.AddScoped<IConnectedActionRuleRepository, ConnectedActionRuleRepository>();
+        services.AddScoped<IDropdownValueRepository, DropdownValueRepository>();
+        services.AddScoped<IDropdownValueMetadataFieldRepository, DropdownValueMetadataFieldRepository>();
+        services.AddScoped<IDropdownValueMetadataValueRepository, DropdownValueMetadataValueRepository>();
         services.AddScoped<AuditService>();
         services.AddScoped<DataPortabilityService>();
         services.AddScoped<TemplateInstallService>();

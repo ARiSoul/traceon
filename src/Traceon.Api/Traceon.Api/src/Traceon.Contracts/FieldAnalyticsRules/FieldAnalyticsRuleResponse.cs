@@ -10,8 +10,12 @@ public sealed record FieldAnalyticsRuleResponse
     public required string MeasureFieldName { get; init; }
     public required Guid GroupByFieldId { get; init; }
     public required string GroupByFieldName { get; init; }
+    public required Guid? GroupByMetadataFieldId { get; init; }
+    public required string? GroupByMetadataFieldName { get; init; }
     public required Guid? FilterFieldId { get; init; }
     public required string? FilterFieldName { get; init; }
+    public required Guid? FilterMetadataFieldId { get; init; }
+    public required string? FilterMetadataFieldName { get; init; }
     public required string? FilterValue { get; init; }
     public required AnalyticsAggregation Aggregation { get; init; }
     public required AnalyticsDisplayType DisplayType { get; init; }

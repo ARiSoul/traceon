@@ -59,5 +59,15 @@ internal sealed class FieldAnalyticsRuleConfiguration : IEntityTypeConfiguration
             .WithMany()
             .HasForeignKey(e => e.SignFieldId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<DropdownValueMetadataField>()
+            .WithMany()
+            .HasForeignKey(e => e.GroupByMetadataFieldId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<DropdownValueMetadataField>()
+            .WithMany()
+            .HasForeignKey(e => e.FilterMetadataFieldId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

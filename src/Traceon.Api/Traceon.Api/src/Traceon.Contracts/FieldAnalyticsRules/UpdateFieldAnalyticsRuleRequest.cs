@@ -11,4 +11,8 @@ public sealed record UpdateFieldAnalyticsRuleRequest(
     int? SortOrder = null,
     Guid? SignFieldId = null,
     string? NegativeValues = null,
-    bool ClearSignField = false);
+    bool ClearSignField = false,
+    Guid? GroupByMetadataFieldId = null,
+    bool ClearGroupByMetadataField = false,
+    Guid? FilterMetadataFieldId = null,
+    bool ClearFilterMetadataField = false);

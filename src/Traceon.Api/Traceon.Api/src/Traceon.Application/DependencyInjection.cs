@@ -20,6 +20,8 @@ public static class DependencyInjection
         services.AddScoped<IReceiptImportConfigService, ReceiptImportConfigService>();
         services.AddScoped<IReceiptScanDraftService, ReceiptScanDraftService>();
         services.AddScoped<IConnectedActionRuleService, ConnectedActionRuleService>();
+        services.AddScoped<IDropdownValueService, DropdownValueService>();
+        services.AddScoped<IDropdownValueMetadataService, DropdownValueMetadataService>();
 
         return services;
     }

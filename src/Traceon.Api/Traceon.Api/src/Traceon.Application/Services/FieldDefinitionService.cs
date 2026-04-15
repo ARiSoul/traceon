@@ -12,6 +12,7 @@ namespace Traceon.Application.Services;
 public sealed class FieldDefinitionService(
     IFieldDefinitionRepository repository,
     IActionFieldRepository actionFieldRepository,
+    IDropdownValueRepository dropdownValueRepository,
     ICurrentUserService currentUser,
     ILogger<FieldDefinitionService> logger) : IFieldDefinitionService
 {
@@ -71,6 +72,9 @@ public sealed class FieldDefinitionService(
 
         await repository.AddAsync(entity, cancellationToken);
 
+        // Seed DropdownValue rows from the pipe-delimited string
+        await SyncDropdownValuesAsync(entity.Id, entity.DropdownValues, cancellationToken);
+
         logger.FieldDefinitionCreated(entity.DefaultName, entity.Id);
         return Result<FieldDefinitionResponse>.Success(entity.ToResponse());
     }
@@ -97,6 +101,9 @@ public sealed class FieldDefinitionService(
             request.Unit);
 
         await repository.UpdateAsync(entity, cancellationToken);
+
+        // Keep DropdownValue rows in sync
+        await SyncDropdownValuesAsync(entity.Id, entity.DropdownValues, cancellationToken);
 
         logger.FieldDefinitionUpdated(id);
         return Result<FieldDefinitionResponse>.Success(entity.ToResponse());
@@ -172,6 +179,49 @@ public sealed class FieldDefinitionService(
 
         await repository.UpdateAsync(entity, cancellationToken);
 
+        // Keep DropdownValues table in sync
+        var existingRows = await dropdownValueRepository.GetByFieldDefinitionIdAsync(id, cancellationToken);
+        if (!existingRows.Any(r => string.Equals(r.Value, trimmed, StringComparison.OrdinalIgnoreCase)))
+        {
+            var sortOrder = existingRows.Count > 0 ? existingRows.Max(r => r.SortOrder) + 1 : 0;
+            var ddv = DropdownValue.Create(id, trimmed, sortOrder);
+            await dropdownValueRepository.AddAsync(ddv, cancellationToken);
+        }
+
         return Result<string>.Success(updated);
+    }
+
+    private async Task SyncDropdownValuesAsync(Guid fieldDefinitionId, string? dropdownValues, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(dropdownValues) || dropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+            return;
+
+        var pipeValues = Traceon.Contracts.Helpers.DropdownValuesHelper.Split(dropdownValues);
+        var existingRows = await dropdownValueRepository.GetByFieldDefinitionIdAsync(fieldDefinitionId, cancellationToken);
+        var existingSet = existingRows.ToDictionary(r => r.Value, StringComparer.OrdinalIgnoreCase);
+
+        var order = 0;
+        foreach (var val in pipeValues)
+        {
+            if (!existingSet.TryGetValue(val, out var row))
+            {
+                var entity = DropdownValue.Create(fieldDefinitionId, val, order);
+                await dropdownValueRepository.AddAsync(entity, cancellationToken);
+            }
+            else if (row.SortOrder != order)
+            {
+                row.SetSortOrder(order);
+                await dropdownValueRepository.UpdateAsync(row, cancellationToken);
+            }
+            order++;
+        }
+
+        // Remove rows no longer in the pipe string
+        var pipeSet = new HashSet<string>(pipeValues, StringComparer.OrdinalIgnoreCase);
+        foreach (var row in existingRows)
+        {
+            if (!pipeSet.Contains(row.Value))
+                await dropdownValueRepository.DeleteAsync(row.Id, cancellationToken);
+        }
     }
 }

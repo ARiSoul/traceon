@@ -1,0 +1,348 @@
+@inject IStringLocalizer<SharedResource> L
+@inject DropdownValueMetadataService MetadataService
+
+@if (_visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);"
+         @onclick="Cancel">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-tags me-2"></i>
+                        @L["MetadataValues_Title"]: <span class="text-primary">@_display</span>
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="Cancel"></button>
+                </div>
+                <div class="modal-body">
+                    @if (_loading)
+                    {
+                        <div class="d-flex justify-content-center py-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">@L["Common_Loading"]</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (_errors.Count > 0)
+                        {
+                            <div class="alert alert-danger py-2 small">
+                                @foreach (var err in _errors)
+                                {
+                                    <div>@err</div>
+                                }
+                            </div>
+                        }
+
+                        @if (_schema.Count == 0)
+                        {
+                            <div class="alert alert-light border py-2 mb-0">
+                                <i class="bi bi-info-circle me-1"></i>@L["MetadataValues_NoSchema"]
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="row g-3">
+                                @foreach (var field in _schema)
+                                {
+                                    var fieldId = field.Id;
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            @field.Name
+                                            @if (field.IsRequired)
+                                            {
+                                                <span class="text-danger">*</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(field.Unit))
+                                            {
+                                                <small class="text-muted ms-1">(@field.Unit)</small>
+                                            }
+                                        </label>
+                                        @RenderInput(field)
+                                        @if (!string.IsNullOrWhiteSpace(field.Description))
+                                        {
+                                            <div class="form-text">@field.Description</div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@_saving">
+                        <i class="bi bi-x-circle me-1"></i>@L["Common_Cancel"]
+                    </button>
+                    <button type="button" class="btn btn-success" @onclick="SaveAsync" disabled="@(_saving || _schema.Count == 0)">
+                        @if (_saving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle me-1"></i>
+                        }
+                        @L["Common_Save"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private bool _visible;
+    private bool _loading;
+    private bool _saving;
+    private Guid _dropdownValueId;
+    private string _display = string.Empty;
+    private List<DropdownValueMetadataFieldResponse> _schema = [];
+    private Dictionary<Guid, string?> _values = new();
+    private IReadOnlyList<string> _errors = [];
+
+    public async Task OpenAsync(Guid dropdownValueId, string display, Guid fieldDefinitionId)
+    {
+        _dropdownValueId = dropdownValueId;
+        _display = display;
+        _errors = [];
+        _visible = true;
+        _loading = true;
+        StateHasChanged();
+
+        _schema = (await MetadataService.GetFieldsAsync(fieldDefinitionId))
+            .OrderBy(f => f.SortOrder)
+            .ToList();
+
+        var existing = await MetadataService.GetValuesAsync(dropdownValueId);
+        _values = _schema.ToDictionary(
+            f => f.Id,
+            f => existing.FirstOrDefault(e => e.MetadataFieldId == f.Id)?.Value ?? f.DefaultValue);
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private void Cancel()
+    {
+        _visible = false;
+        _errors = [];
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving) return;
+        _saving = true;
+        _errors = [];
+
+        var missing = _schema
+            .Where(f => f.IsRequired && string.IsNullOrWhiteSpace(_values.GetValueOrDefault(f.Id)))
+            .Select(f => f.Name)
+            .ToList();
+        if (missing.Count > 0)
+        {
+            _errors = [L["MetadataValues_MissingRequired", string.Join(", ", missing)]];
+            _saving = false;
+            return;
+        }
+
+        var entries = _schema
+            .Select(f => new DropdownValueMetadataValueEntry(f.Id, _values.GetValueOrDefault(f.Id)))
+            .ToList();
+
+        var (success, errors) = await MetadataService.UpsertValuesAsync(_dropdownValueId, entries);
+        if (!success)
+        {
+            _errors = errors;
+            _saving = false;
+            return;
+        }
+
+        _visible = false;
+        _saving = false;
+        if (OnSaved.HasDelegate) await OnSaved.InvokeAsync();
+    }
+
+    private void SetBool(Guid id, ChangeEventArgs e)
+    {
+        var on = e.Value is bool b && b;
+        _values[id] = on ? "true" : "false";
+    }
+
+    private static bool IsNumeric(FieldType t) => t == FieldType.Integer || t == FieldType.Decimal;
+
+    private static bool SupportsStars(DropdownValueMetadataFieldResponse f)
+        => f.DisplayStyle == MetadataDisplayStyle.Stars
+           && IsNumeric(f.Type)
+           && f.MinValue.HasValue && f.MaxValue.HasValue
+           && f.MaxValue.Value > f.MinValue.Value;
+
+    private static bool SupportsProgress(DropdownValueMetadataFieldResponse f)
+        => f.DisplayStyle == MetadataDisplayStyle.ProgressBar
+           && IsNumeric(f.Type)
+           && f.MinValue.HasValue && f.MaxValue.HasValue
+           && f.MaxValue.Value > f.MinValue.Value;
+
+    private static string FormatNumeric(DropdownValueMetadataFieldResponse f, decimal v)
+    {
+        if (f.Type == FieldType.Integer)
+            return ((long)Math.Round(v, MidpointRounding.AwayFromZero))
+                .ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static string FormatNumericPreview(DropdownValueMetadataFieldResponse field, int halfSteps)
+    {
+        var range = field.MaxValue!.Value - field.MinValue!.Value;
+        var raw = field.MinValue.Value + (decimal)halfSteps / 10m * range;
+        return FormatNumeric(field, raw);
+    }
+
+    private void SetStarValue(DropdownValueMetadataFieldResponse field, int halfSteps)
+    {
+        halfSteps = Math.Clamp(halfSteps, 0, 10);
+        var range = field.MaxValue!.Value - field.MinValue!.Value;
+        var raw = field.MinValue.Value + (decimal)halfSteps / 10m * range;
+        _values[field.Id] = FormatNumeric(field, raw);
+    }
+
+    private RenderFragment RenderInput(DropdownValueMetadataFieldResponse field) => __builder =>
+    {
+        var id = field.Id;
+        var value = _values.GetValueOrDefault(id) ?? string.Empty;
+
+        if (SupportsStars(field))
+        {
+            var rating = decimal.TryParse(value, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var r) ? r : field.MinValue!.Value;
+            var range = field.MaxValue!.Value - field.MinValue!.Value;
+            var normalized = (double)((rating - field.MinValue.Value) / range * 5m);
+            var halfSteps = Math.Clamp((int)Math.Round(normalized * 2, MidpointRounding.AwayFromZero), 0, 10);
+            <div class="d-flex align-items-center gap-2">
+                <div class="star-picker text-warning fs-4" role="group">
+                    @for (int s = 1; s <= 5; s++)
+                    {
+                        var starIndex = s;
+                        var leftSteps = starIndex * 2 - 1;
+                        var rightSteps = starIndex * 2;
+                        var iconClass = halfSteps >= rightSteps ? "bi-star-fill"
+                            : halfSteps == leftSteps ? "bi-star-half"
+                            : "bi-star";
+                        <span class="position-relative d-inline-block" style="width: 1.2em; cursor: pointer;">
+                            <i class="bi @iconClass"></i>
+                            <span style="position:absolute; top:0; left:0; width:50%; height:100%;"
+                                  title="@FormatNumericPreview(field, leftSteps)"
+                                  @onclick="() => SetStarValue(field, leftSteps)"></span>
+                            <span style="position:absolute; top:0; left:50%; width:50%; height:100%;"
+                                  title="@FormatNumericPreview(field, rightSteps)"
+                                  @onclick="() => SetStarValue(field, rightSteps)"></span>
+                        </span>
+                    }
+                </div>
+                <small class="text-muted">@value / @field.MaxValue</small>
+                <button type="button" class="btn btn-link btn-sm p-0 ms-1" title="@L["DataGrid_Clear"]"
+                        @onclick="() => _values[id] = null">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+            </div>
+            return;
+        }
+
+        if (SupportsProgress(field))
+        {
+            var step = field.Type == FieldType.Integer ? "1" : "any";
+            <div class="d-flex align-items-center gap-2">
+                <input type="range" class="form-range flex-grow-1"
+                       min="@(field.MinValue!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))"
+                       max="@(field.MaxValue!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))"
+                       step="@step"
+                       value="@value"
+                       @oninput="e => _values[id] = e.Value?.ToString()" />
+                <small class="text-muted" style="min-width: 4rem;">
+                    @value@(!string.IsNullOrWhiteSpace(field.Unit) ? $" {field.Unit}" : "")
+                </small>
+            </div>
+            return;
+        }
+
+        switch (field.Type)
+        {
+            case FieldType.Boolean:
+                var boolChecked = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+                <div class="form-check mt-1 d-flex align-items-center gap-2">
+                    <input type="checkbox" class="form-check-input" id="@($"mv-{id}")"
+                           checked="@boolChecked"
+                           @onchange="e => SetBool(id, e)" />
+                    <label class="form-check-label" for="@($"mv-{id}")">@L["Common_Yes"]</label>
+                    @if (field.DisplayStyle == MetadataDisplayStyle.Badge && !string.IsNullOrWhiteSpace(value))
+                    {
+                        <span class="badge @BadgePreviewClass(field, value)">@(boolChecked ? "✓" : "✗")</span>
+                    }
+                </div>
+                break;
+
+            case FieldType.Integer:
+                <input type="number" step="1" class="form-control"
+                       min="@(field.MinValue?.ToString(System.Globalization.CultureInfo.InvariantCulture))"
+                       max="@(field.MaxValue?.ToString(System.Globalization.CultureInfo.InvariantCulture))"
+                       value="@value"
+                       @onchange="e => _values[id] = e.Value?.ToString()" />
+                break;
+
+            case FieldType.Decimal:
+                <input type="number" step="any" class="form-control"
+                       min="@(field.MinValue?.ToString(System.Globalization.CultureInfo.InvariantCulture))"
+                       max="@(field.MaxValue?.ToString(System.Globalization.CultureInfo.InvariantCulture))"
+                       value="@value"
+                       @onchange="e => _values[id] = e.Value?.ToString()" />
+                break;
+
+            case FieldType.Date:
+                <input type="date" class="form-control"
+                       value="@value"
+                       @onchange="e => _values[id] = e.Value?.ToString()" />
+                break;
+
+            case FieldType.Dropdown:
+                var options = DropdownValuesHelper.Split(field.DropdownValues);
+                <div class="d-flex align-items-center gap-2">
+                    <select class="form-select"
+                            @onchange="e => _values[id] = e.Value?.ToString()">
+                        <option value="" selected="@string.IsNullOrEmpty(value)">@L["Common_None"]</option>
+                        @foreach (var opt in options)
+                        {
+                            <option value="@opt" selected="@(opt == value)">@opt</option>
+                        }
+                    </select>
+                    @if (field.DisplayStyle == MetadataDisplayStyle.Badge && !string.IsNullOrWhiteSpace(value))
+                    {
+                        <span class="badge @BadgePreviewClass(field, value)">@value</span>
+                    }
+                </div>
+                break;
+
+            default:
+                <div class="d-flex align-items-center gap-2">
+                    <input type="text" class="form-control"
+                           value="@value"
+                           @onchange="e => _values[id] = e.Value?.ToString()" />
+                    @if (field.DisplayStyle == MetadataDisplayStyle.Badge && !string.IsNullOrWhiteSpace(value))
+                    {
+                        <span class="badge @BadgePreviewClass(field, value)">@value</span>
+                    }
+                </div>
+                break;
+        }
+    };
+
+    private static string BadgePreviewClass(DropdownValueMetadataFieldResponse field, string value)
+    {
+        if (field.Type == FieldType.Boolean)
+            return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ? "bg-success" : "bg-secondary";
+        var palette = new[] { "bg-primary", "bg-success", "bg-info text-dark", "bg-warning text-dark", "bg-danger", "bg-secondary" };
+        var idx = Math.Abs(value.GetHashCode(StringComparison.OrdinalIgnoreCase)) % palette.Length;
+        return palette[idx];
+    }
+}

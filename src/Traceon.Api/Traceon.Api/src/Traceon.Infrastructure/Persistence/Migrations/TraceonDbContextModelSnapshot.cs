@@ -418,6 +418,167 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                     b.ToTable("ConnectedActionRules", "Traceon");
                 });
 
+            modelBuilder.Entity("Traceon.Domain.Entities.DropdownValue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FieldDefinitionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FieldDefinitionId");
+
+                    b.HasIndex("FieldDefinitionId", "Value")
+                        .IsUnique();
+
+                    b.ToTable("DropdownValues", "Traceon");
+                });
+
+            modelBuilder.Entity("Traceon.Domain.Entities.DropdownValueMetadataField", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DefaultValue")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DisplayStyle")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("DropdownValues")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("FieldDefinitionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRequired")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<decimal?>("MaxValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("MinValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FieldDefinitionId");
+
+                    b.HasIndex("FieldDefinitionId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("DropdownValueMetadataFields", "Traceon");
+                });
+
+            modelBuilder.Entity("Traceon.Domain.Entities.DropdownValueMetadataValue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DropdownValueId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("MetadataFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Value")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DropdownValueId");
+
+                    b.HasIndex("MetadataFieldId");
+
+                    b.HasIndex("DropdownValueId", "MetadataFieldId")
+                        .IsUnique();
+
+                    b.ToTable("DropdownValueMetadataValues", "Traceon");
+                });
+
             modelBuilder.Entity("Traceon.Domain.Entities.FieldAnalyticsRule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -443,11 +604,17 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("FilterFieldId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("FilterMetadataFieldId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("FilterValue")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<Guid>("GroupByFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("GroupByMetadataFieldId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsDeleted")
@@ -482,7 +649,11 @@ namespace Traceon.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("FilterFieldId");
 
+                    b.HasIndex("FilterMetadataFieldId");
+
                     b.HasIndex("GroupByFieldId");
+
+                    b.HasIndex("GroupByMetadataFieldId");
 
                     b.HasIndex("MeasureFieldId");
 
@@ -1150,6 +1321,30 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Traceon.Domain.Entities.DropdownValueMetadataField", b =>
+                {
+                    b.HasOne("Traceon.Domain.Entities.FieldDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("FieldDefinitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Traceon.Domain.Entities.DropdownValueMetadataValue", b =>
+                {
+                    b.HasOne("Traceon.Domain.Entities.DropdownValue", null)
+                        .WithMany()
+                        .HasForeignKey("DropdownValueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Traceon.Domain.Entities.DropdownValueMetadataField", null)
+                        .WithMany()
+                        .HasForeignKey("MetadataFieldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Traceon.Domain.Entities.FieldAnalyticsRule", b =>
                 {
                     b.HasOne("Traceon.Domain.Entities.ActionField", null)
@@ -1157,11 +1352,21 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                         .HasForeignKey("FilterFieldId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Traceon.Domain.Entities.DropdownValueMetadataField", null)
+                        .WithMany()
+                        .HasForeignKey("FilterMetadataFieldId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Traceon.Domain.Entities.ActionField", null)
                         .WithMany()
                         .HasForeignKey("GroupByFieldId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Traceon.Domain.Entities.DropdownValueMetadataField", null)
+                        .WithMany()
+                        .HasForeignKey("GroupByMetadataFieldId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Traceon.Domain.Entities.ActionField", null)
                         .WithMany()

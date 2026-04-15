@@ -155,6 +155,14 @@ else
                                                               Options="model.DropdownOptions.ToList()"
                                                               Placeholder="@L["Entry_Select"]" />
                                         </div>
+                                        @if (TryGetDropdownMetadataEntity(model, out _))
+                                        {
+                                            <button class="btn btn-outline-primary flex-shrink-0" type="button"
+                                                    title="@L["DropdownEditor_ChipMetadataTitle"]"
+                                                    @onclick="() => OpenDropdownMetadataAsync(model)">
+                                                <i class="bi bi-tags"></i>
+                                            </button>
+                                        }
                                         <button class="btn btn-outline-secondary flex-shrink-0" type="button"
                                                 title="@L["Dropdown_AddNew"]"
                                                 @onclick="() => ToggleQuickAdd(model.Field.Id)">
@@ -429,6 +437,8 @@ else
             </div>
         </div>
     </div>
+
+    <DropdownValueMetadataValuesModal @ref="_metadataModal" />
 }
 
 @code {
@@ -441,6 +451,8 @@ else
     [Inject] private FieldDefinitionService FieldDefService { get; set; } = default!;
     [Inject] private FieldDependencyRuleService DepRuleService { get; set; } = default!;
     [Inject] private ConnectedActionRuleService ConnRuleService { get; set; } = default!;
+    [Inject] private DropdownValueService DropdownValueService { get; set; } = default!;
+    [Inject] private DropdownValueMetadataService DropdownMetadataService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     [SupplyParameterFromQuery(Name = "returnUrl")]
@@ -469,6 +481,11 @@ else
     private DateTime _occurredLocal;
     private string? _notes;
     private List<EntryFieldModel> _fieldModels = [];
+
+    // Dropdown-value metadata (per FieldDefinitionId)
+    private Dictionary<Guid, Dictionary<string, Guid>> _dropdownEntityMaps = new();
+    private HashSet<Guid> _fieldDefsWithMetadataSchema = [];
+    private DropdownValueMetadataValuesModal? _metadataModal;
 
     protected override async Task OnInitializedAsync()
     {
@@ -511,6 +528,7 @@ else
         try { _depRules = await DepRuleService.GetByTrackedActionAsync(TrackedActionId); } catch { _depRules = []; }
         await ResolveCompositeDropdownsAsync();
         EvaluateDependencyRules();
+        await LoadDropdownMetadataContextAsync();
 
         if (!_isEdit)
         {
@@ -519,6 +537,53 @@ else
         }
 
         _loading = false;
+    }
+
+    private async Task LoadDropdownMetadataContextAsync()
+    {
+        var fieldDefIds = _fieldModels
+            .Where(m => m.Field.FieldType == FieldType.Dropdown)
+            .Select(m => m.Field.FieldDefinitionId)
+            .Distinct()
+            .ToList();
+
+        foreach (var fdId in fieldDefIds)
+        {
+            try
+            {
+                var schema = await DropdownMetadataService.GetFieldsAsync(fdId);
+                if (schema.Count == 0) continue;
+
+                _fieldDefsWithMetadataSchema.Add(fdId);
+
+                var entities = await DropdownValueService.GetByFieldDefinitionIdAsync(fdId);
+                var map = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+                foreach (var e in entities)
+                    map.TryAdd(e.Value, e.Id);
+                _dropdownEntityMaps[fdId] = map;
+            }
+            catch
+            {
+                // Best-effort; metadata button just won't show.
+            }
+        }
+    }
+
+    private bool TryGetDropdownMetadataEntity(EntryFieldModel model, out Guid dropdownValueId)
+    {
+        dropdownValueId = Guid.Empty;
+        if (model.Field.FieldType != FieldType.Dropdown) return false;
+        if (string.IsNullOrWhiteSpace(model.TextValue)) return false;
+        if (!_fieldDefsWithMetadataSchema.Contains(model.Field.FieldDefinitionId)) return false;
+        if (!_dropdownEntityMaps.TryGetValue(model.Field.FieldDefinitionId, out var map)) return false;
+        return map.TryGetValue(model.TextValue, out dropdownValueId);
+    }
+
+    private async Task OpenDropdownMetadataAsync(EntryFieldModel model)
+    {
+        if (_metadataModal is null) return;
+        if (!TryGetDropdownMetadataEntity(model, out var dropdownValueId)) return;
+        await _metadataModal.OpenAsync(dropdownValueId, model.TextValue ?? string.Empty, model.Field.FieldDefinitionId);
     }
 
     private async Task LoadComputedInitialValuesAsync()

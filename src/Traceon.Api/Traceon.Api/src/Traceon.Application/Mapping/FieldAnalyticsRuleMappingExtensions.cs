@@ -11,7 +11,9 @@ public static class FieldAnalyticsRuleMappingExtensions
         string measureFieldName,
         string groupByFieldName,
         string? filterFieldName,
-        string? signFieldName = null) =>
+        string? signFieldName = null,
+        string? groupByMetadataFieldName = null,
+        string? filterMetadataFieldName = null) =>
         new()
         {
             Id = entity.Id,
@@ -20,8 +22,12 @@ public static class FieldAnalyticsRuleMappingExtensions
             MeasureFieldName = measureFieldName,
             GroupByFieldId = entity.GroupByFieldId,
             GroupByFieldName = groupByFieldName,
+            GroupByMetadataFieldId = entity.GroupByMetadataFieldId,
+            GroupByMetadataFieldName = groupByMetadataFieldName,
             FilterFieldId = entity.FilterFieldId,
             FilterFieldName = filterFieldName,
+            FilterMetadataFieldId = entity.FilterMetadataFieldId,
+            FilterMetadataFieldName = filterMetadataFieldName,
             FilterValue = entity.FilterValue,
             Aggregation = (AnalyticsAggregation)entity.Aggregation,
             DisplayType = (AnalyticsDisplayType)entity.DisplayType,

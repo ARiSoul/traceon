@@ -1,5 +1,7 @@
 @inject IJSRuntime JS
 @inject IStringLocalizer<SharedResource> L
+@inject DropdownValueService DropdownValueService
+@inject DropdownValueMetadataService MetadataService
 
 <div class="dve-container @(_focused ? "dve-focused" : "")" @onclick="FocusMainInput">
     @for (int i = 0; i < _chips.Count; i++)
@@ -20,10 +22,36 @@
         else
         {
             <span class="dve-chip">
+                @if (_chips.Count > 1)
+                {
+                    <span class="dve-chip-reorder" @onclick:stopPropagation="true">
+                        <button type="button" class="dve-reorder-btn"
+                                disabled="@(idx == 0)"
+                                @onclick="() => MoveChipAsync(idx, -1)"
+                                title="@L["Common_MoveUp"]">
+                            <i class="bi bi-caret-up-fill"></i>
+                        </button>
+                        <button type="button" class="dve-reorder-btn"
+                                disabled="@(idx == _chips.Count - 1)"
+                                @onclick="() => MoveChipAsync(idx, 1)"
+                                title="@L["Common_MoveDown"]">
+                            <i class="bi bi-caret-down-fill"></i>
+                        </button>
+                    </span>
+                }
                 <span class="dve-chip-text"
                       @onclick:stopPropagation="true"
                       @onclick="() => StartEdit(idx)"
                       title="@L["DropdownEditor_ChipEditTitle"]">@_chips[idx]</span>
+                @if (_hasMetadataSchema && _chipEntityMap.TryGetValue(_chips[idx], out var metaEntityId))
+                {
+                    <button type="button" class="dve-chip-meta"
+                            @onclick="() => OpenMetadataAsync(metaEntityId, _chips[idx])"
+                            @onclick:stopPropagation="true"
+                            title="@L["DropdownEditor_ChipMetadataTitle"]">
+                        <i class="bi bi-tags"></i>
+                    </button>
+                }
                 <button type="button" class="dve-chip-remove"
                         @onclick="() => RemoveChip(idx)"
                         @onclick:stopPropagation="true"
@@ -59,6 +87,18 @@
     }
 </div>
 
+@if (!string.IsNullOrEmpty(_renameError))
+{
+    <div class="text-danger small mt-1">
+        <i class="bi bi-exclamation-triangle me-1"></i>@_renameError
+    </div>
+}
+
+@if (FieldDefinitionId.HasValue && _hasMetadataSchema)
+{
+    <DropdownValueMetadataValuesModal @ref="_metadataModal" />
+}
+
 @code {
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
@@ -66,6 +106,9 @@
     /// <summary>Storage delimiter character. Defaults to pipe (|) for dropdown values.
     /// Set to ',' for comma-separated data like mapping rule patterns.</summary>
     [Parameter] public char Delimiter { get; set; } = DropdownValuesHelper.Delimiter;
+
+    /// <summary>When set, enables entity-aware mode: renames cascade via the API.</summary>
+    [Parameter] public Guid? FieldDefinitionId { get; set; }
 
     private List<string> _chips = [];
     private string _inputValue = string.Empty;
@@ -78,6 +121,12 @@
     private bool _needsFocusEdit;
     private bool _needsFocusInput;
 
+    private Dictionary<string, Guid> _chipEntityMap = new(StringComparer.OrdinalIgnoreCase);
+    private bool _entitiesLoaded;
+    private string? _renameError;
+    private bool _hasMetadataSchema;
+    private DropdownValueMetadataValuesModal? _metadataModal;
+
     protected override void OnParametersSet()
     {
         if (Value != _trackedValue)
@@ -87,6 +136,27 @@
                 ? []
                 : Value.Split(Delimiter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (FieldDefinitionId.HasValue && !_entitiesLoaded)
+        {
+            var entities = await DropdownValueService.GetByFieldDefinitionIdAsync(FieldDefinitionId.Value);
+            _entitiesLoaded = true;
+            _chipEntityMap.Clear();
+            foreach (var entity in entities)
+                _chipEntityMap.TryAdd(entity.Value, entity.Id);
+
+            var schema = await MetadataService.GetFieldsAsync(FieldDefinitionId.Value);
+            _hasMetadataSchema = schema.Count > 0;
+        }
+    }
+
+    private async Task OpenMetadataAsync(Guid dropdownValueId, string display)
+    {
+        if (!FieldDefinitionId.HasValue || _metadataModal is null) return;
+        await _metadataModal.OpenAsync(dropdownValueId, display, FieldDefinitionId.Value);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -140,6 +210,7 @@
         if (index < 0 || index >= _chips.Count) return;
         _editingIndex = index;
         _editingValue = _chips[index];
+        _renameError = null;
         _needsFocusEdit = true;
     }
 
@@ -149,16 +220,64 @@
         _editingIndex = -1;
         var trimmed = _editingValue.Trim();
         _editingValue = string.Empty;
+        _renameError = null;
+
         if (!string.IsNullOrEmpty(trimmed))
         {
             if (index < _chips.Count)
+            {
+                var oldValue = _chips[index];
+                if (!oldValue.Equals(trimmed, StringComparison.Ordinal)
+                    && _chipEntityMap.TryGetValue(oldValue, out var entityId))
+                {
+                    var (success, _, errors) = await DropdownValueService.RenameAsync(entityId, trimmed);
+                    if (!success)
+                    {
+                        _renameError = string.Join(", ", errors);
+                        _needsFocusInput = true;
+                        return;
+                    }
+                    _chipEntityMap.Remove(oldValue);
+                    _chipEntityMap[trimmed] = entityId;
+                }
                 _chips[index] = trimmed;
+            }
         }
         else if (index < _chips.Count)
         {
             _chips.RemoveAt(index);
         }
         _needsFocusInput = true;
+        await EmitChange();
+    }
+
+    private async Task MoveChipAsync(int index, int direction)
+    {
+        var newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= _chips.Count) return;
+
+        (_chips[index], _chips[newIndex]) = (_chips[newIndex], _chips[index]);
+
+        if (FieldDefinitionId.HasValue && _chipEntityMap.Count > 0)
+        {
+            var orderedIds = _chips
+                .Where(c => _chipEntityMap.ContainsKey(c))
+                .Select(c => _chipEntityMap[c])
+                .ToList();
+
+            if (orderedIds.Count > 0)
+            {
+                var (success, errors) = await DropdownValueService.ReorderAsync(FieldDefinitionId.Value, orderedIds);
+                if (!success)
+                {
+                    (_chips[index], _chips[newIndex]) = (_chips[newIndex], _chips[index]);
+                    _renameError = string.Join(", ", errors);
+                    return;
+                }
+            }
+        }
+
+        _renameError = null;
         await EmitChange();
     }
 

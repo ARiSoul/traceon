@@ -74,6 +74,7 @@ app.MapActionFieldEndpoints().RequireAuthorization();
 app.MapFieldAnalyticsRuleEndpoints().RequireAuthorization();
 app.MapFieldDependencyRuleEndpoints().RequireAuthorization();
 app.MapConnectedActionRuleEndpoints().RequireAuthorization();
+app.MapDropdownValueEndpoints().RequireAuthorization();
 app.MapReceiptImportEndpoints().RequireAuthorization();
 app.MapReceiptScanEndpoints().RequireAuthorization();
 app.MapReceiptScanDraftEndpoints().RequireAuthorization();

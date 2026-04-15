@@ -125,9 +125,28 @@ else
                     <div class="row g-3 mt-1">
                         <div class="col-12">
                             <label class="form-label">@L["Fields_DropdownValues"] <span class="text-danger">*</span></label>
-                            <DropdownValueEditor @bind-Value="_model.DropdownValues" />
+                            <DropdownValueEditor @bind-Value="_model.DropdownValues" FieldDefinitionId="Id" />
                         </div>
                     </div>
+
+                    @if (_isEdit && Id.HasValue)
+                    {
+                        <div class="row g-3 mt-3">
+                            <div class="col-12">
+                                <DropdownValueMetadataFieldsEditor FieldDefinitionId="Id.Value" />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3 mt-3">
+                            <div class="col-12">
+                                <div class="alert alert-info py-2 small mb-0">
+                                    <i class="bi bi-info-circle me-1"></i>@L["MetadataFields_EditOnlyInEdit"]
+                                </div>
+                            </div>
+                        </div>
+                    }
                 }
 
                 @if (_model.Type == FieldType.CompositeDropdown)
@@ -334,6 +353,8 @@ else
         bool success;
         IReadOnlyList<string> errors;
 
+        FieldDefinitionResponse? created = null;
+
         if (_isEdit)
         {
             (success, errors) = await Service.UpdateAsync(Id!.Value, new UpdateFieldDefinitionRequest(
@@ -349,7 +370,7 @@ else
         }
         else
         {
-            (success, errors) = await Service.CreateAsync(new CreateFieldDefinitionRequest(
+            (success, created, errors) = await Service.CreateWithResultAsync(new CreateFieldDefinitionRequest(
                 _model.DefaultName,
                 _model.Type,
                 _model.DefaultDescription,
@@ -362,7 +383,14 @@ else
         }
 
         if (success)
+        {
+            if (!_isEdit && created is not null && _model.Type == FieldType.Dropdown)
+            {
+                Nav.NavigateTo($"/field-definitions/{created.Id}/edit");
+                return;
+            }
             Nav.NavigateTo("/field-definitions");
+        }
         else
             _errors = errors.Count > 0 ? errors : [L["Common_ErrorOccurred"]];
 

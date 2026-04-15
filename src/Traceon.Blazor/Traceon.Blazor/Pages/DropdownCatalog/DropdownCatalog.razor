@@ -1,0 +1,333 @@
+@page "/dropdown-catalog"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+@inject FieldDefinitionService FieldDefService
+@inject DropdownValueService DropdownValueService
+@inject DropdownValueMetadataService MetadataService
+@inject NavigationManager Nav
+
+<PageTitle>@L["Catalog_Title"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1"><i class="bi bi-collection me-2"></i>@L["Catalog_Title"]</h3>
+        <p class="text-muted mb-0">@L["Catalog_Subtitle"]</p>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">@L["Common_Loading"]</span></div>
+    </div>
+}
+else if (_eligibleFields.Count == 0)
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>@L["Catalog_NoFieldsWithMetadata"]
+    </div>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label">@L["Catalog_SelectField"]</label>
+                    <select class="form-select" value="@(_selectedFieldId?.ToString() ?? "")"
+                            @onchange="OnFieldChangedAsync">
+                        <option value="">@L["Catalog_SelectFieldPlaceholder"]</option>
+                        @foreach (var f in _eligibleFields.OrderBy(f => f.DefaultName, StringComparer.CurrentCultureIgnoreCase))
+                        {
+                            <option value="@f.Id">@f.DefaultName</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_selectedFieldId.HasValue)
+    {
+        <DataGrid @ref="_grid"
+                  TItem="DropdownValueResponse"
+                  LoadData="LoadDataAsync"
+                  Columns="_columns"
+                  FilterPlaceholder="@L["Catalog_SearchPlaceholder"]"
+                  EmptyText="@L["Catalog_NoValues"]"
+                  StorageKey="@($"dropdown-catalog-{_selectedFieldId}")"
+                  ItemKey="v => v.Id">
+            <RowActions>
+                <button class="btn btn-sm btn-outline-primary"
+                        title="@L["Catalog_EditMetadata"]"
+                        @onclick="() => OpenEditAsync(context)">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </RowActions>
+        </DataGrid>
+
+        <DropdownValueMetadataValuesModal @ref="_modal" OnSaved="RefreshValuesAsync" />
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "fieldId")]
+    public Guid? FieldId { get; set; }
+
+    private bool _loading = true;
+    private List<FieldDefinitionResponse> _eligibleFields = [];
+    private Guid? _selectedFieldId;
+
+    private readonly Dictionary<Guid, List<DropdownValueMetadataFieldResponse>> _schemaByField = [];
+    private List<DropdownValueMetadataFieldResponse> _schema = [];
+    private List<DropdownValueResponse> _values = [];
+    private Dictionary<Guid, Dictionary<Guid, string?>> _metadataByValue = new();
+
+    private DataGrid<DropdownValueResponse>? _grid;
+    private List<DataGridColumn<DropdownValueResponse>> _columns = [];
+
+    private DropdownValueMetadataValuesModal? _modal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var allFields = await FieldDefService.GetAllAsync();
+        var dropdownFields = allFields.Where(f => f.Type == FieldType.Dropdown).ToList();
+
+        var allMeta = await MetadataService.GetAllFieldsAsync();
+        foreach (var group in allMeta.GroupBy(m => m.FieldDefinitionId))
+            _schemaByField[group.Key] = group.OrderBy(m => m.SortOrder).ToList();
+
+        _eligibleFields = dropdownFields
+            .Where(f => _schemaByField.ContainsKey(f.Id))
+            .ToList();
+        _loading = false;
+
+        if (FieldId.HasValue && _eligibleFields.Any(f => f.Id == FieldId.Value))
+        {
+            _selectedFieldId = FieldId.Value;
+            await LoadForFieldAsync(FieldId.Value);
+        }
+    }
+
+    private async Task OnFieldChangedAsync(ChangeEventArgs e)
+    {
+        if (Guid.TryParse(e.Value?.ToString(), out var id))
+        {
+            _selectedFieldId = id;
+            await LoadForFieldAsync(id);
+        }
+        else
+        {
+            _selectedFieldId = null;
+            _schema = [];
+            _values = [];
+            _metadataByValue.Clear();
+            _columns = [];
+        }
+    }
+
+    private async Task LoadForFieldAsync(Guid fieldDefinitionId)
+    {
+        _schema = _schemaByField.TryGetValue(fieldDefinitionId, out var s) ? s : [];
+        _values = (await DropdownValueService.GetByFieldDefinitionIdAsync(fieldDefinitionId))
+            .OrderBy(v => v.SortOrder).ToList();
+
+        _metadataByValue = _values.ToDictionary(
+            v => v.Id,
+            v => v.Metadata.ToDictionary(e => e.MetadataFieldId, e => e.Value));
+
+        _columns = BuildColumns(_schema);
+
+        if (_grid is not null)
+            await _grid.RefreshAsync();
+    }
+
+    private List<DataGridColumn<DropdownValueResponse>> BuildColumns(List<DropdownValueMetadataFieldResponse> schema)
+    {
+        var cols = new List<DataGridColumn<DropdownValueResponse>>
+        {
+            new()
+            {
+                Title = L["Catalog_ValueColumn"],
+                Selector = v => v.Value,
+                SortField = "Value",
+                IsMobileTitle = true,
+                Template = v => @<strong>@v.Value</strong>
+            }
+        };
+
+        foreach (var meta in schema)
+        {
+            var metaCaptured = meta;
+            cols.Add(new DataGridColumn<DropdownValueResponse>
+            {
+                Title = !string.IsNullOrWhiteSpace(metaCaptured.Unit)
+                    ? $"{metaCaptured.Name} ({metaCaptured.Unit})"
+                    : metaCaptured.Name,
+                Selector = v => GetCellValue(v.Id, metaCaptured.Id) ?? string.Empty,
+                Template = v => RenderMetadataCell(metaCaptured, GetCellValue(v.Id, metaCaptured.Id))
+            });
+        }
+
+        return cols;
+    }
+
+    private string? GetCellValue(Guid valueId, Guid metaFieldId)
+        => _metadataByValue.TryGetValue(valueId, out var map)
+            && map.TryGetValue(metaFieldId, out var v) ? v : null;
+
+    private Task<DataGridResult<DropdownValueResponse>> LoadDataAsync(DataGridRequest request)
+    {
+        IEnumerable<DropdownValueResponse> query = _values;
+
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var term = request.SearchTerm;
+            query = query.Where(v =>
+                v.Value.Contains(term, StringComparison.CurrentCultureIgnoreCase));
+        }
+
+        query = request.SortField switch
+        {
+            "Value" => request.SortDescending
+                ? query.OrderByDescending(v => v.Value, StringComparer.CurrentCultureIgnoreCase)
+                : query.OrderBy(v => v.Value, StringComparer.CurrentCultureIgnoreCase),
+            _ => query.OrderBy(v => v.SortOrder)
+        };
+
+        var items = query.ToList();
+        var total = items.Count;
+        var paged = items
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToList();
+
+        return Task.FromResult(new DataGridResult<DropdownValueResponse>(paged, total));
+    }
+
+    private async Task RefreshValuesAsync()
+    {
+        if (_selectedFieldId.HasValue)
+            await LoadForFieldAsync(_selectedFieldId.Value);
+    }
+
+    private async Task OpenEditAsync(DropdownValueResponse row)
+    {
+        if (_modal is null || !_selectedFieldId.HasValue) return;
+        await _modal.OpenAsync(row.Id, row.Value, _selectedFieldId.Value);
+    }
+
+    private RenderFragment RenderMetadataCell(DropdownValueMetadataFieldResponse meta, string? value) => __builder =>
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            <span class="text-muted">—</span>
+            return;
+        }
+
+        switch (meta.DisplayStyle)
+        {
+            case MetadataDisplayStyle.Stars:
+                if (decimal.TryParse(value, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out var rating)
+                    && meta.MinValue.HasValue && meta.MaxValue.HasValue
+                    && meta.MaxValue.Value > meta.MinValue.Value)
+                {
+                    var range = meta.MaxValue.Value - meta.MinValue.Value;
+                    var normalized = (double)((rating - meta.MinValue.Value) / range * 5m);
+                    var halfSteps = (int)Math.Round(normalized * 2, MidpointRounding.AwayFromZero);
+                    halfSteps = Math.Clamp(halfSteps, 0, 10);
+                    var full = halfSteps / 2;
+                    var half = halfSteps % 2;
+                    var empty = 5 - full - half;
+                    <span class="text-warning" title="@value">
+                        @for (int i = 0; i < full; i++)
+                        {
+                            <i class="bi bi-star-fill"></i>
+                        }
+                        @if (half == 1)
+                        {
+                            <i class="bi bi-star-half"></i>
+                        }
+                        @for (int i = 0; i < empty; i++)
+                        {
+                            <i class="bi bi-star"></i>
+                        }
+                        <small class="text-muted ms-1">@value@(meta.MaxValue.HasValue ? $"/{meta.MaxValue}" : "")</small>
+                    </span>
+                }
+                else
+                {
+                    @value
+                }
+                break;
+
+            case MetadataDisplayStyle.ProgressBar:
+                if (decimal.TryParse(value, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out var num)
+                    && meta.MinValue.HasValue && meta.MaxValue.HasValue
+                    && meta.MaxValue.Value > meta.MinValue.Value)
+                {
+                    var pct = (double)((num - meta.MinValue.Value) / (meta.MaxValue.Value - meta.MinValue.Value) * 100m);
+                    pct = Math.Clamp(pct, 0, 100);
+                    <div class="d-flex align-items-center gap-2" style="min-width: 140px;">
+                        <div class="progress flex-grow-1" style="height: 8px;">
+                            <div class="progress-bar" role="progressbar"
+                                 style="width: @(pct.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"
+                                 aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="text-muted">@value@(!string.IsNullOrWhiteSpace(meta.Unit) ? $" {meta.Unit}" : "")</small>
+                    </div>
+                }
+                else
+                {
+                    @value
+                }
+                break;
+
+            case MetadataDisplayStyle.Badge:
+                var badgeClass = BadgeClassFor(meta, value);
+                <span class="badge @badgeClass">@FormatBadgeLabel(meta, value)</span>
+                break;
+
+            default:
+                if (meta.Type == FieldType.Boolean)
+                {
+                    var on = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+                    <i class="bi @(on ? "bi-check-circle-fill text-success" : "bi-x-circle text-muted")"></i>
+                }
+                else if (meta.Type == FieldType.Date
+                    && DateTime.TryParse(value, System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.None, out var dt))
+                {
+                    @dt.ToString("yyyy-MM-dd")
+                }
+                else if ((meta.Type == FieldType.Integer || meta.Type == FieldType.Decimal)
+                    && !string.IsNullOrWhiteSpace(meta.Unit))
+                {
+                    @($"{value} {meta.Unit}")
+                }
+                else
+                {
+                    @value
+                }
+                break;
+        }
+    };
+
+    private static string BadgeClassFor(DropdownValueMetadataFieldResponse meta, string value)
+    {
+        if (meta.Type == FieldType.Boolean)
+            return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                ? "bg-success" : "bg-secondary";
+
+        var palette = new[] { "bg-primary", "bg-success", "bg-info text-dark", "bg-warning text-dark", "bg-danger", "bg-secondary" };
+        var idx = Math.Abs(value.GetHashCode(StringComparison.OrdinalIgnoreCase)) % palette.Length;
+        return palette[idx];
+    }
+
+    private static string FormatBadgeLabel(DropdownValueMetadataFieldResponse meta, string value) =>
+        meta.Type == FieldType.Boolean
+            ? (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ? "✓" : "✗")
+            : value;
+}

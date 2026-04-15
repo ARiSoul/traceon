@@ -3,6 +3,7 @@ using Traceon.Blazor.Helpers;
 using Traceon.Blazor.Components;
 using Traceon.Contracts.ActionEntries;
 using Traceon.Contracts.ActionFields;
+using Traceon.Contracts.DropdownValues;
 using Traceon.Contracts.Enums;
 using Traceon.Contracts.FieldAnalyticsRules;
 using Traceon.Contracts.TrackedActions;
@@ -13,8 +14,15 @@ public sealed class DashboardService(
     TrackedActionService actionService,
     ActionEntryService entryService,
     ActionFieldService fieldService,
-    FieldAnalyticsRuleService analyticsRuleService)
+    FieldAnalyticsRuleService analyticsRuleService,
+    DropdownValueService dropdownValueService)
 {
+    /// <summary>
+    /// Lookup keyed by the ActionField-parent FieldDefinitionId, mapping dropdown value text
+    /// to a per-metadata-field dictionary. Used to resolve metadata-based group-by and filter
+    /// in cross-field analytics.
+    /// </summary>
+    private sealed record MetadataLookup(IReadOnlyDictionary<Guid, Dictionary<string, Dictionary<Guid, string?>>> ByFieldDefinitionId);
     public async Task<DashboardData> LoadAsync(DateTime? fromUtc = null, DateTime? toUtc = null)
     {
         var actions = await actionService.GetAllAsync();
@@ -228,7 +236,8 @@ public sealed class DashboardService(
             if (rules.Count > 0)
             {
                 var fieldMap = fields.ToDictionary(f => f.Id);
-                detail.CrossFieldResults = BuildCrossFieldResults(rules, entries, fieldMap);
+                var metadataLookup = await BuildMetadataLookupAsync(rules, fieldMap);
+                detail.CrossFieldResults = BuildCrossFieldResults(rules, entries, fieldMap, metadataLookup);
                 detail.RunningBalances = BuildRunningBalances(rules, entries, fieldMap);
             }
         }
@@ -280,10 +289,53 @@ public sealed class DashboardService(
         return detail;
     }
 
+    private async Task<MetadataLookup> BuildMetadataLookupAsync(
+        List<FieldAnalyticsRuleResponse> rules,
+        Dictionary<Guid, ActionFieldResponse> fieldMap)
+    {
+        var fieldDefIds = new HashSet<Guid>();
+        foreach (var rule in rules)
+        {
+            if (rule.GroupByMetadataFieldId.HasValue && fieldMap.TryGetValue(rule.GroupByFieldId, out var gbf))
+                fieldDefIds.Add(gbf.FieldDefinitionId);
+            if (rule.FilterMetadataFieldId.HasValue && rule.FilterFieldId.HasValue &&
+                fieldMap.TryGetValue(rule.FilterFieldId.Value, out var ff))
+                fieldDefIds.Add(ff.FieldDefinitionId);
+        }
+
+        var lookup = new Dictionary<Guid, Dictionary<string, Dictionary<Guid, string?>>>();
+        foreach (var fieldDefId in fieldDefIds)
+        {
+            var ddValues = await dropdownValueService.GetByFieldDefinitionIdAsync(fieldDefId);
+            var byValueText = new Dictionary<string, Dictionary<Guid, string?>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var dv in ddValues)
+            {
+                var metaMap = dv.Metadata.ToDictionary(m => m.MetadataFieldId, m => m.Value);
+                byValueText[dv.Value] = metaMap;
+            }
+            lookup[fieldDefId] = byValueText;
+        }
+
+        return new MetadataLookup(lookup);
+    }
+
+    private static string? ResolveMetadataValue(
+        MetadataLookup lookup,
+        Guid fieldDefinitionId,
+        string? dropdownValueText,
+        Guid metadataFieldId)
+    {
+        if (string.IsNullOrWhiteSpace(dropdownValueText)) return null;
+        if (!lookup.ByFieldDefinitionId.TryGetValue(fieldDefinitionId, out var byText)) return null;
+        if (!byText.TryGetValue(dropdownValueText, out var metaMap)) return null;
+        return metaMap.GetValueOrDefault(metadataFieldId);
+    }
+
     private static List<CrossFieldResult> BuildCrossFieldResults(
         List<FieldAnalyticsRuleResponse> rules,
         List<ActionEntryResponse> entries,
-        Dictionary<Guid, ActionFieldResponse> fieldMap)
+        Dictionary<Guid, ActionFieldResponse> fieldMap,
+        MetadataLookup metadataLookup)
     {
         var results = new List<CrossFieldResult>();
 
@@ -297,10 +349,16 @@ public sealed class DashboardService(
             var filteredEntries = entries;
             if (rule.FilterFieldId.HasValue && rule.FilterValue is not null)
             {
+                var filterField = fieldMap.GetValueOrDefault(rule.FilterFieldId.Value);
                 filteredEntries = entries
-                    .Where(e => e.FieldValues.Any(fv =>
-                        fv.ActionFieldId == rule.FilterFieldId.Value &&
-                        string.Equals(fv.Value, rule.FilterValue, StringComparison.OrdinalIgnoreCase)))
+                    .Where(e =>
+                    {
+                        var raw = e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.FilterFieldId.Value)?.Value;
+                        var resolved = rule.FilterMetadataFieldId.HasValue && filterField is not null
+                            ? ResolveMetadataValue(metadataLookup, filterField.FieldDefinitionId, raw, rule.FilterMetadataFieldId.Value)
+                            : raw;
+                        return string.Equals(resolved, rule.FilterValue, StringComparison.OrdinalIgnoreCase);
+                    })
                     .ToList();
             }
 
@@ -308,8 +366,11 @@ public sealed class DashboardService(
             var pairs = filteredEntries
                 .Select(e =>
                 {
-                    var groupVal = e.FieldValues
+                    var rawGroupVal = e.FieldValues
                         .FirstOrDefault(fv => fv.ActionFieldId == rule.GroupByFieldId)?.Value;
+                    var groupVal = rule.GroupByMetadataFieldId.HasValue
+                        ? ResolveMetadataValue(metadataLookup, groupByField.FieldDefinitionId, rawGroupVal, rule.GroupByMetadataFieldId.Value)
+                        : rawGroupVal;
                     var measureVal = e.FieldValues
                         .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
                     var signVal = rule.SignFieldId.HasValue
