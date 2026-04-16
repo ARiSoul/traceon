@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<IConnectedActionRuleService, ConnectedActionRuleService>();
         services.AddScoped<IDropdownValueService, DropdownValueService>();
         services.AddScoped<IDropdownValueMetadataService, DropdownValueMetadataService>();
+        services.AddScoped<IActionChartVisibilityService, ActionChartVisibilityService>();
 
         return services;
     }

@@ -755,6 +755,7 @@ else
     [SupplyParameterFromQuery(Name = "to")] public string? ToParam { get; set; }
     [SupplyParameterFromQuery(Name = "month")] public string? MonthParam { get; set; }
     [Inject] private DashboardService DashService { get; set; } = default!;
+    [Inject] private ChartVisibilityService ChartVisibility { get; set; } = default!;
     @using Blazored.LocalStorage
     [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
 
@@ -781,7 +782,6 @@ else
     private ApexChartOptions<DailyCount> _frequencyOptions = new();
 
     private string DetailStorageKey => $"traceon_actiondetail_{ActionId}";
-    private string ChartVisibilityKey => $"traceon_chartviz_{ActionId}";
 
     protected override async Task OnInitializedAsync()
     {
@@ -1529,7 +1529,7 @@ else
         public DateTime? SelectedMonth { get; set; }
     }
 
-    // ── Chart visibility persistence ──
+    // ── Chart visibility persistence (per-user, per-action via API) ──
 
     private async void ToggleChartVisibility(string chartKey, bool hide)
     {
@@ -1537,30 +1537,14 @@ else
             _hiddenCharts.Add(chartKey);
         else
             _hiddenCharts.Remove(chartKey);
-        await SaveHiddenChartsAsync();
+        await ChartVisibility.SaveHiddenKeysAsync(ActionId, _hiddenCharts);
     }
 
     private async Task RestoreHiddenChartsAsync()
     {
-        try
-        {
-            var hidden = await LocalStorage.GetItemAsync<List<string>>(ChartVisibilityKey);
-            if (hidden is { Count: > 0 })
-                _hiddenCharts = new HashSet<string>(hidden, StringComparer.Ordinal);
-        }
-        catch { /* best effort */ }
-    }
-
-    private async Task SaveHiddenChartsAsync()
-    {
-        try
-        {
-            if (_hiddenCharts.Count > 0)
-                await LocalStorage.SetItemAsync(ChartVisibilityKey, _hiddenCharts.ToList());
-            else
-                await LocalStorage.RemoveItemAsync(ChartVisibilityKey);
-        }
-        catch { /* best effort */ }
+        var hidden = await ChartVisibility.GetHiddenKeysAsync(ActionId);
+        if (hidden.Count > 0)
+            _hiddenCharts = new HashSet<string>(hidden, StringComparer.Ordinal);
     }
 
     private string BuildEntriesUrl()

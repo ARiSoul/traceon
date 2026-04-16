@@ -50,6 +50,7 @@ builder.Services.AddScoped<DataPortabilityService>();
 builder.Services.AddScoped<ReceiptScanService>();
 builder.Services.AddScoped<ReceiptScanDraftService>();
 builder.Services.AddScoped<ReceiptImportConfigService>();
+builder.Services.AddScoped<ChartVisibilityService>();
 builder.Services.AddScoped<FeedbackService>();
 builder.Services.AddScoped<TemplateService>();
 builder.Services.AddScoped<ThemeService>();

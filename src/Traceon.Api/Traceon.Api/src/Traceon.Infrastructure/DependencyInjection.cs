@@ -107,6 +107,7 @@ public static class DependencyInjection
         services.AddScoped<IDropdownValueRepository, DropdownValueRepository>();
         services.AddScoped<IDropdownValueMetadataFieldRepository, DropdownValueMetadataFieldRepository>();
         services.AddScoped<IDropdownValueMetadataValueRepository, DropdownValueMetadataValueRepository>();
+        services.AddScoped<IActionChartVisibilityRepository, ActionChartVisibilityRepository>();
         services.AddScoped<AuditService>();
         services.AddScoped<DataPortabilityService>();
         services.AddScoped<TemplateInstallService>();
