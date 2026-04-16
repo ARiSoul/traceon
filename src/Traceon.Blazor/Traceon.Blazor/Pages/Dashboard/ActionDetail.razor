@@ -110,7 +110,10 @@
             </button>
         </div>
     }
-    <div class="col-auto ms-auto">
+    <div class="col-auto ms-auto d-flex gap-2">
+        <button class="btn btn-outline-primary btn-sm" @onclick="() => _chartFormModal?.ShowCreate()">
+            <i class="bi bi-plus-circle me-1"></i>@L["CustomChart_AddChart"]
+        </button>
         <button class="btn btn-outline-secondary btn-sm" @onclick="() => _showChartVisibility = !_showChartVisibility">
             <i class="bi bi-@(_showChartVisibility ? "eye-slash" : "eye") me-1"></i>
             @L["Analytics_ChartVisibility"]
@@ -219,6 +222,22 @@
                                    @onchange="e => ToggleChartVisibility(capturedKey, !(bool)(e.Value ?? true))" />
                             <label class="form-check-label small" for="cv-@capturedKey">
                                 <i class="bi bi-graph-up-arrow me-1"></i>@balance.Label — @L["Analytics_Balance"]
+                            </label>
+                        </div>
+                    </div>
+                }
+                @* Custom charts *@
+                @foreach (var cc in _data.CustomChartResults)
+                {
+                    var key = $"cc-{cc.ChartId}";
+                    var capturedKey = key;
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="cv-@capturedKey"
+                                   checked="@(!_hiddenCharts.Contains(capturedKey))"
+                                   @onchange="e => ToggleChartVisibility(capturedKey, !(bool)(e.Value ?? true))" />
+                            <label class="form-check-label small" for="cv-@capturedKey">
+                                <i class="bi bi-bar-chart-steps me-1"></i>@cc.Title
                             </label>
                         </div>
                     </div>
@@ -517,7 +536,7 @@ else
                     <div class="card h-100">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                @if (result.Aggregation == AnalyticsAggregation.CountByValue && result.IsDropdownMeasure)
+                                @if (result.Aggregation is AnalyticsAggregation.CountByValue or AnalyticsAggregation.AggregateByValue && result.IsDropdownMeasure)
                                 {
                                     <i class="bi bi-diagram-3 me-2"></i>
                                 }
@@ -565,7 +584,7 @@ else
                             }
                         </div>
                         <div class="card-body">
-                            @if (result.Aggregation == AnalyticsAggregation.CountByValue && result.IsDropdownMeasure && result.Groups.Any(g => g.SubGroups.Count > 0))
+                            @if (result.Aggregation is AnalyticsAggregation.CountByValue or AnalyticsAggregation.AggregateByValue && result.IsDropdownMeasure && result.Groups.Any(g => g.SubGroups.Count > 0))
                             {
                                 @RenderCountByValueResult(result)
                             }
@@ -624,7 +643,7 @@ else
                                             }
                                         </tbody>
                                         <tfoot>
-                                            <tr class="table-light">
+                                            <tr class="table-active">
                                                 <td class="fw-bold">@L["Analytics_Total"]</td>
                                                 <td class="text-end fw-bold">
                                                     @FormatCrossFieldValue(result.Total, result)
@@ -685,6 +704,26 @@ else
             </div>
         </div>
     }
+
+    <!-- Custom Charts -->
+    @if (_data.CustomChartResults.Count > 0)
+    {
+        <h5 class="mb-3"><i class="bi bi-bar-chart-steps me-2"></i>@L["CustomChart_Title"]</h5>
+        @foreach (var result in _data.CustomChartResults)
+        {
+            if (_hiddenCharts.Contains($"cc-{result.ChartId}")) continue;
+            var chartDef = _customChartDefinitions.FirstOrDefault(c => c.Id == result.ChartId);
+            <CustomChartRenderer Result="result"
+                                 OnEdit="() => { if (chartDef is not null) _chartFormModal?.ShowEdit(chartDef); }"
+                                 OnDelete="() => DeleteCustomChartAsync(result.ChartId)" />
+        }
+    }
+
+    <CustomChartFormModal @ref="_chartFormModal"
+                          TrackedActionId="ActionId"
+                          AvailableFields="_actionFields"
+                          ResolvedDropdownValues="_resolvedDropdownValues"
+                          OnSaved="OnCustomChartSavedAsync" />
 
     <!-- Field Summary Stats (reuse existing pattern) -->
     @if (_data.Stats.FieldStats.Count > 0 && !_hiddenCharts.Contains("summary"))
@@ -756,6 +795,9 @@ else
     [SupplyParameterFromQuery(Name = "month")] public string? MonthParam { get; set; }
     [Inject] private DashboardService DashService { get; set; } = default!;
     [Inject] private ChartVisibilityService ChartVisibility { get; set; } = default!;
+    [Inject] private CustomChartApiService CustomChartApi { get; set; } = default!;
+    [Inject] private ActionFieldService FieldService { get; set; } = default!;
+    [Inject] private FieldDefinitionService FieldDefinitionService { get; set; } = default!;
     @using Blazored.LocalStorage
     [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
 
@@ -770,6 +812,12 @@ else
     // Chart visibility
     private bool _showChartVisibility;
     private HashSet<string> _hiddenCharts = [];
+
+    // Custom charts
+    private CustomChartFormModal? _chartFormModal;
+    private List<ActionFieldResponse> _actionFields = [];
+    private List<CustomChartResponse> _customChartDefinitions = [];
+    private Dictionary<Guid, string[]> _resolvedDropdownValues = [];
 
     private string _periodMode = "all";
     private int _periodValue = 90;
@@ -803,6 +851,10 @@ else
         }
 
         await LoadAsync();
+
+        try { _actionFields = await FieldService.GetByTrackedActionAsync(ActionId); } catch { }
+        try { _resolvedDropdownValues = await ResolveCompositeDropdownValuesAsync(_actionFields); } catch { }
+        try { _customChartDefinitions = await CustomChartApi.GetByTrackedActionAsync(ActionId); } catch { }
     }
 
     private void OnPeriodModeInput(ChangeEventArgs e)
@@ -1285,6 +1337,7 @@ else
         AnalyticsAggregation.Count => L["Aggregation_Count"],
         AnalyticsAggregation.SignedSum => L["Aggregation_SignedSum"],
         AnalyticsAggregation.CountByValue => L["Aggregation_CountByValue"],
+        AnalyticsAggregation.AggregateByValue => L["Aggregation_AggregateByValue"],
         _ => agg.ToString()
     };
 
@@ -1305,8 +1358,10 @@ else
     {
         var sortedGroups = result.Groups.OrderByDescending(g => g.Value).ToList();
         var grandTotal = sortedGroups.Sum(g => g.Value);
-        var hasMetrics = result.ValueMetrics.Count > 0 && sortedGroups.Any(g => g.Metrics is not null);
+        var isAggregateMode = result.Aggregation == AnalyticsAggregation.AggregateByValue;
+        var hasMetrics = !isAggregateMode && result.ValueMetrics.Count > 0 && sortedGroups.Any(g => g.Metrics is not null);
         var unitSuffix = result.ValueFieldUnit is not null ? $" {result.ValueFieldUnit}" : "";
+        var mainUnitSuffix = isAggregateMode ? unitSuffix : "";
 
         <!-- Overview bar chart -->
         <ApexChart TItem="CrossFieldGroup"
@@ -1315,7 +1370,7 @@ else
             <ApexPointSeries TItem="CrossFieldGroup"
                             Items="sortedGroups"
                             SeriesType="SeriesType.Bar"
-                            Name="@L["Aggregation_Count"]"
+                            Name="@(isAggregateMode ? $"{result.ValueMetrics.OrderBy(m => m).FirstOrDefault() ?? "Sum"} ({result.ValueFieldName})" : L["Aggregation_Count"])"
                             XValue="g => g.Key"
                             YValue="g => g.Value"
                             OrderByDescending="g => g.Y" />
@@ -1334,7 +1389,14 @@ else
                             <i class="bi bi-folder2 me-1 text-primary"></i>@grp.Key
                         </span>
                         <span>
-                            <span class="badge bg-primary rounded-pill">@((int)grp.Value)</span>
+                            @if (isAggregateMode)
+                            {
+                                <span class="badge bg-primary rounded-pill">@FormatMetricValue(grp.Value)@mainUnitSuffix</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-primary rounded-pill">@((int)grp.Value)</span>
+                            }
                             <small class="text-muted ms-1">(@grpPct.ToString("F1")%)</small>
                         </span>
                     </div>
@@ -1360,7 +1422,8 @@ else
                         <div class="ps-3 border-start border-2 border-primary-subtle">
                             @foreach (var sub in grp.SubGroups)
                             {
-                                var subWidthPct = (int)(sub.Value / maxSubVal * 100);
+                                var subWidthPct = maxSubVal != 0 ? (int)(sub.Value / maxSubVal * 100) : 0;
+                                var subLabel = isAggregateMode ? FormatMetricValue(sub.Value) + mainUnitSuffix : ((int)sub.Value).ToString();
                                 <div class="d-flex align-items-center gap-2 mb-1">
                                     <span class="text-truncate" style="min-width: 80px; max-width: 140px; font-size: 0.8rem;">@sub.Key</span>
                                     <div class="flex-grow-1">
@@ -1368,14 +1431,14 @@ else
                                             <div class="progress-bar bg-info bg-opacity-75" style="width: @subWidthPct%">
                                                 @if (subWidthPct > 20)
                                                 {
-                                                    <small>@((int)sub.Value)</small>
+                                                    <small>@subLabel</small>
                                                 }
                                             </div>
                                         </div>
                                     </div>
                                     @if (subWidthPct <= 20)
                                     {
-                                        <small class="text-muted flex-shrink-0">@((int)sub.Value)</small>
+                                        <small class="text-muted flex-shrink-0">@subLabel</small>
                                     }
                                     @if (hasMetrics && sub.Metrics is not null)
                                     {
@@ -1407,10 +1470,10 @@ else
         <div class="table-responsive mt-2">
             <table class="table table-sm mb-0">
                 <tfoot>
-                    <tr class="table-light">
+                    <tr class="table-active">
                         <td class="fw-bold">@L["Analytics_Total"]</td>
                         <td class="text-end fw-bold">
-                            @((int)grandTotal)
+                            @(isAggregateMode ? $"{FormatMetricValue(grandTotal)}{mainUnitSuffix}" : ((int)grandTotal).ToString())
                             @if (hasMetrics)
                             {
                                 var allMetricsGroups = sortedGroups.Where(g => g.Metrics is not null).SelectMany(g => g.Metrics!).ToList();
@@ -1545,6 +1608,59 @@ else
         var hidden = await ChartVisibility.GetHiddenKeysAsync(ActionId);
         if (hidden.Count > 0)
             _hiddenCharts = new HashSet<string>(hidden, StringComparer.Ordinal);
+    }
+
+    private async Task OnCustomChartSavedAsync()
+    {
+        _customChartDefinitions = await CustomChartApi.GetByTrackedActionAsync(ActionId);
+        await LoadDataCoreAsync();
+        StateHasChanged();
+    }
+
+    private async Task DeleteCustomChartAsync(Guid chartId)
+    {
+        var (success, _) = await CustomChartApi.DeleteAsync(ActionId, chartId);
+        if (success)
+        {
+            _customChartDefinitions = await CustomChartApi.GetByTrackedActionAsync(ActionId);
+            await LoadDataCoreAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task<Dictionary<Guid, string[]>> ResolveCompositeDropdownValuesAsync(List<ActionFieldResponse> fields)
+    {
+        var result = new Dictionary<Guid, string[]>();
+        var compositeFields = fields.Where(f =>
+            f.FieldType == FieldType.CompositeDropdown
+            && !string.IsNullOrWhiteSpace(f.DropdownValues)
+            && f.DropdownValues.StartsWith("ref:", StringComparison.Ordinal)).ToList();
+
+        if (compositeFields.Count == 0)
+            return result;
+
+        var allDefs = await FieldDefinitionService.GetAllAsync();
+
+        foreach (var field in compositeFields)
+        {
+            var refIds = field.DropdownValues!["ref:".Length..]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
+                .Where(id => id != Guid.Empty)
+                .ToHashSet();
+
+            var values = allDefs
+                .Where(fd => fd.Type == FieldType.Dropdown && refIds.Contains(fd.Id) && !string.IsNullOrWhiteSpace(fd.DropdownValues))
+                .SelectMany(fd => DropdownValuesHelper.Split(fd.DropdownValues))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                .ToArray();
+
+            if (values.Length > 0)
+                result[field.Id] = values;
+        }
+
+        return result;
     }
 
     private string BuildEntriesUrl()

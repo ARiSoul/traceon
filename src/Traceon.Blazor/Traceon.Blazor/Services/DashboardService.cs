@@ -15,7 +15,8 @@ public sealed class DashboardService(
     ActionEntryService entryService,
     ActionFieldService fieldService,
     FieldAnalyticsRuleService analyticsRuleService,
-    DropdownValueService dropdownValueService)
+    DropdownValueService dropdownValueService,
+    CustomChartApiService customChartApiService)
 {
     /// <summary>
     /// Lookup keyed by the ActionField-parent FieldDefinitionId, mapping dropdown value text
@@ -286,6 +287,24 @@ public sealed class DashboardService(
             });
         }
 
+        // Build custom charts
+        try
+        {
+            var customCharts = await customChartApiService.GetByTrackedActionAsync(actionId);
+            if (customCharts.Count > 0)
+            {
+                detail.CustomChartResults = customCharts
+                    .Select(c => CustomChartEvaluationService.Evaluate(c, entries, fields))
+                    .Where(r => r is not null)
+                    .Select(r => r!)
+                    .ToList();
+            }
+        }
+        catch
+        {
+            // Custom charts are optional; don't fail the whole detail load
+        }
+
         return detail;
     }
 
@@ -396,49 +415,79 @@ public sealed class DashboardService(
             var isDropdownMeasure = measureField.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown;
             var groups = new List<CrossFieldGroup>();
 
-            if (rule.Aggregation == AnalyticsAggregation.CountByValue && isDropdownMeasure)
+            if (rule.Aggregation is AnalyticsAggregation.CountByValue or AnalyticsAggregation.AggregateByValue && isDropdownMeasure)
             {
-                // Parse requested metrics (stored in NegativeValues for CountByValue)
+                // Parse requested metrics (stored in NegativeValues for CountByValue/AggregateByValue)
                 var requestedMetrics = DropdownValuesHelper.Split(rule.NegativeValues)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
                 var hasValueField = rule.SignFieldId.HasValue;
+                var useValueAsMain = rule.Aggregation == AnalyticsAggregation.AggregateByValue && hasValueField;
 
-                // Hierarchical: group by GroupByField, then count each MeasureField value within
+                // Hierarchical: group by GroupByField, then break down by each MeasureField value
                 foreach (var grp in pairs.GroupBy(p => p.GroupKey!).OrderBy(g => g.Key))
                 {
                     var subGroups = grp
                         .Where(p => !string.IsNullOrWhiteSpace(p.MeasureValue))
                         .GroupBy(p => p.MeasureValue!, StringComparer.OrdinalIgnoreCase)
-                        .OrderByDescending(sg => sg.Count())
                         .Select(sg =>
                         {
+                            decimal mainValue;
                             Dictionary<string, decimal>? subMetrics = null;
-                            if (hasValueField && requestedMetrics.Count > 0)
+
+                            if (useValueAsMain)
                             {
                                 var nums = sg
                                     .Where(p => decimal.TryParse(p.SignValue, CultureInfo.InvariantCulture, out _))
                                     .Select(p => decimal.Parse(p.SignValue!, CultureInfo.InvariantCulture))
                                     .ToList();
-                                if (nums.Count > 0)
-                                    subMetrics = ComputeMetrics(nums, requestedMetrics);
+                                mainValue = nums.Count > 0 ? AggregateForMetric(nums, requestedMetrics) : 0;
                             }
-                            return new CrossFieldGroup(sg.Key, sg.Count()) { Metrics = subMetrics };
+                            else
+                            {
+                                mainValue = sg.Count();
+                                if (hasValueField && requestedMetrics.Count > 0)
+                                {
+                                    var nums = sg
+                                        .Where(p => decimal.TryParse(p.SignValue, CultureInfo.InvariantCulture, out _))
+                                        .Select(p => decimal.Parse(p.SignValue!, CultureInfo.InvariantCulture))
+                                        .ToList();
+                                    if (nums.Count > 0)
+                                        subMetrics = ComputeMetrics(nums, requestedMetrics);
+                                }
+                            }
+
+                            return new CrossFieldGroup(sg.Key, mainValue) { Metrics = subMetrics };
                         })
+                        .OrderByDescending(sg => sg.Value)
                         .ToList();
 
+                    decimal grpMainValue;
                     Dictionary<string, decimal>? grpMetrics = null;
-                    if (hasValueField && requestedMetrics.Count > 0)
+
+                    if (useValueAsMain)
                     {
                         var allNums = grp
                             .Where(p => decimal.TryParse(p.SignValue, CultureInfo.InvariantCulture, out _))
                             .Select(p => decimal.Parse(p.SignValue!, CultureInfo.InvariantCulture))
                             .ToList();
-                        if (allNums.Count > 0)
-                            grpMetrics = ComputeMetrics(allNums, requestedMetrics);
+                        grpMainValue = allNums.Count > 0 ? AggregateForMetric(allNums, requestedMetrics) : 0;
+                    }
+                    else
+                    {
+                        grpMainValue = grp.Count();
+                        if (hasValueField && requestedMetrics.Count > 0)
+                        {
+                            var allNums = grp
+                                .Where(p => decimal.TryParse(p.SignValue, CultureInfo.InvariantCulture, out _))
+                                .Select(p => decimal.Parse(p.SignValue!, CultureInfo.InvariantCulture))
+                                .ToList();
+                            if (allNums.Count > 0)
+                                grpMetrics = ComputeMetrics(allNums, requestedMetrics);
+                        }
                     }
 
-                    groups.Add(new CrossFieldGroup(grp.Key!, grp.Count()) { SubGroups = subGroups, Metrics = grpMetrics });
+                    groups.Add(new CrossFieldGroup(grp.Key!, grpMainValue) { SubGroups = subGroups, Metrics = grpMetrics });
                 }
             }
             else
@@ -496,9 +545,19 @@ public sealed class DashboardService(
             var label = rule.Label
                 ?? $"{rule.Aggregation} of {measureField.Name} by {groupByField.Name}";
 
-            var unit = isNumericMeasure && rule.Aggregation is not AnalyticsAggregation.Count and not AnalyticsAggregation.CountByValue
-                ? measureField.Unit
-                : null;
+            string? unit;
+            if (rule.Aggregation == AnalyticsAggregation.AggregateByValue && rule.SignFieldId.HasValue
+                && fieldMap.TryGetValue(rule.SignFieldId.Value, out var aggValField))
+            {
+                unit = aggValField.Unit is not null && aggValField.Unit != "UN" ? aggValField.Unit : null;
+            }
+            else
+            {
+                unit = isNumericMeasure && rule.Aggregation is not AnalyticsAggregation.Count
+                    and not AnalyticsAggregation.CountByValue and not AnalyticsAggregation.AggregateByValue
+                    ? measureField.Unit
+                    : null;
+            }
 
             var filterDescription = rule.FilterFieldId.HasValue
                 ? $"{rule.FilterFieldName} = {rule.FilterValue}"
@@ -508,11 +567,12 @@ public sealed class DashboardService(
                 ? $"{rule.SignFieldName} → −{rule.NegativeValues}"
                 : null;
 
-            // For CountByValue, SignFieldId is the optional value field
+            // For CountByValue/AggregateByValue, SignFieldId is the optional value field
             string? valueFieldName = null;
             string? valueFieldUnit = null;
             HashSet<string> valueMetrics = [];
-            if (rule.Aggregation == AnalyticsAggregation.CountByValue && rule.SignFieldId.HasValue)
+            if (rule.Aggregation is AnalyticsAggregation.CountByValue or AnalyticsAggregation.AggregateByValue
+                && rule.SignFieldId.HasValue)
             {
                 if (fieldMap.TryGetValue(rule.SignFieldId.Value, out var valField))
                 {
@@ -955,6 +1015,19 @@ public sealed class DashboardService(
         return stats;
     }
 
+    /// <summary>
+    /// Returns a single aggregated value using the first matching metric from the requested set.
+    /// Priority: Sum > Avg > Min > Max. Used by AggregateByValue mode.
+    /// </summary>
+    private static decimal AggregateForMetric(List<decimal> values, HashSet<string> requested)
+    {
+        if (requested.Contains("Sum")) return values.Sum();
+        if (requested.Contains("Avg")) return values.Average();
+        if (requested.Contains("Min")) return values.Min();
+        if (requested.Contains("Max")) return values.Max();
+        return values.Sum(); // fallback
+    }
+
     private static Dictionary<string, decimal> ComputeMetrics(List<decimal> values, HashSet<string> requested)
     {
         var metrics = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
@@ -1155,6 +1228,7 @@ public sealed class ActionDetailData
     public List<DropdownValueTrendSeries> DropdownValueTrends { get; init; } = [];
     public List<CrossFieldResult> CrossFieldResults { get; set; } = [];
     public List<RunningBalanceSeries> RunningBalances { get; set; } = [];
+    public List<CustomChartResult> CustomChartResults { get; set; } = [];
 }
 
 public sealed class RunningBalanceSeries

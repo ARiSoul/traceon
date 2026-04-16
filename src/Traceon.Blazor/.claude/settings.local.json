@@ -8,7 +8,10 @@
       "Bash(grep -n \"public.*Error\" src/Traceon.Api/Traceon.Api/src/Traceon.Application/Common/Result*.cs src/Traceon.Api/Traceon.Api/src/Traceon.Domain/Common/Result*.cs)",
       "Bash(xargs grep *)",
       "Bash(find src/Traceon.Api -name \"ActionFieldResponse.cs\" -exec cat {} \\\\;)",
-      "Bash(grep -nE \"GroupByMetadataField|FilterMetadataField\" src/Traceon.Api/Traceon.Api/src/Traceon.Application/Services/*.cs src/Traceon.Api/Traceon.Api/src/Traceon.Application/Mapping/*.cs src/Traceon.Blazor/Traceon.Blazor/Services/*.cs)"
+      "Bash(grep -nE \"GroupByMetadataField|FilterMetadataField\" src/Traceon.Api/Traceon.Api/src/Traceon.Application/Services/*.cs src/Traceon.Api/Traceon.Api/src/Traceon.Application/Mapping/*.cs src/Traceon.Blazor/Traceon.Blazor/Services/*.cs)",
+      "Bash(grep -E \"\\\\.\\(cs\\)$\")",
+      "Bash(grep -E \"\\\\.\\(razor|cs\\)$\")",
+      "Bash(grep -E \"\\\\.cs$\")"
     ]
   }
 }

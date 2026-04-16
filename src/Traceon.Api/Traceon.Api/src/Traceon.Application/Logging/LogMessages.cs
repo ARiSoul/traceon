@@ -135,4 +135,17 @@ internal static partial class LogMessages
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Connected action rule with ID '{Id}' was not found.")]
     public static partial void ConnectedActionRuleNotFound(this ILogger logger, Guid id);
+
+    // CustomChart
+    [LoggerMessage(Level = LogLevel.Information, Message = "Custom chart created with ID '{Id}' for tracked action '{TrackedActionId}'.")]
+    public static partial void CustomChartCreated(this ILogger logger, Guid id, Guid trackedActionId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Custom chart '{Id}' updated.")]
+    public static partial void CustomChartUpdated(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Custom chart '{Id}' deleted.")]
+    public static partial void CustomChartDeleted(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Custom chart with ID '{Id}' was not found.")]
+    public static partial void CustomChartNotFound(this ILogger logger, Guid id);
 }

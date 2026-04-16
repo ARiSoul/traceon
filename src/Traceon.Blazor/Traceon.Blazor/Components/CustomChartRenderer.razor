@@ -1,0 +1,257 @@
+@inject IStringLocalizer<SharedResource> L
+@using Traceon.Contracts.CustomCharts
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="bi bi-@GetChartIcon() me-2"></i>@Result.Title
+            @if (Result.Unit is not null && Result.Unit != "UN")
+            {
+                <span class="badge bg-info ms-1">@Result.Unit</span>
+            }
+        </h6>
+        <div class="d-flex gap-1">
+            <button class="btn btn-outline-secondary btn-sm" @onclick="() => OnEdit.InvokeAsync()"
+                    title="@L["CustomChart_EditChart"]">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger btn-sm" @onclick="() => OnDelete.InvokeAsync()"
+                    title="@L["CustomChart_DeleteChart"]">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (Result.Groups.Count == 0 && Result.TimeSeriesData.Count == 0)
+        {
+            <div class="text-center text-muted py-3">
+                <i class="bi bi-inbox me-1"></i>@L["CustomChart_NoResults"]
+            </div>
+        }
+        else if (Result.ChartType == CustomChartType.Table)
+        {
+            @RenderTable()
+        }
+        else if (Result.ChartType is CustomChartType.Donut or CustomChartType.Pie)
+        {
+            @RenderPieChart()
+        }
+        else if (Result.ChartType == CustomChartType.TimeSeries && Result.TimeSeriesData.Count > 0)
+        {
+            @RenderTimeSeries()
+        }
+        else
+        {
+            @RenderBarLineChart()
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CustomChartResult Result { get; set; } = default!;
+    [Parameter] public EventCallback OnEdit { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
+
+    private static readonly List<string> Palette =
+    [
+        "#008FFB", "#00E396", "#FEB019", "#FF4560", "#775DD0",
+        "#3F51B5", "#03A9F4", "#4CAF50", "#F9CE1D", "#FF6384",
+        "#33B2DF", "#546E7A", "#D4526E", "#13D8AA", "#A5978B"
+    ];
+
+    private List<string> GetColors()
+    {
+        if (!string.IsNullOrWhiteSpace(Result.ColorPalette))
+        {
+            var custom = Result.ColorPalette.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (custom.Length > 0) return [..custom];
+        }
+        return Palette;
+    }
+
+    private string GetChartIcon() => Result.ChartType switch
+    {
+        CustomChartType.Bar or CustomChartType.HorizontalBar or CustomChartType.StackedBar => "bar-chart",
+        CustomChartType.Line or CustomChartType.TimeSeries => "graph-up",
+        CustomChartType.Area => "graph-up",
+        CustomChartType.Donut or CustomChartType.Pie => "pie-chart",
+        CustomChartType.Table => "table",
+        _ => "bar-chart"
+    };
+
+    private RenderFragment RenderBarLineChart() => __builder =>
+    {
+        var isHorizontal = Result.ChartType == CustomChartType.HorizontalBar;
+        var seriesType = Result.ChartType switch
+        {
+            CustomChartType.Line => SeriesType.Line,
+            CustomChartType.Area => SeriesType.Area,
+            _ => SeriesType.Bar
+        };
+
+        var options = new ApexChartOptions<CrossFieldGroup>
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = true, AutoSelected = AutoSelected.Pan },
+                Zoom = new Zoom { Enabled = true, AllowMouseWheelZoom = false }
+            },
+            Colors = GetColors(),
+            PlotOptions = new PlotOptions
+            {
+                Bar = new PlotOptionsBar
+                {
+                    ColumnWidth = "60%",
+                    Distributed = true,
+                    Horizontal = isHorizontal
+                }
+            },
+            Legend = new Legend { Show = false },
+            DataLabels = new DataLabels
+            {
+                Enabled = true,
+                Formatter = "function(val) { return val > 0 ? (val % 1 === 0 ? val.toString() : val.toFixed(2)) : ''; }",
+                Style = new DataLabelsStyle { FontSize = "11px" }
+            }
+        };
+
+        if (Result.ChartType is CustomChartType.Line or CustomChartType.Area)
+        {
+            options.Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 };
+            options.Markers = new Markers { Size = 3 };
+        }
+        if (Result.ChartType == CustomChartType.Area)
+        {
+            options.Fill = new Fill { Opacity = new Opacity(0.3) };
+        }
+
+        <ApexChart TItem="CrossFieldGroup"
+                   Options="options"
+                   Height="250">
+            <ApexPointSeries TItem="CrossFieldGroup"
+                            Items="Result.Groups"
+                            SeriesType="seriesType"
+                            Name="@(Result.MeasureFieldName ?? Result.Title)"
+                            XValue="g => g.Key"
+                            YValue="g => g.Value"
+                            OrderByDescending="g => Result.SortDescending ? g.Y : 0" />
+        </ApexChart>
+    };
+
+    private RenderFragment RenderPieChart() => __builder =>
+    {
+        var options = new ApexChartOptions<CrossFieldGroup>
+        {
+            Chart = new Chart { },
+            Colors = GetColors(),
+            Legend = new Legend
+            {
+                Position = LegendPosition.Bottom,
+                Formatter = "function(seriesName, opts) { return seriesName + ' — ' + opts.w.globals.series[opts.seriesIndex]; }"
+            },
+            DataLabels = new DataLabels
+            {
+                Enabled = true,
+                Formatter = "function(val) { return Math.round(val) + '%'; }",
+                Style = new DataLabelsStyle { FontSize = "11px" },
+                DropShadow = new DropShadow { Enabled = false }
+            }
+        };
+
+        <ApexChart TItem="CrossFieldGroup"
+                   Options="options"
+                   Height="280">
+            <ApexPointSeries TItem="CrossFieldGroup"
+                            Items="Result.Groups"
+                            SeriesType="@(Result.ChartType == CustomChartType.Pie ? SeriesType.Pie : SeriesType.Donut)"
+                            Name="@(Result.MeasureFieldName ?? Result.Title)"
+                            XValue="g => g.Key"
+                            YValue="g => g.Value"
+                            OrderByDescending="g => g.Y" />
+        </ApexChart>
+    };
+
+    private RenderFragment RenderTimeSeries() => __builder =>
+    {
+        var colors = GetColors();
+        var options = new ApexChartOptions<NumericDataPoint>
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = true, AutoSelected = AutoSelected.Pan },
+                Zoom = new Zoom { Enabled = true, AllowMouseWheelZoom = false }
+            },
+            Xaxis = new XAxis
+            {
+                Type = XAxisType.Datetime,
+                Labels = new XAxisLabels
+                {
+                    DatetimeFormatter = new DatetimeFormatter { Day = "dd MMM", Month = "MMM yyyy" }
+                }
+            },
+            Yaxis = [new YAxis { Title = new AxisTitle { Text = Result.Unit ?? Result.MeasureFieldName ?? "" } }],
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Colors = colors,
+            Legend = new Legend { Position = LegendPosition.Bottom },
+            Tooltip = new Tooltip { X = new TooltipX { Format = "dd MMM yyyy" } }
+        };
+
+        <ApexChart TItem="NumericDataPoint"
+                   Options="options"
+                   Height="300">
+            @foreach (var series in Result.TimeSeriesData)
+            {
+                <ApexPointSeries TItem="NumericDataPoint"
+                                Items="series.Points"
+                                SeriesType="SeriesType.Line"
+                                Name="@series.SeriesLabel"
+                                XValue="p => p.Date"
+                                YValue="p => p.Value"
+                                OrderBy="p => p.X" />
+            }
+        </ApexChart>
+    };
+
+    private RenderFragment RenderTable() => __builder =>
+    {
+        var unit = Result.Unit is not null && Result.Unit != "UN" ? $" {Result.Unit}" : "";
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>@(Result.GroupByFieldName ?? L["CustomChart_Group"])</th>
+                        <th class="text-end">@FormatAggLabel()</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var group in Result.Groups)
+                    {
+                        <tr>
+                            <td>@group.Key</td>
+                            <td class="text-end fw-bold">@FormatValue(group.Value)@unit</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="table-active">
+                        <td class="fw-bold">@L["Analytics_Total"]</td>
+                        <td class="text-end fw-bold">@FormatValue(Result.Total)@unit</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    };
+
+    private string FormatAggLabel() => Result.Aggregation switch
+    {
+        AnalyticsAggregation.Sum => L["Aggregation_Sum"],
+        AnalyticsAggregation.Avg => L["Aggregation_Avg"],
+        AnalyticsAggregation.Min => L["Aggregation_Min"],
+        AnalyticsAggregation.Max => L["Aggregation_Max"],
+        AnalyticsAggregation.Count => L["Aggregation_Count"],
+        _ => Result.Aggregation.ToString()
+    };
+
+    private static string FormatValue(decimal value)
+        => value == Math.Truncate(value) ? value.ToString("F0") : value.ToString("F2");
+}

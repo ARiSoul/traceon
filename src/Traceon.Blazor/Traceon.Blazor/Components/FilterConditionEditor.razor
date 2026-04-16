@@ -1,0 +1,308 @@
+@inject IStringLocalizer<SharedResource> L
+@using Traceon.Contracts.CustomCharts
+
+<div class="border rounded p-2 mb-2 @(Depth > 0 ? "ms-3 border-start border-2 border-primary-subtle" : "")">
+    <!-- Logic toggle -->
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn @(Group.Logic == FilterLogic.And ? "btn-primary" : "btn-outline-primary")"
+                    @onclick="() => SetLogic(FilterLogic.And)">
+                @L["CustomChart_FilterLogicAnd"]
+            </button>
+            <button type="button" class="btn @(Group.Logic == FilterLogic.Or ? "btn-warning" : "btn-outline-warning")"
+                    @onclick="() => SetLogic(FilterLogic.Or)">
+                @L["CustomChart_FilterLogicOr"]
+            </button>
+        </div>
+        @if (Depth > 0)
+        {
+            <button type="button" class="btn btn-outline-danger btn-sm ms-auto" @onclick="OnRemove">
+                <i class="bi bi-trash me-1"></i>@L["CustomChart_RemoveGroup"]
+            </button>
+        }
+    </div>
+
+    <!-- Leaf conditions -->
+    @if (Group.Conditions is not null)
+    {
+        for (var i = 0; i < Group.Conditions.Count; i++)
+        {
+            var idx = i;
+            var condition = Group.Conditions[idx];
+            var selectedField = AvailableFields.FirstOrDefault(f => f.Id == condition.FieldId);
+            var fieldType = selectedField?.FieldType ?? FieldType.Text;
+            var operators = GetOperatorsForType(fieldType);
+
+            <div class="row g-2 align-items-end mb-2">
+                <!-- Field selector -->
+                <div class="col-12 col-md-3">
+                    <select class="form-select form-select-sm"
+                            value="@condition.FieldId"
+                            @onchange="e => UpdateConditionField(idx, e)">
+                        <option value="@Guid.Empty">— @L["CustomChart_SelectField"] —</option>
+                        @foreach (var field in AvailableFields)
+                        {
+                            <option value="@field.Id">@field.Name (@field.FieldType)</option>
+                        }
+                    </select>
+                </div>
+                <!-- Operator selector -->
+                <div class="col-12 col-md-3">
+                    <select class="form-select form-select-sm"
+                            value="@((int)condition.Operator)"
+                            @onchange="e => UpdateConditionOperator(idx, e)">
+                        @foreach (var op in operators)
+                        {
+                            <option value="@((int)op)">@FormatOperator(op)</option>
+                        }
+                    </select>
+                </div>
+                <!-- Value input(s) -->
+                @if (condition.Operator is not (FilterOperator.IsEmpty or FilterOperator.IsNotEmpty))
+                {
+                    @if (condition.Operator == FilterOperator.Between)
+                    {
+                        <div class="col-5 col-md-2">
+                            <input type="text" class="form-control form-control-sm" placeholder="@L["Dashboard_From"]"
+                                   value="@condition.Value"
+                                   @onchange="e => UpdateConditionValue(idx, e.Value?.ToString(), condition.ValueTo)" />
+                        </div>
+                        <div class="col-5 col-md-2">
+                            <input type="text" class="form-control form-control-sm" placeholder="@L["Dashboard_To"]"
+                                   value="@condition.ValueTo"
+                                   @onchange="e => UpdateConditionValue(idx, condition.Value, e.Value?.ToString())" />
+                        </div>
+                    }
+                    else if (selectedField?.FieldType is FieldType.Boolean)
+                    {
+                        <div class="col-10 col-md-3">
+                            <select class="form-select form-select-sm"
+                                    value="@condition.Value"
+                                    @onchange="e => UpdateConditionValue(idx, e.Value?.ToString(), null)">
+                                <option value="true">@L["Dashboard_True"]</option>
+                                <option value="false">@L["Dashboard_False"]</option>
+                            </select>
+                        </div>
+                    }
+                    else if (selectedField?.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown
+                             && condition.Operator is FilterOperator.Equals or FilterOperator.NotEquals
+                             && GetDropdownOptions(selectedField).Length > 0)
+                    {
+                        <div class="col-10 col-md-3">
+                            <select class="form-select form-select-sm"
+                                    value="@condition.Value"
+                                    @onchange="e => UpdateConditionValue(idx, e.Value?.ToString(), null)">
+                                <option value="">— @L["Common_Select"] —</option>
+                                @foreach (var ddVal in GetDropdownOptions(selectedField))
+                                {
+                                    <option value="@ddVal">@ddVal</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-10 col-md-3">
+                            <input type="text" class="form-control form-control-sm"
+                                   placeholder="@(condition.Operator is FilterOperator.In or FilterOperator.NotIn ? L["CustomChart_PipeSeparated"] : L["CustomChart_Value"])"
+                                   value="@condition.Value"
+                                   @onchange="e => UpdateConditionValue(idx, e.Value?.ToString(), null)" />
+                        </div>
+                    }
+                }
+                <!-- Remove button -->
+                <div class="col-2 col-md-1">
+                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveCondition(idx)"
+                            title="@L["CustomChart_RemoveCondition"]">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Nested groups -->
+    @if (Group.Groups is not null)
+    {
+        for (var i = 0; i < Group.Groups.Count; i++)
+        {
+            var idx = i;
+            <FilterConditionEditor Group="Group.Groups[idx]"
+                                   GroupChanged="g => UpdateSubGroup(idx, g)"
+                                   AvailableFields="AvailableFields"
+                                   ResolvedDropdownValues="ResolvedDropdownValues"
+                                   Depth="Depth + 1"
+                                   OnRemove="() => RemoveSubGroup(idx)" />
+        }
+    }
+
+    <!-- Action buttons -->
+    <div class="d-flex gap-2 mt-2">
+        <button type="button" class="btn btn-outline-primary btn-sm" @onclick="AddCondition">
+            <i class="bi bi-plus me-1"></i>@L["CustomChart_AddCondition"]
+        </button>
+        @if (Depth < 3)
+        {
+            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="AddGroup">
+                <i class="bi bi-folder-plus me-1"></i>@L["CustomChart_AddGroup"]
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public FilterGroupDto Group { get; set; } = new(FilterLogic.And, [], []);
+    [Parameter] public EventCallback<FilterGroupDto> GroupChanged { get; set; }
+    [Parameter] public List<ActionFieldResponse> AvailableFields { get; set; } = [];
+    [Parameter] public Dictionary<Guid, string[]> ResolvedDropdownValues { get; set; } = [];
+    [Parameter] public int Depth { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+
+    private async Task NotifyChanged(FilterGroupDto newGroup)
+    {
+        await GroupChanged.InvokeAsync(newGroup);
+    }
+
+    private async Task SetLogic(FilterLogic logic)
+    {
+        await NotifyChanged(Group with { Logic = logic });
+    }
+
+    private async Task AddCondition()
+    {
+        var conditions = new List<FilterConditionDto>(Group.Conditions ?? [])
+        {
+            new(AvailableFields.FirstOrDefault()?.Id ?? Guid.Empty, FilterOperator.Equals, null, null)
+        };
+        await NotifyChanged(Group with { Conditions = conditions });
+    }
+
+    private async Task RemoveCondition(int index)
+    {
+        var conditions = new List<FilterConditionDto>(Group.Conditions ?? []);
+        if (index < conditions.Count) conditions.RemoveAt(index);
+        await NotifyChanged(Group with { Conditions = conditions });
+    }
+
+    private async Task UpdateConditionField(int index, ChangeEventArgs e)
+    {
+        var conditions = new List<FilterConditionDto>(Group.Conditions ?? []);
+        if (index >= conditions.Count) return;
+        if (Guid.TryParse(e.Value?.ToString(), out var fieldId))
+        {
+            conditions[index] = conditions[index] with { FieldId = fieldId, Value = null, ValueTo = null };
+            await NotifyChanged(Group with { Conditions = conditions });
+        }
+    }
+
+    private async Task UpdateConditionOperator(int index, ChangeEventArgs e)
+    {
+        var conditions = new List<FilterConditionDto>(Group.Conditions ?? []);
+        if (index >= conditions.Count) return;
+        if (int.TryParse(e.Value?.ToString(), out var opInt))
+        {
+            var op = (FilterOperator)opInt;
+            conditions[index] = conditions[index] with { Operator = op };
+            await NotifyChanged(Group with { Conditions = conditions });
+        }
+    }
+
+    private async Task UpdateConditionValue(int index, string? value, string? valueTo)
+    {
+        var conditions = new List<FilterConditionDto>(Group.Conditions ?? []);
+        if (index >= conditions.Count) return;
+        conditions[index] = conditions[index] with { Value = value, ValueTo = valueTo };
+        await NotifyChanged(Group with { Conditions = conditions });
+    }
+
+    private async Task AddGroup()
+    {
+        var groups = new List<FilterGroupDto>(Group.Groups ?? [])
+        {
+            new(FilterLogic.And, [], [])
+        };
+        await NotifyChanged(Group with { Groups = groups });
+    }
+
+    private async Task RemoveSubGroup(int index)
+    {
+        var groups = new List<FilterGroupDto>(Group.Groups ?? []);
+        if (index < groups.Count) groups.RemoveAt(index);
+        await NotifyChanged(Group with { Groups = groups });
+    }
+
+    private async Task UpdateSubGroup(int index, FilterGroupDto updated)
+    {
+        var groups = new List<FilterGroupDto>(Group.Groups ?? []);
+        if (index < groups.Count) groups[index] = updated;
+        await NotifyChanged(Group with { Groups = groups });
+    }
+
+    private string[] GetDropdownOptions(ActionFieldResponse field)
+    {
+        if (ResolvedDropdownValues.TryGetValue(field.Id, out var resolved))
+            return resolved;
+
+        if (!string.IsNullOrEmpty(field.DropdownValues)
+            && !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+        {
+            return DropdownValuesHelper.Split(field.DropdownValues)
+                .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                .ToArray();
+        }
+
+        return [];
+    }
+
+    private static List<FilterOperator> GetOperatorsForType(FieldType type) => type switch
+    {
+        FieldType.Integer or FieldType.Decimal => [
+            FilterOperator.Equals, FilterOperator.NotEquals,
+            FilterOperator.GreaterThan, FilterOperator.GreaterThanOrEqual,
+            FilterOperator.LessThan, FilterOperator.LessThanOrEqual,
+            FilterOperator.Between,
+            FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
+        ],
+        FieldType.Boolean => [
+            FilterOperator.Equals, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
+        ],
+        FieldType.Dropdown or FieldType.CompositeDropdown => [
+            FilterOperator.Equals, FilterOperator.NotEquals,
+            FilterOperator.In, FilterOperator.NotIn,
+            FilterOperator.Contains, FilterOperator.NotContains,
+            FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
+        ],
+        FieldType.Date => [
+            FilterOperator.Equals, FilterOperator.NotEquals,
+            FilterOperator.GreaterThan, FilterOperator.LessThan,
+            FilterOperator.Between,
+            FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
+        ],
+        _ => [
+            FilterOperator.Equals, FilterOperator.NotEquals,
+            FilterOperator.Contains, FilterOperator.NotContains,
+            FilterOperator.StartsWith, FilterOperator.EndsWith,
+            FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
+        ]
+    };
+
+    private string FormatOperator(FilterOperator op) => op switch
+    {
+        FilterOperator.Equals => L["FilterOp_Equals"],
+        FilterOperator.NotEquals => L["FilterOp_NotEquals"],
+        FilterOperator.GreaterThan => L["FilterOp_GreaterThan"],
+        FilterOperator.GreaterThanOrEqual => L["FilterOp_GreaterThanOrEqual"],
+        FilterOperator.LessThan => L["FilterOp_LessThan"],
+        FilterOperator.LessThanOrEqual => L["FilterOp_LessThanOrEqual"],
+        FilterOperator.Contains => L["FilterOp_Contains"],
+        FilterOperator.NotContains => L["FilterOp_NotContains"],
+        FilterOperator.StartsWith => L["FilterOp_StartsWith"],
+        FilterOperator.EndsWith => L["FilterOp_EndsWith"],
+        FilterOperator.In => L["FilterOp_In"],
+        FilterOperator.NotIn => L["FilterOp_NotIn"],
+        FilterOperator.Between => L["FilterOp_Between"],
+        FilterOperator.IsEmpty => L["FilterOp_IsEmpty"],
+        FilterOperator.IsNotEmpty => L["FilterOp_IsNotEmpty"],
+        _ => op.ToString()
+    };
+}

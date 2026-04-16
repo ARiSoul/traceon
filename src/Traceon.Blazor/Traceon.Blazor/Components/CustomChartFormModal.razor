@@ -1,0 +1,312 @@
+@inject IStringLocalizer<SharedResource> L
+@using Traceon.Contracts.CustomCharts
+
+@if (_visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);"
+         @onclick="Cancel" @onclick:stopPropagation="false">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-bar-chart-steps me-2"></i>
+                        @(_editId.HasValue ? L["CustomChart_EditChart"] : L["CustomChart_AddChart"])
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="Cancel"></button>
+                </div>
+                <div class="modal-body">
+                    <ErrorAlert Errors="_errors" />
+
+                    <!-- Title -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">@L["CustomChart_ChartTitle"]</label>
+                        <input type="text" class="form-control" @bind="_title" maxlength="200"
+                               placeholder="@L["CustomChart_ChartTitlePlaceholder"]" />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Measure field -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">@L["CustomChart_MeasureField"]</label>
+                            <select class="form-select" @bind="_measureFieldId">
+                                <option value="@Guid.Empty">— @L["Common_Select"] —</option>
+                                @foreach (var field in AvailableFields)
+                                {
+                                    <option value="@field.Id">@field.Name (@field.FieldType)</option>
+                                }
+                            </select>
+                        </div>
+                        <!-- Aggregation -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">@L["CustomChart_Aggregation"]</label>
+                            <select class="form-select" @bind="_aggregation">
+                                <option value="@AnalyticsAggregation.Count">@L["Aggregation_Count"]</option>
+                                <option value="@AnalyticsAggregation.Sum">@L["Aggregation_Sum"]</option>
+                                <option value="@AnalyticsAggregation.Avg">@L["Aggregation_Avg"]</option>
+                                <option value="@AnalyticsAggregation.Min">@L["Aggregation_Min"]</option>
+                                <option value="@AnalyticsAggregation.Max">@L["Aggregation_Max"]</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Group by field -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">@L["CustomChart_GroupBy"]</label>
+                            <select class="form-select" @bind="_groupByFieldId">
+                                <option value="@Guid.Empty">— @L["CustomChart_NoGrouping"] —</option>
+                                @foreach (var field in AvailableFields)
+                                {
+                                    <option value="@field.Id">@field.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <!-- Time grouping -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">@L["CustomChart_TimeGrouping"]</label>
+                            <select class="form-select" @bind="_timeGrouping">
+                                <option value="@TimeGrouping.None">@L["CustomChart_NoTimeGrouping"]</option>
+                                <option value="@TimeGrouping.Day">@L["TimeGrouping_Day"]</option>
+                                <option value="@TimeGrouping.Week">@L["TimeGrouping_Week"]</option>
+                                <option value="@TimeGrouping.Month">@L["TimeGrouping_Month"]</option>
+                                <option value="@TimeGrouping.Year">@L["TimeGrouping_Year"]</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Chart type -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">@L["CustomChart_ChartType"]</label>
+                            <select class="form-select" @bind="_chartType">
+                                <option value="@CustomChartType.Bar">@L["ChartType_Bar"]</option>
+                                <option value="@CustomChartType.HorizontalBar">@L["ChartType_HorizontalBar"]</option>
+                                <option value="@CustomChartType.Line">@L["ChartType_Line"]</option>
+                                <option value="@CustomChartType.Area">@L["ChartType_Area"]</option>
+                                <option value="@CustomChartType.Donut">@L["ChartType_Donut"]</option>
+                                <option value="@CustomChartType.Pie">@L["ChartType_Pie"]</option>
+                                <option value="@CustomChartType.StackedBar">@L["ChartType_StackedBar"]</option>
+                                <option value="@CustomChartType.TimeSeries">@L["ChartType_TimeSeries"]</option>
+                                <option value="@CustomChartType.Table">@L["ChartType_Table"]</option>
+                            </select>
+                        </div>
+                        <!-- Max groups -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold">@L["CustomChart_MaxGroups"]</label>
+                            <input type="number" class="form-control" min="0" @bind="_maxGroups"
+                                   placeholder="@L["Common_All"]" />
+                        </div>
+                        <!-- Sort descending -->
+                        <div class="col-12 col-md-3 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" class="form-check-input" id="cc-sort-desc"
+                                       checked="@_sortDescending" @onchange="e => _sortDescending = (bool)(e.Value ?? false)" />
+                                <label class="form-check-label" for="cc-sort-desc">@L["CustomChart_SortDescending"]</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-funnel me-1"></i>@L["CustomChart_Filters"]
+                        </label>
+                        <small class="text-muted d-block mb-2">@L["CustomChart_FiltersHint"]</small>
+                        @if (_filterGroup is not null)
+                        {
+                            <FilterConditionEditor Group="_filterGroup"
+                                                   GroupChanged="g => _filterGroup = g"
+                                                   AvailableFields="AvailableFields"
+                                                   ResolvedDropdownValues="ResolvedDropdownValues" />
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1" @onclick="() => _filterGroup = null">
+                                <i class="bi bi-x-circle me-1"></i>@L["CustomChart_ClearFilters"]
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                    @onclick="() => _filterGroup = new FilterGroupDto(FilterLogic.And, [], [])">
+                                <i class="bi bi-plus me-1"></i>@L["CustomChart_AddFilters"]
+                            </button>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@_saving">
+                        @L["Common_Cancel"]
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveAsync" disabled="@_saving">
+                        @if (_saving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle me-1"></i>
+                        }
+                        @L["Common_Save"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid TrackedActionId { get; set; }
+    [Parameter] public List<ActionFieldResponse> AvailableFields { get; set; } = [];
+    [Parameter] public Dictionary<Guid, string[]> ResolvedDropdownValues { get; set; } = [];
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Inject] private CustomChartApiService ChartService { get; set; } = default!;
+
+    private bool _visible;
+    private bool _saving;
+    private Guid? _editId;
+    private string _title = string.Empty;
+    private Guid _measureFieldId;
+    private AnalyticsAggregation _aggregation = AnalyticsAggregation.Count;
+    private Guid _groupByFieldId;
+    private TimeGrouping _timeGrouping = TimeGrouping.None;
+    private CustomChartType _chartType = CustomChartType.Bar;
+    private FilterGroupDto? _filterGroup;
+    private bool _sortDescending;
+    private int? _maxGroups;
+    private IReadOnlyList<string> _errors = [];
+
+    public void ShowCreate()
+    {
+        _editId = null;
+        _title = string.Empty;
+        _measureFieldId = Guid.Empty;
+        _aggregation = AnalyticsAggregation.Count;
+        _groupByFieldId = Guid.Empty;
+        _timeGrouping = TimeGrouping.None;
+        _chartType = CustomChartType.Bar;
+        _filterGroup = null;
+        _sortDescending = false;
+        _maxGroups = null;
+        _errors = [];
+        _saving = false;
+        _visible = true;
+        StateHasChanged();
+    }
+
+    public void ShowEdit(CustomChartResponse chart)
+    {
+        _editId = chart.Id;
+        _title = chart.Title;
+        _measureFieldId = chart.MeasureFieldId;
+        _aggregation = chart.Aggregation;
+        _groupByFieldId = chart.GroupByFieldId ?? Guid.Empty;
+        _timeGrouping = chart.TimeGrouping;
+        _chartType = chart.ChartType;
+        _filterGroup = chart.FilterConditions;
+        _sortDescending = chart.SortDescending;
+        _maxGroups = chart.MaxGroups;
+        _errors = [];
+        _saving = false;
+        _visible = true;
+        StateHasChanged();
+    }
+
+    private async Task SaveAsync()
+    {
+        _errors = [];
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            _errors = [L["CustomChart_TitleRequired"]];
+            return;
+        }
+        if (_measureFieldId == Guid.Empty)
+        {
+            _errors = [L["CustomChart_MeasureRequired"]];
+            return;
+        }
+
+        // Clean filter: remove empty groups with no conditions
+        var filter = CleanFilterGroup(_filterGroup);
+
+        _saving = true;
+
+        if (_editId.HasValue)
+        {
+            var request = new UpdateCustomChartRequest(
+                Title: _title,
+                Aggregation: _aggregation,
+                ChartType: _chartType,
+                GroupByFieldId: _groupByFieldId != Guid.Empty ? _groupByFieldId : null,
+                ClearGroupByField: _groupByFieldId == Guid.Empty,
+                TimeGrouping: _timeGrouping,
+                FilterConditions: filter,
+                ClearFilterConditions: filter is null,
+                SortDescending: _sortDescending,
+                MaxGroups: _maxGroups,
+                ClearMaxGroups: !_maxGroups.HasValue);
+
+            var (success, errors) = await ChartService.UpdateAsync(TrackedActionId, _editId.Value, request);
+            if (!success)
+            {
+                _errors = errors;
+                _saving = false;
+                return;
+            }
+        }
+        else
+        {
+            var request = new CreateCustomChartRequest(
+                Title: _title,
+                MeasureFieldId: _measureFieldId,
+                Aggregation: _aggregation,
+                ChartType: _chartType,
+                GroupByFieldId: _groupByFieldId != Guid.Empty ? _groupByFieldId : null,
+                TimeGrouping: _timeGrouping,
+                FilterConditions: filter,
+                SortDescending: _sortDescending,
+                MaxGroups: _maxGroups);
+
+            var (success, errors) = await ChartService.CreateAsync(TrackedActionId, request);
+            if (!success)
+            {
+                _errors = errors;
+                _saving = false;
+                return;
+            }
+        }
+
+        _saving = false;
+        _visible = false;
+        await OnSaved.InvokeAsync();
+    }
+
+    private void Cancel()
+    {
+        _visible = false;
+        OnCancel.InvokeAsync();
+    }
+
+    private static FilterGroupDto? CleanFilterGroup(FilterGroupDto? group)
+    {
+        if (group is null) return null;
+
+        var conditions = group.Conditions?
+            .Where(c => c.FieldId != Guid.Empty)
+            .ToList();
+
+        var groups = group.Groups?
+            .Select(CleanFilterGroup)
+            .Where(g => g is not null)
+            .Select(g => g!)
+            .ToList();
+
+        var hasConditions = conditions is { Count: > 0 };
+        var hasGroups = groups is { Count: > 0 };
+
+        if (!hasConditions && !hasGroups) return null;
+
+        return new FilterGroupDto(
+            group.Logic,
+            hasConditions ? conditions : null,
+            hasGroups ? groups : null);
+    }
+}
