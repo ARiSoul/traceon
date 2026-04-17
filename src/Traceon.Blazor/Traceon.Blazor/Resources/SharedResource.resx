@@ -1114,4 +1114,11 @@
   <data name="FilterOp_Between"><value>Between</value></data>
   <data name="FilterOp_IsEmpty"><value>Is Empty</value></data>
   <data name="FilterOp_IsNotEmpty"><value>Is Not Empty</value></data>
+  <data name="Analytics_ResetLayout"><value>Reset layout</value></data>
+  <data name="Analytics_ResetLayoutHint"><value>Restore default chart visibility and order</value></data>
+  <data name="Chart_DragHint"><value>Drag to reorder</value></data>
+  <data name="Chart_QuickNav"><value>Jump to chart</value></data>
+  <data name="Chart_QuickNavPrompt"><value>Select a chart…</value></data>
+  <data name="Chart_ScrollToTop"><value>Scroll to top</value></data>
+  <data name="Analytics_Trend"><value>Trend</value></data>
 </root>

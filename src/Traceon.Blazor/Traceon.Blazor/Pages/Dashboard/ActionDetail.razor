@@ -1,5 +1,6 @@
 @page "/dashboard/action/{ActionId:guid}/detail"
 @attribute [Authorize]
+@implements IDisposable
 @inject IStringLocalizer<SharedResource> L
 
 <PageTitle>@L["Analytics_Title"] - Traceon</PageTitle>
@@ -126,7 +127,15 @@
     <div class="card border-secondary mb-4">
         <div class="card-header bg-secondary bg-opacity-10 d-flex justify-content-between align-items-center py-2">
             <h6 class="mb-0"><i class="bi bi-eye me-2"></i>@L["Analytics_ChartVisibility"]</h6>
-            <button class="btn-close" @onclick="() => _showChartVisibility = false"></button>
+            <div class="d-flex gap-2 align-items-center">
+                <button class="btn btn-outline-secondary btn-sm"
+                        @onclick="ResetChartLayoutAsync"
+                        disabled="@(_hiddenCharts.Count == 0 && _chartOrder.Count == 0)"
+                        title="@L["Analytics_ResetLayoutHint"]">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>@L["Analytics_ResetLayout"]
+                </button>
+                <button class="btn-close" @onclick="() => _showChartVisibility = false"></button>
+            </div>
         </div>
         <div class="card-body py-2">
             <small class="text-muted d-block mb-2">@L["Analytics_ChartVisibilityHint"]</small>
@@ -206,6 +215,22 @@
                                    @onchange="e => ToggleChartVisibility(capturedKey, !(bool)(e.Value ?? true))" />
                             <label class="form-check-label small" for="cv-@capturedKey">
                                 <i class="bi bi-graph-up me-1"></i>@trend.FieldName — @trend.ValueFieldName
+                            </label>
+                        </div>
+                    </div>
+                }
+                @* Cross-field analytics charts *@
+                @foreach (var cf in _data.CrossFieldResults)
+                {
+                    var key = $"cf-{cf.RuleId}";
+                    var capturedKey = key;
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="cv-@capturedKey"
+                                   checked="@(!_hiddenCharts.Contains(capturedKey))"
+                                   @onchange="e => ToggleChartVisibility(capturedKey, !(bool)(e.Value ?? true))" />
+                            <label class="form-check-label small" for="cv-@capturedKey">
+                                <i class="bi bi-diagram-3 me-1"></i>@cf.Label
                             </label>
                         </div>
                     </div>
@@ -331,117 +356,166 @@ else
         </div>
     </div>
 
+    @if (BuildChartNavList() is { Count: > 1 } chartNavList)
+    {
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <label class="form-label form-label-sm mb-0 text-muted">
+                <i class="bi bi-arrow-down-square me-1"></i>@L["Chart_QuickNav"]
+            </label>
+            <select class="form-select form-select-sm" style="max-width: 22rem;"
+                    @onchange="OnQuickNavChanged">
+                <option value="">@L["Chart_QuickNavPrompt"]</option>
+                @foreach (var item in chartNavList)
+                {
+                    <option value="@item.Key">@item.Label</option>
+                }
+            </select>
+        </div>
+    }
+
+    <div class="chart-list ps-3 ps-lg-4">
     <!-- Entry Frequency Chart -->
     @if (_data.DailyEntries.Count > 0 && !_hiddenCharts.Contains("freq"))
     {
-        <div class="card mb-4" @key="@($"freq-{_loadKey}")">
-            <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>@L["Analytics_EntryFrequency"]</h6>
+        <ReorderableChart ChartKey="freq" Order="@(GetChartOrder("freq"))"
+                          IsDragging="@(_draggingKey == "freq")"
+                          IsDropTarget="@(_dropTargetKey == "freq")"
+                          OnDragStart="OnChartDragStart" OnDragOver="OnChartDragOver"
+                          OnDragLeave="OnChartDragLeave" OnDrop="OnChartDropAsync"
+                          OnDragEnd="OnChartDragEnd">
+            <div class="card mb-4" @key="@($"freq-{_loadKey}")">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>@L["Analytics_EntryFrequency"]</h6>
+                </div>
+                <div class="card-body">
+                    <ApexChart TItem="DailyCount"
+                               Options="_frequencyOptions"
+                               Height="250"
+                               @ref="_frequencyChart">
+                        <ApexPointSeries TItem="DailyCount"
+                                        Items="_data.DailyEntries"
+                                        SeriesType="SeriesType.Area"
+                                        Name="@L["Common_Entries"]"
+                                        XValue="d => d.Date"
+                                        YValue="d => d.Count"
+                                        OrderBy="d => d.X" />
+                    </ApexChart>
+                </div>
             </div>
-            <div class="card-body">
-                <ApexChart TItem="DailyCount"
-                           Options="_frequencyOptions"
-                           Height="250"
-                           @ref="_frequencyChart">
-                    <ApexPointSeries TItem="DailyCount"
-                                    Items="_data.DailyEntries"
-                                    SeriesType="SeriesType.Area"
-                                    Name="@L["Common_Entries"]"
-                                    XValue="d => d.Date"
-                                    YValue="d => d.Count"
-                                    OrderBy="d => d.X" />
-                </ApexChart>
-            </div>
-        </div>
+        </ReorderableChart>
     }
 
     <!-- Numeric Field Trend Charts -->
     @foreach (var series in _data.NumericSeries)
     {
-        if (_hiddenCharts.Contains($"num-{series.Name}")) continue;
-        <div class="card mb-4" @key="@($"num-{series.Name}-{_loadKey}")">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="bi bi-graph-up me-2"></i>@series.Name
-                    @if (series.Unit != "UN")
-                    {
-                        <span class="badge bg-info ms-1">@series.Unit</span>
-                    }
-                    @if (series.TargetValue.HasValue && series.TargetValueMode == TargetValueMode.PerEntry)
-                    {
-                        <span class="badge bg-warning ms-1">@L["Metric_Target"]: @FormatNumeric(series.TargetValue, series.IsInteger)</span>
-                    }
-                </h6>
+        var numKey = $"num-{series.Name}";
+        if (_hiddenCharts.Contains(numKey)) continue;
+        <ReorderableChart ChartKey="@numKey" Order="@GetChartOrder(numKey)"
+                          IsDragging="@(_draggingKey == numKey)"
+                          IsDropTarget="@(_dropTargetKey == numKey)"
+                          OnDragStart="OnChartDragStart" OnDragOver="OnChartDragOver"
+                          OnDragLeave="OnChartDragLeave" OnDrop="OnChartDropAsync"
+                          OnDragEnd="OnChartDragEnd">
+            <div class="card mb-4" @key="@($"num-{series.Name}-{_loadKey}")">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>@series.Name
+                        @if (series.Unit != "UN")
+                        {
+                            <span class="badge bg-info ms-1">@series.Unit</span>
+                        }
+                        @if (series.TargetValue.HasValue && series.TargetValueMode == TargetValueMode.PerEntry)
+                        {
+                            <span class="badge bg-warning ms-1">@L["Metric_Target"]: @FormatNumeric(series.TargetValue, series.IsInteger)</span>
+                        }
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ApexChart TItem="NumericDataPoint"
+                               Options="BuildNumericOptions(series)"
+                               Height="250">
+                        <ApexPointSeries TItem="NumericDataPoint"
+                                        Items="series.Points"
+                                        SeriesType="MapChartType(series.ChartType)"
+                                        Name="@series.Name"
+                                        XValue="p => p.Date"
+                                        YValue="p => p.Value"
+                                        OrderBy="p => p.X" />
+                    </ApexChart>
+                </div>
             </div>
-            <div class="card-body">
-                <ApexChart TItem="NumericDataPoint"
-                           Options="BuildNumericOptions(series)"
-                           Height="250">
-                    <ApexPointSeries TItem="NumericDataPoint"
-                                    Items="series.Points"
-                                    SeriesType="MapChartType(series.ChartType)"
-                                    Name="@series.Name"
-                                    XValue="p => p.Date"
-                                    YValue="p => p.Value"
-                                    OrderBy="p => p.X" />
-                </ApexChart>
-            </div>
-        </div>
+        </ReorderableChart>
     }
 
     <!-- Boolean Field Charts -->
     @foreach (var series in _data.BooleanSeries)
     {
-        if (_hiddenCharts.Contains($"bool-{series.Name}")) continue;
-        <div class="card mb-4" @key="@($"bool-{series.Name}-{_loadKey}")">
-            <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-toggles me-2"></i>@series.Name</h6>
+        var boolKey = $"bool-{series.Name}";
+        if (_hiddenCharts.Contains(boolKey)) continue;
+        <ReorderableChart ChartKey="@boolKey" Order="@GetChartOrder(boolKey)"
+                          IsDragging="@(_draggingKey == boolKey)"
+                          IsDropTarget="@(_dropTargetKey == boolKey)"
+                          OnDragStart="OnChartDragStart" OnDragOver="OnChartDragOver"
+                          OnDragLeave="OnChartDragLeave" OnDrop="OnChartDropAsync"
+                          OnDragEnd="OnChartDragEnd">
+            <div class="card mb-4" @key="@($"bool-{series.Name}-{_loadKey}")">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-toggles me-2"></i>@series.Name</h6>
+                </div>
+                <div class="card-body">
+                    <ApexChart TItem="BooleanDataPoint"
+                               Options="BuildBooleanOptions(series)"
+                               Height="250">
+                         <ApexPointSeries TItem="BooleanDataPoint"
+                                        Items="series.Points"
+                                        SeriesType="SeriesType.Bar"
+                                        Name="@L["Dashboard_True"]"
+                                        XValue="p => p.Date"
+                                        YValue="p => (decimal)p.TrueCount"
+                                        OrderBy="p => p.X" />
+                        <ApexPointSeries TItem="BooleanDataPoint"
+                                        Items="series.Points"
+                                        SeriesType="SeriesType.Bar"
+                                        Name="@L["Dashboard_False"]"
+                                        XValue="p => p.Date"
+                                        YValue="p => (decimal)p.FalseCount"
+                                        OrderBy="p => p.X" />
+                    </ApexChart>
+                </div>
             </div>
-            <div class="card-body">
-                <ApexChart TItem="BooleanDataPoint"
-                           Options="BuildBooleanOptions(series)"
-                           Height="250">
-                     <ApexPointSeries TItem="BooleanDataPoint"
-                                    Items="series.Points"
-                                    SeriesType="SeriesType.Bar"
-                                    Name="@L["Dashboard_True"]"
-                                    XValue="p => p.Date"
-                                    YValue="p => (decimal)p.TrueCount"
-                                    OrderBy="p => p.X" />
-                    <ApexPointSeries TItem="BooleanDataPoint"
-                                    Items="series.Points"
-                                    SeriesType="SeriesType.Bar"
-                                    Name="@L["Dashboard_False"]"
-                                    XValue="p => p.Date"
-                                    YValue="p => (decimal)p.FalseCount"
-                                    OrderBy="p => p.X" />
-                </ApexChart>
-            </div>
-        </div>
+        </ReorderableChart>
     }
 
     <!-- Dropdown Distribution Charts -->
     @foreach (var series in _data.DropdownSeries)
     {
-        if (_hiddenCharts.Contains($"dd-{series.Name}")) continue;
-        <div class="card mb-4" @key="@($"dd-{series.Name}-{_loadKey}")">
-            <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>@series.Name @L["Analytics_Distribution"]</h6>
+        var ddKey = $"dd-{series.Name}";
+        if (_hiddenCharts.Contains(ddKey)) continue;
+        <ReorderableChart ChartKey="@ddKey" Order="@GetChartOrder(ddKey)"
+                          IsDragging="@(_draggingKey == ddKey)"
+                          IsDropTarget="@(_dropTargetKey == ddKey)"
+                          OnDragStart="OnChartDragStart" OnDragOver="OnChartDragOver"
+                          OnDragLeave="OnChartDragLeave" OnDrop="OnChartDropAsync"
+                          OnDragEnd="OnChartDragEnd">
+            <div class="card mb-4" @key="@($"dd-{series.Name}-{_loadKey}")">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>@series.Name @L["Analytics_Distribution"]</h6>
+                </div>
+                <div class="card-body">
+                    <ApexChart TItem="DropdownDataPoint"
+                               Options="BuildDonutOptions(series)"
+                               Height="280">
+                        <ApexPointSeries TItem="DropdownDataPoint"
+                                        Items="series.Distribution"
+                                        SeriesType="SeriesType.Donut"
+                                        Name="@L["Metric_Count"]"
+                                        XValue="p => p.Label"
+                                        YValue="p => p.Count"
+                                        OrderByDescending="p => p.Y" />
+                    </ApexChart>
+                </div>
             </div>
-            <div class="card-body">
-                <ApexChart TItem="DropdownDataPoint"
-                           Options="BuildDonutOptions(series)"
-                           Height="280">
-                    <ApexPointSeries TItem="DropdownDataPoint"
-                                    Items="series.Distribution"
-                                    SeriesType="SeriesType.Donut"
-                                    Name="@L["Metric_Count"]"
-                                    XValue="p => p.Label"
-                                    YValue="p => p.Count"
-                                    OrderByDescending="p => p.Y" />
-                </ApexChart>
-            </div>
-        </div>
+        </ReorderableChart>
     }
 
     <!-- Dropdown Value Trend Charts -->
@@ -455,85 +529,91 @@ else
             ? trend.Series.Where(s => selected!.Contains(s.ValueLabel)).ToList()
             : trend.Series;
 
-        <div class="card mb-4" @key="@($"{chartKey}-{_loadKey}")">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="bi bi-graph-up me-2"></i>@trend.FieldName — @trend.ValueFieldName
-                    @if (trend.ValueFieldUnit != "UN")
-                    {
-                        <span class="badge bg-info ms-1">@trend.ValueFieldUnit</span>
-                    }
-                </h6>
-                <small class="text-muted">@L["FieldEditor_DropdownTrendHint"]</small>
-            </div>
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-1 mb-2">
-                    @for (var i = 0; i < trend.Series.Count; i++)
-                    {
-                        var s = trend.Series[i];
-                        var isActive = !hasFilter || selected!.Contains(s.ValueLabel);
-                        var color = i < CrossFieldPalette.Count ? CrossFieldPalette[i] : "#999";
-                        var idx = i;
-                        <button class="btn btn-sm px-2 py-0 border @(isActive ? "" : "opacity-25")"
-                                style="font-size:.75rem; color:@color; border-color:@color !important;"
-                                @onclick="() => ToggleDropdownTrendSeries(chartKey, trend.Series[idx].ValueLabel, trend.Series.Count)">
-                            <i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>@s.ValueLabel
-                        </button>
-                    }
-                    @if (hasFilter)
-                    {
-                        <button class="btn btn-outline-secondary btn-sm px-2 py-0" style="font-size:.75rem;"
-                                @onclick="() => InvertDropdownTrendSeries(chartKey, trend.Series)">
-                            <i class="bi bi-arrow-left-right me-1"></i>@L["Common_Invert"]
-                        </button>
-                        <button class="btn btn-outline-secondary btn-sm px-2 py-0" style="font-size:.75rem;"
-                                @onclick="() => { _selectedSeries.Remove(chartKey); }">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i>@L["DataGrid_ResetAll"]
-                        </button>
-                    }
-                </div>
-                <div @key="@($"{chartKey}-{(hasFilter ? string.Join(',', selected!) : "all")}-{_loadKey}")">
-                    @{
-                        var visibleColors = hasFilter
-                            ? trend.Series
-                                .Select((s, i) => (s, i))
-                                .Where(x => selected!.Contains(x.s.ValueLabel))
-                                .Select(x => x.i < CrossFieldPalette.Count ? CrossFieldPalette[x.i] : "#999")
-                                .ToList()
-                            : CrossFieldPalette;
-                    }
-                    <ApexChart TItem="NumericDataPoint"
-                               Options="BuildDropdownTrendOptions(trend, visibleColors)"
-                               Height="300">
-                        @foreach (var valueSeries in visibleSeries)
+        <ReorderableChart ChartKey="@chartKey" Order="@GetChartOrder(chartKey)"
+                          IsDragging="@(_draggingKey == chartKey)"
+                          IsDropTarget="@(_dropTargetKey == chartKey)"
+                          OnDragStart="OnChartDragStart" OnDragOver="OnChartDragOver"
+                          OnDragLeave="OnChartDragLeave" OnDrop="OnChartDropAsync"
+                          OnDragEnd="OnChartDragEnd">
+            <div class="card mb-4" @key="@($"{chartKey}-{_loadKey}")">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>@trend.FieldName — @trend.ValueFieldName
+                        @if (trend.ValueFieldUnit != "UN")
                         {
-                            <ApexPointSeries TItem="NumericDataPoint"
-                                            Items="valueSeries.Points"
-                                            SeriesType="MapChartType(trend.ChartType)"
-                                            Name="@valueSeries.ValueLabel"
-                                            XValue="p => p.Date"
-                                            YValue="p => p.Value"
-                                            OrderBy="p => p.X" />
+                            <span class="badge bg-info ms-1">@trend.ValueFieldUnit</span>
                         }
-                    </ApexChart>
+                    </h6>
+                    <small class="text-muted">@L["FieldEditor_DropdownTrendHint"]</small>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        @for (var i = 0; i < trend.Series.Count; i++)
+                        {
+                            var s = trend.Series[i];
+                            var isActive = !hasFilter || selected!.Contains(s.ValueLabel);
+                            var color = i < CrossFieldPalette.Count ? CrossFieldPalette[i] : "#999";
+                            var idx = i;
+                            <button class="btn btn-sm px-2 py-0 border @(isActive ? "" : "opacity-25")"
+                                    style="font-size:.75rem; color:@color; border-color:@color !important;"
+                                    @onclick="() => ToggleDropdownTrendSeries(chartKey, trend.Series[idx].ValueLabel, trend.Series.Count)">
+                                <i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>@s.ValueLabel
+                            </button>
+                        }
+                        @if (hasFilter)
+                        {
+                            <button class="btn btn-outline-secondary btn-sm px-2 py-0" style="font-size:.75rem;"
+                                    @onclick="() => InvertDropdownTrendSeries(chartKey, trend.Series)">
+                                <i class="bi bi-arrow-left-right me-1"></i>@L["Common_Invert"]
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm px-2 py-0" style="font-size:.75rem;"
+                                    @onclick="() => { _selectedSeries.Remove(chartKey); }">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>@L["DataGrid_ResetAll"]
+                            </button>
+                        }
+                    </div>
+                    <div @key="@($"{chartKey}-{(hasFilter ? string.Join(',', selected!) : "all")}-{_loadKey}")">
+                        @{
+                            var visibleColors = hasFilter
+                                ? trend.Series
+                                    .Select((s, i) => (s, i))
+                                    .Where(x => selected!.Contains(x.s.ValueLabel))
+                                    .Select(x => x.i < CrossFieldPalette.Count ? CrossFieldPalette[x.i] : "#999")
+                                    .ToList()
+                                : CrossFieldPalette;
+                        }
+                        <ApexChart TItem="NumericDataPoint"
+                                   Options="BuildDropdownTrendOptions(trend, visibleColors)"
+                                   Height="300">
+                            @foreach (var valueSeries in visibleSeries)
+                            {
+                                <ApexPointSeries TItem="NumericDataPoint"
+                                                Items="valueSeries.Points"
+                                                SeriesType="MapChartType(trend.ChartType)"
+                                                Name="@valueSeries.ValueLabel"
+                                                XValue="p => p.Date"
+                                                YValue="p => p.Value"
+                                                OrderBy="p => p.X" />
+                            }
+                        </ApexChart>
+                    </div>
                 </div>
             </div>
-        </div>
+        </ReorderableChart>
     }
 
     <!-- Cross-Field Analytics -->
-    @if (_data.CrossFieldResults.Count > 0)
+    @foreach (var result in _data.CrossFieldResults)
     {
-        <h5 class="mb-3">
-            <i class="bi bi-diagram-3 me-2"></i>@L["Analytics_CrossField"]
-        </h5>
-        <p class="text-muted small mb-3">@L["Analytics_CrossFieldHint"]</p>
-
-        <div class="row g-4 mb-4" @key="@($"cross-{_loadKey}")">
-            @foreach (var result in _data.CrossFieldResults)
-            {
-                <div class="@(result.DisplayType == AnalyticsDisplayType.TimeSeries ? "col-12" : "col-12 col-lg-6")">
-                    <div class="card h-100">
+        var cfKey = $"cf-{result.RuleId}";
+        if (_hiddenCharts.Contains(cfKey)) continue;
+        <ReorderableChart ChartKey="@cfKey" Order="@GetChartOrder(cfKey)"
+                          IsDragging="@(_draggingKey == cfKey)"
+                          IsDropTarget="@(_dropTargetKey == cfKey)"
+                          OnDragStart="OnChartDragStart" OnDragOver="OnChartDragOver"
+                          OnDragLeave="OnChartDragLeave" OnDrop="OnChartDropAsync"
+                          OnDragEnd="OnChartDragEnd">
+            <div class="card mb-4" @key="@($"{cfKey}-{_loadKey}")">
                         <div class="card-header">
                             <h6 class="mb-0">
                                 @if (result.Aggregation is AnalyticsAggregation.CountByValue or AnalyticsAggregation.AggregateByValue && result.IsDropdownMeasure)
@@ -655,15 +735,20 @@ else
                             }
                         </div>
                     </div>
-                </div>
-            }
-        </div>
+        </ReorderableChart>
     }
 
     <!-- Running Balance Charts -->
     @foreach (var balance in _data.RunningBalances)
     {
-        if (_hiddenCharts.Contains($"bal-{balance.Label}")) continue;
+        var balKey = $"bal-{balance.Label}";
+        if (_hiddenCharts.Contains(balKey)) continue;
+        <ReorderableChart ChartKey="@balKey" Order="@GetChartOrder(balKey)"
+                          IsDragging="@(_draggingKey == balKey)"
+                          IsDropTarget="@(_dropTargetKey == balKey)"
+                          OnDragStart="OnChartDragStart" OnDragOver="OnChartDragOver"
+                          OnDragLeave="OnChartDragLeave" OnDrop="OnChartDropAsync"
+                          OnDragEnd="OnChartDragEnd">
         <div class="card mb-4" @key="@($"bal-{balance.Label}-{_loadKey}")">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
@@ -703,33 +788,37 @@ else
                 </ApexChart>
             </div>
         </div>
+        </ReorderableChart>
     }
 
     <!-- Custom Charts -->
-    @if (_data.CustomChartResults.Count > 0)
+    @foreach (var result in _data.CustomChartResults)
     {
-        <h5 class="mb-3"><i class="bi bi-bar-chart-steps me-2"></i>@L["CustomChart_Title"]</h5>
-        @foreach (var result in _data.CustomChartResults)
-        {
-            if (_hiddenCharts.Contains($"cc-{result.ChartId}")) continue;
-            var chartDef = _customChartDefinitions.FirstOrDefault(c => c.Id == result.ChartId);
+        var ccKey = $"cc-{result.ChartId}";
+        if (_hiddenCharts.Contains(ccKey)) continue;
+        var chartDef = _customChartDefinitions.FirstOrDefault(c => c.Id == result.ChartId);
+        <ReorderableChart ChartKey="@ccKey" Order="@GetChartOrder(ccKey)"
+                          IsDragging="@(_draggingKey == ccKey)"
+                          IsDropTarget="@(_dropTargetKey == ccKey)"
+                          OnDragStart="OnChartDragStart" OnDragOver="OnChartDragOver"
+                          OnDragLeave="OnChartDragLeave" OnDrop="OnChartDropAsync"
+                          OnDragEnd="OnChartDragEnd">
             <CustomChartRenderer @key="@($"cc-{result.ChartId}-{_loadKey}")"
                                  Result="result"
                                  OnEdit="() => { if (chartDef is not null) _chartFormModal?.ShowEdit(chartDef); }"
                                  OnDelete="() => DeleteCustomChartAsync(result.ChartId)" />
-        }
+        </ReorderableChart>
     }
-
-    <CustomChartFormModal @ref="_chartFormModal"
-                          TrackedActionId="ActionId"
-                          AvailableFields="_actionFields"
-                          ResolvedDropdownValues="_resolvedDropdownValues"
-                          OnSaved="OnCustomChartSavedAsync" />
 
     <!-- Field Summary Stats (reuse existing pattern) -->
     @if (_data.Stats.FieldStats.Count > 0 && !_hiddenCharts.Contains("summary"))
     {
-        <h5 class="mb-3"><i class="bi bi-sliders me-2"></i>@L["Dashboard_FieldSummary"]</h5>
+        <ReorderableChart ChartKey="summary" Order="@(GetChartOrder("summary"))"
+                          IsDragging="@(_draggingKey == "summary")"
+                          IsDropTarget="@(_dropTargetKey == "summary")"
+                          OnDragStart="OnChartDragStart" OnDragOver="OnChartDragOver"
+                          OnDragLeave="OnChartDragLeave" OnDrop="OnChartDropAsync"
+                          OnDragEnd="OnChartDragEnd">
         <div class="row g-3 mb-4">
             @foreach (var field in _data.Stats.FieldStats)
             {
@@ -784,7 +873,23 @@ else
                 </div>
             }
         </div>
+        </ReorderableChart>
     }
+    </div>
+
+    <CustomChartFormModal @ref="_chartFormModal"
+                          TrackedActionId="ActionId"
+                          AvailableFields="_actionFields"
+                          ResolvedDropdownValues="_resolvedDropdownValues"
+                          OnSaved="OnCustomChartSavedAsync" />
+
+    <button type="button"
+            class="scroll-to-top-fab @(_showScrollToTop ? "visible" : "")"
+            title="@L["Chart_ScrollToTop"]"
+            aria-label="@L["Chart_ScrollToTop"]"
+            @onclick="ScrollToTopAsync">
+        <i class="bi bi-arrow-up"></i>
+    </button>
 }
 
 @code {
@@ -801,6 +906,7 @@ else
     [Inject] private FieldDefinitionService FieldDefinitionService { get; set; } = default!;
     @using Blazored.LocalStorage
     [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private ActionDetailData? _data;
     private bool _loading = true;
@@ -1523,11 +1629,30 @@ else
             var (from, to) = ResolveDateRange();
             _data = await DashService.LoadActionDetailAsync(ActionId, from, to);
             _loadKey++;
+            RebuildNaturalKeyOrder();
         }
         catch (Exception ex)
         {
             _errors = [L["Analytics_LoadFailed", ex.Message]];
         }
+    }
+
+    private void RebuildNaturalKeyOrder()
+    {
+        _naturalKeyOrder = new Dictionary<string, int>(StringComparer.Ordinal);
+        var i = 0;
+        void reg(string k) { if (!_naturalKeyOrder.ContainsKey(k)) _naturalKeyOrder[k] = i++; }
+        if (_data is null) return;
+
+        if (_data.DailyEntries.Count > 0) reg("freq");
+        foreach (var s in _data.NumericSeries) reg($"num-{s.Name}");
+        foreach (var s in _data.BooleanSeries) reg($"bool-{s.Name}");
+        foreach (var s in _data.DropdownSeries) reg($"dd-{s.Name}");
+        foreach (var t in _data.DropdownValueTrends) reg($"ddt-{t.FieldName}");
+        foreach (var c in _data.CrossFieldResults) reg($"cf-{c.RuleId}");
+        foreach (var b in _data.RunningBalances) reg($"bal-{b.Label}");
+        foreach (var c in _data.CustomChartResults) reg($"cc-{c.ChartId}");
+        if (_data.Stats.FieldStats.Count > 0) reg("summary");
     }
 
     private async Task ApplyFiltersAsync()
@@ -1606,16 +1731,209 @@ else
 
     private async Task RestoreHiddenChartsAsync()
     {
-        var hidden = await ChartVisibility.GetHiddenKeysAsync(ActionId);
-        if (hidden.Count > 0)
-            _hiddenCharts = new HashSet<string>(hidden, StringComparer.Ordinal);
+        var response = await ChartVisibility.GetAsync(ActionId);
+        if (response.HiddenKeys.Count > 0)
+            _hiddenCharts = new HashSet<string>(response.HiddenKeys, StringComparer.Ordinal);
+        if (response.ChartOrder.Count > 0)
+            _chartOrder = response.ChartOrder.ToList();
+    }
+
+    private async Task ResetChartLayoutAsync()
+    {
+        _hiddenCharts.Clear();
+        _chartOrder.Clear();
+        await ChartVisibility.SaveHiddenKeysAsync(ActionId, _hiddenCharts);
+        await ChartVisibility.SaveChartOrderAsync(ActionId, _chartOrder);
+        StateHasChanged();
+    }
+
+    // ── Chart ordering (drag-to-reorder) ──
+
+    private List<string> _chartOrder = [];
+    private string? _draggingKey;
+    private string? _dropTargetKey;
+    private Dictionary<string, int> _naturalKeyOrder = new(StringComparer.Ordinal);
+
+    private int GetChartOrder(string key)
+    {
+        var idx = _chartOrder.IndexOf(key);
+        if (idx >= 0) return idx;
+        return 10_000 + (_naturalKeyOrder.TryGetValue(key, out var n) ? n : 9_999);
+    }
+
+    private void OnChartDragStart(string key) => _draggingKey = key;
+
+    private void OnChartDragOver(string key)
+    {
+        if (_draggingKey is null || key == _draggingKey) return;
+        if (_dropTargetKey != key)
+        {
+            _dropTargetKey = key;
+            StateHasChanged();
+        }
+    }
+
+    private void OnChartDragLeave(string key)
+    {
+        if (_dropTargetKey == key)
+        {
+            _dropTargetKey = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnChartDropAsync(string targetKey)
+    {
+        if (_draggingKey is null || _draggingKey == targetKey)
+        {
+            _draggingKey = null;
+            _dropTargetKey = null;
+            return;
+        }
+
+        var movedKey = _draggingKey;
+        var naturalKeys = _naturalKeyOrder.OrderBy(kv => kv.Value).Select(kv => kv.Key).ToList();
+        var order = naturalKeys.OrderBy(GetChartOrder).ToList();
+
+        order.Remove(movedKey);
+        var targetIdx = order.IndexOf(targetKey);
+        if (targetIdx < 0) targetIdx = order.Count;
+        order.Insert(targetIdx, movedKey);
+
+        _chartOrder = order;
+        _draggingKey = null;
+        _dropTargetKey = null;
+
+        await ChartVisibility.SaveChartOrderAsync(ActionId, _chartOrder);
+        StateHasChanged();
+        await ScrollToChartAsync(movedKey);
+    }
+
+    private void OnChartDragEnd()
+    {
+        _draggingKey = null;
+        _dropTargetKey = null;
+    }
+
+    private List<(string Key, string Label)> BuildChartNavList()
+    {
+        var list = new List<(string Key, string Label)>();
+        if (_data is null) return list;
+
+        void add(string key, string label) => list.Add((key, label));
+
+        void addIfVisible(string key, string label)
+        {
+            if (_hiddenCharts.Contains(key)) return;
+            add(key, label);
+        }
+
+        if (_data.DailyEntries.Count > 0) addIfVisible("freq", L["Analytics_EntryFrequency"]);
+        foreach (var s in _data.NumericSeries) addIfVisible($"num-{s.Name}", s.Name);
+        foreach (var s in _data.BooleanSeries) addIfVisible($"bool-{s.Name}", s.Name);
+        foreach (var s in _data.DropdownSeries) addIfVisible($"dd-{s.Name}", $"{s.Name} ({L["Analytics_Distribution"]})");
+        foreach (var t in _data.DropdownValueTrends) addIfVisible($"ddt-{t.FieldName}", $"{t.FieldName} ({L["Analytics_Trend"]})");
+        foreach (var c in _data.CrossFieldResults) addIfVisible($"cf-{c.RuleId}", c.Label);
+        foreach (var b in _data.RunningBalances) addIfVisible($"bal-{b.Label}", $"{b.Label} — {L["Analytics_Balance"]}");
+        foreach (var c in _data.CustomChartResults) addIfVisible($"cc-{c.ChartId}", c.Title);
+        if (_data.Stats.FieldStats.Count > 0) addIfVisible("summary", L["Dashboard_FieldSummary"]);
+
+        return list.OrderBy(x => GetChartOrder(x.Key)).ToList();
     }
 
     private async Task OnCustomChartSavedAsync()
     {
+        double? savedY = null;
+        try { savedY = await JS.InvokeAsync<double>("eval", "window.scrollY"); } catch { }
+
         _customChartDefinitions = await CustomChartApi.GetByTrackedActionAsync(ActionId);
         await LoadDataCoreAsync();
+
+        if (savedY.HasValue) _pendingScrollY = savedY.Value;
         StateHasChanged();
+    }
+
+    private double? _pendingScrollY;
+    private bool _showScrollToTop;
+    private DotNetObjectReference<ActionDetail>? _dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeVoidAsync("eval",
+                    "window.__traceonAttachScrollFab = function(ref){" +
+                    " if(window.__traceonScrollFabAttached){ window.__traceonScrollFabRef = ref; return; }" +
+                    " window.__traceonScrollFabAttached = true; window.__traceonScrollFabRef = ref;" +
+                    " var last=false; function tick(){ var r=window.__traceonScrollFabRef; if(!r) return;" +
+                    " var s=(window.scrollY||window.pageYOffset||0)>400; if(s!==last){last=s; r.invokeMethodAsync('OnScrollThreshold', s);} }" +
+                    " window.addEventListener('scroll', tick, {passive:true}); tick(); };");
+                await JS.InvokeVoidAsync("__traceonAttachScrollFab", _dotNetRef);
+            }
+            catch { }
+        }
+
+        if (_pendingScrollY.HasValue)
+        {
+            var y = _pendingScrollY.Value;
+            _pendingScrollY = null;
+            try
+            {
+                var script = $"window.scrollTo(0,{y.ToString(System.Globalization.CultureInfo.InvariantCulture)});" +
+                             $"setTimeout(()=>window.scrollTo(0,{y.ToString(System.Globalization.CultureInfo.InvariantCulture)}),150);" +
+                             $"setTimeout(()=>window.scrollTo(0,{y.ToString(System.Globalization.CultureInfo.InvariantCulture)}),400);";
+                await JS.InvokeVoidAsync("eval", script);
+            }
+            catch { }
+        }
+    }
+
+    [JSInvokable]
+    public void OnScrollThreshold(bool visible)
+    {
+        if (_showScrollToTop == visible) return;
+        _showScrollToTop = visible;
+        StateHasChanged();
+    }
+
+    private async Task ScrollToTopAsync()
+    {
+        try { await JS.InvokeVoidAsync("eval", "window.scrollTo({top:0, behavior:'smooth'});"); } catch { }
+    }
+
+    private async Task OnQuickNavChanged(ChangeEventArgs e)
+    {
+        var key = e.Value?.ToString();
+        if (string.IsNullOrEmpty(key)) return;
+        await ScrollToChartAsync(key);
+    }
+
+    private async Task ScrollToChartAsync(string key)
+    {
+        try
+        {
+            var safeKey = System.Text.Json.JsonEncodedText.Encode(key).Value;
+            var script = $"(function(){{" +
+                         $"requestAnimationFrame(function(){{" +
+                         $"var el=document.querySelector('[data-chart-key=\"{safeKey}\"]');" +
+                         $"if(!el)return;" +
+                         $"var header=document.querySelector('.top-row');" +
+                         $"var offset=(header?header.getBoundingClientRect().height:0)+16;" +
+                         $"var top=el.getBoundingClientRect().top+window.scrollY-offset;" +
+                         $"window.scrollTo({{top:top,behavior:'smooth'}});" +
+                         $"}});" +
+                         $"}})();";
+            await JS.InvokeVoidAsync("eval", script);
+        }
+        catch { }
+    }
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
     }
 
     private async Task DeleteCustomChartAsync(Guid chartId)

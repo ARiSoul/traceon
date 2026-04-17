@@ -7,4 +7,5 @@ public interface IActionChartVisibilityService
 {
     Task<Result<ChartVisibilityResponse>> GetAsync(Guid trackedActionId, CancellationToken cancellationToken = default);
     Task<Result<ChartVisibilityResponse>> UpsertAsync(Guid trackedActionId, UpdateChartVisibilityRequest request, CancellationToken cancellationToken = default);
+    Task<Result<ChartVisibilityResponse>> UpsertOrderAsync(Guid trackedActionId, UpdateChartOrderRequest request, CancellationToken cancellationToken = default);
 }

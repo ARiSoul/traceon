@@ -1264,7 +1264,7 @@ else
     {
         <div class="d-flex justify-content-between align-items-center mb-3">
             <p class="text-muted mb-0">@L["CustomChart_TabHint"]</p>
-            <button class="btn btn-outline-primary btn-sm" @onclick="StartCreateCustomChart" disabled="@(_ccEditing is not null && !_ccEditing.Id.HasValue)">
+            <button class="btn btn-outline-primary btn-sm" @onclick="StartCreateCustomChart" disabled="@(_ccShowForm && _ccEditingChart is null)">
                 <i class="bi bi-plus-circle me-1"></i>@L["CustomChart_AddChart"]
             </button>
         </div>
@@ -1278,12 +1278,12 @@ else
         else
         {
             @* New chart form (top) *@
-            @if (_ccEditing is not null && !_ccEditing.Id.HasValue)
+            @if (_ccShowForm && _ccEditingChart is null)
             {
-                @RenderCustomChartEditForm()
+                @RenderCustomChartEditCard(null)
             }
 
-            @if (_customCharts.Count == 0 && _ccEditing is null)
+            @if (_customCharts.Count == 0 && !_ccShowForm)
             {
                 <div class="text-center text-muted py-4">
                     <i class="bi bi-bar-chart-steps fs-3 d-block mb-2"></i>
@@ -1298,10 +1298,10 @@ else
                 <div class="list-group">
                     @foreach (var chart in _customCharts)
                     {
-                        @if (_ccEditing is not null && _ccEditing.Id == chart.Id)
+                        @if (_ccShowForm && _ccEditingChart?.Id == chart.Id)
                         {
                             <div class="list-group-item p-0">
-                                @RenderCustomChartEditForm()
+                                @RenderCustomChartEditCard(chart)
                             </div>
                         }
                         else
@@ -1493,9 +1493,8 @@ else
     private List<CustomChartResponse> _customCharts = [];
     private bool _customChartsTabLoaded;
     private Dictionary<Guid, string[]> _resolvedDropdownValues = [];
-    private CustomChartEditModel? _ccEditing;
-    private bool _ccSaving;
-    private IReadOnlyList<string> _ccErrors = [];
+    private bool _ccShowForm;
+    private CustomChartResponse? _ccEditingChart;
 
     protected override async Task OnInitializedAsync()
     {
@@ -2976,92 +2975,26 @@ else
 
     private void StartCreateCustomChart()
     {
-        _ccEditing = new CustomChartEditModel();
-        _ccErrors = [];
-        _ccSaving = false;
+        _ccEditingChart = null;
+        _ccShowForm = true;
     }
 
     private void StartEditCustomChart(CustomChartResponse chart)
     {
-        _ccEditing = new CustomChartEditModel
-        {
-            Id = chart.Id,
-            Title = chart.Title,
-            MeasureFieldId = chart.MeasureFieldId,
-            Aggregation = chart.Aggregation,
-            GroupByFieldId = chart.GroupByFieldId ?? Guid.Empty,
-            TimeGrouping = chart.TimeGrouping,
-            ChartType = chart.ChartType,
-            FilterGroup = chart.FilterConditions,
-            SortDescending = chart.SortDescending,
-            MaxGroups = chart.MaxGroups
-        };
-        _ccErrors = [];
-        _ccSaving = false;
+        _ccEditingChart = chart;
+        _ccShowForm = true;
     }
 
     private void CancelCustomChartEdit()
     {
-        _ccEditing = null;
-        _ccErrors = [];
+        _ccShowForm = false;
+        _ccEditingChart = null;
     }
 
-    private async Task SaveCustomChartAsync()
+    private async Task OnCustomChartSavedAsync()
     {
-        if (_ccEditing is null) return;
-        _ccErrors = [];
-
-        if (string.IsNullOrWhiteSpace(_ccEditing.Title))
-        {
-            _ccErrors = [L["CustomChart_TitleRequired"]];
-            return;
-        }
-        if (_ccEditing.MeasureFieldId == Guid.Empty)
-        {
-            _ccErrors = [L["CustomChart_MeasureRequired"]];
-            return;
-        }
-
-        var filter = CleanFilterGroup(_ccEditing.FilterGroup);
-        _ccSaving = true;
-
-        if (_ccEditing.Id.HasValue)
-        {
-            var request = new UpdateCustomChartRequest(
-                Title: _ccEditing.Title,
-                Aggregation: _ccEditing.Aggregation,
-                ChartType: _ccEditing.ChartType,
-                GroupByFieldId: _ccEditing.GroupByFieldId != Guid.Empty ? _ccEditing.GroupByFieldId : null,
-                ClearGroupByField: _ccEditing.GroupByFieldId == Guid.Empty,
-                TimeGrouping: _ccEditing.TimeGrouping,
-                FilterConditions: filter,
-                ClearFilterConditions: filter is null,
-                SortDescending: _ccEditing.SortDescending,
-                MaxGroups: _ccEditing.MaxGroups,
-                ClearMaxGroups: !_ccEditing.MaxGroups.HasValue);
-
-            var (success, errors) = await CustomChartApi.UpdateAsync(Id, _ccEditing.Id.Value, request);
-            if (!success) { _ccErrors = errors; _ccSaving = false; return; }
-        }
-        else
-        {
-            var request = new CreateCustomChartRequest(
-                Title: _ccEditing.Title,
-                MeasureFieldId: _ccEditing.MeasureFieldId,
-                Aggregation: _ccEditing.Aggregation,
-                ChartType: _ccEditing.ChartType,
-                GroupByFieldId: _ccEditing.GroupByFieldId != Guid.Empty ? _ccEditing.GroupByFieldId : null,
-                TimeGrouping: _ccEditing.TimeGrouping,
-                FilterConditions: filter,
-                SortDescending: _ccEditing.SortDescending,
-                MaxGroups: _ccEditing.MaxGroups);
-
-            var (success, errors) = await CustomChartApi.CreateAsync(Id, request);
-            if (!success) { _ccErrors = errors; _ccSaving = false; return; }
-        }
-
-        _ccSaving = false;
-        _ccEditing = null;
+        _ccShowForm = false;
+        _ccEditingChart = null;
         await LoadCustomChartsAsync();
     }
 
@@ -3072,169 +3005,26 @@ else
             await LoadCustomChartsAsync();
     }
 
-    private static FilterGroupDto? CleanFilterGroup(FilterGroupDto? group)
+    private RenderFragment RenderCustomChartEditCard(CustomChartResponse? chart) => __builder =>
     {
-        if (group is null) return null;
-        var conditions = group.Conditions?.Where(c => c.FieldId != Guid.Empty).ToList();
-        var groups = group.Groups?.Select(CleanFilterGroup).Where(g => g is not null).Select(g => g!).ToList();
-        var hasConditions = conditions is { Count: > 0 };
-        var hasGroups = groups is { Count: > 0 };
-        if (!hasConditions && !hasGroups) return null;
-        return new FilterGroupDto(group.Logic, hasConditions ? conditions : null, hasGroups ? groups : null);
-    }
-
-    private RenderFragment RenderCustomChartEditForm() => __builder =>
-    {
-        if (_ccEditing is null) return;
         <div class="card border-primary mb-3">
             <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
-                    <i class="bi bi-@(_ccEditing.Id.HasValue ? "pencil" : "plus-circle") me-2"></i>
-                    @(_ccEditing.Id.HasValue? L["CustomChart_EditChart"] : L["CustomChart_AddChart"])
+                    <i class="bi bi-@(chart is not null ? "pencil" : "plus-circle") me-2"></i>
+                    @(chart is not null ? L["CustomChart_EditChart"] : L["CustomChart_AddChart"])
                 </h6>
                 <button class="btn-close" @onclick="CancelCustomChartEdit"></button>
             </div>
             <div class="card-body">
-                <ErrorAlert Errors="_ccErrors" />
-                <div class="row g-3">
-                    <!-- Title -->
-                    <div class="col-12">
-                        <label class="form-label">@L["CustomChart_ChartTitle"] <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" @bind="_ccEditing.Title" maxlength="200"
-                               placeholder="@L["CustomChart_ChartTitlePlaceholder"]" />
-                    </div>
-                    <!-- Measure Field -->
-                    <div class="col-12 col-md-6">
-                        <label class="form-label">@L["CustomChart_MeasureField"] <span class="text-danger">*</span></label>
-                        <select class="form-select" @bind="_ccEditing.MeasureFieldId">
-                            <option value="@Guid.Empty">— @L["Common_Select"] —</option>
-                            @foreach (var field in _fields)
-                            {
-                                <option value="@field.Id">@field.Name (@field.FieldType)</option>
-                            }
-                        </select>
-                    </div>
-                    <!-- Aggregation -->
-                    <div class="col-12 col-md-6">
-                        <label class="form-label">@L["CustomChart_Aggregation"]</label>
-                        <select class="form-select" @bind="_ccEditing.Aggregation">
-                            <option value="@AnalyticsAggregation.Count">@L["Aggregation_Count"]</option>
-                            <option value="@AnalyticsAggregation.Sum">@L["Aggregation_Sum"]</option>
-                            <option value="@AnalyticsAggregation.Avg">@L["Aggregation_Avg"]</option>
-                            <option value="@AnalyticsAggregation.Min">@L["Aggregation_Min"]</option>
-                            <option value="@AnalyticsAggregation.Max">@L["Aggregation_Max"]</option>
-                        </select>
-                    </div>
-                    <!-- Group By Field -->
-                    <div class="col-12 col-md-6">
-                        <label class="form-label">@L["CustomChart_GroupBy"]</label>
-                        <select class="form-select" @bind="_ccEditing.GroupByFieldId">
-                            <option value="@Guid.Empty">— @L["CustomChart_NoGrouping"] —</option>
-                            @foreach (var field in _fields)
-                            {
-                                <option value="@field.Id">@field.Name</option>
-                            }
-                        </select>
-                    </div>
-                    <!-- Time Grouping -->
-                    <div class="col-12 col-md-6">
-                        <label class="form-label">@L["CustomChart_TimeGrouping"]</label>
-                        <select class="form-select" @bind="_ccEditing.TimeGrouping">
-                            <option value="@TimeGrouping.None">@L["CustomChart_NoTimeGrouping"]</option>
-                            <option value="@TimeGrouping.Day">@L["TimeGrouping_Day"]</option>
-                            <option value="@TimeGrouping.Week">@L["TimeGrouping_Week"]</option>
-                            <option value="@TimeGrouping.Month">@L["TimeGrouping_Month"]</option>
-                            <option value="@TimeGrouping.Year">@L["TimeGrouping_Year"]</option>
-                        </select>
-                    </div>
-                    <!-- Chart Type -->
-                    <div class="col-12 col-md-4">
-                        <label class="form-label">@L["CustomChart_ChartType"]</label>
-                        <select class="form-select" @bind="_ccEditing.ChartType">
-                            <option value="@CustomChartType.Bar">@L["ChartType_Bar"]</option>
-                            <option value="@CustomChartType.HorizontalBar">@L["ChartType_HorizontalBar"]</option>
-                            <option value="@CustomChartType.Line">@L["ChartType_Line"]</option>
-                            <option value="@CustomChartType.Area">@L["ChartType_Area"]</option>
-                            <option value="@CustomChartType.Donut">@L["ChartType_Donut"]</option>
-                            <option value="@CustomChartType.Pie">@L["ChartType_Pie"]</option>
-                            <option value="@CustomChartType.StackedBar">@L["ChartType_StackedBar"]</option>
-                            <option value="@CustomChartType.TimeSeries">@L["ChartType_TimeSeries"]</option>
-                            <option value="@CustomChartType.Table">@L["ChartType_Table"]</option>
-                        </select>
-                    </div>
-                    <!-- Max Groups -->
-                    <div class="col-12 col-md-4">
-                        <label class="form-label">@L["CustomChart_MaxGroups"]</label>
-                        <input type="number" class="form-control" min="0" @bind="_ccEditing.MaxGroups"
-                               placeholder="@L["Common_All"]" />
-                    </div>
-                    <!-- Sort Descending -->
-                    <div class="col-12 col-md-4 d-flex align-items-end">
-                        <div class="form-check form-switch">
-                            <input type="checkbox" class="form-check-input" id="cc-sort-desc-inline"
-                                   checked="@_ccEditing.SortDescending" @onchange="e => _ccEditing.SortDescending = (bool)(e.Value ?? false)" />
-                            <label class="form-check-label" for="cc-sort-desc-inline">@L["CustomChart_SortDescending"]</label>
-                        </div>
-                    </div>
-                    <!-- Filters -->
-                    <div class="col-12">
-                        <label class="form-label fw-semibold">
-                            <i class="bi bi-funnel me-1"></i>@L["CustomChart_Filters"]
-                        </label>
-                        <small class="text-muted d-block mb-2">@L["CustomChart_FiltersHint"]</small>
-                        @if (_ccEditing.FilterGroup is not null)
-                        {
-                            <FilterConditionEditor Group="_ccEditing.FilterGroup"
-                                                   GroupChanged="g => _ccEditing.FilterGroup = g"
-                                                   AvailableFields="_fields"
-                                                   ResolvedDropdownValues="_resolvedDropdownValues" />
-                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1" @onclick="() => _ccEditing.FilterGroup = null">
-                                <i class="bi bi-x-circle me-1"></i>@L["CustomChart_ClearFilters"]
-                            </button>
-                        }
-                        else
-                        {
-                            <button type="button" class="btn btn-outline-primary btn-sm"
-                                    @onclick="() => _ccEditing.FilterGroup = new FilterGroupDto(FilterLogic.And, [], [])">
-                                <i class="bi bi-plus me-1"></i>@L["CustomChart_AddFilters"]
-                            </button>
-                        }
-                    </div>
-                </div>
-                <!-- Actions -->
-                <div class="d-flex justify-content-end gap-2 mt-3">
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelCustomChartEdit">
-                        @L["Common_Cancel"]
-                    </button>
-                    <button class="btn btn-primary btn-sm" @onclick="SaveCustomChartAsync" disabled="@_ccSaving">
-                        @if (_ccSaving)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1"></span>
-                        }
-                        else
-                        {
-                            <i class="bi bi-check-circle me-1"></i>
-                        }
-                        @L["Common_Save"]
-                    </button>
-                </div>
+                <CustomChartForm TrackedActionId="Id"
+                                 AvailableFields="_fields"
+                                 ResolvedDropdownValues="_resolvedDropdownValues"
+                                 EditingChart="chart"
+                                 OnSaved="OnCustomChartSavedAsync"
+                                 OnCancel="CancelCustomChartEdit" />
             </div>
         </div>
     };
-
-    private sealed class CustomChartEditModel
-    {
-        public Guid? Id { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public Guid MeasureFieldId { get; set; }
-        public AnalyticsAggregation Aggregation { get; set; } = AnalyticsAggregation.Count;
-        public Guid GroupByFieldId { get; set; }
-        public TimeGrouping TimeGrouping { get; set; } = TimeGrouping.None;
-        public CustomChartType ChartType { get; set; } = CustomChartType.Bar;
-        public FilterGroupDto? FilterGroup { get; set; }
-        public bool SortDescending { get; set; }
-        public int? MaxGroups { get; set; }
-    }
 
     // ── Connected Actions inline edit form ──
 

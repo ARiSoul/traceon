@@ -19,6 +19,10 @@ internal sealed class ActionChartVisibilityConfiguration : IEntityTypeConfigurat
         builder.Property(e => e.HiddenKeys)
             .HasMaxLength(4000);
 
+        builder.Property(e => e.ChartOrder)
+            .HasMaxLength(4000)
+            .HasDefaultValue(string.Empty);
+
         builder.HasIndex(e => new { e.UserId, e.TrackedActionId }).IsUnique();
 
         builder.HasOne<TrackedAction>()

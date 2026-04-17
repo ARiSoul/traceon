@@ -1111,4 +1111,11 @@
   <data name="FilterOp_Between"><value>Entre</value></data>
   <data name="FilterOp_IsEmpty"><value>Está Vacío</value></data>
   <data name="FilterOp_IsNotEmpty"><value>No Está Vacío</value></data>
+  <data name="Chart_DragHint"><value>Arrastra para reordenar</value></data>
+  <data name="Chart_QuickNav"><value>Saltar a gráfico</value></data>
+  <data name="Chart_QuickNavPrompt"><value>Selecciona un gráfico…</value></data>
+  <data name="Chart_ScrollToTop"><value>Ir arriba</value></data>
+  <data name="Analytics_Trend"><value>Tendencia</value></data>
+  <data name="Analytics_ResetLayout"><value>Restablecer diseño</value></data>
+  <data name="Analytics_ResetLayoutHint"><value>Restaurar visibilidad y orden de gráficos predeterminados</value></data>
 </root>

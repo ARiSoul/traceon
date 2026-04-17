@@ -13,6 +13,7 @@ internal static class ChartVisibilityEndpoints
 
         group.MapGet("/", GetAsync);
         group.MapPut("/", UpsertAsync);
+        group.MapPut("/order", UpsertOrderAsync);
 
         return group;
     }
@@ -29,4 +30,11 @@ internal static class ChartVisibilityEndpoints
         IActionChartVisibilityService service,
         CancellationToken cancellationToken)
         => (await service.UpsertAsync(trackedActionId, request, cancellationToken)).ToHttpResult();
+
+    private static async Task<IResult> UpsertOrderAsync(
+        Guid trackedActionId,
+        UpdateChartOrderRequest request,
+        IActionChartVisibilityService service,
+        CancellationToken cancellationToken)
+        => (await service.UpsertOrderAsync(trackedActionId, request, cancellationToken)).ToHttpResult();
 }
