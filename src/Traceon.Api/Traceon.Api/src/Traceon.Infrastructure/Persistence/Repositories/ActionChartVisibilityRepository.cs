@@ -12,6 +12,13 @@ internal sealed class ActionChartVisibilityRepository(TraceonDbContext context) 
             .FirstOrDefaultAsync(e => e.TrackedActionId == trackedActionId && e.UserId == userId, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<ActionChartVisibility>> GetByActionAsync(Guid trackedActionId, CancellationToken cancellationToken = default)
+    {
+        return await context.ActionChartVisibilities
+            .Where(e => e.TrackedActionId == trackedActionId)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(ActionChartVisibility entity, CancellationToken cancellationToken = default)
     {
         context.ActionChartVisibilities.Add(entity);
@@ -21,6 +28,12 @@ internal sealed class ActionChartVisibilityRepository(TraceonDbContext context) 
     public async Task UpdateAsync(ActionChartVisibility entity, CancellationToken cancellationToken = default)
     {
         context.ActionChartVisibilities.Update(entity);
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateRangeAsync(IEnumerable<ActionChartVisibility> entities, CancellationToken cancellationToken = default)
+    {
+        context.ActionChartVisibilities.UpdateRange(entities);
         await context.SaveChangesAsync(cancellationToken);
     }
 }

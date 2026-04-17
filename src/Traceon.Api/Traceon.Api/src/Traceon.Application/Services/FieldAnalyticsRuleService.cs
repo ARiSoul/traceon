@@ -3,6 +3,7 @@ using Traceon.Application.Common;
 using Traceon.Application.Interfaces;
 using Traceon.Application.Logging;
 using Traceon.Application.Mapping;
+using Traceon.Contracts.Enums;
 using Traceon.Contracts.FieldAnalyticsRules;
 using Traceon.Domain.Entities;
 using Traceon.Domain.Repositories;
@@ -14,6 +15,7 @@ public sealed class FieldAnalyticsRuleService(
     ITrackedActionRepository actionRepository,
     IActionFieldRepository fieldRepository,
     IDropdownValueMetadataFieldRepository metadataFieldRepository,
+    IActionChartVisibilityService chartVisibilityService,
     ICurrentUserService currentUser,
     ILogger<FieldAnalyticsRuleService> logger) : IFieldAnalyticsRuleService
 {
@@ -161,6 +163,9 @@ public sealed class FieldAnalyticsRuleService(
         if (metadataValidation is not null)
             return Result<FieldAnalyticsRuleResponse>.Failure(metadataValidation, ResultErrorType.Validation);
 
+        var oldAggregation = entity.Aggregation;
+        var oldLabel = entity.Label;
+
         entity.Update(
             request.Aggregation.HasValue ? (int)request.Aggregation.Value : null,
             request.DisplayType.HasValue ? (int)request.DisplayType.Value : null,
@@ -177,6 +182,8 @@ public sealed class FieldAnalyticsRuleService(
             request.ClearFilterMetadataField);
 
         await repository.UpdateAsync(entity, cancellationToken);
+
+        await MigrateBalanceChartKeyIfChangedAsync(entity, oldAggregation, oldLabel, fieldsById, cancellationToken);
 
         var fieldNames = fields.ToDictionary(f => f.Id, f => f.Name);
         var metadataNames = await LoadMetadataFieldNamesAsync(
@@ -208,6 +215,33 @@ public sealed class FieldAnalyticsRuleService(
 
         logger.FieldAnalyticsRuleDeleted(id);
         return Result.Success();
+    }
+
+    private async Task MigrateBalanceChartKeyIfChangedAsync(
+        FieldAnalyticsRule entity,
+        int oldAggregation,
+        string? oldLabel,
+        Dictionary<Guid, ActionField> fieldsById,
+        CancellationToken cancellationToken)
+    {
+        var signedSum = (int)AnalyticsAggregation.SignedSum;
+        if (oldAggregation != signedSum || entity.Aggregation != signedSum)
+            return;
+
+        if (!fieldsById.TryGetValue(entity.MeasureFieldId, out var measureField))
+            return;
+
+        var oldKeyLabel = string.IsNullOrWhiteSpace(oldLabel) ? measureField.Name : oldLabel!;
+        var newKeyLabel = string.IsNullOrWhiteSpace(entity.Label) ? measureField.Name : entity.Label!;
+        if (string.Equals(oldKeyLabel, newKeyLabel, StringComparison.Ordinal))
+            return;
+
+        var renames = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [$"bal-{oldKeyLabel}"] = $"bal-{newKeyLabel}",
+        };
+
+        await chartVisibilityService.RenameKeysAsync(entity.TrackedActionId, renames, cancellationToken);
     }
 
     private async Task<string?> ValidateMetadataLinksAsync(

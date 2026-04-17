@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Traceon.Application.Common;
 using Traceon.Contracts.ActionFields;
+using Traceon.Contracts.Enums;
 using Traceon.Application.Interfaces;
 using Traceon.Application.Logging;
 using Traceon.Application.Mapping;
@@ -13,6 +14,8 @@ public sealed class ActionFieldService(
     IActionFieldRepository repository,
     ITrackedActionRepository actionRepository,
     IFieldDefinitionRepository fieldDefinitionRepository,
+    IFieldAnalyticsRuleRepository analyticsRuleRepository,
+    IActionChartVisibilityService chartVisibilityService,
     ICurrentUserService currentUser,
     ILogger<ActionFieldService> logger) : IActionFieldService
 {
@@ -175,6 +178,8 @@ public sealed class ActionFieldService(
             return Result<ActionFieldResponse>.Failure($"Field definition with ID '{entity.FieldDefinitionId}' was not found.");
         }
 
+        var oldName = entity.Name;
+
         entity.Update(
             request.Name,
             request.Description,
@@ -198,8 +203,34 @@ public sealed class ActionFieldService(
 
         await repository.UpdateAsync(entity, cancellationToken);
 
+        if (!string.Equals(oldName, entity.Name, StringComparison.Ordinal))
+            await MigrateChartKeysForFieldRenameAsync(entity, oldName, cancellationToken);
+
         logger.ActionFieldUpdated(id);
         return Result<ActionFieldResponse>.Success(entity.ToResponse(fieldDef));
+    }
+
+    private async Task MigrateChartKeysForFieldRenameAsync(ActionField field, string oldName, CancellationToken cancellationToken)
+    {
+        var renames = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [$"num-{oldName}"] = $"num-{field.Name}",
+            [$"bool-{oldName}"] = $"bool-{field.Name}",
+            [$"dd-{oldName}"] = $"dd-{field.Name}",
+            [$"ddt-{oldName}"] = $"ddt-{field.Name}",
+        };
+
+        // If any SignedSum rule measures this field without a custom label,
+        // the balance chart falls back to the field name — rename bal- too.
+        var rules = await analyticsRuleRepository.GetByTrackedActionIdAsync(field.TrackedActionId, cancellationToken);
+        if (rules.Any(r => r.Aggregation == (int)AnalyticsAggregation.SignedSum
+                           && r.MeasureFieldId == field.Id
+                           && string.IsNullOrWhiteSpace(r.Label)))
+        {
+            renames[$"bal-{oldName}"] = $"bal-{field.Name}";
+        }
+
+        await chartVisibilityService.RenameKeysAsync(field.TrackedActionId, renames, cancellationToken);
     }
 
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
