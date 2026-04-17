@@ -19,6 +19,7 @@ public sealed record CustomChartResponse
     public required int SortOrder { get; init; }
     public required bool SortDescending { get; init; }
     public required int? MaxGroups { get; init; }
+    public required bool ShowTotalizer { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime? UpdatedAtUtc { get; init; }
 }

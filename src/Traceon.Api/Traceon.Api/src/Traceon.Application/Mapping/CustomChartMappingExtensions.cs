@@ -33,6 +33,7 @@ public static class CustomChartMappingExtensions
             SortOrder = entity.SortOrder,
             SortDescending = entity.SortDescending,
             MaxGroups = entity.MaxGroups,
+            ShowTotalizer = entity.ShowTotalizer,
             CreatedAtUtc = entity.CreatedAtUtc,
             UpdatedAtUtc = entity.UpdatedAtUtc
         };

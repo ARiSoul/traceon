@@ -106,6 +106,27 @@
                         </div>
                     </div>
 
+                    @{
+                        var measureField = AvailableFields.FirstOrDefault(f => f.Id == _measureFieldId);
+                        var isMeasureNumeric = measureField is not null
+                            && measureField.FieldType is FieldType.Integer or FieldType.Decimal;
+                        var totalizerAvailable = isMeasureNumeric || _aggregation == AnalyticsAggregation.Count;
+                    }
+                    @if (totalizerAvailable)
+                    {
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" class="form-check-input" id="cc-show-total"
+                                       checked="@_showTotalizer"
+                                       @onchange="e => _showTotalizer = (bool)(e.Value ?? false)" />
+                                <label class="form-check-label" for="cc-show-total">
+                                    @L["CustomChart_ShowTotalizer"]
+                                </label>
+                                <div class="form-text small">@L["CustomChart_ShowTotalizerHint"]</div>
+                            </div>
+                        </div>
+                    }
+
                     <!-- Filters -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
@@ -172,6 +193,7 @@
     private FilterGroupDto? _filterGroup;
     private bool _sortDescending;
     private int? _maxGroups;
+    private bool _showTotalizer;
     private IReadOnlyList<string> _errors = [];
 
     public void ShowCreate()
@@ -186,6 +208,7 @@
         _filterGroup = null;
         _sortDescending = false;
         _maxGroups = null;
+        _showTotalizer = false;
         _errors = [];
         _saving = false;
         _visible = true;
@@ -204,6 +227,7 @@
         _filterGroup = chart.FilterConditions;
         _sortDescending = chart.SortDescending;
         _maxGroups = chart.MaxGroups;
+        _showTotalizer = chart.ShowTotalizer;
         _errors = [];
         _saving = false;
         _visible = true;
@@ -242,7 +266,8 @@
                 ClearFilterConditions: filter is null,
                 SortDescending: _sortDescending,
                 MaxGroups: _maxGroups,
-                ClearMaxGroups: !_maxGroups.HasValue);
+                ClearMaxGroups: !_maxGroups.HasValue,
+                ShowTotalizer: _showTotalizer);
 
             var (success, errors) = await ChartService.UpdateAsync(TrackedActionId, _editId.Value, request);
             if (!success)
@@ -263,7 +288,8 @@
                 TimeGrouping: _timeGrouping,
                 FilterConditions: filter,
                 SortDescending: _sortDescending,
-                MaxGroups: _maxGroups);
+                MaxGroups: _maxGroups,
+                ShowTotalizer: _showTotalizer);
 
             var (success, errors) = await ChartService.CreateAsync(TrackedActionId, request);
             if (!success)

@@ -272,17 +272,31 @@
                             </div>
                             @if (hasValue)
                             {
-                                @if (field.FieldType == FieldType.Dropdown && field.DropdownValues is not null && !field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                @if (field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
                                 {
-                                    <select class="form-select form-select-sm"
-                                            value="@GetBulkFieldValue(fieldId)"
-                                            @onchange="e => SetBulkFieldValue(fieldId, e.Value?.ToString())">
-                                        <option value="">— @L["Common_Select"] —</option>
-                                        @foreach (var opt in DropdownValuesHelper.Split(field.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase))
-                                        {
-                                            <option value="@opt">@opt</option>
-                                        }
-                                    </select>
+                                    var bulkCtx = GetBulkDropdownContext(field);
+                                    @if (bulkCtx.Blocked)
+                                    {
+                                        <div class="form-text text-warning">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>@L["Bulk_DropdownBlockedByParent"]
+                                        </div>
+                                    }
+                                    else if (bulkCtx.Groups is { Count: > 0 })
+                                    {
+                                        <SearchableSelect Value="@GetBulkFieldValue(fieldId)"
+                                                          ValueChanged="v => SetBulkFieldValue(fieldId, v)"
+                                                          Groups="bulkCtx.Groups"
+                                                          Placeholder="@L["Entry_Select"]"
+                                                          Small="true" />
+                                    }
+                                    else
+                                    {
+                                        <SearchableSelect Value="@GetBulkFieldValue(fieldId)"
+                                                          ValueChanged="v => SetBulkFieldValue(fieldId, v)"
+                                                          Options="bulkCtx.Options"
+                                                          Placeholder="@L["Entry_Select"]"
+                                                          Small="true" />
+                                    }
                                 }
                                 else if (field.FieldType == FieldType.Boolean)
                                 {
@@ -389,6 +403,7 @@ else
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
     [Inject] private FieldDefinitionService FieldDefService { get; set; } = default!;
+    [Inject] private FieldDependencyRuleService DepRuleService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
@@ -422,6 +437,12 @@ else
 
     // Resolved dropdown options per field (handles CompositeDropdown ref: format)
     private Dictionary<Guid, List<string>> _resolvedDropdownOptions = [];
+
+    // Resolved composite dropdown groups per field (CompositeDropdown with ref: format)
+    private Dictionary<Guid, List<(string GroupName, string[] Values)>> _resolvedCompositeGroups = [];
+
+    // Dependency rules for the filtered action (drives parent→child dropdown filtering in bulk edit)
+    private List<FieldDependencyRuleResponse> _depRules = [];
 
     private string? _userKey;
 
@@ -484,6 +505,7 @@ else
         }
 
         await ResolveDropdownOptionsAsync();
+        await LoadDependencyRulesAsync();
         RebuildColumns();
 
         if (!LockActionFilter)
@@ -590,6 +612,7 @@ else
         }
 
         await ResolveDropdownOptionsAsync();
+        await LoadDependencyRulesAsync();
         RebuildColumns();
 
         if (EntryStorageKey is not null)
@@ -872,6 +895,7 @@ else
         }
 
         await ResolveDropdownOptionsAsync();
+        await LoadDependencyRulesAsync();
         RebuildColumns();
         await _grid.RefreshAsync();
         await SaveEntryFiltersAsync();
@@ -999,6 +1023,7 @@ else
     private async Task ResolveDropdownOptionsAsync()
     {
         _resolvedDropdownOptions = [];
+        _resolvedCompositeGroups = [];
 
         var dropdownFields = _activeFields
             .Where(f => f.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
@@ -1032,20 +1057,29 @@ else
                 var refIds = field.DropdownValues["ref:".Length..]
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
-                    .Where(id => id != Guid.Empty);
+                    .Where(id => id != Guid.Empty)
+                    .ToList();
 
                 var values = new List<string>();
+                var groups = new List<(string GroupName, string[] Values)>();
                 foreach (var refId in refIds)
                 {
                     if (fieldDefLookup.TryGetValue(refId, out var fd) && fd.DropdownValues is not null)
                     {
-                        values.AddRange(DropdownValuesHelper.Split(fd.DropdownValues));
+                        var groupValues = DropdownValuesHelper.Split(fd.DropdownValues)
+                            .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                            .ToArray();
+                        values.AddRange(groupValues);
+                        groups.Add((fd.DefaultName, groupValues));
                     }
                 }
 
                 _resolvedDropdownOptions[field.Id] = values
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+                _resolvedCompositeGroups[field.Id] = groups
+                    .OrderBy(g => g.GroupName, StringComparer.CurrentCultureIgnoreCase)
                     .ToList();
             }
             else if (!string.IsNullOrWhiteSpace(field.DropdownValues) &&
@@ -1059,6 +1093,19 @@ else
             {
                 _resolvedDropdownOptions[field.Id] = [];
             }
+        }
+    }
+
+    private async Task LoadDependencyRulesAsync()
+    {
+        if (Guid.TryParse(_selectedActionId, out var actionId) && actionId != Guid.Empty)
+        {
+            try { _depRules = await DepRuleService.GetByTrackedActionAsync(actionId); }
+            catch { _depRules = []; }
+        }
+        else
+        {
+            _depRules = [];
         }
     }
 
@@ -1155,8 +1202,138 @@ else
     private string GetBulkFieldValue(Guid fieldId) =>
         _bulkFieldValues.TryGetValue(fieldId, out var v) ? v : "";
 
-    private void SetBulkFieldValue(Guid fieldId, string? value) =>
+    private void SetBulkFieldValue(Guid fieldId, string? value)
+    {
         _bulkFieldValues[fieldId] = value ?? "";
+        CascadeDependencyInvalidation(fieldId);
+    }
+
+    /// <summary>
+    /// When a bulk-edit value changes, clear every downstream dependent field's value
+    /// (walking the dependency graph transitively, top-down).
+    /// </summary>
+    private void CascadeDependencyInvalidation(Guid changedSourceFieldId)
+    {
+        var visited = new HashSet<Guid> { changedSourceFieldId };
+        var queue = new Queue<Guid>();
+        queue.Enqueue(changedSourceFieldId);
+
+        while (queue.Count > 0)
+        {
+            var sourceId = queue.Dequeue();
+            var directTargets = _depRules
+                .Where(r => r.RuleType == DependencyRuleType.FilterDropdownValues
+                            && r.SourceFieldId == sourceId)
+                .Select(r => r.TargetFieldId)
+                .Distinct();
+
+            foreach (var targetId in directTargets)
+            {
+                if (!visited.Add(targetId)) continue;
+
+                if (_bulkFieldValues.ContainsKey(targetId))
+                    _bulkFieldValues[targetId] = "";
+
+                queue.Enqueue(targetId);
+            }
+        }
+    }
+
+    private readonly record struct BulkDropdownContext(
+        List<string> Options,
+        List<(string GroupName, string[] Values)>? Groups,
+        bool Blocked);
+
+    /// <summary>
+    /// Resolves the dropdown options for a field in the bulk edit modal,
+    /// applying dependency rules using the effective parent value (bulk edit override → common value across selected entries).
+    /// </summary>
+    private BulkDropdownContext GetBulkDropdownContext(ActionFieldResponse field)
+    {
+        var originalOptions = _resolvedDropdownOptions.TryGetValue(field.Id, out var opts) ? opts : [];
+        var originalGroups = field.FieldType == FieldType.CompositeDropdown
+            && _resolvedCompositeGroups.TryGetValue(field.Id, out var g) ? g : null;
+
+        var rulesForTarget = _depRules
+            .Where(r => r.RuleType == DependencyRuleType.FilterDropdownValues && r.TargetFieldId == field.Id)
+            .ToList();
+
+        if (rulesForTarget.Count == 0)
+            return new BulkDropdownContext(originalOptions, originalGroups, false);
+
+        var sourceFieldIds = rulesForTarget.Select(r => r.SourceFieldId).Distinct().ToList();
+        var effectiveSourceValues = new Dictionary<Guid, string>();
+        foreach (var srcId in sourceFieldIds)
+        {
+            var srcValue = GetEffectiveSourceValue(srcId);
+            if (!string.IsNullOrEmpty(srcValue))
+                effectiveSourceValues[srcId] = srcValue;
+        }
+
+        var anySourceHasValue = effectiveSourceValues.Count > 0;
+        var matchedConstraints = new List<string>();
+        var anySourceMatched = false;
+
+        foreach (var rule in rulesForTarget)
+        {
+            if (effectiveSourceValues.TryGetValue(rule.SourceFieldId, out var srcVal)
+                && string.Equals(srcVal, rule.SourceValue, StringComparison.OrdinalIgnoreCase))
+            {
+                anySourceMatched = true;
+                if (!string.IsNullOrWhiteSpace(rule.TargetConstraint))
+                    matchedConstraints.AddRange(DropdownValuesHelper.Split(rule.TargetConstraint));
+            }
+        }
+
+        if (anySourceMatched)
+        {
+            var allowed = matchedConstraints
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var filteredOptions = originalOptions
+                .Where(o => allowed.Contains(o))
+                .ToList();
+
+            var filteredGroups = originalGroups?
+                .Select(gr => (gr.GroupName, Values: gr.Values.Where(v => allowed.Contains(v)).ToArray()))
+                .Where(gr => gr.Values.Length > 0)
+                .ToList();
+
+            return new BulkDropdownContext(filteredOptions, filteredGroups, false);
+        }
+
+        if (anySourceHasValue)
+            return new BulkDropdownContext([], null, true);
+
+        return new BulkDropdownContext(originalOptions, originalGroups, false);
+    }
+
+    /// <summary>
+    /// Returns the effective value of a source field for dependency evaluation in bulk edit:
+    /// 1) the bulk override if set, else 2) the common value across all selected entries, else empty.
+    /// </summary>
+    private string GetEffectiveSourceValue(Guid sourceFieldId)
+    {
+        if (_bulkFieldValues.TryGetValue(sourceFieldId, out var bulkValue)
+            && !string.IsNullOrEmpty(bulkValue))
+            return bulkValue;
+
+        var selectedItems = _grid.SelectedItems;
+        if (selectedItems.Count == 0) return "";
+
+        string? sharedValue = null;
+        foreach (var entry in selectedItems)
+        {
+            var entryValue = entry.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == sourceFieldId)?.Value ?? "";
+            if (sharedValue is null)
+                sharedValue = entryValue;
+            else if (!string.Equals(sharedValue, entryValue, StringComparison.OrdinalIgnoreCase))
+                return "";
+        }
+
+        return sharedValue ?? "";
+    }
 
     private async Task ApplyBulkEditAsync()
     {

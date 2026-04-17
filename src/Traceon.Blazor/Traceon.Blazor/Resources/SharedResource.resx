@@ -938,6 +938,7 @@
   <data name="Bulk_EditHint"><value>Check the properties you want to update and set the new values. Only checked properties will be changed.</value></data>
   <data name="Bulk_Apply"><value>Apply Changes</value></data>
   <data name="Bulk_OperationFailed"><value>Bulk operation failed. Please try again.</value></data>
+  <data name="Bulk_DropdownBlockedByParent"><value>No values available — the parent field has no common value across selected entries or its current value has no matching rule.</value></data>
   <data name="DataGrid_Selected"><value>selected</value></data>
   <data name="DataGrid_ClearSelection"><value>Clear</value></data>
   <data name="MultiSelect_Selected"><value>selected</value></data>
@@ -1077,6 +1078,9 @@
   <data name="CustomChart_PipeSeparated"><value>Values separated by |</value></data>
   <data name="CustomChart_SortDescending"><value>Sort Descending</value></data>
   <data name="CustomChart_MaxGroups"><value>Max Groups</value></data>
+  <data name="CustomChart_ShowTotalizer"><value>Show Totalizer</value></data>
+  <data name="CustomChart_ShowTotalizerHint"><value>Displays the total of the filtered entries in the top-right corner of the chart.</value></data>
+  <data name="CustomChart_TotalTooltip"><value>Total of filtered entries</value></data>
   <data name="CustomChart_NoResults"><value>No data matches the configured filters.</value></data>
   <data name="CustomChart_TabHint"><value>Create custom charts with flexible filtering, grouping, and aggregation options.</value></data>
   <data name="CustomChart_NoChartsYet"><value>No custom charts configured yet. Create one to get started.</value></data>

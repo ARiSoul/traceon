@@ -713,7 +713,8 @@ else
         {
             if (_hiddenCharts.Contains($"cc-{result.ChartId}")) continue;
             var chartDef = _customChartDefinitions.FirstOrDefault(c => c.Id == result.ChartId);
-            <CustomChartRenderer Result="result"
+            <CustomChartRenderer @key="@($"cc-{result.ChartId}-{_loadKey}")"
+                                 Result="result"
                                  OnEdit="() => { if (chartDef is not null) _chartFormModal?.ShowEdit(chartDef); }"
                                  OnDelete="() => DeleteCustomChartAsync(result.ChartId)" />
         }

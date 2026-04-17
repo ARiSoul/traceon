@@ -36,6 +36,10 @@ internal sealed class CustomChartConfiguration : IEntityTypeConfiguration<Custom
             .IsRequired()
             .HasDefaultValue(false);
 
+        builder.Property(e => e.ShowTotalizer)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(e => e.ColorPalette)
             .HasMaxLength(500);
 

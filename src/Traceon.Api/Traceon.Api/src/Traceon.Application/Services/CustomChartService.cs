@@ -84,7 +84,8 @@ public sealed class CustomChartService(
             request.ColorPalette,
             request.SortOrder,
             request.SortDescending,
-            request.MaxGroups);
+            request.MaxGroups,
+            request.ShowTotalizer);
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -149,7 +150,8 @@ public sealed class CustomChartService(
             request.SortOrder,
             request.SortDescending,
             request.MaxGroups,
-            request.ClearMaxGroups);
+            request.ClearMaxGroups,
+            request.ShowTotalizer);
 
         await repository.UpdateAsync(entity, cancellationToken);
 

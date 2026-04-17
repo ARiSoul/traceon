@@ -935,6 +935,7 @@
   <data name="Bulk_EditHint"><value>Marque las propiedades que desea actualizar y establezca los nuevos valores. Solo se cambiarán las propiedades marcadas.</value></data>
   <data name="Bulk_Apply"><value>Aplicar Cambios</value></data>
   <data name="Bulk_OperationFailed"><value>La operación masiva falló. Inténtelo de nuevo.</value></data>
+  <data name="Bulk_DropdownBlockedByParent"><value>No hay valores disponibles — el campo dependiente no tiene un valor común en las entradas seleccionadas o su valor actual no coincide con ninguna regla.</value></data>
   <data name="DataGrid_Selected"><value>seleccionados</value></data>
   <data name="DataGrid_ClearSelection"><value>Limpiar</value></data>
   <data name="MultiSelect_Selected"><value>seleccionados</value></data>
@@ -1074,6 +1075,9 @@
   <data name="CustomChart_PipeSeparated"><value>Valores separados por |</value></data>
   <data name="CustomChart_SortDescending"><value>Orden Descendente</value></data>
   <data name="CustomChart_MaxGroups"><value>Máx. Grupos</value></data>
+  <data name="CustomChart_ShowTotalizer"><value>Mostrar Totalizador</value></data>
+  <data name="CustomChart_ShowTotalizerHint"><value>Muestra el total de las entradas filtradas en la esquina superior derecha del gráfico.</value></data>
+  <data name="CustomChart_TotalTooltip"><value>Total de las entradas filtradas</value></data>
   <data name="CustomChart_NoResults"><value>Ningún dato coincide con los filtros configurados.</value></data>
   <data name="CustomChart_TabHint"><value>Cree gráficos personalizados con opciones flexibles de filtrado, agrupación y agregación.</value></data>
   <data name="CustomChart_NoChartsYet"><value>Aún no hay gráficos personalizados configurados. Cree uno para comenzar.</value></data>

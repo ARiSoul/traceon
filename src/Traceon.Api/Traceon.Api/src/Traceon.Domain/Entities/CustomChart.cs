@@ -24,6 +24,7 @@ public sealed class CustomChart : Entity
     public int SortOrder { get; private set; }
     public bool SortDescending { get; private set; }
     public int? MaxGroups { get; private set; }
+    public bool ShowTotalizer { get; private set; }
 
     private CustomChart(
         Guid trackedActionId,
@@ -37,7 +38,8 @@ public sealed class CustomChart : Entity
         string? colorPalette,
         int sortOrder,
         bool sortDescending,
-        int? maxGroups)
+        int? maxGroups,
+        bool showTotalizer)
     {
         TrackedActionId = trackedActionId;
         Title = title;
@@ -51,6 +53,7 @@ public sealed class CustomChart : Entity
         SortOrder = sortOrder;
         SortDescending = sortDescending;
         MaxGroups = maxGroups;
+        ShowTotalizer = showTotalizer;
     }
 
     public static CustomChart Create(
@@ -65,7 +68,8 @@ public sealed class CustomChart : Entity
         string? colorPalette = null,
         int sortOrder = 0,
         bool sortDescending = false,
-        int? maxGroups = null)
+        int? maxGroups = null,
+        bool showTotalizer = false)
     {
         if (trackedActionId == Guid.Empty)
             throw new ArgumentException("Tracked action ID is required.", nameof(trackedActionId));
@@ -88,7 +92,8 @@ public sealed class CustomChart : Entity
             colorPalette?.Trim(),
             sortOrder,
             sortDescending,
-            maxGroups);
+            maxGroups,
+            showTotalizer);
     }
 
     public void Update(
@@ -105,7 +110,8 @@ public sealed class CustomChart : Entity
         int? sortOrder = null,
         bool? sortDescending = null,
         int? maxGroups = null,
-        bool clearMaxGroups = false)
+        bool clearMaxGroups = false,
+        bool? showTotalizer = null)
     {
         if (title is not null)
             Title = title.Trim();
@@ -135,6 +141,8 @@ public sealed class CustomChart : Entity
             MaxGroups = maxGroups.Value;
         else if (clearMaxGroups)
             MaxGroups = null;
+        if (showTotalizer.HasValue)
+            ShowTotalizer = showTotalizer.Value;
         MarkUpdated();
     }
 }

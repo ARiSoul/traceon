@@ -10,15 +10,27 @@
                 <span class="badge bg-info ms-1">@Result.Unit</span>
             }
         </h6>
-        <div class="d-flex gap-1">
-            <button class="btn btn-outline-secondary btn-sm" @onclick="() => OnEdit.InvokeAsync()"
-                    title="@L["CustomChart_EditChart"]">
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-outline-danger btn-sm" @onclick="() => OnDelete.InvokeAsync()"
-                    title="@L["CustomChart_DeleteChart"]">
-                <i class="bi bi-trash"></i>
-            </button>
+        <div class="d-flex gap-2 align-items-center">
+            @if (Result.ShowTotalizer)
+            {
+                var totalUnit = Result.Unit is not null && Result.Unit != "UN" ? $" {Result.Unit}" : "";
+                <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle px-2 py-1"
+                      title="@L["CustomChart_TotalTooltip"]">
+                    <i class="bi bi-sigma me-1"></i>
+                    <span class="fw-semibold">@L["Analytics_Total"]:</span>
+                    <span class="ms-1">@FormatValue(GetTotal())@totalUnit</span>
+                </span>
+            }
+            <div class="d-flex gap-1">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="() => OnEdit.InvokeAsync()"
+                        title="@L["CustomChart_EditChart"]">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm" @onclick="() => OnDelete.InvokeAsync()"
+                        title="@L["CustomChart_DeleteChart"]">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
         </div>
     </div>
     <div class="card-body">
@@ -254,4 +266,12 @@
 
     private static string FormatValue(decimal value)
         => value == Math.Truncate(value) ? value.ToString("F0") : value.ToString("F2");
+
+    private decimal GetTotal()
+    {
+        if (Result.ChartType == CustomChartType.TimeSeries && Result.TimeSeriesData.Count > 0)
+            return Result.TimeSeriesData.SelectMany(s => s.Points).Sum(p => p.Value);
+
+        return Result.Total;
+    }
 }

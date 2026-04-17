@@ -56,6 +56,7 @@ public static class CustomChartEvaluationService
             TimeGrouping = chart.TimeGrouping,
             ColorPalette = chart.ColorPalette,
             SortDescending = chart.SortDescending,
+            ShowTotalizer = chart.ShowTotalizer,
             Groups = resultGroups,
             TimeSeriesData = timeSeriesData
         };
@@ -346,6 +347,7 @@ public sealed class CustomChartResult
     public TimeGrouping TimeGrouping { get; init; }
     public string? ColorPalette { get; init; }
     public bool SortDescending { get; init; }
+    public bool ShowTotalizer { get; init; }
     public List<CrossFieldGroup> Groups { get; init; } = [];
     public List<CrossFieldTimeSeries> TimeSeriesData { get; init; } = [];
     public decimal Total => Groups.Sum(g => g.Value);

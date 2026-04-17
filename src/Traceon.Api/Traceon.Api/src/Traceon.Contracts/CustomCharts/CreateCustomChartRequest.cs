@@ -13,4 +13,5 @@ public sealed record CreateCustomChartRequest(
     string? ColorPalette = null,
     int SortOrder = 0,
     bool SortDescending = false,
-    int? MaxGroups = null);
+    int? MaxGroups = null,
+    bool ShowTotalizer = false);

@@ -16,4 +16,5 @@ public sealed record UpdateCustomChartRequest(
     int? SortOrder = null,
     bool? SortDescending = null,
     int? MaxGroups = null,
-    bool ClearMaxGroups = false);
+    bool ClearMaxGroups = false,
+    bool? ShowTotalizer = null);
