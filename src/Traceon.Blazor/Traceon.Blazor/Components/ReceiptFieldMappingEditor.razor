@@ -57,6 +57,8 @@
     </div>
 </div>
 
+@ChildContent
+
 @if (ShowMappingRules)
 {
     var ddFields = FieldMappings
@@ -245,6 +247,9 @@
 
     /// <summary>Whether to show the auto-categorization rules panel. Default true (action config). Set false for import flow.</summary>
     [Parameter] public bool ShowMappingRules { get; set; } = true;
+
+    /// <summary>Optional content rendered between the field mapping and the mapping-rules panels.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>Fired when any field mapping changes (source or fixed value).</summary>
     [Parameter] public EventCallback<ReceiptFieldMapping> OnMappingChanged { get; set; }

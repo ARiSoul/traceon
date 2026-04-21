@@ -7,4 +7,6 @@ public sealed record UpdateReceiptImportConfigRequest(
     Guid? QuantityFieldId = null,
     Guid? UnitPriceFieldId = null,
     Guid? DiscountFieldId = null,
+    Guid? ReceiptDiscountTypeFieldId = null,
+    string? ReceiptDiscountTypeValue = null,
     string? StaticFieldValues = null);

@@ -9,6 +9,8 @@ public sealed class ReceiptImportConfig : Entity
     public Guid? QuantityFieldId { get; private set; }
     public Guid? UnitPriceFieldId { get; private set; }
     public Guid? DiscountFieldId { get; private set; }
+    public Guid? ReceiptDiscountTypeFieldId { get; private set; }
+    public string? ReceiptDiscountTypeValue { get; private set; }
 
     /// <summary>JSON dictionary of fieldId to static value.</summary>
     public string? StaticFieldValues { get; private set; }
@@ -36,6 +38,8 @@ public sealed class ReceiptImportConfig : Entity
         Guid? quantityFieldId,
         Guid? unitPriceFieldId,
         Guid? discountFieldId = null,
+        Guid? receiptDiscountTypeFieldId = null,
+        string? receiptDiscountTypeValue = null,
         string? staticFieldValues = null)
     {
         ShopFieldId = shopFieldId;
@@ -44,6 +48,10 @@ public sealed class ReceiptImportConfig : Entity
         QuantityFieldId = quantityFieldId;
         UnitPriceFieldId = unitPriceFieldId;
         DiscountFieldId = discountFieldId;
+        ReceiptDiscountTypeFieldId = receiptDiscountTypeFieldId;
+        ReceiptDiscountTypeValue = string.IsNullOrWhiteSpace(receiptDiscountTypeValue)
+            ? null
+            : receiptDiscountTypeValue.Trim();
         StaticFieldValues = staticFieldValues;
         MarkUpdated();
     }

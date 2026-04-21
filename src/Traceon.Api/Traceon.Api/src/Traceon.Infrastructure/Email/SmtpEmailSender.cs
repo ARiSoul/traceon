@@ -62,7 +62,7 @@ internal sealed class SmtpEmailSender(EmailSettings settings, ILogger<SmtpEmailS
             await client.ConnectAsync(settings.SmtpHost, settings.SmtpPort, secureSocket);
 
             if (!string.IsNullOrEmpty(settings.SmtpUser))
-                await client.AuthenticateAsync(settings.SmtpUser, settings.SmtpPassword);
+                await client.AuthenticateAsync(settings.SmtpUser, settings.SmtpPassword!);
 
             await client.SendAsync(message);
             await client.DisconnectAsync(true);

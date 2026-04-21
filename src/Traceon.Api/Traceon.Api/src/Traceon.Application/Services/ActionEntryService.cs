@@ -100,7 +100,7 @@ public sealed class ActionEntryService(
             return Result<ActionEntryResponse>.Failure($"Tracked action with ID '{trackedActionId}' was not found.");
         }
 
-        var entity = ActionEntry.Create(trackedActionId, request.OccurredAtUtc, request.Notes);
+        var entity = ActionEntry.Create(trackedActionId, request.OccurredAtUtc, request.Notes, request.ReceiptImportBatchId);
 
         if (request.FieldValues is not null)
         {
