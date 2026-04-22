@@ -24,6 +24,13 @@ public sealed record FieldAnalyticsRuleResponse
     public required Guid? SignFieldId { get; init; }
     public required string? SignFieldName { get; init; }
     public required string? NegativeValues { get; init; }
+    public required Guid? OffsetTriggerFieldId { get; init; }
+    public required string? OffsetTriggerFieldName { get; init; }
+    public required string? OffsetTriggerValues { get; init; }
+    public required Guid? OffsetValueFieldId { get; init; }
+    public required string? OffsetValueFieldName { get; init; }
+    public required AnalyticsOffsetDirection? OffsetDirection { get; init; }
+    public required bool CollapseByImportBatch { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime? UpdatedAtUtc { get; init; }
 }

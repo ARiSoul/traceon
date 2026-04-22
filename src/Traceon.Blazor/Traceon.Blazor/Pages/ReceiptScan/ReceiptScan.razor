@@ -775,6 +775,25 @@
                 </div>
             }
 
+            @if (_receiptConfig?.DiscountFieldId is not null)
+            {
+                <div class="card bg-body-tertiary mb-3">
+                    <div class="card-body py-2">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <label class="form-label mb-0 small text-nowrap">
+                                <i class="bi bi-ticket-perforated me-1"></i>@L["Receipt_ReceiptDiscountReview"]
+                            </label>
+                            <input type="number" step="0.01" min="0"
+                                   class="form-control form-control-sm"
+                                   style="width: 140px;"
+                                   value="@(_reviewReceiptDiscount?.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+                                   @onchange="OnReviewReceiptDiscountChanged" />
+                            <small class="text-muted">@L["Receipt_ReceiptDiscountReviewHint"]</small>
+                        </div>
+                    </div>
+                </div>
+            }
+
             <div class="d-flex justify-content-between mt-4">
                 <button class="btn btn-outline-secondary" @onclick="GoBack">
                     <i class="bi bi-arrow-left me-1"></i>@L["Common_Back"]
@@ -1092,6 +1111,11 @@
 
     // Batch assignment
     private readonly Dictionary<Guid, string> _batchValues = [];
+
+    // Receipt-scoped discount value used on the review step (editable by the user
+    // so they can correct OCR mistakes before importing). Initialized from
+    // _scanResult.TotalDiscount when entering the review step; not persisted to draft.
+    private decimal? _reviewReceiptDiscount;
 
     // Auto-categorization
     private int _patternsAppliedCount;
@@ -1611,8 +1635,27 @@
     {
         RefreshNewValues();
         _importDate = _scanResult?.TransactionDate?.Date ?? DateTime.Today;
+        _reviewReceiptDiscount = _scanResult?.TotalDiscount;
         _currentStep = 3;
         _ = SaveDraftAsync();
+    }
+
+    private void OnReviewReceiptDiscountChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            _reviewReceiptDiscount = null;
+            return;
+        }
+
+        if (decimal.TryParse(raw, System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+            || decimal.TryParse(raw, System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.CurrentCulture, out parsed))
+        {
+            _reviewReceiptDiscount = parsed < 0 ? 0 : parsed;
+        }
     }
 
     private void ToggleAllItems(ChangeEventArgs e)
@@ -2390,6 +2433,7 @@
             var includedItems = _receiptItems.Where(i => i.Include).ToList();
 
             var occurredAt = DateTime.SpecifyKind(_importDate, DateTimeKind.Utc);
+            var batchId = Guid.NewGuid();
 
             foreach (var item in includedItems)
             {
@@ -2446,11 +2490,16 @@
                 var request = new CreateActionEntryRequest(
                     occurredAt,
                     Notes: $"Receipt: {_scanResult?.MerchantName} — {item.Description}",
-                    FieldValues: fieldValues);
+                    FieldValues: fieldValues,
+                    ReceiptImportBatchId: batchId);
 
                 var (success, _) = await EntryService.CreateAsync(_selectedActionId, request);
                 if (success) _importedCount++;
             }
+
+            // 4. If the receipt has a receipt-scoped discount and the config is wired,
+            //    emit one extra entry with Amount 0 and the discount amount in the Discount field.
+            await CreateReceiptDiscountEntryIfNeededAsync(occurredAt, batchId);
 
             _currentStep = 4;
             _ = DeleteDraftAsync();
@@ -2461,6 +2510,79 @@
         }
 
         _importing = false;
+    }
+
+    private async Task CreateReceiptDiscountEntryIfNeededAsync(DateTime occurredAt, Guid batchId)
+    {
+        if (_reviewReceiptDiscount is not { } discount || discount <= 0) return;
+        if (_receiptConfig?.DiscountFieldId is not { } discountFieldId) return;
+
+        var fieldValues = new List<ActionEntryFieldValue>();
+
+        if (!string.IsNullOrEmpty(_receiptConfig.StaticFieldValues))
+        {
+            try
+            {
+                var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(_receiptConfig.StaticFieldValues);
+                if (dict is not null)
+                {
+                    foreach (var (key, val) in dict)
+                    {
+                        if (Guid.TryParse(key, out var fid) && !string.IsNullOrEmpty(val))
+                        {
+                            fieldValues.Add(new ActionEntryFieldValue(fid, val));
+                        }
+                    }
+                }
+            }
+            catch { /* ignore malformed JSON */ }
+        }
+
+        var mappedFieldIds = fieldValues.Select(fv => fv.ActionFieldId).ToHashSet();
+        foreach (var fm in _fieldMappings)
+        {
+            if (mappedFieldIds.Contains(fm.FieldId)) continue;
+
+            var fixedVal = fm.Source switch
+            {
+                ReceiptFieldMappingSource.FixedValue => fm.FixedValue,
+                ReceiptFieldMappingSource.MerchantName => _resolvedMerchantName ?? _scanResult?.MerchantName,
+                _ => null
+            };
+
+            if (!string.IsNullOrEmpty(fixedVal))
+            {
+                fieldValues.Add(new ActionEntryFieldValue(fm.FieldId, fixedVal));
+                mappedFieldIds.Add(fm.FieldId);
+            }
+        }
+
+        if (_receiptConfig.TotalFieldId is { } totalFieldId)
+        {
+            fieldValues.RemoveAll(fv => fv.ActionFieldId == totalFieldId);
+            fieldValues.Add(new ActionEntryFieldValue(totalFieldId, "0"));
+        }
+
+        fieldValues.RemoveAll(fv => fv.ActionFieldId == discountFieldId);
+        fieldValues.Add(new ActionEntryFieldValue(
+            discountFieldId,
+            discount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+
+        if (_receiptConfig.ReceiptDiscountTypeFieldId is { } typeFieldId &&
+            !string.IsNullOrWhiteSpace(_receiptConfig.ReceiptDiscountTypeValue))
+        {
+            fieldValues.RemoveAll(fv => fv.ActionFieldId == typeFieldId);
+            fieldValues.Add(new ActionEntryFieldValue(typeFieldId, _receiptConfig.ReceiptDiscountTypeValue));
+        }
+
+        var request = new CreateActionEntryRequest(
+            occurredAt,
+            Notes: $"Receipt discount: {_scanResult?.MerchantName}",
+            FieldValues: fieldValues,
+            ReceiptImportBatchId: batchId);
+
+        var (success, _) = await EntryService.CreateAsync(_selectedActionId, request);
+        if (success) _importedCount++;
     }
 
     private void Reset()

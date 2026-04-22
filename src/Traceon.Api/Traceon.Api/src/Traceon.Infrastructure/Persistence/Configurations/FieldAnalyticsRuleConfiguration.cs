@@ -33,6 +33,13 @@ internal sealed class FieldAnalyticsRuleConfiguration : IEntityTypeConfiguration
         builder.Property(e => e.NegativeValues)
             .HasMaxLength(500);
 
+        builder.Property(e => e.OffsetTriggerValues)
+            .HasMaxLength(500);
+
+        builder.Property(e => e.CollapseByImportBatch)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.HasIndex(e => e.TrackedActionId);
 
         builder.HasOne<TrackedAction>()
@@ -58,6 +65,16 @@ internal sealed class FieldAnalyticsRuleConfiguration : IEntityTypeConfiguration
         builder.HasOne<ActionField>()
             .WithMany()
             .HasForeignKey(e => e.SignFieldId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<ActionField>()
+            .WithMany()
+            .HasForeignKey(e => e.OffsetTriggerFieldId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<ActionField>()
+            .WithMany()
+            .HasForeignKey(e => e.OffsetValueFieldId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<DropdownValueMetadataField>()

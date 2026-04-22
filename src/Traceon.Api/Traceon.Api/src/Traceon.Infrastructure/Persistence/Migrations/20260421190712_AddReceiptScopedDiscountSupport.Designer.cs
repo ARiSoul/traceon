@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Traceon.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Traceon.Infrastructure.Persistence;
 namespace Traceon.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(TraceonDbContext))]
-    partial class TraceonDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260421190712_AddReceiptScopedDiscountSupport")]
+    partial class AddReceiptScopedDiscountSupport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -726,11 +729,6 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(0);
 
-                    b.Property<bool>("CollapseByImportBatch")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -772,19 +770,6 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int?>("OffsetDirection")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("OffsetTriggerFieldId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("OffsetTriggerValues")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<Guid?>("OffsetValueFieldId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid?>("SignFieldId")
                         .HasColumnType("uniqueidentifier");
 
@@ -810,10 +795,6 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                     b.HasIndex("GroupByMetadataFieldId");
 
                     b.HasIndex("MeasureFieldId");
-
-                    b.HasIndex("OffsetTriggerFieldId");
-
-                    b.HasIndex("OffsetValueFieldId");
 
                     b.HasIndex("SignFieldId");
 
@@ -1569,16 +1550,6 @@ namespace Traceon.Infrastructure.Persistence.Migrations
                         .HasForeignKey("MeasureFieldId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("Traceon.Domain.Entities.ActionField", null)
-                        .WithMany()
-                        .HasForeignKey("OffsetTriggerFieldId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Traceon.Domain.Entities.ActionField", null)
-                        .WithMany()
-                        .HasForeignKey("OffsetValueFieldId")
-                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Traceon.Domain.Entities.ActionField", null)
                         .WithMany()

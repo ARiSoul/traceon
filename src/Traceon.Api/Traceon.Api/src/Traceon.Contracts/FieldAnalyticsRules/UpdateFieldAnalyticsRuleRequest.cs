@@ -15,4 +15,10 @@ public sealed record UpdateFieldAnalyticsRuleRequest(
     Guid? GroupByMetadataFieldId = null,
     bool ClearGroupByMetadataField = false,
     Guid? FilterMetadataFieldId = null,
-    bool ClearFilterMetadataField = false);
+    bool ClearFilterMetadataField = false,
+    Guid? OffsetTriggerFieldId = null,
+    string? OffsetTriggerValues = null,
+    Guid? OffsetValueFieldId = null,
+    AnalyticsOffsetDirection? OffsetDirection = null,
+    bool ClearOffset = false,
+    bool? CollapseByImportBatch = null);

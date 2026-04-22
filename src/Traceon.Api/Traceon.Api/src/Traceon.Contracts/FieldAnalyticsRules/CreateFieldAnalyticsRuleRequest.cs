@@ -14,4 +14,9 @@ public sealed record CreateFieldAnalyticsRuleRequest(
     Guid? SignFieldId = null,
     string? NegativeValues = null,
     Guid? GroupByMetadataFieldId = null,
-    Guid? FilterMetadataFieldId = null);
+    Guid? FilterMetadataFieldId = null,
+    Guid? OffsetTriggerFieldId = null,
+    string? OffsetTriggerValues = null,
+    Guid? OffsetValueFieldId = null,
+    AnalyticsOffsetDirection? OffsetDirection = null,
+    bool CollapseByImportBatch = false);

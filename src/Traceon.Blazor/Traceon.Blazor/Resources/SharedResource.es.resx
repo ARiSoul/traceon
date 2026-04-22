@@ -732,6 +732,17 @@
   <data name="Analytics_NegativeValues"><value>Valores Negativos</value></data>
   <data name="Analytics_NegativeValuesPlaceholder"><value>Separados por coma, ej: Gasto,Retiro</value></data>
   <data name="Analytics_SignedSumHint"><value>Elige un campo desplegable que determine el signo. Los valores marcados como negativos se restarán del total (ej: Gasto → −Monto).</value></data>
+  <data name="Analytics_OffsetEnable"><value>Aplicar ajuste por desplazamiento</value></data>
+  <data name="Analytics_OffsetHint"><value>Para entradas que coincidan, también suma o resta el valor de otro campo. Útil para descuentos a nivel de recibo: cuando Tipo = Descuento de Recibo, resta el campo Descuento.</value></data>
+  <data name="Analytics_OffsetTriggerField"><value>Cuando este campo…</value></data>
+  <data name="Analytics_OffsetTriggerValues"><value>…coincida con alguno de</value></data>
+  <data name="Analytics_OffsetValueField"><value>Ajustar con este campo</value></data>
+  <data name="Analytics_OffsetDirection"><value>Dirección</value></data>
+  <data name="Analytics_OffsetDirectionSubtract"><value>Restar</value></data>
+  <data name="Analytics_OffsetDirectionAdd"><value>Sumar</value></data>
+  <data name="Analytics_Discounts"><value>Descuentos</value></data>
+  <data name="Analytics_CollapseByImportBatch"><value>Agrupar entradas del mismo lote de importación</value></data>
+  <data name="Analytics_CollapseByImportBatchHint"><value>Para el saldo acumulado, agrupa las entradas provenientes del mismo escaneo de recibo en un único paso acumulado (evita la caída visual cuando los ítems y la fila de descuento del recibo se grafican por separado).</value></data>
   <data name="Analytics_NeedTwoFields"><value>Necesitas al menos dos campos (uno numérico) para crear reglas. Agrega campos en la pestaña Campos primero.</value></data>
   <data name="Dep_FieldDependencies"><value>Dependencias</value></data>
   <data name="Dep_Hint"><value>Define cómo los campos desplegables dependen entre sí. Al seleccionar un valor de origen, el desplegable de destino muestra solo los valores permitidos.</value></data>
@@ -875,6 +886,8 @@
   <data name="Receipt_NewValues"><value>valores nuevos</value></data>
   <data name="Receipt_TargetAction"><value>Acción destino</value></data>
   <data name="Receipt_NewValuesInfo"><value>Los nuevos valores se añadirán automáticamente a las definiciones de campo correspondientes.</value></data>
+  <data name="Receipt_ReceiptDiscountReview"><value>Descuento del recibo</value></data>
+  <data name="Receipt_ReceiptDiscountReviewHint"><value>Crea una entrada extra con Importe 0 y este valor en el campo Descuento. Deja en 0 o vacío para omitir.</value></data>
   <data name="Receipt_ImportEntries"><value>Importar Entradas</value></data>
   <data name="Receipt_ImportFailed"><value>Error al importar las entradas. Inténtalo de nuevo.</value></data>
   <data name="Receipt_ImportComplete"><value>¡Importación Completada!</value></data>
@@ -928,6 +941,14 @@
   <data name="RcptCfg_NeedsDecimalField"><value>Esta acción necesita al menos un campo Decimal para activar la importación de recibos.</value></data>
   <data name="RcptCfg_NotConfigured"><value>Importación de recibos no configurada para esta acción.</value></data>
   <data name="RcptCfg_ConfiguredAction"><value>configurada para importación de recibos</value></data>
+  <data name="RcptCfg_ReceiptDiscountSection"><value>Descuento a nivel de recibo</value></data>
+  <data name="RcptCfg_ReceiptDiscountHint"><value>Cuando un recibo tiene un descuento aplicado a todo el recibo (no vinculado a artículos concretos), se creará una entrada adicional con Importe 0 y el valor del descuento en el campo Descuento. Configure el campo Tipo para que esta entrada aparezca correctamente etiquetada en sus paneles.</value></data>
+  <data name="RcptCfg_ReceiptDiscountNeedsDiscountField"><value>Asigne un campo numérico al origen «Descuento» para activar el tratamiento de descuentos a nivel de recibo.</value></data>
+  <data name="RcptCfg_ReceiptDiscountTypeField"><value>Campo de tipo</value></data>
+  <data name="RcptCfg_ReceiptDiscountTypeFieldHint"><value>Campo desplegable de esta acción que representa el tipo de entrada (p. ej. Gasto, Ingreso, Descuento).</value></data>
+  <data name="RcptCfg_ReceiptDiscountTypeValue"><value>Valor para entradas de descuento de recibo</value></data>
+  <data name="RcptCfg_ReceiptDiscountTypeValuePlaceholder"><value>p. ej. Descuento de recibo</value></data>
+  <data name="RcptCfg_ReceiptDiscountTypeValueHint"><value>Este valor se escribirá en el campo Tipo de la entrada adicional de descuento.</value></data>
 
   <!-- ═══ Bulk Operations ═══ -->
   <data name="Bulk_Edit"><value>Editar</value></data>

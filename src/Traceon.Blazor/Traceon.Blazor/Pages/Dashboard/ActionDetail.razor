@@ -769,6 +769,12 @@ else
                             <i class="bi bi-@(remaining > 0 ? "hourglass-split" : "check-circle") me-1"></i>@L["Analytics_Remaining"]: @FormatNumeric(remaining, false) @balance.Unit
                         </span>
                     }
+                    @if (balance.DiscountTotal.HasValue && balance.DiscountTotal.Value != 0)
+                    {
+                        <span class="badge bg-secondary fs-6" title="@(balance.DiscountFieldName ?? L["Analytics_Discounts"].Value)">
+                            <i class="bi bi-tag me-1"></i>@L["Analytics_Discounts"]: @FormatNumeric(balance.DiscountTotal.Value, false) @balance.Unit
+                        </span>
+                    }
                     <span class="badge @(balance.CurrentBalance >= 0 ? "bg-success" : "bg-danger") fs-6">
                         @L["Analytics_Balance"]: @FormatNumeric(balance.CurrentBalance, false) @balance.Unit
                     </span>

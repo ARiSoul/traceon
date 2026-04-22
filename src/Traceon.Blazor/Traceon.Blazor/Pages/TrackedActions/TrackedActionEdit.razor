@@ -340,7 +340,8 @@ else
                                                 <small class="text-muted"><i class="bi bi-calculator me-1"></i>@(isAggregate? L["Analytics_AggregateByValueHint"] : L["Analytics_ValueFieldHint"])</small>
                                             </div>
                                             <div class="col-12 col-md-4">
-                                                <label class="form-label">@L["Analytics_ValueField"] @if (isAggregate) {
+                                                <label class="form-label">
+                                                    @L["Analytics_ValueField"] @if (isAggregate) {
                                                     <span class="text-danger">*</span>
                                                 }
                                             </label>
@@ -498,6 +499,92 @@ else
                                             {
                                                 <input type="text" class="form-control" @bind="_newRule.NegativeValues" placeholder="@L["Analytics_NegativeValuesPlaceholder"]" />
                                             }
+                                        </div>
+                                    }
+                                }
+                                @if (_newRule.Aggregation is AnalyticsAggregation.Sum or AnalyticsAggregation.SignedSum)
+                                {
+                                    <div class="col-12">
+                                        <hr class="my-2" />
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="new-offset-enable"
+                                                   checked="@_newRule.OffsetEnabled"
+                                                   @onchange="e => _newRule.OffsetEnabled = (bool)(e.Value ?? false)" />
+                                            <label class="form-check-label" for="new-offset-enable">
+                                                <strong>@L["Analytics_OffsetEnable"]</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@L["Analytics_OffsetHint"]</small>
+                                    </div>
+                                    @if (_newRule.OffsetEnabled)
+                                    {
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label">@L["Analytics_OffsetTriggerField"]</label>
+                                            <select class="form-select" @bind="_newRule.OffsetTriggerFieldId">
+                                                <option value="">— @L["Common_Select"] —</option>
+                                                @foreach (var f in _fields.Where(f => f.FieldType == FieldType.Dropdown).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
+                                                {
+                                                    <option value="@f.Id">@f.Name</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        @if (_newRule.OffsetTriggerFieldId != Guid.Empty)
+                                        {
+                                            <div class="col-12 col-md-4">
+                                                <label class="form-label">@L["Analytics_OffsetTriggerValues"]</label>
+                                                @{
+                                                    var offsetTriggerField = _fields.FirstOrDefault(f => f.Id == _newRule.OffsetTriggerFieldId);
+                                                }
+                                                @if (offsetTriggerField?.DropdownValues is not null)
+                                                {
+                                                    var offsetTriggerOptions = DropdownValuesHelper.Split(offsetTriggerField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
+                                                    var selectedOffsetTriggers = DropdownValuesHelper.Split(_newRule.OffsetTriggerValues).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                    @foreach (var opt in offsetTriggerOptions)
+                                                    {
+                                                        var capturedOpt = opt;
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="new-offset-trig-@capturedOpt" checked="@selectedOffsetTriggers.Contains(capturedOpt)"
+                                                                   @onchange="e => { _newRule.OffsetTriggerValues = ToggleNegativeValue(_newRule.OffsetTriggerValues, capturedOpt, (bool)(e.Value ?? false)); }" />
+                                                            <label class="form-check-label" for="new-offset-trig-@capturedOpt">@capturedOpt</label>
+                                                        </div>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <input type="text" class="form-control" @bind="_newRule.OffsetTriggerValues" placeholder="@L["Analytics_NegativeValuesPlaceholder"]" />
+                                                }
+                                            </div>
+                                        }
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label">@L["Analytics_OffsetValueField"]</label>
+                                            <select class="form-select" @bind="_newRule.OffsetValueFieldId">
+                                                <option value="">— @L["Common_Select"] —</option>
+                                                @foreach (var f in _fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
+                                                {
+                                                    <option value="@f.Id">@f.Name</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label">@L["Analytics_OffsetDirection"]</label>
+                                            <select class="form-select" @bind="_newRule.OffsetDirection">
+                                                <option value="@AnalyticsOffsetDirection.Subtract">@L["Analytics_OffsetDirectionSubtract"]</option>
+                                                <option value="@AnalyticsOffsetDirection.Add">@L["Analytics_OffsetDirectionAdd"]</option>
+                                            </select>
+                                        </div>
+                                    }
+                                    @if (_newRule.Aggregation == AnalyticsAggregation.SignedSum)
+                                    {
+                                        <div class="col-12">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="new-collapse-batch"
+                                                       checked="@_newRule.CollapseByImportBatch"
+                                                       @onchange="e => _newRule.CollapseByImportBatch = (bool)(e.Value ?? false)" />
+                                                <label class="form-check-label" for="new-collapse-batch">
+                                                    <strong>@L["Analytics_CollapseByImportBatch"]</strong>
+                                                </label>
+                                            </div>
+                                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@L["Analytics_CollapseByImportBatchHint"]</small>
                                         </div>
                                     }
                                 }
@@ -676,7 +763,8 @@ else
                                                             <small class="text-muted"><i class="bi bi-calculator me-1"></i>@(editIsAggregate? L["Analytics_AggregateByValueHint"] : L["Analytics_ValueFieldHint"])</small>
                                                         </div>
                                                         <div class="col-12 col-md-4">
-                                                            <label class="form-label">@L["Analytics_ValueField"] @if (editIsAggregate) {
+                                                            <label class="form-label">
+                                                                @L["Analytics_ValueField"] @if (editIsAggregate) {
                                                                 <span class="text-danger">*</span>
                                                             }
                                                         </label>
@@ -759,6 +847,92 @@ else
                                                     </div>
                                                 }
                                             }
+                                            @if (_editRule.Aggregation is AnalyticsAggregation.Sum or AnalyticsAggregation.SignedSum)
+                                            {
+                                                <div class="col-12">
+                                                    <hr class="my-2" />
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="edit-offset-enable"
+                                                               checked="@_editRule.OffsetEnabled"
+                                                               @onchange="e => _editRule.OffsetEnabled = (bool)(e.Value ?? false)" />
+                                                        <label class="form-check-label" for="edit-offset-enable">
+                                                            <strong>@L["Analytics_OffsetEnable"]</strong>
+                                                        </label>
+                                                    </div>
+                                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@L["Analytics_OffsetHint"]</small>
+                                                </div>
+                                                @if (_editRule.OffsetEnabled)
+                                                {
+                                                    <div class="col-12 col-md-4">
+                                                        <label class="form-label">@L["Analytics_OffsetTriggerField"]</label>
+                                                        <select class="form-select" @bind="_editRule.OffsetTriggerFieldId">
+                                                            <option value="">— @L["Common_Select"] —</option>
+                                                            @foreach (var f in _fields.Where(f => f.FieldType == FieldType.Dropdown).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
+                                                            {
+                                                                <option value="@f.Id">@f.Name</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                    @if (_editRule.OffsetTriggerFieldId != Guid.Empty)
+                                                    {
+                                                        <div class="col-12 col-md-4">
+                                                            <label class="form-label">@L["Analytics_OffsetTriggerValues"]</label>
+                                                            @{
+                                                                var editOffsetTriggerField = _fields.FirstOrDefault(f => f.Id == _editRule.OffsetTriggerFieldId);
+                                                            }
+                                                            @if (editOffsetTriggerField?.DropdownValues is not null)
+                                                            {
+                                                                var editOffsetTriggerOptions = DropdownValuesHelper.Split(editOffsetTriggerField.DropdownValues).OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
+                                                                var editSelectedOffsetTriggers = DropdownValuesHelper.Split(_editRule.OffsetTriggerValues).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                                @foreach (var opt in editOffsetTriggerOptions)
+                                                                {
+                                                                    var capturedOpt = opt;
+                                                                    <div class="form-check">
+                                                                        <input class="form-check-input" type="checkbox" id="edit-offset-trig-@capturedOpt" checked="@editSelectedOffsetTriggers.Contains(capturedOpt)"
+                                                                               @onchange="e => { _editRule.OffsetTriggerValues = ToggleNegativeValue(_editRule.OffsetTriggerValues, capturedOpt, (bool)(e.Value ?? false)); }" />
+                                                                        <label class="form-check-label" for="edit-offset-trig-@capturedOpt">@capturedOpt</label>
+                                                                    </div>
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                <input type="text" class="form-control" @bind="_editRule.OffsetTriggerValues" placeholder="@L["Analytics_NegativeValuesPlaceholder"]" />
+                                                            }
+                                                        </div>
+                                                    }
+                                                    <div class="col-12 col-md-4">
+                                                        <label class="form-label">@L["Analytics_OffsetValueField"]</label>
+                                                        <select class="form-select" @bind="_editRule.OffsetValueFieldId">
+                                                            <option value="">— @L["Common_Select"] —</option>
+                                                            @foreach (var f in _fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal).OrderBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase))
+                                                            {
+                                                                <option value="@f.Id">@f.Name</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 col-md-4">
+                                                        <label class="form-label">@L["Analytics_OffsetDirection"]</label>
+                                                        <select class="form-select" @bind="_editRule.OffsetDirection">
+                                                            <option value="@AnalyticsOffsetDirection.Subtract">@L["Analytics_OffsetDirectionSubtract"]</option>
+                                                            <option value="@AnalyticsOffsetDirection.Add">@L["Analytics_OffsetDirectionAdd"]</option>
+                                                        </select>
+                                                    </div>
+                                                }
+                                                @if (_editRule.Aggregation == AnalyticsAggregation.SignedSum)
+                                                {
+                                                    <div class="col-12">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" id="edit-collapse-batch"
+                                                                   checked="@_editRule.CollapseByImportBatch"
+                                                                   @onchange="e => _editRule.CollapseByImportBatch = (bool)(e.Value ?? false)" />
+                                                            <label class="form-check-label" for="edit-collapse-batch">
+                                                                <strong>@L["Analytics_CollapseByImportBatch"]</strong>
+                                                            </label>
+                                                        </div>
+                                                        <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@L["Analytics_CollapseByImportBatchHint"]</small>
+                                                    </div>
+                                                }
+                                            }
                                         </div>
                                         <ErrorAlert Errors="_ruleErrors" OnDismiss="() => _ruleErrors = []" />
                                         <div class="d-flex justify-content-end gap-2 mt-3">
@@ -816,6 +990,13 @@ else
                                             {
                                                 <span class="ms-2">
                                                     <i class="bi bi-plus-slash-minus me-1"></i>@rule.SignFieldName → @rule.NegativeValues
+                                                </span>
+                                            }
+                                            @if (rule.OffsetTriggerFieldName is not null && rule.OffsetValueFieldName is not null)
+                                            {
+                                                var offsetSign = rule.OffsetDirection == AnalyticsOffsetDirection.Add ? "+" : "−";
+                                                <span class="ms-2">
+                                                    <i class="bi bi-arrow-left-right me-1"></i>@rule.OffsetTriggerFieldName=@rule.OffsetTriggerValues → @offsetSign@rule.OffsetValueFieldName
                                                 </span>
                                             }
                                         </small>
@@ -1154,7 +1335,68 @@ else
                                        OnMappingChanged="OnRcptFieldMappingChanged"
                                        OnAddRule="OnRcptAddRuleAsync"
                                        OnDeleteRule="DeleteRcptRuleAsync"
-                                       OnUpdateRule="UpdateRcptRuleAsync" />
+                                       OnUpdateRule="UpdateRcptRuleAsync">
+                @{
+                    var hasDiscountField = _rcptFieldMappings.Any(f => f.Source == ReceiptFieldMappingSource.ReceiptDiscount);
+                    var dropdownFields = _fields.Where(f => f.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown).ToList();
+                    var discountTypeOptions = _rcptDiscountTypeFieldId.HasValue
+                        && _rcptDropdownOptions.TryGetValue(_rcptDiscountTypeFieldId.Value, out var dtOpts)
+                        ? dtOpts
+                        : [];
+                }
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <i class="bi bi-ticket-perforated me-2"></i>@L["RcptCfg_ReceiptDiscountSection"]
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">@L["RcptCfg_ReceiptDiscountHint"]</p>
+
+                        @if (!hasDiscountField)
+                        {
+                            <div class="alert alert-info small mb-0">
+                                <i class="bi bi-info-circle me-1"></i>@L["RcptCfg_ReceiptDiscountNeedsDiscountField"]
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small">@L["RcptCfg_ReceiptDiscountTypeField"]</label>
+                                    <select class="form-select form-select-sm"
+                                            value="@(_rcptDiscountTypeFieldId?.ToString() ?? "")"
+                                            @onchange="OnReceiptDiscountTypeFieldChanged">
+                                        <option value="">— @L["Common_None"] —</option>
+                                        @foreach (var f in dropdownFields)
+                                        {
+                                            <option value="@f.Id">@f.Name</option>
+                                        }
+                                    </select>
+                                    <small class="text-muted">@L["RcptCfg_ReceiptDiscountTypeFieldHint"]</small>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small">@L["RcptCfg_ReceiptDiscountTypeValue"]</label>
+                                    @if (_rcptDiscountTypeFieldId.HasValue && discountTypeOptions.Count > 0)
+                                    {
+                                        <SearchableSelect Value="@_rcptDiscountTypeValue"
+                                                          ValueChanged="v => _rcptDiscountTypeValue = string.IsNullOrWhiteSpace(v) ? null : v"
+                                                          Options="discountTypeOptions"
+                                                          Placeholder="@($"\u2014 {L["Common_Select"]} \u2014")"
+                                                          Small="true" />
+                                    }
+                                    else
+                                    {
+                                        <input type="text" class="form-control form-control-sm"
+                                               placeholder="@L["RcptCfg_ReceiptDiscountTypeValuePlaceholder"]"
+                                               value="@(_rcptDiscountTypeValue ?? "")"
+                                               @onchange="e => _rcptDiscountTypeValue = string.IsNullOrWhiteSpace(e.Value?.ToString()) ? null : e.Value!.ToString()" />
+                                    }
+                                    <small class="text-muted">@L["RcptCfg_ReceiptDiscountTypeValueHint"]</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </ReceiptFieldMappingEditor>
         }
     }
     else if (_activeTab == "connected")
@@ -1735,6 +1977,11 @@ else
 
         _savingRule = true;
 
+        var offsetActive = _newRule.OffsetEnabled
+            && _newRule.OffsetTriggerFieldId != Guid.Empty
+            && _newRule.OffsetValueFieldId != Guid.Empty
+            && !string.IsNullOrWhiteSpace(_newRule.OffsetTriggerValues);
+
         var request = new CreateFieldAnalyticsRuleRequest(
             _newRule.MeasureFieldId,
             _newRule.GroupByFieldId,
@@ -1747,7 +1994,12 @@ else
             _newRule.SignFieldId != Guid.Empty ? _newRule.SignFieldId : null,
             string.IsNullOrWhiteSpace(_newRule.NegativeValues) ? null : _newRule.NegativeValues,
             _newRule.GroupByMetadataFieldId != Guid.Empty ? _newRule.GroupByMetadataFieldId : null,
-            _newRule.FilterMetadataFieldId != Guid.Empty ? _newRule.FilterMetadataFieldId : null);
+            _newRule.FilterMetadataFieldId != Guid.Empty ? _newRule.FilterMetadataFieldId : null,
+            offsetActive ? _newRule.OffsetTriggerFieldId : null,
+            offsetActive ? _newRule.OffsetTriggerValues : null,
+            offsetActive ? _newRule.OffsetValueFieldId : null,
+            offsetActive ? _newRule.OffsetDirection : null,
+            _newRule.Aggregation == AnalyticsAggregation.SignedSum && _newRule.CollapseByImportBatch);
 
         var (ok, errs) = await AnalyticsRuleService.CreateAsync(Id, request);
 
@@ -1794,7 +2046,13 @@ else
             SignFieldId = rule.SignFieldId ?? Guid.Empty,
             NegativeValues = rule.NegativeValues,
             GroupByMetadataFieldId = rule.GroupByMetadataFieldId ?? Guid.Empty,
-            FilterMetadataFieldId = rule.FilterMetadataFieldId ?? Guid.Empty
+            FilterMetadataFieldId = rule.FilterMetadataFieldId ?? Guid.Empty,
+            OffsetEnabled = rule.OffsetTriggerFieldId.HasValue && rule.OffsetValueFieldId.HasValue,
+            OffsetTriggerFieldId = rule.OffsetTriggerFieldId ?? Guid.Empty,
+            OffsetTriggerValues = rule.OffsetTriggerValues,
+            OffsetValueFieldId = rule.OffsetValueFieldId ?? Guid.Empty,
+            OffsetDirection = rule.OffsetDirection ?? AnalyticsOffsetDirection.Subtract,
+            CollapseByImportBatch = rule.CollapseByImportBatch
         };
         _ruleErrors = [];
         _showRuleForm = false;
@@ -1881,6 +2139,11 @@ else
 
         _savingRule = true;
 
+        var offsetActive = _editRule.OffsetEnabled
+            && _editRule.OffsetTriggerFieldId != Guid.Empty
+            && _editRule.OffsetValueFieldId != Guid.Empty
+            && !string.IsNullOrWhiteSpace(_editRule.OffsetTriggerValues);
+
         var request = new UpdateFieldAnalyticsRuleRequest(
             _editRule.Aggregation,
             _editRule.DisplayType,
@@ -1893,7 +2156,13 @@ else
             GroupByMetadataFieldId: _editRule.GroupByMetadataFieldId != Guid.Empty ? _editRule.GroupByMetadataFieldId : null,
             ClearGroupByMetadataField: _editRule.GroupByMetadataFieldId == Guid.Empty,
             FilterMetadataFieldId: _editRule.FilterMetadataFieldId != Guid.Empty ? _editRule.FilterMetadataFieldId : null,
-            ClearFilterMetadataField: _editRule.FilterMetadataFieldId == Guid.Empty);
+            ClearFilterMetadataField: _editRule.FilterMetadataFieldId == Guid.Empty,
+            OffsetTriggerFieldId: offsetActive ? _editRule.OffsetTriggerFieldId : null,
+            OffsetTriggerValues: offsetActive ? _editRule.OffsetTriggerValues : null,
+            OffsetValueFieldId: offsetActive ? _editRule.OffsetValueFieldId : null,
+            OffsetDirection: offsetActive ? _editRule.OffsetDirection : null,
+            ClearOffset: !offsetActive,
+            CollapseByImportBatch: _editRule.Aggregation == AnalyticsAggregation.SignedSum && _editRule.CollapseByImportBatch);
 
         var (ok, errs) = await AnalyticsRuleService.UpdateAsync(Id, _editingRuleId.Value, request);
 
@@ -1930,6 +2199,12 @@ else
         public string? NegativeValues { get; set; }
         public Guid GroupByMetadataFieldId { get; set; }
         public Guid FilterMetadataFieldId { get; set; }
+        public bool OffsetEnabled { get; set; }
+        public Guid OffsetTriggerFieldId { get; set; }
+        public string? OffsetTriggerValues { get; set; }
+        public Guid OffsetValueFieldId { get; set; }
+        public AnalyticsOffsetDirection OffsetDirection { get; set; } = AnalyticsOffsetDirection.Subtract;
+        public bool CollapseByImportBatch { get; set; }
     }
 
     private sealed class EditRuleModel
@@ -1943,6 +2218,12 @@ else
         public string? NegativeValues { get; set; }
         public Guid GroupByMetadataFieldId { get; set; }
         public Guid FilterMetadataFieldId { get; set; }
+        public bool OffsetEnabled { get; set; }
+        public Guid OffsetTriggerFieldId { get; set; }
+        public string? OffsetTriggerValues { get; set; }
+        public Guid OffsetValueFieldId { get; set; }
+        public AnalyticsOffsetDirection OffsetDirection { get; set; } = AnalyticsOffsetDirection.Subtract;
+        public bool CollapseByImportBatch { get; set; }
     }
 
     // ── Dependency rules ──
@@ -2259,6 +2540,8 @@ else
     private List<ReceiptMappingRuleResponse> _rcptMappingRules = [];
     private List<ReceiptFieldMapping> _rcptFieldMappings = [];
     private Dictionary<Guid, List<string>> _rcptDropdownOptions = [];
+    private Guid? _rcptDiscountTypeFieldId;
+    private string? _rcptDiscountTypeValue;
     private bool _savingRcptCfg;
 
     private async Task ActivateReceiptTabAsync()
@@ -2321,6 +2604,10 @@ else
             SetSource(_receiptConfig.UnitPriceFieldId, ReceiptFieldMappingSource.ReceiptUnitPrice);
             SetSource(_receiptConfig.DescriptionFieldId, ReceiptFieldMappingSource.ReceiptDescription);
             SetSource(_receiptConfig.ShopFieldId, ReceiptFieldMappingSource.MerchantName);
+            SetSource(_receiptConfig.DiscountFieldId, ReceiptFieldMappingSource.ReceiptDiscount);
+
+            _rcptDiscountTypeFieldId = _receiptConfig.ReceiptDiscountTypeFieldId;
+            _rcptDiscountTypeValue = _receiptConfig.ReceiptDiscountTypeValue;
 
             // Restore fixed-value mappings from JSON
             if (!string.IsNullOrEmpty(_receiptConfig.StaticFieldValues))
@@ -2356,10 +2643,34 @@ else
                 var fm = _rcptFieldMappings.FirstOrDefault(f => f.FieldId == numFields[0].Id);
                 if (fm is not null) fm.Source = ReceiptFieldMappingSource.ReceiptTotal;
             }
+
+            _rcptDiscountTypeFieldId = null;
+            _rcptDiscountTypeValue = null;
         }
     }
 
     private void OnRcptFieldMappingChanged(ReceiptFieldMapping _) => StateHasChanged();
+
+    private void OnReceiptDiscountTypeFieldChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(raw) || !Guid.TryParse(raw, out var fieldId))
+        {
+            _rcptDiscountTypeFieldId = null;
+            _rcptDiscountTypeValue = null;
+            return;
+        }
+
+        _rcptDiscountTypeFieldId = fieldId;
+
+        if (_rcptDiscountTypeValue is not null
+            && _rcptDropdownOptions.TryGetValue(fieldId, out var options)
+            && options.Count > 0
+            && !options.Contains(_rcptDiscountTypeValue, StringComparer.OrdinalIgnoreCase))
+        {
+            _rcptDiscountTypeValue = null;
+        }
+    }
 
     private async Task EnableReceiptImportAsync()
     {
@@ -2394,6 +2705,9 @@ else
             TotalFieldId: FindFieldWithSource(ReceiptFieldMappingSource.ReceiptTotal),
             QuantityFieldId: FindFieldWithSource(ReceiptFieldMappingSource.ReceiptQuantity),
             UnitPriceFieldId: FindFieldWithSource(ReceiptFieldMappingSource.ReceiptUnitPrice),
+            DiscountFieldId: FindFieldWithSource(ReceiptFieldMappingSource.ReceiptDiscount),
+            ReceiptDiscountTypeFieldId: _rcptDiscountTypeFieldId,
+            ReceiptDiscountTypeValue: _rcptDiscountTypeValue,
             StaticFieldValues: staticJson));
 
         if (!ok) _errors = errs;
@@ -2407,6 +2721,8 @@ else
         _receiptConfig = null;
         _rcptMappingRules = [];
         _rcptFieldMappings = [];
+        _rcptDiscountTypeFieldId = null;
+        _rcptDiscountTypeValue = null;
     }
 
     private async Task OnRcptAddRuleAsync(CreateReceiptMappingRuleRequest request)
@@ -3259,8 +3575,8 @@ else
                                                     var targetField = _connTargetFields.FirstOrDefault(f => f.Id == mapping.TargetFieldId);
                                                 }
                                                 @if (targetField?.FieldType == FieldType.Dropdown
-                                                                                                && !string.IsNullOrWhiteSpace(targetField.DropdownValues)
-                                                                                                && !targetField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                                                                                                                && !string.IsNullOrWhiteSpace(targetField.DropdownValues)
+                                                                                                                                                && !targetField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
                                                 {
                                                     <SearchableSelect Value="@mapping.StaticValue"
                                                                       ValueChanged="v => mapping.StaticValue = v"
@@ -3321,8 +3637,8 @@ else
                                                         @if (srcField is not null && IsDropdownLike(srcField))
                                                         {
                                                             @if (srcField.FieldType == FieldType.CompositeDropdown
-                                                                                                                        && !string.IsNullOrWhiteSpace(srcField.DropdownValues)
-                                                                                                                        && srcField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                                                                                                                                                    && !string.IsNullOrWhiteSpace(srcField.DropdownValues)
+                                                                                                                                                                                    && srcField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
                                                             {
                                                                 <SearchableSelect Value="@pair.WhenValue"
                                                                                   ValueChanged="v => pair.WhenValue = v ?? string.Empty"
@@ -3349,8 +3665,8 @@ else
                                                         @if (tgtField is not null && IsDropdownLike(tgtField))
                                                         {
                                                             @if (tgtField.FieldType == FieldType.CompositeDropdown
-                                                                                                                        && !string.IsNullOrWhiteSpace(tgtField.DropdownValues)
-                                                                                                                        && tgtField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
+                                                                                                                                                                                    && !string.IsNullOrWhiteSpace(tgtField.DropdownValues)
+                                                                                                                                                                                    && tgtField.DropdownValues.StartsWith("ref:", StringComparison.Ordinal))
                                                             {
                                                                 <SearchableSelect Value="@pair.ThenValue"
                                                                                   ValueChanged="v => pair.ThenValue = v ?? string.Empty"

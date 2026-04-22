@@ -13,6 +13,7 @@ public static class ActionEntryMappingExtensions
             ActionName = actionName,
             OccurredAtUtc = entity.OccurredAtUtc,
             Notes = entity.Notes,
+            ReceiptImportBatchId = entity.ReceiptImportBatchId,
             FieldValues = [.. entity.Fields.Select(f => new ActionEntryFieldResponse
             {
                 Id = f.Id,

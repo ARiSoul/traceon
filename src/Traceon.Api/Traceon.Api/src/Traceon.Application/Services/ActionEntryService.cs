@@ -38,6 +38,7 @@ public sealed class ActionEntryService(
                         ActionName = actionName,
                         OccurredAtUtc = e.OccurredAtUtc,
                         Notes = e.Notes,
+                        ReceiptImportBatchId = e.ReceiptImportBatchId,
                         CreatedAtUtc = e.CreatedAtUtc,
                         FieldValues = (from f in e.Fields
                                        join af in fieldRepository.Query()
@@ -100,7 +101,7 @@ public sealed class ActionEntryService(
             return Result<ActionEntryResponse>.Failure($"Tracked action with ID '{trackedActionId}' was not found.");
         }
 
-        var entity = ActionEntry.Create(trackedActionId, request.OccurredAtUtc, request.Notes);
+        var entity = ActionEntry.Create(trackedActionId, request.OccurredAtUtc, request.Notes, request.ReceiptImportBatchId);
 
         if (request.FieldValues is not null)
         {
@@ -294,6 +295,7 @@ public sealed class ActionEntryService(
                    ActionName = a.Name,
                    OccurredAtUtc = e.OccurredAtUtc,
                    Notes = e.Notes,
+                   ReceiptImportBatchId = e.ReceiptImportBatchId,
                    FieldValues = (from f in e.Fields
                                   join af in fieldRepository.Query()
                                       on f.ActionFieldId equals af.Id

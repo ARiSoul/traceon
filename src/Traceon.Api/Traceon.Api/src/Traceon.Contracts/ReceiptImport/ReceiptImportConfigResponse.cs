@@ -10,6 +10,8 @@ public sealed record ReceiptImportConfigResponse
     public required Guid? QuantityFieldId { get; init; }
     public required Guid? UnitPriceFieldId { get; init; }
     public required Guid? DiscountFieldId { get; init; }
+    public Guid? ReceiptDiscountTypeFieldId { get; init; }
+    public string? ReceiptDiscountTypeValue { get; init; }
     public string? StaticFieldValues { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime? UpdatedAtUtc { get; init; }

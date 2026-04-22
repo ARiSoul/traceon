@@ -7,6 +7,7 @@ public sealed record ActionEntryResponse
     public required string ActionName { get; init; }
     public required DateTime OccurredAtUtc { get; init; }
     public required string? Notes { get; init; }
+    public required Guid? ReceiptImportBatchId { get; init; }
     public required List<ActionEntryFieldResponse> FieldValues { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime? UpdatedAtUtc { get; init; }

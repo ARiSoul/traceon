@@ -735,6 +735,17 @@
   <data name="Analytics_NegativeValues"><value>Negative Values</value></data>
   <data name="Analytics_NegativeValuesPlaceholder"><value>Comma-separated, e.g.: Expense,Withdrawal</value></data>
   <data name="Analytics_SignedSumHint"><value>Choose a dropdown field that determines sign. Values marked as negative will be subtracted in the total (e.g., Expense → −Amount).</value></data>
+  <data name="Analytics_OffsetEnable"><value>Apply offset adjustment</value></data>
+  <data name="Analytics_OffsetHint"><value>For matching entries, also add or subtract the value of another field. Useful for receipt-scoped discounts: when Type = Receipt Discount, subtract the Discount field.</value></data>
+  <data name="Analytics_OffsetTriggerField"><value>When this field…</value></data>
+  <data name="Analytics_OffsetTriggerValues"><value>…matches any of</value></data>
+  <data name="Analytics_OffsetValueField"><value>Adjust by this field</value></data>
+  <data name="Analytics_OffsetDirection"><value>Direction</value></data>
+  <data name="Analytics_OffsetDirectionSubtract"><value>Subtract</value></data>
+  <data name="Analytics_OffsetDirectionAdd"><value>Add</value></data>
+  <data name="Analytics_Discounts"><value>Discounts</value></data>
+  <data name="Analytics_CollapseByImportBatch"><value>Collapse entries from same import batch</value></data>
+  <data name="Analytics_CollapseByImportBatchHint"><value>For running balance, group entries that came from the same receipt scan into one cumulative step (avoids the visual dip when items and the receipt-discount row are plotted separately).</value></data>
   <data name="Analytics_NeedTwoFields"><value>You need at least two fields (one numeric) to create analytics rules. Add fields in the Fields tab first.</value></data>
   <data name="Dep_FieldDependencies"><value>Dependencies</value></data>
   <data name="Dep_Hint"><value>Define how dropdown fields depend on each other. When a source value is selected, the target dropdown shows only the allowed values.</value></data>
@@ -878,6 +889,8 @@
   <data name="Receipt_NewValues"><value>new values</value></data>
   <data name="Receipt_TargetAction"><value>Target action</value></data>
   <data name="Receipt_NewValuesInfo"><value>New dropdown values will be automatically added to the corresponding field definitions.</value></data>
+  <data name="Receipt_ReceiptDiscountReview"><value>Receipt-scoped discount</value></data>
+  <data name="Receipt_ReceiptDiscountReviewHint"><value>Creates one extra entry with Amount 0 and this value in the Discount field. Set to 0 or empty to skip.</value></data>
   <data name="Receipt_ImportEntries"><value>Import Entries</value></data>
   <data name="Receipt_ImportFailed"><value>Failed to import entries. Please try again.</value></data>
   <data name="Receipt_ImportComplete"><value>Import Complete!</value></data>
@@ -931,6 +944,14 @@
   <data name="RcptCfg_NeedsDecimalField"><value>This action needs at least one Decimal field to enable receipt import.</value></data>
   <data name="RcptCfg_NotConfigured"><value>Receipt import not configured for this action.</value></data>
   <data name="RcptCfg_ConfiguredAction"><value>configured for receipt import</value></data>
+  <data name="RcptCfg_ReceiptDiscountSection"><value>Receipt-Scoped Discount</value></data>
+  <data name="RcptCfg_ReceiptDiscountHint"><value>When a receipt has a discount applied to the whole receipt (not tied to specific items), an extra entry will be created with Amount 0 and the discount amount in the Discount field. Configure the Type field below so this entry is labeled correctly in your dashboards.</value></data>
+  <data name="RcptCfg_ReceiptDiscountNeedsDiscountField"><value>Map a numeric field to the Discount source above to enable receipt-scoped discount handling.</value></data>
+  <data name="RcptCfg_ReceiptDiscountTypeField"><value>Type field</value></data>
+  <data name="RcptCfg_ReceiptDiscountTypeFieldHint"><value>Dropdown field on this action that represents the entry type (e.g. Expense, Income, Discount).</value></data>
+  <data name="RcptCfg_ReceiptDiscountTypeValue"><value>Value for receipt-discount entries</value></data>
+  <data name="RcptCfg_ReceiptDiscountTypeValuePlaceholder"><value>e.g. Receipt Discount</value></data>
+  <data name="RcptCfg_ReceiptDiscountTypeValueHint"><value>This value will be written to the Type field on the extra discount entry.</value></data>
 
   <!-- ═══ Bulk Operations ═══ -->
   <data name="Bulk_Edit"><value>Edit</value></data>

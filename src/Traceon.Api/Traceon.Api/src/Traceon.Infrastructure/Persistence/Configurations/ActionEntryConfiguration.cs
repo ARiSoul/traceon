@@ -16,6 +16,8 @@ internal sealed class ActionEntryConfiguration : IEntityTypeConfiguration<Action
 
         builder.HasIndex(e => e.OccurredAtUtc);
 
+        builder.HasIndex(e => e.ReceiptImportBatchId);
+
         builder.Property(e => e.Notes)
             .HasMaxLength(500);
 

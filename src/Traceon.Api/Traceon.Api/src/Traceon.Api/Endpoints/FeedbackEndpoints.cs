@@ -76,7 +76,7 @@ internal static class FeedbackEndpoints
             await client.ConnectAsync(emailSettings.SmtpHost, emailSettings.SmtpPort, secureSocket);
 
             if (!string.IsNullOrEmpty(emailSettings.SmtpUser))
-                await client.AuthenticateAsync(emailSettings.SmtpUser, emailSettings.SmtpPassword);
+                await client.AuthenticateAsync(emailSettings.SmtpUser, emailSettings.SmtpPassword!);
 
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
