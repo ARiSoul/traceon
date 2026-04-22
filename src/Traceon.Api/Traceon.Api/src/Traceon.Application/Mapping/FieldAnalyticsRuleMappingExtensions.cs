@@ -13,7 +13,9 @@ public static class FieldAnalyticsRuleMappingExtensions
         string? filterFieldName,
         string? signFieldName = null,
         string? groupByMetadataFieldName = null,
-        string? filterMetadataFieldName = null) =>
+        string? filterMetadataFieldName = null,
+        string? offsetTriggerFieldName = null,
+        string? offsetValueFieldName = null) =>
         new()
         {
             Id = entity.Id,
@@ -36,6 +38,15 @@ public static class FieldAnalyticsRuleMappingExtensions
             SignFieldId = entity.SignFieldId,
             SignFieldName = signFieldName,
             NegativeValues = entity.NegativeValues,
+            OffsetTriggerFieldId = entity.OffsetTriggerFieldId,
+            OffsetTriggerFieldName = offsetTriggerFieldName,
+            OffsetTriggerValues = entity.OffsetTriggerValues,
+            OffsetValueFieldId = entity.OffsetValueFieldId,
+            OffsetValueFieldName = offsetValueFieldName,
+            OffsetDirection = entity.OffsetDirection.HasValue
+                ? (AnalyticsOffsetDirection)entity.OffsetDirection.Value
+                : null,
+            CollapseByImportBatch = entity.CollapseByImportBatch,
             CreatedAtUtc = entity.CreatedAtUtc,
             UpdatedAtUtc = entity.UpdatedAtUtc
         };

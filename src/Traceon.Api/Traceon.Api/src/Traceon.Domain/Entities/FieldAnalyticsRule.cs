@@ -15,6 +15,11 @@ public sealed class FieldAnalyticsRule : Entity
     public int SortOrder { get; private set; }
     public Guid? SignFieldId { get; private set; }
     public string? NegativeValues { get; private set; }
+    public Guid? OffsetTriggerFieldId { get; private set; }
+    public string? OffsetTriggerValues { get; private set; }
+    public Guid? OffsetValueFieldId { get; private set; }
+    public int? OffsetDirection { get; private set; }
+    public bool CollapseByImportBatch { get; private set; }
 
     private FieldAnalyticsRule(
         Guid trackedActionId,
@@ -29,7 +34,12 @@ public sealed class FieldAnalyticsRule : Entity
         string? label,
         int sortOrder,
         Guid? signFieldId,
-        string? negativeValues)
+        string? negativeValues,
+        Guid? offsetTriggerFieldId,
+        string? offsetTriggerValues,
+        Guid? offsetValueFieldId,
+        int? offsetDirection,
+        bool collapseByImportBatch)
     {
         TrackedActionId = trackedActionId;
         MeasureFieldId = measureFieldId;
@@ -44,6 +54,11 @@ public sealed class FieldAnalyticsRule : Entity
         SortOrder = sortOrder;
         SignFieldId = signFieldId;
         NegativeValues = negativeValues;
+        OffsetTriggerFieldId = offsetTriggerFieldId;
+        OffsetTriggerValues = offsetTriggerValues;
+        OffsetValueFieldId = offsetValueFieldId;
+        OffsetDirection = offsetDirection;
+        CollapseByImportBatch = collapseByImportBatch;
     }
 
     public static FieldAnalyticsRule Create(
@@ -59,7 +74,12 @@ public sealed class FieldAnalyticsRule : Entity
         Guid? signFieldId = null,
         string? negativeValues = null,
         Guid? groupByMetadataFieldId = null,
-        Guid? filterMetadataFieldId = null)
+        Guid? filterMetadataFieldId = null,
+        Guid? offsetTriggerFieldId = null,
+        string? offsetTriggerValues = null,
+        Guid? offsetValueFieldId = null,
+        int? offsetDirection = null,
+        bool collapseByImportBatch = false)
     {
         if (trackedActionId == Guid.Empty)
             throw new ArgumentException("Tracked action ID is required.", nameof(trackedActionId));
@@ -89,7 +109,12 @@ public sealed class FieldAnalyticsRule : Entity
             label?.Trim(),
             sortOrder,
             signFieldId,
-            negativeValues?.Trim());
+            negativeValues?.Trim(),
+            offsetTriggerFieldId,
+            offsetTriggerValues?.Trim(),
+            offsetValueFieldId,
+            offsetDirection,
+            collapseByImportBatch);
     }
 
     public void Update(
@@ -105,7 +130,13 @@ public sealed class FieldAnalyticsRule : Entity
         Guid? groupByMetadataFieldId = null,
         bool clearGroupByMetadataField = false,
         Guid? filterMetadataFieldId = null,
-        bool clearFilterMetadataField = false)
+        bool clearFilterMetadataField = false,
+        Guid? offsetTriggerFieldId = null,
+        string? offsetTriggerValues = null,
+        Guid? offsetValueFieldId = null,
+        int? offsetDirection = null,
+        bool clearOffset = false,
+        bool? collapseByImportBatch = null)
     {
         if (aggregation.HasValue)
             Aggregation = aggregation.Value;
@@ -130,6 +161,26 @@ public sealed class FieldAnalyticsRule : Entity
         else if (clearFilterMetadataField)
             FilterMetadataFieldId = null;
         NegativeValues = negativeValues?.Trim();
+        if (clearOffset)
+        {
+            OffsetTriggerFieldId = null;
+            OffsetTriggerValues = null;
+            OffsetValueFieldId = null;
+            OffsetDirection = null;
+        }
+        else
+        {
+            if (offsetTriggerFieldId.HasValue)
+                OffsetTriggerFieldId = offsetTriggerFieldId;
+            if (offsetTriggerValues is not null)
+                OffsetTriggerValues = offsetTriggerValues.Trim();
+            if (offsetValueFieldId.HasValue)
+                OffsetValueFieldId = offsetValueFieldId;
+            if (offsetDirection.HasValue)
+                OffsetDirection = offsetDirection;
+        }
+        if (collapseByImportBatch.HasValue)
+            CollapseByImportBatch = collapseByImportBatch.Value;
         MarkUpdated();
     }
 }

@@ -732,6 +732,17 @@
   <data name="Analytics_NegativeValues"><value>Valores Negativos</value></data>
   <data name="Analytics_NegativeValuesPlaceholder"><value>Separados por vírgula, ex: Despesa,Levantamento</value></data>
   <data name="Analytics_SignedSumHint"><value>Escolha um campo dropdown que determina o sinal. Valores marcados como negativos serão subtraídos no total (ex: Despesa → −Montante).</value></data>
+  <data name="Analytics_OffsetEnable"><value>Aplicar ajuste por compensação</value></data>
+  <data name="Analytics_OffsetHint"><value>Para entradas correspondentes, soma ou subtrai também o valor de outro campo. Útil para descontos ao nível do recibo: quando Tipo = Desconto de Recibo, subtrair o campo Desconto.</value></data>
+  <data name="Analytics_OffsetTriggerField"><value>Quando este campo…</value></data>
+  <data name="Analytics_OffsetTriggerValues"><value>…corresponder a algum de</value></data>
+  <data name="Analytics_OffsetValueField"><value>Ajustar com este campo</value></data>
+  <data name="Analytics_OffsetDirection"><value>Direção</value></data>
+  <data name="Analytics_OffsetDirectionSubtract"><value>Subtrair</value></data>
+  <data name="Analytics_OffsetDirectionAdd"><value>Somar</value></data>
+  <data name="Analytics_Discounts"><value>Descontos</value></data>
+  <data name="Analytics_CollapseByImportBatch"><value>Agrupar entradas do mesmo lote de importação</value></data>
+  <data name="Analytics_CollapseByImportBatchHint"><value>No saldo acumulado, agrupa as entradas provenientes do mesmo scan de recibo num único passo cumulativo (evita a queda visual quando os itens e a linha de desconto do recibo são desenhados em separado).</value></data>
   <data name="Analytics_NeedTwoFields"><value>Precisa de pelo menos dois campos (um numérico) para criar regras. Adicione campos no separador Campos primeiro.</value></data>
   <data name="Dep_FieldDependencies"><value>Dependências</value></data>
   <data name="Dep_Hint"><value>Defina como campos dropdown dependem uns dos outros. Quando um valor de origem é selecionado, o dropdown de destino mostra apenas os valores permitidos.</value></data>

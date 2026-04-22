@@ -38,6 +38,7 @@ public sealed class ActionEntryService(
                         ActionName = actionName,
                         OccurredAtUtc = e.OccurredAtUtc,
                         Notes = e.Notes,
+                        ReceiptImportBatchId = e.ReceiptImportBatchId,
                         CreatedAtUtc = e.CreatedAtUtc,
                         FieldValues = (from f in e.Fields
                                        join af in fieldRepository.Query()
@@ -294,6 +295,7 @@ public sealed class ActionEntryService(
                    ActionName = a.Name,
                    OccurredAtUtc = e.OccurredAtUtc,
                    Notes = e.Notes,
+                   ReceiptImportBatchId = e.ReceiptImportBatchId,
                    FieldValues = (from f in e.Fields
                                   join af in fieldRepository.Query()
                                       on f.ActionFieldId equals af.Id

@@ -42,7 +42,7 @@
                     else
                     {
                         <span class="badge @(bal.CurrentBalance >= 0 ? "bg-success" : "bg-danger") rounded-pill"
-                              title="@bal.Label">
+                              title="@BuildBalanceTitle(bal)">
                             <i class="bi bi-wallet2 me-1"></i>@FormatBalance(bal.CurrentBalance) @bal.Unit
                         </span>
                     }
@@ -85,7 +85,7 @@
                 <a href="/entries/action/@Action.Id"
                    class="btn btn-outline-secondary btn-sm py-0 px-2"
                    title="@L["TrackedActions_ViewEntries"]">
-                    <i class="bi bi-journal-text me-1"></i><small>@Action.EntryCount</small>
+                    <i class="bi bi-journal-text me-1"></i><small>@(EntryCountOverride ?? Action.EntryCount)</small>
                 </a>
             </div>
         </div>
@@ -101,6 +101,9 @@
 
     [Parameter]
     public List<BalanceSummary> Balances { get; set; } = [];
+
+    [Parameter]
+    public int? EntryCountOverride { get; set; }
 
     [Parameter]
     public EventCallback<TrackedActionResponse> OnTrack { get; set; }
@@ -131,5 +134,14 @@
         return value == Math.Truncate(value)
             ? $"{value:F0}"
             : $"{value:F2}";
+    }
+
+    private string BuildBalanceTitle(BalanceSummary bal)
+    {
+        if (!bal.DiscountTotal.HasValue || bal.DiscountTotal.Value == 0)
+            return bal.Label;
+
+        var unit = string.IsNullOrEmpty(bal.Unit) ? "" : $" {bal.Unit}";
+        return $"{bal.Label} ({L["Analytics_Discounts"]}: {FormatNumeric(bal.DiscountTotal.Value)}{unit})";
     }
 }

@@ -50,7 +50,9 @@ public sealed class FieldAnalyticsRuleService(
                 r.FilterFieldId.HasValue ? fieldNames.GetValueOrDefault(r.FilterFieldId.Value, "?") : null,
                 r.SignFieldId.HasValue ? fieldNames.GetValueOrDefault(r.SignFieldId.Value, "?") : null,
                 r.GroupByMetadataFieldId.HasValue ? metadataNames.GetValueOrDefault(r.GroupByMetadataFieldId.Value) : null,
-                r.FilterMetadataFieldId.HasValue ? metadataNames.GetValueOrDefault(r.FilterMetadataFieldId.Value) : null))
+                r.FilterMetadataFieldId.HasValue ? metadataNames.GetValueOrDefault(r.FilterMetadataFieldId.Value) : null,
+                r.OffsetTriggerFieldId.HasValue ? fieldNames.GetValueOrDefault(r.OffsetTriggerFieldId.Value, "?") : null,
+                r.OffsetValueFieldId.HasValue ? fieldNames.GetValueOrDefault(r.OffsetValueFieldId.Value, "?") : null))
             .ToList();
 
         return Result<IReadOnlyList<FieldAnalyticsRuleResponse>>.Success(responses);
@@ -87,6 +89,13 @@ public sealed class FieldAnalyticsRuleService(
             return Result<FieldAnalyticsRuleResponse>.Failure(
                 $"Sign field '{request.SignFieldId}' not found in this action.", ResultErrorType.Validation);
 
+        var offsetValidation = ValidateOffsetFields(
+            fieldsById,
+            request.OffsetTriggerFieldId,
+            request.OffsetValueFieldId);
+        if (offsetValidation is not null)
+            return Result<FieldAnalyticsRuleResponse>.Failure(offsetValidation, ResultErrorType.Validation);
+
         var metadataValidation = await ValidateMetadataLinksAsync(
             fieldsById,
             request.GroupByFieldId,
@@ -110,7 +119,12 @@ public sealed class FieldAnalyticsRuleService(
             request.SignFieldId,
             request.NegativeValues,
             request.GroupByMetadataFieldId,
-            request.FilterMetadataFieldId);
+            request.FilterMetadataFieldId,
+            request.OffsetTriggerFieldId,
+            request.OffsetTriggerValues,
+            request.OffsetValueFieldId,
+            request.OffsetDirection.HasValue ? (int)request.OffsetDirection.Value : null,
+            request.CollapseByImportBatch);
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -127,7 +141,9 @@ public sealed class FieldAnalyticsRuleService(
             entity.FilterFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.FilterFieldId.Value, "?") : null,
             entity.SignFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.SignFieldId.Value, "?") : null,
             entity.GroupByMetadataFieldId.HasValue ? metadataNames.GetValueOrDefault(entity.GroupByMetadataFieldId.Value) : null,
-            entity.FilterMetadataFieldId.HasValue ? metadataNames.GetValueOrDefault(entity.FilterMetadataFieldId.Value) : null));
+            entity.FilterMetadataFieldId.HasValue ? metadataNames.GetValueOrDefault(entity.FilterMetadataFieldId.Value) : null,
+            entity.OffsetTriggerFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.OffsetTriggerFieldId.Value, "?") : null,
+            entity.OffsetValueFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.OffsetValueFieldId.Value, "?") : null));
     }
 
     public async Task<Result<FieldAnalyticsRuleResponse>> UpdateAsync(
@@ -152,6 +168,16 @@ public sealed class FieldAnalyticsRuleService(
         if (request.SignFieldId.HasValue && !fieldsById.ContainsKey(request.SignFieldId.Value))
             return Result<FieldAnalyticsRuleResponse>.Failure(
                 $"Sign field '{request.SignFieldId}' not found in this action.", ResultErrorType.Validation);
+
+        if (!request.ClearOffset)
+        {
+            var offsetValidation = ValidateOffsetFields(
+                fieldsById,
+                request.OffsetTriggerFieldId,
+                request.OffsetValueFieldId);
+            if (offsetValidation is not null)
+                return Result<FieldAnalyticsRuleResponse>.Failure(offsetValidation, ResultErrorType.Validation);
+        }
 
         var metadataValidation = await ValidateMetadataLinksAsync(
             fieldsById,
@@ -179,7 +205,13 @@ public sealed class FieldAnalyticsRuleService(
             request.GroupByMetadataFieldId,
             request.ClearGroupByMetadataField,
             request.FilterMetadataFieldId,
-            request.ClearFilterMetadataField);
+            request.ClearFilterMetadataField,
+            request.OffsetTriggerFieldId,
+            request.OffsetTriggerValues,
+            request.OffsetValueFieldId,
+            request.OffsetDirection.HasValue ? (int)request.OffsetDirection.Value : null,
+            request.ClearOffset,
+            request.CollapseByImportBatch);
 
         await repository.UpdateAsync(entity, cancellationToken);
 
@@ -198,7 +230,9 @@ public sealed class FieldAnalyticsRuleService(
             entity.FilterFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.FilterFieldId.Value, "?") : null,
             entity.SignFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.SignFieldId.Value, "?") : null,
             entity.GroupByMetadataFieldId.HasValue ? metadataNames.GetValueOrDefault(entity.GroupByMetadataFieldId.Value) : null,
-            entity.FilterMetadataFieldId.HasValue ? metadataNames.GetValueOrDefault(entity.FilterMetadataFieldId.Value) : null));
+            entity.FilterMetadataFieldId.HasValue ? metadataNames.GetValueOrDefault(entity.FilterMetadataFieldId.Value) : null,
+            entity.OffsetTriggerFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.OffsetTriggerFieldId.Value, "?") : null,
+            entity.OffsetValueFieldId.HasValue ? fieldNames.GetValueOrDefault(entity.OffsetValueFieldId.Value, "?") : null));
     }
 
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -242,6 +276,18 @@ public sealed class FieldAnalyticsRuleService(
         };
 
         await chartVisibilityService.RenameKeysAsync(entity.TrackedActionId, renames, cancellationToken);
+    }
+
+    private static string? ValidateOffsetFields(
+        Dictionary<Guid, ActionField> fieldsById,
+        Guid? offsetTriggerFieldId,
+        Guid? offsetValueFieldId)
+    {
+        if (offsetTriggerFieldId.HasValue && !fieldsById.ContainsKey(offsetTriggerFieldId.Value))
+            return $"Offset trigger field '{offsetTriggerFieldId}' not found in this action.";
+        if (offsetValueFieldId.HasValue && !fieldsById.ContainsKey(offsetValueFieldId.Value))
+            return $"Offset value field '{offsetValueFieldId}' not found in this action.";
+        return null;
     }
 
     private async Task<string?> ValidateMetadataLinksAsync(

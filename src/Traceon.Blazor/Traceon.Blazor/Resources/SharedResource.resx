@@ -735,6 +735,17 @@
   <data name="Analytics_NegativeValues"><value>Negative Values</value></data>
   <data name="Analytics_NegativeValuesPlaceholder"><value>Comma-separated, e.g.: Expense,Withdrawal</value></data>
   <data name="Analytics_SignedSumHint"><value>Choose a dropdown field that determines sign. Values marked as negative will be subtracted in the total (e.g., Expense → −Amount).</value></data>
+  <data name="Analytics_OffsetEnable"><value>Apply offset adjustment</value></data>
+  <data name="Analytics_OffsetHint"><value>For matching entries, also add or subtract the value of another field. Useful for receipt-scoped discounts: when Type = Receipt Discount, subtract the Discount field.</value></data>
+  <data name="Analytics_OffsetTriggerField"><value>When this field…</value></data>
+  <data name="Analytics_OffsetTriggerValues"><value>…matches any of</value></data>
+  <data name="Analytics_OffsetValueField"><value>Adjust by this field</value></data>
+  <data name="Analytics_OffsetDirection"><value>Direction</value></data>
+  <data name="Analytics_OffsetDirectionSubtract"><value>Subtract</value></data>
+  <data name="Analytics_OffsetDirectionAdd"><value>Add</value></data>
+  <data name="Analytics_Discounts"><value>Discounts</value></data>
+  <data name="Analytics_CollapseByImportBatch"><value>Collapse entries from same import batch</value></data>
+  <data name="Analytics_CollapseByImportBatchHint"><value>For running balance, group entries that came from the same receipt scan into one cumulative step (avoids the visual dip when items and the receipt-discount row are plotted separately).</value></data>
   <data name="Analytics_NeedTwoFields"><value>You need at least two fields (one numeric) to create analytics rules. Add fields in the Fields tab first.</value></data>
   <data name="Dep_FieldDependencies"><value>Dependencies</value></data>
   <data name="Dep_Hint"><value>Define how dropdown fields depend on each other. When a source value is selected, the target dropdown shows only the allowed values.</value></data>

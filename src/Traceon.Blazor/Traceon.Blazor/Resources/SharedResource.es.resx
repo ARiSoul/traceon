@@ -732,6 +732,17 @@
   <data name="Analytics_NegativeValues"><value>Valores Negativos</value></data>
   <data name="Analytics_NegativeValuesPlaceholder"><value>Separados por coma, ej: Gasto,Retiro</value></data>
   <data name="Analytics_SignedSumHint"><value>Elige un campo desplegable que determine el signo. Los valores marcados como negativos se restarán del total (ej: Gasto → −Monto).</value></data>
+  <data name="Analytics_OffsetEnable"><value>Aplicar ajuste por desplazamiento</value></data>
+  <data name="Analytics_OffsetHint"><value>Para entradas que coincidan, también suma o resta el valor de otro campo. Útil para descuentos a nivel de recibo: cuando Tipo = Descuento de Recibo, resta el campo Descuento.</value></data>
+  <data name="Analytics_OffsetTriggerField"><value>Cuando este campo…</value></data>
+  <data name="Analytics_OffsetTriggerValues"><value>…coincida con alguno de</value></data>
+  <data name="Analytics_OffsetValueField"><value>Ajustar con este campo</value></data>
+  <data name="Analytics_OffsetDirection"><value>Dirección</value></data>
+  <data name="Analytics_OffsetDirectionSubtract"><value>Restar</value></data>
+  <data name="Analytics_OffsetDirectionAdd"><value>Sumar</value></data>
+  <data name="Analytics_Discounts"><value>Descuentos</value></data>
+  <data name="Analytics_CollapseByImportBatch"><value>Agrupar entradas del mismo lote de importación</value></data>
+  <data name="Analytics_CollapseByImportBatchHint"><value>Para el saldo acumulado, agrupa las entradas provenientes del mismo escaneo de recibo en un único paso acumulado (evita la caída visual cuando los ítems y la fila de descuento del recibo se grafican por separado).</value></data>
   <data name="Analytics_NeedTwoFields"><value>Necesitas al menos dos campos (uno numérico) para crear reglas. Agrega campos en la pestaña Campos primero.</value></data>
   <data name="Dep_FieldDependencies"><value>Dependencias</value></data>
   <data name="Dep_Hint"><value>Define cómo los campos desplegables dependen entre sí. Al seleccionar un valor de origen, el desplegable de destino muestra solo los valores permitidos.</value></data>

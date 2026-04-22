@@ -395,7 +395,14 @@ public sealed class DashboardService(
                     var signVal = rule.SignFieldId.HasValue
                         ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.SignFieldId.Value)?.Value
                         : null;
-                    return (Date: e.OccurredAtUtc, GroupKey: groupVal, MeasureValue: measureVal, SignValue: signVal);
+                    var offsetTriggerVal = rule.OffsetTriggerFieldId.HasValue
+                        ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.OffsetTriggerFieldId.Value)?.Value
+                        : null;
+                    var offsetVal = rule.OffsetValueFieldId.HasValue
+                        ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.OffsetValueFieldId.Value)?.Value
+                        : null;
+                    return (Date: e.OccurredAtUtc, GroupKey: groupVal, MeasureValue: measureVal, SignValue: signVal,
+                            OffsetTriggerValue: offsetTriggerVal, OffsetValue: offsetVal);
                 })
                 .Where(p => !string.IsNullOrWhiteSpace(p.GroupKey))
                 .ToList();
@@ -410,6 +417,8 @@ public sealed class DashboardService(
                 negativeValueSet = DropdownValuesHelper.Split(rule.NegativeValues)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
+
+            var offsetTriggerSet = BuildOffsetTriggerSet(rule);
 
             var isNumericMeasure = measureField.FieldType is FieldType.Integer or FieldType.Decimal;
             var isDropdownMeasure = measureField.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown;
@@ -514,6 +523,7 @@ public sealed class DashboardService(
                             {
                                 val = -val;
                             }
+                            val = ApplyOffset(val, p.OffsetTriggerValue, p.OffsetValue, offsetTriggerSet, rule.OffsetDirection);
                             return val;
                         })
                         .ToList();
@@ -587,7 +597,8 @@ public sealed class DashboardService(
             var timeSeriesData = new List<CrossFieldTimeSeries>();
             if (rule.DisplayType == AnalyticsDisplayType.TimeSeries)
             {
-                timeSeriesData = BuildCrossFieldTimeSeries(pairs, rule.Aggregation, isNumericMeasure, negativeValueSet);
+                timeSeriesData = BuildCrossFieldTimeSeries(pairs, rule.Aggregation, isNumericMeasure, negativeValueSet,
+                    offsetTriggerSet, rule.OffsetDirection);
             }
 
             results.Add(new CrossFieldResult
@@ -615,10 +626,12 @@ public sealed class DashboardService(
 
     /// <summary>Build time-series for cross-field analytics: one line per group-by value, aggregated per day.</summary>
     private static List<CrossFieldTimeSeries> BuildCrossFieldTimeSeries(
-        List<(DateTime Date, string? GroupKey, string? MeasureValue, string? SignValue)> pairs,
+        List<(DateTime Date, string? GroupKey, string? MeasureValue, string? SignValue, string? OffsetTriggerValue, string? OffsetValue)> pairs,
         AnalyticsAggregation aggregation,
         bool isNumericMeasure,
-        HashSet<string>? negativeValueSet)
+        HashSet<string>? negativeValueSet,
+        HashSet<string>? offsetTriggerSet,
+        AnalyticsOffsetDirection? offsetDirection)
     {
         return pairs
             .Where(p => !string.IsNullOrWhiteSpace(p.GroupKey))
@@ -657,6 +670,7 @@ public sealed class DashboardService(
                                 {
                                     val = -val;
                                 }
+                                val = ApplyOffset(val, p.OffsetTriggerValue, p.OffsetValue, offsetTriggerSet, offsetDirection);
                                 return val;
                             }).ToList();
 
@@ -707,36 +721,58 @@ public sealed class DashboardService(
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
 
-            // Build signed values per entry, ordered chronologically
-            var signedEntries = entries
-                .OrderBy(e => e.OccurredAtUtc)
+            var offsetTriggerSet = BuildOffsetTriggerSet(rule);
+
+            // Build per-entry signed+offset contributions, ordered chronologically
+            var contributions = entries
                 .Select(e =>
                 {
                     var measureVal = e.FieldValues
                         .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
+                    if (!decimal.TryParse(measureVal, CultureInfo.InvariantCulture, out var val))
+                        return ((decimal?)null, e.OccurredAtUtc, e.Id, e.ReceiptImportBatchId);
+
                     var signVal = rule.SignFieldId.HasValue
                         ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.SignFieldId.Value)?.Value
                         : null;
-                    return (Date: e.OccurredAtUtc, MeasureValue: measureVal, SignValue: signVal);
+                    if (negativeValueSet is not null && signVal is not null && negativeValueSet.Contains(signVal))
+                        val = -val;
+
+                    var offsetTriggerVal = rule.OffsetTriggerFieldId.HasValue
+                        ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.OffsetTriggerFieldId.Value)?.Value
+                        : null;
+                    var offsetVal = rule.OffsetValueFieldId.HasValue
+                        ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.OffsetValueFieldId.Value)?.Value
+                        : null;
+                    val = ApplyOffset(val, offsetTriggerVal, offsetVal, offsetTriggerSet, rule.OffsetDirection);
+
+                    return ((decimal?)val, e.OccurredAtUtc, e.Id, e.ReceiptImportBatchId);
                 })
-                .Where(x => decimal.TryParse(x.MeasureValue, CultureInfo.InvariantCulture, out _))
+                .Where(x => x.Item1.HasValue)
+                .Select(x => (Value: x.Item1!.Value, Date: x.Item2, EntryId: x.Item3, BatchId: x.Item4))
                 .ToList();
 
-            if (signedEntries.Count == 0) continue;
+            if (contributions.Count == 0) continue;
+
+            // Optionally collapse entries from the same import batch into a single cumulative step
+            var stepped = rule.CollapseByImportBatch
+                ? contributions
+                    .GroupBy(c => c.BatchId ?? c.EntryId)
+                    .Select(g => (Value: g.Sum(c => c.Value), Date: g.Max(c => c.Date)))
+                    .OrderBy(s => s.Date)
+                    .ToList()
+                : contributions
+                    .OrderBy(c => c.Date)
+                    .Select(c => (c.Value, c.Date))
+                    .ToList();
 
             var points = new List<NumericDataPoint>();
             decimal runningTotal = 0;
 
-            foreach (var entry in signedEntries)
+            foreach (var (value, date) in stepped)
             {
-                var val = decimal.Parse(entry.MeasureValue!, CultureInfo.InvariantCulture);
-                if (negativeValueSet is not null && entry.SignValue is not null &&
-                    negativeValueSet.Contains(entry.SignValue))
-                {
-                    val = -val;
-                }
-                runningTotal += val;
-                points.Add(new NumericDataPoint(entry.Date, runningTotal));
+                runningTotal += value;
+                points.Add(new NumericDataPoint(date, runningTotal));
             }
 
             var unit = measureField.Unit is not null && measureField.Unit != "UN"
@@ -748,6 +784,8 @@ public sealed class DashboardService(
                 ? measureField.TargetValue
                 : null;
 
+            var (discountTotal, discountFieldName) = ComputeDiscountTotal(rule, entries, fieldMap);
+
             balances.Add(new RunningBalanceSeries
             {
                 Label = label,
@@ -755,11 +793,35 @@ public sealed class DashboardService(
                 CurrentBalance = runningTotal,
                 GoalValue = goalValue,
                 MeasureFieldId = rule.MeasureFieldId,
-                Points = points
+                Points = points,
+                DiscountTotal = discountTotal,
+                DiscountFieldName = discountFieldName
             });
         }
 
         return balances;
+    }
+
+    internal static (decimal? Total, string? FieldName) ComputeDiscountTotal(
+        FieldAnalyticsRuleResponse rule,
+        List<ActionEntryResponse> entries,
+        Dictionary<Guid, ActionFieldResponse> fieldMap)
+    {
+        if (!rule.OffsetValueFieldId.HasValue) return (null, null);
+        if (!fieldMap.TryGetValue(rule.OffsetValueFieldId.Value, out var discountField)) return (null, null);
+
+        decimal total = 0;
+        var any = false;
+        foreach (var e in entries)
+        {
+            var raw = e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.OffsetValueFieldId.Value)?.Value;
+            if (decimal.TryParse(raw, CultureInfo.InvariantCulture, out var v))
+            {
+                total += v;
+                any = true;
+            }
+        }
+        return any ? (total, discountField.Name) : (null, discountField.Name);
     }
 
     private static List<BalanceSummary> BuildBalanceSummaries(
@@ -783,6 +845,8 @@ public sealed class DashboardService(
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
 
+            var offsetTriggerSet = BuildOffsetTriggerSet(rule);
+
             decimal total = 0;
             foreach (var e in entries)
             {
@@ -798,11 +862,21 @@ public sealed class DashboardService(
                     negativeValueSet.Contains(signVal))
                     val = -val;
 
+                var offsetTriggerVal = rule.OffsetTriggerFieldId.HasValue
+                    ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.OffsetTriggerFieldId.Value)?.Value
+                    : null;
+                var offsetVal = rule.OffsetValueFieldId.HasValue
+                    ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.OffsetValueFieldId.Value)?.Value
+                    : null;
+                val = ApplyOffset(val, offsetTriggerVal, offsetVal, offsetTriggerSet, rule.OffsetDirection);
+
                 total += val;
             }
 
             var unit = measureField.Unit is not null && measureField.Unit != "UN"
                 ? measureField.Unit : "";
+
+            var (discountTotal, discountFieldName) = ComputeDiscountTotal(rule, entries, fieldMap);
 
             summaries.Add(new BalanceSummary
             {
@@ -810,11 +884,39 @@ public sealed class DashboardService(
                 Unit = unit,
                 CurrentBalance = total,
                 GoalValue = measureField.TargetValueMode == TargetValueMode.Goal ? measureField.TargetValue : null,
-                MeasureFieldId = rule.MeasureFieldId
+                MeasureFieldId = rule.MeasureFieldId,
+                DiscountTotal = discountTotal,
+                DiscountFieldName = discountFieldName
             });
         }
 
         return summaries;
+    }
+
+    internal static HashSet<string>? BuildOffsetTriggerSet(FieldAnalyticsRuleResponse rule)
+    {
+        if (!rule.OffsetTriggerFieldId.HasValue || !rule.OffsetValueFieldId.HasValue
+            || string.IsNullOrWhiteSpace(rule.OffsetTriggerValues))
+            return null;
+        if (rule.Aggregation is not (AnalyticsAggregation.Sum or AnalyticsAggregation.SignedSum))
+            return null;
+        return DropdownValuesHelper.Split(rule.OffsetTriggerValues)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    internal static decimal ApplyOffset(
+        decimal baseValue,
+        string? offsetTriggerValue,
+        string? offsetValue,
+        HashSet<string>? offsetTriggerSet,
+        AnalyticsOffsetDirection? offsetDirection)
+    {
+        if (offsetTriggerSet is null || offsetTriggerValue is null) return baseValue;
+        if (!offsetTriggerSet.Contains(offsetTriggerValue)) return baseValue;
+        if (!decimal.TryParse(offsetValue, CultureInfo.InvariantCulture, out var offset)) return baseValue;
+        return offsetDirection == AnalyticsOffsetDirection.Add
+            ? baseValue + offset
+            : baseValue - offset;
     }
 
     private static List<NumericDataPoint> AggregateTrendPoints(
@@ -1178,6 +1280,8 @@ public sealed class BalanceSummary
     public required decimal CurrentBalance { get; init; }
     public decimal? GoalValue { get; init; }
     public Guid? MeasureFieldId { get; init; }
+    public decimal? DiscountTotal { get; init; }
+    public string? DiscountFieldName { get; init; }
 }
 
 public sealed record WeekBucket(DateTime WeekStart, int Count);
@@ -1239,6 +1343,8 @@ public sealed class RunningBalanceSeries
     public decimal? GoalValue { get; init; }
     public Guid? MeasureFieldId { get; init; }
     public List<NumericDataPoint> Points { get; init; } = [];
+    public decimal? DiscountTotal { get; init; }
+    public string? DiscountFieldName { get; init; }
 }
 
 public sealed record DailyCount(DateTime Date, int Count);

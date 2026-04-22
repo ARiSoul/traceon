@@ -1,5 +1,7 @@
 ﻿@page "/"
+@using Blazored.LocalStorage
 @inject IStringLocalizer<SharedResource> L
+@inject ILocalStorageService LocalStorage
 
 <PageTitle>Traceon</PageTitle>
 
@@ -135,7 +137,8 @@
                             <label class="form-label small mb-1">@L["Common_Search"]</label>
                             <input type="text" class="form-control form-control-sm"
                                    placeholder="@L["Home_SearchPlaceholder"]"
-                                   @bind="_filterText" @bind:event="oninput" />
+                                   value="@_filterText"
+                                   @oninput="OnFilterTextInput" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small mb-1">@L["Common_Tags"]</label>
@@ -163,6 +166,78 @@
                                 </button>
                             }
                         </div>
+                    </div>
+                    <hr class="my-3" />
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-md-3">
+                            <label class="form-label form-label-sm mb-1">
+                                <i class="bi bi-calendar-range me-1"></i>@L["Dashboard_Period"]
+                            </label>
+                            <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeInput">
+                                <option value="all">@L["Common_AllTime"]</option>
+                                <option value="days">@L["Dashboard_LastNDays"]</option>
+                                <option value="months">@L["Dashboard_LastNMonths"]</option>
+                                <option value="years">@L["Dashboard_LastNYears"]</option>
+                                <option value="month">@L["Dashboard_SpecificMonth"]</option>
+                                <option value="custom">@L["Dashboard_CustomRange"]</option>
+                            </select>
+                        </div>
+                        @if (_periodMode is "days" or "months" or "years")
+                        {
+                            <div class="col-6 col-md-2">
+                                <label class="form-label form-label-sm mb-1">
+                                    @(_periodMode switch { "days" => L["Dashboard_Days"], "months" => L["Dashboard_Months"], _ => L["Dashboard_Years"] })
+                                </label>
+                                <input type="number" class="form-control form-control-sm" min="1"
+                                       value="@_periodValue"
+                                       @onchange="e => { if (int.TryParse(e.Value?.ToString(), out var v) && v > 0) _periodValue = v; }" />
+                            </div>
+                        }
+                        else if (_periodMode == "month")
+                        {
+                            <div class="col-6 col-md-2">
+                                <label class="form-label form-label-sm mb-1">@L["Dashboard_Month"]</label>
+                                <input type="month" class="form-control form-control-sm"
+                                       value="@_selectedMonth?.ToString("yyyy-MM")"
+                                       @onchange="OnMonthInput" />
+                            </div>
+                        }
+                        else if (_periodMode == "custom")
+                        {
+                            <div class="col-6 col-md-2">
+                                <label class="form-label form-label-sm mb-1">@L["Dashboard_From"]</label>
+                                <input type="date" class="form-control form-control-sm"
+                                       value="@_customFrom?.ToString("yyyy-MM-dd")"
+                                       @onchange="OnCustomFromInput" />
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
+                                <input type="date" class="form-control form-control-sm"
+                                       value="@_customTo?.ToString("yyyy-MM-dd")"
+                                       @onchange="OnCustomToInput" />
+                            </div>
+                        }
+                        <div class="col-auto">
+                            <button class="btn btn-primary btn-sm" @onclick="ApplyPeriodAsync" disabled="@_applyingPeriod">
+                                @if (_applyingPeriod)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-funnel me-1"></i>
+                                }
+                                @L["Dashboard_ApplyFilters"]
+                            </button>
+                        </div>
+                        @if (_periodMode != "all")
+                        {
+                            <div class="col-auto">
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="ResetPeriodAsync" disabled="@_applyingPeriod">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>@L["Dashboard_ResetFilters"]
+                                </button>
+                            </div>
+                        }
                     </div>
                 </div>
             }
@@ -198,6 +273,7 @@
                             <QuickTrackCard Action="action"
                                             Highlighted="action.Name == _loggedActionName"
                                             Balances="@(_balances.GetValueOrDefault(action.Id) ?? [])"
+                                            EntryCountOverride="@(_filteredCounts is not null && _filteredCounts.TryGetValue(action.Id, out var c) ? c : (int?)null)"
                                             OnTrack="OpenTrackModal" />
                         }
                     </div>
@@ -250,7 +326,23 @@
     private string _filterText = string.Empty;
     private HashSet<TrackedActionTagSummary> _selectedTags = new(TagComparer.Instance);
     private List<TrackedActionTagSummary> _allTags = [];
-    private bool _hasActiveFilters => !string.IsNullOrWhiteSpace(_filterText) || _selectedTags.Count > 0;
+
+    // Period filter
+    private string _periodMode = "all";
+    private int _periodValue = 30;
+    private DateTime? _customFrom;
+    private DateTime? _customTo;
+    private DateTime? _selectedMonth;
+    private bool _applyingPeriod;
+    private Dictionary<Guid, int>? _filteredCounts;
+
+    private bool _hasActiveFilters => !string.IsNullOrWhiteSpace(_filterText) || _selectedTags.Count > 0 || _periodMode != "all";
+
+    // Filter persistence
+    private string? _userKey;
+    private List<string>? _restoredTagNames;
+    private const string FilterStorageKey = "traceon_home_filters";
+    private string UserScopedFilterKey => _userKey is null ? FilterStorageKey : $"{_userKey}_{FilterStorageKey}";
 
     // Onboarding
     private IReadOnlyList<TemplatePackResponse> _templates = [];
@@ -265,6 +357,10 @@
         var authState = await AuthState;
         if (authState.User.Identity?.IsAuthenticated == true)
         {
+            _userKey = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? authState.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+            await RestoreFiltersAsync();
+
             _actions = (await ActionService.GetAllAsync())
                 .OrderBy(a => a.SortOrder)
                 .ThenByDescending(a => a.CreatedAtUtc)
@@ -281,7 +377,29 @@
                     .DistinctBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
                     .OrderBy(t => t.Name)
                     .ToList();
+
+                // Resolve restored tag names to actual tag summaries
+                if (_restoredTagNames is { Count: > 0 })
+                {
+                    foreach (var name in _restoredTagNames)
+                    {
+                        var tag = _allTags.FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase));
+                        if (tag is not null) _selectedTags.Add(tag);
+                    }
+                    _restoredTagNames = null;
+                }
+
+                if (_periodMode != "all")
+                {
+                    _filteredCounts = new Dictionary<Guid, int>();
+                }
+
+                if (_hasActiveFilters)
+                    _showFilters = true;
+
                 _ = LoadBalancesAsync();
+                if (_periodMode != "all")
+                    _ = LoadFilteredCountsAsync();
             }
         }
         _loading = false;
@@ -345,16 +463,155 @@
         }
     }
 
-    private void ToggleTag(TrackedActionTagSummary tag)
+    private async Task ToggleTag(TrackedActionTagSummary tag)
     {
         if (!_selectedTags.Remove(tag))
             _selectedTags.Add(tag);
+        await SaveFiltersAsync();
     }
 
-    private void ClearFilters()
+    private async Task ClearFilters()
     {
         _filterText = string.Empty;
         _selectedTags.Clear();
+        await SaveFiltersAsync();
+    }
+
+    private async Task OnFilterTextInput(ChangeEventArgs e)
+    {
+        _filterText = e.Value?.ToString() ?? string.Empty;
+        await SaveFiltersAsync();
+    }
+
+    private void OnPeriodModeInput(ChangeEventArgs e)
+    {
+        _periodMode = e.Value?.ToString() ?? "all";
+    }
+
+    private void OnMonthInput(ChangeEventArgs e)
+    {
+        _selectedMonth = DateTime.TryParse(e.Value?.ToString() + "-01", out var d) ? d : null;
+    }
+
+    private void OnCustomFromInput(ChangeEventArgs e)
+    {
+        _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+    }
+
+    private void OnCustomToInput(ChangeEventArgs e)
+    {
+        _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+    }
+
+    private (DateTime? From, DateTime? To) ResolveDateRange() => _periodMode switch
+    {
+        "days" => (DateTime.UtcNow.AddDays(-_periodValue), null),
+        "months" => (DateTime.UtcNow.AddMonths(-_periodValue), null),
+        "years" => (DateTime.UtcNow.AddYears(-_periodValue), null),
+        "month" when _selectedMonth.HasValue => (_selectedMonth.Value, _selectedMonth.Value.AddMonths(1)),
+        "custom" => (_customFrom, _customTo?.AddDays(1)),
+        _ => (null, null)
+    };
+
+    private static string? BuildDateFilter(DateTime? from, DateTime? to, Guid? actionId = null)
+    {
+        var parts = new List<string>();
+        if (actionId.HasValue) parts.Add($"TrackedActionId eq {actionId.Value}");
+        if (from.HasValue) parts.Add($"OccurredAtUtc ge {from.Value:yyyy-MM-ddTHH:mm:ssZ}");
+        if (to.HasValue) parts.Add($"OccurredAtUtc le {to.Value:yyyy-MM-ddTHH:mm:ssZ}");
+        return parts.Count > 0 ? string.Join(" and ", parts) : null;
+    }
+
+    private async Task ApplyPeriodAsync()
+    {
+        _applyingPeriod = true;
+        _balances.Clear();
+        _filteredCounts = _periodMode == "all" ? null : new Dictionary<Guid, int>();
+        StateHasChanged();
+        await SaveFiltersAsync();
+        await LoadBalancesAsync();
+        if (_filteredCounts is not null) await LoadFilteredCountsAsync();
+        _applyingPeriod = false;
+    }
+
+    private async Task ResetPeriodAsync()
+    {
+        _periodMode = "all";
+        _periodValue = 30;
+        _customFrom = null;
+        _customTo = null;
+        _selectedMonth = null;
+        _filteredCounts = null;
+        _balances.Clear();
+        StateHasChanged();
+        await SaveFiltersAsync();
+        await LoadBalancesAsync();
+    }
+
+    // ── Filter persistence ──
+
+    private async Task RestoreFiltersAsync()
+    {
+        try
+        {
+            var state = await LocalStorage.GetItemAsync<HomeFilterState>(UserScopedFilterKey);
+            if (state is null) return;
+            if (state.FilterText is not null) _filterText = state.FilterText;
+            _restoredTagNames = state.SelectedTagNames;
+            if (state.PeriodMode is not null) _periodMode = state.PeriodMode;
+            if (state.PeriodValue.HasValue) _periodValue = state.PeriodValue.Value;
+            _customFrom = state.CustomFrom;
+            _customTo = state.CustomTo;
+            _selectedMonth = state.SelectedMonth;
+        }
+        catch { /* best effort */ }
+    }
+
+    private async Task SaveFiltersAsync()
+    {
+        try
+        {
+            await LocalStorage.SetItemAsync(UserScopedFilterKey, new HomeFilterState
+            {
+                FilterText = string.IsNullOrWhiteSpace(_filterText) ? null : _filterText,
+                SelectedTagNames = _selectedTags.Count > 0 ? _selectedTags.Select(t => t.Name).ToList() : null,
+                PeriodMode = _periodMode == "all" ? null : _periodMode,
+                PeriodValue = _periodValue,
+                CustomFrom = _customFrom,
+                CustomTo = _customTo,
+                SelectedMonth = _selectedMonth
+            });
+        }
+        catch { /* best effort */ }
+    }
+
+    private sealed class HomeFilterState
+    {
+        public string? FilterText { get; set; }
+        public List<string>? SelectedTagNames { get; set; }
+        public string? PeriodMode { get; set; }
+        public int? PeriodValue { get; set; }
+        public DateTime? CustomFrom { get; set; }
+        public DateTime? CustomTo { get; set; }
+        public DateTime? SelectedMonth { get; set; }
+    }
+
+    private async Task LoadFilteredCountsAsync()
+    {
+        var (from, to) = ResolveDateRange();
+        var counts = new Dictionary<Guid, int>();
+        foreach (var action in _actions)
+        {
+            try
+            {
+                var req = new DataGridRequest(1, 1, "OccurredAtUtc", false, null);
+                var result = await EntryService.QueryAsync(req, null, BuildDateFilter(from, to, action.Id));
+                counts[action.Id] = result.TotalCount;
+            }
+            catch { /* best effort per action */ }
+        }
+        _filteredCounts = counts;
+        StateHasChanged();
     }
 
     private sealed class TagComparer : IEqualityComparer<TrackedActionTagSummary>
@@ -406,6 +663,7 @@
         try
         {
             var actionsWithFields = _actions.Where(a => a.FieldCount > 0).ToList();
+            var (from, to) = ResolveDateRange();
             foreach (var action in actionsWithFields)
             {
                 var fields = await FieldService.GetByTrackedActionAsync(action.Id);
@@ -426,7 +684,7 @@
 
                 var entryRequest = new DataGridRequest(1, 10_000, "OccurredAtUtc", false, null);
                 var entryResult = await EntryService.QueryAsync(entryRequest, null,
-                    $"TrackedActionId eq {action.Id}");
+                    BuildDateFilter(from, to, action.Id));
                 var entries = entryResult.Items.ToList();
                 if (entries.Count == 0) continue;
 
@@ -447,6 +705,8 @@
                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
                     }
 
+                    var offsetTriggerSet = DashboardService.BuildOffsetTriggerSet(rule);
+
                     decimal total = 0;
                     foreach (var e in entries)
                     {
@@ -462,11 +722,21 @@
                             negativeValueSet.Contains(signVal))
                             val = -val;
 
+                        var offsetTriggerVal = rule.OffsetTriggerFieldId.HasValue
+                            ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.OffsetTriggerFieldId.Value)?.Value
+                            : null;
+                        var offsetVal = rule.OffsetValueFieldId.HasValue
+                            ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.OffsetValueFieldId.Value)?.Value
+                            : null;
+                        val = DashboardService.ApplyOffset(val, offsetTriggerVal, offsetVal, offsetTriggerSet, rule.OffsetDirection);
+
                         total += val;
                     }
 
                     var unit = measureField.Unit is not null && measureField.Unit != "UN"
                         ? measureField.Unit : "";
+
+                    var (discountTotal, discountFieldName) = DashboardService.ComputeDiscountTotal(rule, entries, fieldMap);
 
                     actionBalances.Add(new BalanceSummary
                     {
@@ -474,7 +744,9 @@
                         Unit = unit,
                         CurrentBalance = total,
                         GoalValue = measureField.TargetValueMode == TargetValueMode.Goal ? measureField.TargetValue : null,
-                        MeasureFieldId = rule.MeasureFieldId
+                        MeasureFieldId = rule.MeasureFieldId,
+                        DiscountTotal = discountTotal,
+                        DiscountFieldName = discountFieldName
                     });
                 }
 
