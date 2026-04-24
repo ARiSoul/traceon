@@ -48,6 +48,7 @@ public sealed class HybridReceiptOcrService(
         - For separate discount lines, attach the discount to the preceding item rather than creating a new item
         - discount is the absolute amount subtracted from that item (always positive or null)
         - totalPrice is the final price AFTER discount for that item
+        - totalDiscount is ONLY a receipt-wide / receipt-scoped discount applied AFTER the subtotal (e.g. "10% off total", "$5 loyalty credit", coupon on the whole order). DO NOT sum per-item discounts into totalDiscount. If there is no explicit receipt-wide discount line, return null.
         - Use null for any value you cannot determine
         - Dates must be in ISO 8601 format (yyyy-MM-ddTHH:mm:ss)
         - All monetary values are numbers (no currency symbols)

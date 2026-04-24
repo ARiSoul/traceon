@@ -29,7 +29,7 @@
             }
             @if (_hasActiveState && StorageKey is not null)
             {
-                <button class="btn btn-outline-warning btn-sm" @onclick="ResetAllAsync" disabled="@_loading"
+                <button class="btn btn-outline-warning" @onclick="ResetAllAsync" disabled="@_loading"
                         title="@L["DataGrid_ResetAll"]">
                     <i class="bi bi-arrow-counterclockwise me-1"></i>@L["DataGrid_ResetAll"]
                 </button>

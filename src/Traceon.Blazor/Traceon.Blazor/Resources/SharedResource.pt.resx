@@ -887,6 +887,8 @@
   <data name="Receipt_UnitPrice"><value>Preço Unit.</value></data>
   <data name="Receipt_Discount"><value>Desconto</value></data>
   <data name="Receipt_Total"><value>Total</value></data>
+  <data name="Receipt_ApplyTaxToItems"><value>Aplicar IVA aos itens ({0}%)</value></data>
+  <data name="Receipt_ApplyTaxHint"><value>Os totais por linha parecem ser sem IVA; o total do talão inclui {0}% de IVA. Aplicar a todos os itens?</value></data>
   <data name="Receipt_Uncategorized"><value>Sem categoria</value></data>
   <data name="Receipt_NewValue"><value>Novo Valor</value></data>
   <data name="Receipt_TypeNewValue"><value>Escreva novo valor…</value></data>

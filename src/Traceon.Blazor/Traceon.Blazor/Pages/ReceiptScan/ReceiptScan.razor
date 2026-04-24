@@ -340,10 +340,23 @@
                     <button class="btn btn-outline-secondary btn-sm" @onclick="ShiftPricesDown" title="@L["Receipt_ShiftPricesDown"]">
                         <i class="bi bi-arrow-down"></i>
                     </button>
+                    @if (DerivedTaxRateForItems.HasValue)
+                    {
+                        <button class="btn btn-outline-warning btn-sm" @onclick="ApplyTaxToLineItems"
+                                title="@string.Format(L["Receipt_ApplyTaxHint"], DerivedTaxPercent)">
+                            <i class="bi bi-percent me-1"></i>@string.Format(L["Receipt_ApplyTaxToItems"], DerivedTaxPercent)
+                        </button>
+                    }
                 </div>
             </div>
 
             <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>@L["Receipt_ShiftHint"]</p>
+            @if (DerivedTaxRateForItems.HasValue)
+            {
+                <div class="alert alert-warning py-2 small mb-2">
+                    <i class="bi bi-exclamation-triangle me-1"></i>@string.Format(L["Receipt_ApplyTaxHint"], DerivedTaxPercent)
+                </div>
+            }
 
             <div class="table-responsive">
                 <table class="table table-sm table-hover align-middle mb-0">
@@ -479,6 +492,16 @@
 
         <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>@L["Receipt_ShiftHintMobile"]</p>
 
+        @if (DerivedTaxRateForItems.HasValue)
+        {
+            <div class="alert alert-warning py-2 small mb-2 d-flex justify-content-between align-items-center gap-2">
+                <span><i class="bi bi-exclamation-triangle me-1"></i>@string.Format(L["Receipt_ApplyTaxHint"], DerivedTaxPercent)</span>
+                <button class="btn btn-outline-warning btn-sm flex-shrink-0" @onclick="ApplyTaxToLineItems">
+                    <i class="bi bi-percent me-1"></i>@string.Format(L["Receipt_ApplyTaxToItems"], DerivedTaxPercent)
+                </button>
+            </div>
+        }
+
         @foreach (var item in _receiptItems)
         {
             <div class="card mb-2 @(!item.Include ? "opacity-50" : "")"
@@ -501,13 +524,20 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center gap-2 mt-1">
+                            <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
                                 <div class="d-flex align-items-center gap-1">
                                     <input type="number" class="form-control form-control-sm text-end p-1"
                                            @bind="item.Quantity" step="any" style="width: 55px;" placeholder="Qty" />
                                     <span class="text-muted small">×</span>
                                     <input type="number" class="form-control form-control-sm text-end p-1"
                                            @bind="item.UnitPrice" step="0.01" style="width: 70px;" placeholder="Price" />
+                                </div>
+                                <div class="d-flex align-items-center gap-1" @onclick:stopPropagation="true">
+                                    <span class="text-muted small">−</span>
+                                    <input type="number" class="form-control form-control-sm text-end text-danger p-1"
+                                           @bind="item.Discount" step="0.01" style="width: 70px;"
+                                           placeholder="@L["Receipt_Discount"]"
+                                           title="@L["Receipt_Discount"]" />
                                 </div>
                                 @if (item.MatchedRule is not null)
                                 {
@@ -1635,9 +1665,23 @@
     {
         RefreshNewValues();
         _importDate = _scanResult?.TransactionDate?.Date ?? DateTime.Today;
-        _reviewReceiptDiscount = _scanResult?.TotalDiscount;
+        _reviewReceiptDiscount = ComputeReceiptScopedDiscount();
         _currentStep = 3;
         _ = SaveDraftAsync();
+    }
+
+    /// <summary>
+    /// Returns only a genuine receipt-scoped discount (e.g., "$5 off total", loyalty credit).
+    /// OCR often collapses per-item discounts into <c>TotalDiscount</c>; those must NOT flow
+    /// into the receipt-level discount entry. Only the excess beyond per-item sum counts.
+    /// </summary>
+    private decimal? ComputeReceiptScopedDiscount()
+    {
+        if (_scanResult?.TotalDiscount is not { } reported || reported <= 0) return null;
+
+        var perItemSum = _receiptItems.Sum(i => i.Discount ?? 0);
+        var receiptScoped = reported - perItemSum;
+        return receiptScoped > 0.01m ? Math.Round(receiptScoped, 2) : null;
     }
 
     private void OnReviewReceiptDiscountChanged(ChangeEventArgs e)
@@ -1803,6 +1847,55 @@
     }
 
     private int SelectedCount => _receiptItems.Count(i => i.Selected);
+
+    /// <summary>
+    /// Detects the "line totals are pre-tax, receipt total is gross" pattern.
+    /// Returns the derived tax rate (e.g. 0.23m for 23%) when:
+    ///   - Tax and Subtotal are both reported and positive
+    ///   - The sum of included item totals already matches Subtotal (so items are net)
+    /// Otherwise returns null. The user can then click a one-shot button to multiply
+    /// each line total/unit price by (1 + rate).
+    /// </summary>
+    private decimal? DerivedTaxRateForItems
+    {
+        get
+        {
+            if (_scanResult?.Tax is not { } tax || tax <= 0) return null;
+            if (_scanResult?.Subtotal is not { } subtotal || subtotal <= 0) return null;
+
+            var itemSum = _receiptItems.Where(i => i.Include).Sum(i => i.TotalPrice ?? 0);
+            if (itemSum <= 0) return null;
+
+            // Items already include tax → no adjustment needed.
+            if (Math.Abs(itemSum - (subtotal + tax)) < 0.05m) return null;
+
+            // Items match the net subtotal within tolerance → tax is missing from line totals.
+            if (Math.Abs(itemSum - subtotal) >= 0.05m) return null;
+
+            return Math.Round(tax / subtotal, 4);
+        }
+    }
+
+    private int DerivedTaxPercent => DerivedTaxRateForItems is { } r
+        ? (int)Math.Round(r * 100m)
+        : 0;
+
+    private void ApplyTaxToLineItems()
+    {
+        if (DerivedTaxRateForItems is not { } rate) return;
+
+        var multiplier = 1m + rate;
+        foreach (var item in _receiptItems)
+        {
+            if (item.TotalPrice.HasValue)
+                item.TotalPrice = Math.Round(item.TotalPrice.Value * multiplier, 2);
+            if (item.UnitPrice.HasValue)
+                item.UnitPrice = Math.Round(item.UnitPrice.Value * multiplier, 2);
+            if (item.Discount.HasValue)
+                item.Discount = Math.Round(item.Discount.Value * multiplier, 2);
+        }
+        _ = SaveDraftAsync();
+    }
 
     // ── Row merge ──
 

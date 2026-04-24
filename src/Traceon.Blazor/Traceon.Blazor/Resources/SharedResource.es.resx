@@ -886,6 +886,8 @@
   <data name="Receipt_Qty"><value>Cant.</value></data>
   <data name="Receipt_UnitPrice"><value>Precio Unit.</value></data>
   <data name="Receipt_Discount"><value>Descuento</value></data>
+  <data name="Receipt_ApplyTaxToItems"><value>Aplicar impuesto a los ítems ({0}%)</value></data>
+  <data name="Receipt_ApplyTaxHint"><value>Los totales por línea parecen ser sin impuestos; el total del recibo incluye {0}% de impuesto. ¿Aplicar a todos los ítems?</value></data>
   <data name="Receipt_Total"><value>Total</value></data>
   <data name="Receipt_Uncategorized"><value>Sin categoría</value></data>
   <data name="Receipt_NewValue"><value>Nuevo Valor</value></data>

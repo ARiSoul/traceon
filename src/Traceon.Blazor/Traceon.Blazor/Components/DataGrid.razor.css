@@ -14,6 +14,16 @@
     max-width: 500px;
 }
 
+.data-grid-filter > input {
+    flex: 1;
+    min-width: 0;
+}
+
+.data-grid-filter > button {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
 .data-grid-toolbar-actions {
     margin-left: auto;
     display: flex;

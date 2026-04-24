@@ -114,6 +114,7 @@ else
         if (Guid.TryParse(e.Value?.ToString(), out var id))
         {
             _selectedFieldId = id;
+            Nav.NavigateTo($"/dropdown-catalog?fieldId={id}", replace: true);
             await LoadForFieldAsync(id);
         }
         else
@@ -123,6 +124,7 @@ else
             _values = [];
             _metadataByValue.Clear();
             _columns = [];
+            Nav.NavigateTo("/dropdown-catalog", replace: true);
         }
     }
 
