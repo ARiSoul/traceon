@@ -12,6 +12,20 @@
         </h3>
         <p class="text-muted mb-0">@L["Trash_Subtitle"]</p>
     </div>
+    <div class="d-flex gap-2">
+        @if (_selected.Count > 0)
+        {
+            <button class="btn btn-outline-danger" disabled="@_busy" @onclick="() => ConfirmPermanentDelete(false)">
+                <i class="bi bi-x-octagon me-1"></i>@L["Trash_DeleteSelected"] (@_selected.Count)
+            </button>
+        }
+        @if (_items.Count > 0)
+        {
+            <button class="btn btn-danger" disabled="@_busy" @onclick="() => ConfirmPermanentDelete(true)">
+                <i class="bi bi-trash3 me-1"></i>@L["Trash_ClearAll"]
+            </button>
+        }
+    </div>
 </div>
 
 <ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
@@ -50,18 +64,38 @@ else
             <ul class="list-group list-group-flush">
                 @foreach (var item in group.OrderByDescending(i => i.DeletedAtUtc))
                 {
+                    var key = ItemKey(item);
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="fw-semibold">@item.Name</span>
-                            <small class="text-muted ms-2">
-                                @L["Trash_DeletedAt"]: @item.DeletedAtUtc.ToLocalTime().ToString("g")
-                            </small>
+                        <div class="d-flex align-items-center flex-grow-1">
+                            <input type="checkbox" class="form-check-input me-3"
+                                   checked="@_selected.Contains(key)"
+                                   @onchange="e => ToggleSelect(key, (bool)e.Value!)" />
+                            <div>
+                                <span class="fw-semibold">@item.Name</span>
+                                <small class="text-muted ms-2">
+                                    @L["Trash_DeletedAt"]: @item.DeletedAtUtc.ToLocalTime().ToString("g")
+                                </small>
+                            </div>
                         </div>
-                        <button class="btn btn-sm btn-outline-success"
-                                disabled="@_restoring"
-                                @onclick="() => RestoreAsync(item)">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i>@L["Common_Restore"]
-                        </button>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    title="@L["Common_Preview"]"
+                                    disabled="@_busy"
+                                    @onclick="() => ShowPreviewAsync(item)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success"
+                                    disabled="@_busy"
+                                    @onclick="() => RestoreAsync(item)">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>@L["Common_Restore"]
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                    title="@L["Trash_DeletePermanently"]"
+                                    disabled="@_busy"
+                                    @onclick="() => ConfirmPermanentDeleteSingle(item)">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
                     </li>
                 }
             </ul>
@@ -69,21 +103,102 @@ else
     }
 }
 
+@if (_preview is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi @GetTypeIcon(_preview.Type) me-2"></i>@_preview.Name
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="() => _preview = null"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2 text-muted small">
+                        <strong>@GetTypeLabel(_preview.Type)</strong>
+                        &middot; @L["Trash_CreatedAt"]: @_preview.CreatedAtUtc.ToLocalTime().ToString("g")
+                        &middot; @L["Trash_DeletedAt"]: @_preview.DeletedAtUtc.ToLocalTime().ToString("g")
+                    </div>
+                    <dl class="row mb-0">
+                        @foreach (var d in _preview.Details.Where(d => !string.IsNullOrWhiteSpace(d.Value)))
+                        {
+                            <dt class="col-sm-4 text-muted">@d.Key</dt>
+                            <dd class="col-sm-8">@d.Value</dd>
+                        }
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="() => _preview = null">
+                        @L["Common_Close"]
+                    </button>
+                    <button class="btn btn-outline-danger"
+                            disabled="@_busy"
+                            @onclick="() => ConfirmPermanentDeleteFromPreview()">
+                        <i class="bi bi-x-lg me-1"></i>@L["Trash_DeletePermanently"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_pendingDelete is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@L["Trash_ConfirmDeleteTitle"]</h5>
+                    <button type="button" class="btn-close" @onclick="() => _pendingDelete = null"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">@_pendingDelete.Message</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="() => _pendingDelete = null" disabled="@_busy">
+                        @L["Common_Cancel"]
+                    </button>
+                    <button class="btn btn-danger" disabled="@_busy" @onclick="ExecutePendingDeleteAsync">
+                        <i class="bi bi-trash3 me-1"></i>@L["Trash_DeletePermanently"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Inject] private TrashService TrashSvc { get; set; } = default!;
     [Inject] private TrackedActionService ActionSvc { get; set; } = default!;
     [Inject] private FieldDefinitionService FieldDefSvc { get; set; } = default!;
     [Inject] private TagService TagSvc { get; set; } = default!;
+    [Inject] private ActionEntryService EntrySvc { get; set; } = default!;
+    [Inject] private ActionFieldService FieldSvc { get; set; } = default!;
 
     private List<DeletedItemResponse> _items = [];
+    private HashSet<string> _selected = [];
     private IReadOnlyList<string> _errors = [];
     private string? _successMessage;
     private bool _loading = true;
-    private bool _restoring;
+    private bool _busy;
+
+    private TrashPreviewResponse? _preview;
+    private PendingDelete? _pendingDelete;
+
+    private sealed record PendingDelete(string Message, List<TrashItemRef> Items, bool ClearAll);
 
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
+    }
+
+    private static string ItemKey(DeletedItemResponse item) => $"{item.Type}:{item.Id}";
+
+    private void ToggleSelect(string key, bool checked_)
+    {
+        if (checked_) _selected.Add(key);
+        else _selected.Remove(key);
     }
 
     private async Task LoadAsync()
@@ -92,10 +207,11 @@ else
         try
         {
             _items = await TrashSvc.GetDeletedItemsAsync();
+            _selected.RemoveWhere(k => !_items.Any(i => ItemKey(i) == k));
         }
         catch
         {
-            _errors = ["Failed to load deleted items."];
+            _errors = [L["Trash_LoadFailed"]];
         }
         finally
         {
@@ -107,13 +223,15 @@ else
     {
         _errors = [];
         _successMessage = null;
-        _restoring = true;
+        _busy = true;
 
         var (success, errors) = item.Type switch
         {
             "TrackedAction" => await ActionSvc.RestoreAsync(item.Id),
             "FieldDefinition" => await FieldDefSvc.RestoreAsync(item.Id),
             "Tag" => await TagSvc.RestoreAsync(item.Id),
+            "ActionEntry" when item.ParentId.HasValue => await EntrySvc.RestoreAsync(item.ParentId.Value, item.Id),
+            "ActionField" when item.ParentId.HasValue => await FieldSvc.RestoreAsync(item.ParentId.Value, item.Id),
             _ => (false, (IReadOnlyList<string>)[$"Unknown type: {item.Type}"])
         };
 
@@ -121,13 +239,86 @@ else
         {
             _successMessage = L["Common_RestoreSuccess"];
             _items.Remove(item);
+            _selected.Remove(ItemKey(item));
         }
         else
         {
             _errors = errors;
         }
 
-        _restoring = false;
+        _busy = false;
+    }
+
+    private async Task ShowPreviewAsync(DeletedItemResponse item)
+    {
+        _errors = [];
+        _busy = true;
+        var (preview, errors) = await TrashSvc.GetPreviewAsync(item.Type, item.Id);
+        _busy = false;
+
+        if (preview is null) _errors = errors;
+        else _preview = preview;
+    }
+
+    private void ConfirmPermanentDelete(bool clearAll)
+    {
+        if (clearAll)
+        {
+            _pendingDelete = new PendingDelete(L["Trash_ConfirmClearAll"], [], true);
+        }
+        else
+        {
+            var refs = _items
+                .Where(i => _selected.Contains(ItemKey(i)))
+                .Select(i => new TrashItemRef(i.Type, i.Id))
+                .ToList();
+            if (refs.Count == 0) return;
+            _pendingDelete = new PendingDelete(
+                string.Format(L["Trash_ConfirmDeleteCount"], refs.Count), refs, false);
+        }
+    }
+
+    private void ConfirmPermanentDeleteSingle(DeletedItemResponse item)
+    {
+        _pendingDelete = new PendingDelete(
+            string.Format(L["Trash_ConfirmDeleteSingle"], item.Name),
+            [new TrashItemRef(item.Type, item.Id)],
+            false);
+    }
+
+    private void ConfirmPermanentDeleteFromPreview()
+    {
+        if (_preview is null) return;
+        _pendingDelete = new PendingDelete(
+            string.Format(L["Trash_ConfirmDeleteSingle"], _preview.Name),
+            [new TrashItemRef(_preview.Type, _preview.Id)],
+            false);
+    }
+
+    private async Task ExecutePendingDeleteAsync()
+    {
+        if (_pendingDelete is null) return;
+        _errors = [];
+        _successMessage = null;
+        _busy = true;
+
+        (bool success, IReadOnlyList<string> errors) result = _pendingDelete.ClearAll
+            ? await TrashSvc.ClearAllAsync()
+            : await TrashSvc.PermanentlyDeleteAsync(_pendingDelete.Items);
+
+        _busy = false;
+        _pendingDelete = null;
+        _preview = null;
+
+        if (result.success)
+        {
+            _successMessage = L["Trash_DeleteSuccess"];
+            await LoadAsync();
+        }
+        else
+        {
+            _errors = result.errors;
+        }
     }
 
     private string GetTypeIcon(string type) => type switch
@@ -135,6 +326,8 @@ else
         "TrackedAction" => "bi-list-check",
         "FieldDefinition" => "bi-sliders",
         "Tag" => "bi-tags",
+        "ActionEntry" => "bi-journal-text",
+        "ActionField" => "bi-input-cursor-text",
         _ => "bi-file-earmark"
     };
 
@@ -143,6 +336,8 @@ else
         "TrackedAction" => L["Trash_TrackedActions"],
         "FieldDefinition" => L["Trash_FieldDefinitions"],
         "Tag" => L["Trash_Tags"],
+        "ActionEntry" => L["Trash_ActionEntries"],
+        "ActionField" => L["Trash_ActionFields"],
         _ => type
     };
 }

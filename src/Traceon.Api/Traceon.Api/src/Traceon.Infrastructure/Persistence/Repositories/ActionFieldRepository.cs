@@ -15,9 +15,13 @@ internal sealed class ActionFieldRepository(TraceonDbContext context) : IActionF
 
     public async Task<bool> ExistsByFieldDefinitionIdAsync(Guid fieldDefinitionId, CancellationToken cancellationToken = default)
     {
+        // A field is "in use" only if at least one ActionField referencing it belongs to an
+        // active (non-trashed) TrackedAction. ActionFields under a soft-deleted TrackedAction
+        // should not block deletion — restoring that action also re-checks field references.
         return await context.ActionFields
             .AsNoTracking()
-            .AnyAsync(af => af.FieldDefinitionId == fieldDefinitionId, cancellationToken);
+            .AnyAsync(af => af.FieldDefinitionId == fieldDefinitionId
+                && context.TrackedActions.Any(a => a.Id == af.TrackedActionId), cancellationToken);
     }
 
     public async Task<IReadOnlyList<ActionField>> GetByTrackedActionIdAsync(Guid trackedActionId, CancellationToken cancellationToken = default)

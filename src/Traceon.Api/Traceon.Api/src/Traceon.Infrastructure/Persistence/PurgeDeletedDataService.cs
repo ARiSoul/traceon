@@ -68,9 +68,12 @@ internal sealed class PurgeDeletedDataService(
 
         try
         {
-            var purged = 0;
+            var expiredActionIds = await context.TrackedActions
+                .IgnoreQueryFilters()
+                .Where(a => a.UserId == userId && a.IsDeleted && a.DeletedAtUtc <= cutoff)
+                .Select(a => a.Id)
+                .ToListAsync(cancellationToken);
 
-            // 1. Expired ActionField IDs (independently deleted)
             var expiredFieldIds = await context.ActionFields
                 .IgnoreQueryFilters()
                 .Where(af => af.IsDeleted && af.DeletedAtUtc <= cutoff
@@ -78,106 +81,35 @@ internal sealed class PurgeDeletedDataService(
                 .Select(af => af.Id)
                 .ToListAsync(cancellationToken);
 
-            // 2. Expired TrackedAction IDs
-            var expiredActionIds = await context.TrackedActions
-                .IgnoreQueryFilters()
-                .Where(a => a.UserId == userId && a.IsDeleted && a.DeletedAtUtc <= cutoff)
-                .Select(a => a.Id)
-                .ToListAsync(cancellationToken);
-
-            // 3. All ActionField IDs to purge (independently deleted + children of deleted actions)
-            var allFieldIdsToPurge = await context.ActionFields
-                .IgnoreQueryFilters()
-                .Where(af => expiredFieldIds.Contains(af.Id) || expiredActionIds.Contains(af.TrackedActionId))
-                .Select(af => af.Id)
-                .ToListAsync(cancellationToken);
-
-            // 4. Expired ActionEntry IDs (independently deleted)
             var expiredEntryIds = await context.ActionEntries
                 .IgnoreQueryFilters()
                 .Where(e => e.IsDeleted && e.DeletedAtUtc <= cutoff
-                    && expiredActionIds.Contains(e.TrackedActionId) == false
+                    && !expiredActionIds.Contains(e.TrackedActionId)
                     && context.TrackedActions.IgnoreQueryFilters().Any(a => a.Id == e.TrackedActionId && a.UserId == userId))
                 .Select(e => e.Id)
                 .ToListAsync(cancellationToken);
 
-            // 5. All ActionEntry IDs to purge (independently deleted + children of deleted actions)
-            var allEntryIdsToPurge = await context.ActionEntries
-                .IgnoreQueryFilters()
-                .Where(e => expiredEntryIds.Contains(e.Id) || expiredActionIds.Contains(e.TrackedActionId))
-                .Select(e => e.Id)
-                .ToListAsync(cancellationToken);
-
-            // --- Delete in FK-safe order ---
-
-            // ActionEntryFields (reference both ActionField and ActionEntry)
-            if (allFieldIdsToPurge.Count > 0 || allEntryIdsToPurge.Count > 0)
-            {
-                purged += await context.ActionEntryFields
-                    .IgnoreQueryFilters()
-                    .Where(ef => allFieldIdsToPurge.Contains(ef.ActionFieldId) || allEntryIdsToPurge.Contains(ef.ActionEntryId))
-                    .ExecuteDeleteAsync(cancellationToken);
-            }
-
-            // FieldAnalyticsRules (reference ActionField and TrackedAction)
-            if (allFieldIdsToPurge.Count > 0 || expiredActionIds.Count > 0)
-            {
-                purged += await context.FieldAnalyticsRules
-                    .IgnoreQueryFilters()
-                    .Where(r => expiredActionIds.Contains(r.TrackedActionId)
-                        || allFieldIdsToPurge.Contains(r.MeasureFieldId)
-                        || allFieldIdsToPurge.Contains(r.GroupByFieldId)
-                        || (r.FilterFieldId != null && allFieldIdsToPurge.Contains(r.FilterFieldId.Value)))
-                    .ExecuteDeleteAsync(cancellationToken);
-            }
-
-            // ActionFields
-            if (allFieldIdsToPurge.Count > 0)
-            {
-                purged += await context.ActionFields
-                    .IgnoreQueryFilters()
-                    .Where(af => allFieldIdsToPurge.Contains(af.Id))
-                    .ExecuteDeleteAsync(cancellationToken);
-            }
-
-            // ActionEntries
-            if (allEntryIdsToPurge.Count > 0)
-            {
-                purged += await context.ActionEntries
-                    .IgnoreQueryFilters()
-                    .Where(e => allEntryIdsToPurge.Contains(e.Id))
-                    .ExecuteDeleteAsync(cancellationToken);
-            }
-
-            // TrackedActionTags
-            if (expiredActionIds.Count > 0)
-            {
-                purged += await context.TrackedActionTags
-                    .IgnoreQueryFilters()
-                    .Where(t => expiredActionIds.Contains(t.TrackedActionId))
-                    .ExecuteDeleteAsync(cancellationToken);
-            }
-
-            // TrackedActions
-            if (expiredActionIds.Count > 0)
-            {
-                purged += await context.TrackedActions
-                    .IgnoreQueryFilters()
-                    .Where(a => expiredActionIds.Contains(a.Id))
-                    .ExecuteDeleteAsync(cancellationToken);
-            }
-
-            // FieldDefinitions (no FK children left at this point)
-            purged += await context.FieldDefinitions
+            var candidateFieldDefIds = await context.FieldDefinitions
                 .IgnoreQueryFilters()
                 .Where(fd => fd.UserId == userId && fd.IsDeleted && fd.DeletedAtUtc <= cutoff)
-                .ExecuteDeleteAsync(cancellationToken);
+                .Select(fd => fd.Id)
+                .ToListAsync(cancellationToken);
 
-            // Tags
-            purged += await context.Tags
+            var expiredTagIds = await context.Tags
                 .IgnoreQueryFilters()
                 .Where(t => t.UserId == userId && t.IsDeleted && t.DeletedAtUtc <= cutoff)
-                .ExecuteDeleteAsync(cancellationToken);
+                .Select(t => t.Id)
+                .ToListAsync(cancellationToken);
+
+            var purged = await TrashPurgeHelper.ExecutePurgeAsync(
+                context,
+                userId,
+                expiredActionIds,
+                expiredFieldIds,
+                expiredEntryIds,
+                candidateFieldDefIds,
+                expiredTagIds,
+                cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
             return purged;
