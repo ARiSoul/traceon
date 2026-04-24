@@ -1,6 +1,8 @@
 @page "/tracked-actions/{Id:guid}/edit"
 @attribute [Authorize]
 @inject IStringLocalizer<SharedResource> L
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorage
 
 <PageTitle>@L["ActionEdit_Title"] - Traceon</PageTitle>
 
@@ -58,12 +60,12 @@ else
         <div class="card-header p-0">
             <ul class="nav nav-tabs card-header-tabs">
                 <li class="nav-item">
-                    <button class="nav-link @(_activeTab == "basic" ? "active" : "")" @onclick='() => _activeTab = "basic"'>
+                    <button class="nav-link @(_activeTab == "basic" ? "active" : "")" @onclick='() => SetActiveTabAsync("basic")'>
                         <i class="bi bi-info-circle me-1"></i>@L["Edit_BasicInfo"]
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link @(_activeTab == "fields" ? "active" : "")" @onclick='() => _activeTab = "fields"'>
+                    <button class="nav-link @(_activeTab == "fields" ? "active" : "")" @onclick='() => SetActiveTabAsync("fields")'>
                         <i class="bi bi-sliders me-1"></i>@L["Common_Fields"]
                         @if (_fields.Count > 0)
                         {
@@ -72,7 +74,7 @@ else
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link @(_activeTab == "tags" ? "active" : "")" @onclick='() => _activeTab = "tags"'>
+                    <button class="nav-link @(_activeTab == "tags" ? "active" : "")" @onclick='() => SetActiveTabAsync("tags")'>
                         <i class="bi bi-tags me-1"></i>@L["Common_Tags"]
                         @if (_tags.Count > 0)
                         {
@@ -81,7 +83,7 @@ else
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link @(_activeTab == "entries" ? "active" : "")" @onclick='() => _activeTab = "entries"'>
+                    <button class="nav-link @(_activeTab == "entries" ? "active" : "")" @onclick='() => SetActiveTabAsync("entries")'>
                         <i class="bi bi-journal-text me-1"></i>@L["Common_Entries"]
                     </button>
                 </li>
@@ -1738,6 +1740,10 @@ else
     private bool _ccShowForm;
     private CustomChartResponse? _ccEditingChart;
 
+    private string TabStorageKey => $"traceon_action_edit_tab_{Id}";
+    private static readonly HashSet<string> _knownTabs =
+        ["basic", "fields", "tags", "entries", "dependencies", "analytics", "receipt", "connected", "customcharts"];
+
     protected override async Task OnInitializedAsync()
     {
         var action = await Service.GetByIdAsync(Id);
@@ -1760,9 +1766,60 @@ else
             _allFieldDefinitions = fieldDefsTask.Result;
 
             await LoadDropdownMetadataSchemasAsync();
+            await RestoreActiveTabAsync();
         }
 
         _loading = false;
+    }
+
+    private async Task RestoreActiveTabAsync()
+    {
+        try
+        {
+            var stored = await LocalStorage.GetItemAsync<string>(TabStorageKey);
+            if (!string.IsNullOrEmpty(stored) && _knownTabs.Contains(stored))
+            {
+                _activeTab = stored;
+                // Trigger lazy-loaders for tabs that defer data fetching.
+                switch (stored)
+                {
+                    case "dependencies":
+                        if (_dependencyRules.Count == 0) await LoadDependencyRulesAsync();
+                        break;
+                    case "analytics":
+                        if (_analyticsRules.Count == 0) await LoadAnalyticsRulesAsync();
+                        break;
+                    case "receipt":
+                        await LoadReceiptConfigAsync();
+                        break;
+                    case "connected":
+                        if (!_connTabLoaded)
+                        {
+                            _connTabLoaded = true;
+                            var rulesTask = ConnRuleService.GetByTrackedActionAsync(Id);
+                            var actionsTask = Service.GetAllAsync();
+                            await Task.WhenAll(rulesTask, actionsTask);
+                            _connectedRules = rulesTask.Result;
+                            _allActions = actionsTask.Result;
+                        }
+                        break;
+                    case "customcharts":
+                        if (!_customChartsTabLoaded)
+                        {
+                            BuildResolvedDropdownValues();
+                            await LoadCustomChartsAsync();
+                        }
+                        break;
+                }
+            }
+        }
+        catch { /* localStorage may be unavailable */ }
+    }
+
+    private async Task SetActiveTabAsync(string tab)
+    {
+        _activeTab = tab;
+        try { await LocalStorage.SetItemAsync(TabStorageKey, tab); } catch { }
     }
 
     private async Task LoadDropdownMetadataSchemasAsync()
@@ -1942,7 +1999,7 @@ else
     // Analytics rules
     private async Task ActivateAnalyticsTabAsync()
     {
-        _activeTab = "analytics";
+        await SetActiveTabAsync("analytics");
         if (_analyticsRules.Count == 0)
             await LoadAnalyticsRulesAsync();
     }
@@ -2254,7 +2311,7 @@ else
 
     private async Task ActivateDependenciesTabAsync()
     {
-        _activeTab = "dependencies";
+        await SetActiveTabAsync("dependencies");
         if (_dependencyRules.Count == 0)
             await LoadDependencyRulesAsync();
     }
@@ -2546,7 +2603,7 @@ else
 
     private async Task ActivateReceiptTabAsync()
     {
-        _activeTab = "receipt";
+        await SetActiveTabAsync("receipt");
         await LoadReceiptConfigAsync();
     }
 
@@ -2754,7 +2811,7 @@ else
 
     private async Task ActivateConnectedTabAsync()
     {
-        _activeTab = "connected";
+        await SetActiveTabAsync("connected");
 
         if (!_connTabLoaded)
         {
@@ -3242,7 +3299,7 @@ else
 
     private async Task ActivateCustomChartsTabAsync()
     {
-        _activeTab = "customcharts";
+        await SetActiveTabAsync("customcharts");
         if (!_customChartsTabLoaded)
         {
             BuildResolvedDropdownValues();

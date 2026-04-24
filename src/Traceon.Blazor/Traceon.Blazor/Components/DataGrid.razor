@@ -581,6 +581,8 @@
             }
             if (state.PageSize.HasValue && PageSizeOptions.Contains(state.PageSize.Value))
                 _pageSize = state.PageSize.Value;
+            if (state.CurrentPage is > 0)
+                _page = state.CurrentPage.Value;
 
             if (state.Summaries is not null)
             {
@@ -614,6 +616,7 @@
                 SortDescending = _sortDescending,
                 SearchTerm = _appliedFilter,
                 PageSize = _pageSize,
+                CurrentPage = _page > 1 ? _page : null,
                 Summaries = summaries
             };
 
@@ -658,10 +661,21 @@
         _totalCount = result.TotalCount;
         _totalPages = Math.Max(1, (int)Math.Ceiling((double)_totalCount / _pageSize));
 
+        // If the requested page is past the last page (e.g., the only row on this page
+        // was just deleted), clamp and re-fetch so the user lands on the previous page
+        // with actual content instead of an empty grid.
         if (_page > _totalPages)
+        {
             _page = _totalPages;
+            request = new DataGridRequest(_page, _pageSize, _sortField, _sortDescending, _appliedFilter);
+            result = await LoadData(request);
+            _items = result.Items;
+            _totalCount = result.TotalCount;
+            _totalPages = Math.Max(1, (int)Math.Ceiling((double)_totalCount / _pageSize));
+        }
 
         ComputeSummaries();
+        await SaveStateAsync();
 
         _loading = false;
         StateHasChanged();

@@ -44,5 +44,6 @@ public sealed class DataGridPersistedState
     public bool SortDescending { get; set; }
     public string? SearchTerm { get; set; }
     public int? PageSize { get; set; }
+    public int? CurrentPage { get; set; }
     public Dictionary<string, List<ColumnSummaryType>>? Summaries { get; set; }
 }
