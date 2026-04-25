@@ -46,13 +46,10 @@
 
         <div class="col-6 col-md-3">
             <label class="form-label form-label-sm mb-1">@L["Common_Type"]</label>
-            <select class="form-select form-select-sm" value="@_typeFilter" @onchange="OnTypeFilterChangedAsync">
-                <option value="">@L["EntryGrid_AllValues"]</option>
-                @foreach (var ft in Enum.GetValues<FieldType>())
-                {
-                    <option value="@ft">@ft</option>
-                }
-            </select>
+            <MultiSelectDropdown Options="_typeOptions"
+                                 Placeholder="@L["EntryGrid_AllValues"]"
+                                 SelectedValues="_selectedTypes"
+                                 SelectedValuesChanged="OnTypeFilterChangedAsync" />
         </div>
 
         <div class="col-6 col-md-2">
@@ -117,10 +114,13 @@
 
     private bool _showFilters;
     private string _nameFilter = "";
-    private string _typeFilter = "";
+    private HashSet<string> _selectedTypes = new(StringComparer.OrdinalIgnoreCase);
     private string _requiredFilter = "";
     private DateTime? _createdFrom;
     private DateTime? _createdTo;
+
+    private static readonly List<string> _typeOptions =
+        Enum.GetValues<FieldType>().Select(ft => ft.ToString()).ToList();
 
     protected override async Task OnInitializedAsync()
     {
@@ -137,7 +137,7 @@
 
     private bool _hasExternalFilters =>
         !string.IsNullOrEmpty(_nameFilter)
-        || !string.IsNullOrEmpty(_typeFilter)
+        || _selectedTypes.Count > 0
         || !string.IsNullOrEmpty(_requiredFilter)
         || _createdFrom.HasValue
         || _createdTo.HasValue;
@@ -158,10 +158,16 @@
             clauses.Add($"contains(tolower(DefaultName),'{lower}')");
         }
 
-        if (!string.IsNullOrWhiteSpace(_typeFilter)
-            && Enum.TryParse<FieldType>(_typeFilter, out var ft))
+        if (_selectedTypes.Count > 0)
         {
-            clauses.Add($"Type eq {(int)ft}");
+            var typeClauses = _selectedTypes
+                .Select(t => Enum.TryParse<FieldType>(t, out var ft) ? $"Type eq {(int)ft}" : null)
+                .Where(c => c is not null)
+                .ToList();
+            if (typeClauses.Count == 1)
+                clauses.Add(typeClauses[0]!);
+            else if (typeClauses.Count > 1)
+                clauses.Add($"({string.Join(" or ", typeClauses)})");
         }
 
         if (_requiredFilter is "true")
@@ -221,9 +227,9 @@
         return ApplyFiltersAsync();
     }
 
-    private async Task OnTypeFilterChangedAsync(ChangeEventArgs e)
+    private async Task OnTypeFilterChangedAsync(HashSet<string> selected)
     {
-        _typeFilter = e.Value?.ToString() ?? "";
+        _selectedTypes = new HashSet<string>(selected, StringComparer.OrdinalIgnoreCase);
         await ApplyFiltersAsync();
     }
 
@@ -255,7 +261,7 @@
     private async Task OnGridResetAsync()
     {
         _nameFilter = "";
-        _typeFilter = "";
+        _selectedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         _requiredFilter = "";
         _createdFrom = null;
         _createdTo = null;
@@ -269,7 +275,9 @@
             var state = await LocalStorage.GetItemAsync<FieldDefinitionFilterState>(FilterStorageKey);
             if (state is null) return;
             _nameFilter = state.NameFilter ?? "";
-            _typeFilter = state.TypeFilter ?? "";
+            _selectedTypes = state.SelectedTypes is { Count: > 0 }
+                ? new HashSet<string>(state.SelectedTypes, StringComparer.OrdinalIgnoreCase)
+                : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             _requiredFilter = state.RequiredFilter ?? "";
             _createdFrom = state.CreatedFrom;
             _createdTo = state.CreatedTo;
@@ -290,7 +298,7 @@
             await LocalStorage.SetItemAsync(FilterStorageKey, new FieldDefinitionFilterState
             {
                 NameFilter = _nameFilter,
-                TypeFilter = _typeFilter,
+                SelectedTypes = _selectedTypes.Count > 0 ? _selectedTypes.ToList() : null,
                 RequiredFilter = _requiredFilter,
                 CreatedFrom = _createdFrom,
                 CreatedTo = _createdTo,
@@ -326,7 +334,7 @@
     private sealed class FieldDefinitionFilterState
     {
         public string? NameFilter { get; set; }
-        public string? TypeFilter { get; set; }
+        public List<string>? SelectedTypes { get; set; }
         public string? RequiredFilter { get; set; }
         public DateTime? CreatedFrom { get; set; }
         public DateTime? CreatedTo { get; set; }
