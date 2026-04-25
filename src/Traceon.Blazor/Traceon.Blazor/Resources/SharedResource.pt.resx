@@ -393,6 +393,7 @@
   <!-- ═══ Filtros / Placeholders ═══ -->
   <data name="Filter_ByNameOrDesc"><value>Filtrar por nome ou descrição...</value></data>
   <data name="Filter_ByName"><value>Filtrar por nome...</value></data>
+  <data name="Filter_AnyColumn"><value>Filtrar qualquer coluna...</value></data>
   <data name="Filter_ByNotes"><value>Filtrar por notas...</value></data>
   <data name="Filter_DateField"><value>Campo de data</value></data>
   <data name="Filter_Occurred"><value>Ocorrido</value></data>

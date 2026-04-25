@@ -391,6 +391,7 @@
   <!-- ═══ Filter / Placeholders ═══ -->
   <data name="Filter_ByNameOrDesc"><value>Filter by name or description...</value></data>
   <data name="Filter_ByName"><value>Filter by name...</value></data>
+  <data name="Filter_AnyColumn"><value>Filter any column...</value></data>
   <data name="Filter_ByNotes"><value>Filter by notes...</value></data>
   <data name="Filter_DateField"><value>Date field</value></data>
   <data name="Filter_Occurred"><value>Occurred</value></data>

@@ -1,6 +1,8 @@
 @page "/field-definitions"
 @attribute [Authorize]
+@using Blazored.LocalStorage
 @inject IStringLocalizer<SharedResource> L
+@inject ILocalStorageService LocalStorage
 
 <PageTitle>@L["Fields_Title"] - Traceon</PageTitle>
 
@@ -16,13 +18,77 @@
 
 <ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
 
+<div class="d-md-none mb-2">
+    <button class="btn btn-outline-secondary btn-sm w-100" @onclick="() => _showFilters = !_showFilters">
+        <i class="bi bi-funnel me-1"></i>
+        @L["DataGrid_Filter"]
+        <i class="bi bi-chevron-@(_showFilters ? "up" : "down") ms-1"></i>
+    </button>
+</div>
+
+<div class="@(_showFilters ? "" : "d-none") d-md-block">
+    <div class="row g-2 mb-3">
+        <div class="col-12 col-md-3">
+            <label class="form-label form-label-sm mb-1">@L["Common_Name"]</label>
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="@L["Common_Name"]..."
+                       value="@_nameFilter"
+                       @onchange="OnNameFilterChangedAsync" />
+                @if (!string.IsNullOrEmpty(_nameFilter))
+                {
+                    <button class="btn btn-outline-secondary" @onclick="ClearNameFilterAsync">
+                        <i class="bi bi-x"></i>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <label class="form-label form-label-sm mb-1">@L["Common_Type"]</label>
+            <select class="form-select form-select-sm" value="@_typeFilter" @onchange="OnTypeFilterChangedAsync">
+                <option value="">@L["EntryGrid_AllValues"]</option>
+                @foreach (var ft in Enum.GetValues<FieldType>())
+                {
+                    <option value="@ft">@ft</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Common_Required"]</label>
+            <select class="form-select form-select-sm" value="@_requiredFilter" @onchange="OnRequiredFilterChangedAsync">
+                <option value="">@L["EntryGrid_AllValues"]</option>
+                <option value="true">@L["Common_Yes"]</option>
+                <option value="false">@L["Common_No"]</option>
+            </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Dashboard_From"]</label>
+            <input type="date" class="form-control form-control-sm"
+                   value="@_createdFrom?.ToString("yyyy-MM-dd")"
+                   @onchange="OnCreatedFromChangedAsync" />
+        </div>
+
+        <div class="col-6 col-md-2">
+            <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
+            <input type="date" class="form-control form-control-sm"
+                   value="@_createdTo?.ToString("yyyy-MM-dd")"
+                   @onchange="OnCreatedToChangedAsync" />
+        </div>
+    </div>
+</div>
+
 <DataGrid @ref="_grid"
           TItem="FieldDefinitionResponse"
           LoadData="LoadDataAsync"
           Columns="_columns"
-          FilterPlaceholder="@L["Filter_ByName"]"
+          FilterPlaceholder="@L["Filter_AnyColumn"]"
           EmptyText="@L["Fields_Empty"]"
-          StorageKey="field-definitions">
+          StorageKey="field-definitions"
+          HasExternalFilters="_hasExternalFilters"
+          OnReset="OnGridResetAsync">
     <Toolbar>
         <a href="/field-definitions/create" class="btn btn-primary">
             <i class="bi bi-plus-circle me-1"></i> @L["Fields_New"]
@@ -39,6 +105,8 @@
 </DataGrid>
 
 @code {
+    private const string FilterStorageKey = "field-definitions-filters";
+
     [Inject] private FieldDefinitionService Service { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
@@ -47,19 +115,189 @@
 
     private List<DataGridColumn<FieldDefinitionResponse>> _columns = [];
 
-    protected override void OnInitialized()
+    private bool _showFilters;
+    private string _nameFilter = "";
+    private string _typeFilter = "";
+    private string _requiredFilter = "";
+    private DateTime? _createdFrom;
+    private DateTime? _createdTo;
+
+    protected override async Task OnInitializedAsync()
     {
         _columns =
         [
             new() { Title = L["Common_Name"], Selector = x => x.DefaultName, SortField = "DefaultName", IsMobileTitle = true },
-            new() { Title = L["Common_Type"], Selector = x => x.Type },
-            new() { Title = L["Common_Required"], Selector = x => x.DefaultIsRequired ? L["Common_Yes"] : L["Common_No"] },
+            new() { Title = L["Common_Type"], Selector = x => x.Type, SortField = "Type" },
+            new() { Title = L["Common_Required"], Selector = x => x.DefaultIsRequired ? L["Common_Yes"] : L["Common_No"], SortField = "DefaultIsRequired" },
             new() { Title = L["Common_Created"], Selector = x => x.CreatedAtUtc.ToLocalTime(), SortField = "CreatedAtUtc", Format = "g", HideOnMobile = true },
         ];
+
+        await RestoreFiltersAsync();
     }
 
+    private bool _hasExternalFilters =>
+        !string.IsNullOrEmpty(_nameFilter)
+        || !string.IsNullOrEmpty(_typeFilter)
+        || !string.IsNullOrEmpty(_requiredFilter)
+        || _createdFrom.HasValue
+        || _createdTo.HasValue;
+
     private Task<DataGridResult<FieldDefinitionResponse>> LoadDataAsync(DataGridRequest request)
-        => Service.QueryAsync(request, ["DefaultName"]);
+        => Service.QueryAsync(request, searchFields: null, extraFilter: BuildFilterString(request.SearchTerm));
+
+    private string? BuildFilterString(string? searchTerm)
+    {
+        var clauses = new List<string>();
+
+        var freeText = BuildFreeTextSearchClause(searchTerm);
+        if (freeText is not null) clauses.Add(freeText);
+
+        if (!string.IsNullOrWhiteSpace(_nameFilter))
+        {
+            var lower = _nameFilter.Replace("'", "''").ToLowerInvariant();
+            clauses.Add($"contains(tolower(DefaultName),'{lower}')");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_typeFilter)
+            && Enum.TryParse<FieldType>(_typeFilter, out var ft))
+        {
+            clauses.Add($"Type eq {(int)ft}");
+        }
+
+        if (_requiredFilter is "true")
+            clauses.Add("DefaultIsRequired eq true");
+        else if (_requiredFilter is "false")
+            clauses.Add("DefaultIsRequired eq false");
+
+        if (_createdFrom.HasValue)
+            clauses.Add($"CreatedAtUtc ge {_createdFrom.Value:yyyy-MM-ddTHH:mm:ssZ}");
+        if (_createdTo.HasValue)
+            clauses.Add($"CreatedAtUtc le {_createdTo.Value.AddDays(1):yyyy-MM-ddTHH:mm:ssZ}");
+
+        return clauses.Count > 0 ? string.Join(" and ", clauses) : null;
+    }
+
+    private string? BuildFreeTextSearchClause(string? searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm)) return null;
+
+        var lower = searchTerm.Replace("'", "''").ToLowerInvariant();
+        var clauses = new List<string>
+        {
+            $"contains(tolower(DefaultName),'{lower}')"
+        };
+
+        var yesText = L["Common_Yes"].Value;
+        var noText = L["Common_No"].Value;
+        if (string.Equals(searchTerm, yesText, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(searchTerm, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            clauses.Add("DefaultIsRequired eq true");
+        }
+        if (string.Equals(searchTerm, noText, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(searchTerm, "false", StringComparison.OrdinalIgnoreCase))
+        {
+            clauses.Add("DefaultIsRequired eq false");
+        }
+
+        foreach (var ft in Enum.GetValues<FieldType>())
+        {
+            if (ft.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                clauses.Add($"Type eq {(int)ft}");
+        }
+
+        return $"({string.Join(" or ", clauses)})";
+    }
+
+    private async Task OnNameFilterChangedAsync(ChangeEventArgs e)
+    {
+        _nameFilter = e.Value?.ToString() ?? "";
+        await ApplyFiltersAsync();
+    }
+
+    private Task ClearNameFilterAsync()
+    {
+        _nameFilter = "";
+        return ApplyFiltersAsync();
+    }
+
+    private async Task OnTypeFilterChangedAsync(ChangeEventArgs e)
+    {
+        _typeFilter = e.Value?.ToString() ?? "";
+        await ApplyFiltersAsync();
+    }
+
+    private async Task OnRequiredFilterChangedAsync(ChangeEventArgs e)
+    {
+        _requiredFilter = e.Value?.ToString() ?? "";
+        await ApplyFiltersAsync();
+    }
+
+    private async Task OnCreatedFromChangedAsync(ChangeEventArgs e)
+    {
+        _createdFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await ApplyFiltersAsync();
+    }
+
+    private async Task OnCreatedToChangedAsync(ChangeEventArgs e)
+    {
+        _createdTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await ApplyFiltersAsync();
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        await SaveFiltersAsync();
+        if (_grid is not null)
+            await _grid.RefreshAsync();
+    }
+
+    private async Task OnGridResetAsync()
+    {
+        _nameFilter = "";
+        _typeFilter = "";
+        _requiredFilter = "";
+        _createdFrom = null;
+        _createdTo = null;
+        try { await LocalStorage.RemoveItemAsync(FilterStorageKey); } catch { }
+    }
+
+    private async Task RestoreFiltersAsync()
+    {
+        try
+        {
+            var state = await LocalStorage.GetItemAsync<FieldDefinitionFilterState>(FilterStorageKey);
+            if (state is null) return;
+            _nameFilter = state.NameFilter ?? "";
+            _typeFilter = state.TypeFilter ?? "";
+            _requiredFilter = state.RequiredFilter ?? "";
+            _createdFrom = state.CreatedFrom;
+            _createdTo = state.CreatedTo;
+        }
+        catch { /* best effort */ }
+    }
+
+    private async Task SaveFiltersAsync()
+    {
+        try
+        {
+            if (!_hasExternalFilters)
+            {
+                await LocalStorage.RemoveItemAsync(FilterStorageKey);
+                return;
+            }
+
+            await LocalStorage.SetItemAsync(FilterStorageKey, new FieldDefinitionFilterState
+            {
+                NameFilter = _nameFilter,
+                TypeFilter = _typeFilter,
+                RequiredFilter = _requiredFilter,
+                CreatedFrom = _createdFrom,
+                CreatedTo = _createdTo,
+            });
+        }
+        catch { /* best effort */ }
+    }
 
     private List<ListAction> GetActions(FieldDefinitionResponse field)
     {
@@ -83,5 +321,14 @@
             await _grid.RefreshAsync();
         else
             _errors = errors;
+    }
+
+    private sealed class FieldDefinitionFilterState
+    {
+        public string? NameFilter { get; set; }
+        public string? TypeFilter { get; set; }
+        public string? RequiredFilter { get; set; }
+        public DateTime? CreatedFrom { get; set; }
+        public DateTime? CreatedTo { get; set; }
     }
 }

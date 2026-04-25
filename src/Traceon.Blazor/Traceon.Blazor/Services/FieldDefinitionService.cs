@@ -6,9 +6,9 @@ namespace Traceon.Blazor.Services;
 
 public sealed class FieldDefinitionService(HttpClient http)
 {
-    public async Task<DataGridResult<FieldDefinitionResponse>> QueryAsync(DataGridRequest request, string[]? searchFields = null)
+    public async Task<DataGridResult<FieldDefinitionResponse>> QueryAsync(DataGridRequest request, string[]? searchFields = null, string? extraFilter = null)
     {
-        var queryString = ODataQueryBuilder.BuildQueryString(request, searchFields);
+        var queryString = ODataQueryBuilder.BuildQueryString(request, searchFields, extraFilter);
         using var response = await http.GetAsync($"/api/field-definitions?{queryString}");
         response.EnsureSuccessStatusCode();
 
