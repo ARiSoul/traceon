@@ -759,6 +759,8 @@
   <data name="Dep_SelectSourceFirst"><value>Select a source field first</value></data>
   <data name="Dep_TargetField"><value>Target Field</value></data>
   <data name="Dep_AllowedValues"><value>Show only these values</value></data>
+  <data name="Dep_ShowOnlySelected"><value>Selected only</value></data>
+  <data name="Dep_ShowOnlySelectedTooltip"><value>Show only the target values currently selected for this source.</value></data>
   <data name="Dep_PickSourceValue"><value>Select a value on the left to configure its allowed target values.</value></data>
   <data name="Dep_WhenValueIs"><value>When value is</value></data>
   <data name="Dep_NoDropdownValues"><value>One or both selected fields have no dropdown values configured.</value></data>

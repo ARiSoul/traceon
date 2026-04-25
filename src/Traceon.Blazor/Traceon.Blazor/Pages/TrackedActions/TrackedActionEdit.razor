@@ -1144,9 +1144,17 @@ else
                                                         @L["Dep_WhenValueIs"] <span class="badge bg-secondary">@_depActiveSourceValue</span>
                                                         → @L["Dep_AllowedValues"]:
                                                     </span>
-                                                    <div class="btn-group btn-group-sm">
-                                                        <button class="btn btn-outline-secondary" @onclick="() => DepSelectAll(tgtOptions)">@L["Common_All"]</button>
-                                                        <button class="btn btn-outline-secondary" @onclick="DepSelectNone">@L["Common_None"]</button>
+                                                    <div class="d-flex gap-2 align-items-center">
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-secondary @(_depTargetShowOnlySelected ? "active" : "")"
+                                                                @onclick="() => _depTargetShowOnlySelected = !_depTargetShowOnlySelected"
+                                                                title="@L["Dep_ShowOnlySelectedTooltip"]">
+                                                            <i class="bi bi-funnel"></i> @L["Dep_ShowOnlySelected"]
+                                                        </button>
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button class="btn btn-outline-secondary" @onclick="() => DepSelectAll(tgtOptions)">@L["Common_All"]</button>
+                                                            <button class="btn btn-outline-secondary" @onclick="DepSelectNone">@L["Common_None"]</button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 @if (tgtOptions.Length > 8)
@@ -1168,12 +1176,13 @@ else
                                                 {
                                                     @foreach (var (groupName, groupValues) in compositeGroups)
                                                     {
-                                                        var filteredGroupValues = string.IsNullOrEmpty(_depTargetSearch)
-                                                            ? groupValues
-                                                            : groupValues.Where(v => v.Contains(_depTargetSearch, StringComparison.OrdinalIgnoreCase)).ToArray();
+                                                        var depSetForGroup = _depMappings.GetValueOrDefault(_depActiveSourceValue!) ?? [];
+                                                        var filteredGroupValues = groupValues
+                                                            .Where(v => string.IsNullOrEmpty(_depTargetSearch) || v.Contains(_depTargetSearch, StringComparison.OrdinalIgnoreCase))
+                                                            .Where(v => !_depTargetShowOnlySelected || depSetForGroup.Contains(v, StringComparer.OrdinalIgnoreCase))
+                                                            .ToArray();
                                                         if (filteredGroupValues.Length == 0) continue;
                                                         var capturedGroup = filteredGroupValues;
-                                                        var depSetForGroup = _depMappings.GetValueOrDefault(_depActiveSourceValue!) ?? [];
                                                         var allGroupChecked = capturedGroup.All(v => depSetForGroup.Contains(v, StringComparer.OrdinalIgnoreCase));
                                                         <div class="mb-2">
                                                             <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1">
@@ -1209,11 +1218,15 @@ else
                                                 else
                                                 {
                                                     <div class="row row-cols-1 row-cols-sm-2 g-1">
-                                                        @foreach (var tgtVal in tgtOptions.Where(v => string.IsNullOrEmpty(_depTargetSearch) || v.Contains(_depTargetSearch, StringComparison.OrdinalIgnoreCase)))
+                                                        @{
+                                                            var depSetForList = _depMappings.GetValueOrDefault(_depActiveSourceValue!) ?? [];
+                                                        }
+                                                        @foreach (var tgtVal in tgtOptions
+                                                            .Where(v => string.IsNullOrEmpty(_depTargetSearch) || v.Contains(_depTargetSearch, StringComparison.OrdinalIgnoreCase))
+                                                            .Where(v => !_depTargetShowOnlySelected || depSetForList.Contains(v, StringComparer.OrdinalIgnoreCase)))
                                                         {
                                                             var capturedTgt = tgtVal;
-                                                            var depSet = _depMappings.GetValueOrDefault(_depActiveSourceValue!) ?? [];
-                                                            var isChecked = depSet.Contains(capturedTgt, StringComparer.OrdinalIgnoreCase);
+                                                            var isChecked = depSetForList.Contains(capturedTgt, StringComparer.OrdinalIgnoreCase);
                                                             <div class="col">
                                                                 <div class="form-check">
                                                                     <input class="form-check-input" type="checkbox" id="dep-@_depActiveSourceValue-@capturedTgt"
@@ -2308,6 +2321,7 @@ else
     private Dictionary<string, HashSet<string>> _depMappings = new(StringComparer.OrdinalIgnoreCase);
     private string _depSourceSearch = "";
     private string _depTargetSearch = "";
+    private bool _depTargetShowOnlySelected;
 
     private async Task ActivateDependenciesTabAsync()
     {
@@ -2402,6 +2416,7 @@ else
         _depErrors = [];
         _depSourceSearch = "";
         _depTargetSearch = "";
+        _depTargetShowOnlySelected = false;
     }
 
     private void OpenEditDepEditor(List<FieldDependencyRuleResponse> group)
@@ -2414,6 +2429,7 @@ else
         _depErrors = [];
         _depSourceSearch = "";
         _depTargetSearch = "";
+        _depTargetShowOnlySelected = false;
 
         _depMappings = new(StringComparer.OrdinalIgnoreCase);
         foreach (var rule in group)
@@ -2445,6 +2461,7 @@ else
         _depErrors = [];
         _depSourceSearch = "";
         _depTargetSearch = "";
+        _depTargetShowOnlySelected = false;
     }
 
     private void OnDepSourceFieldChanged(ChangeEventArgs e)
@@ -2454,6 +2471,7 @@ else
         _depMappings = new(StringComparer.OrdinalIgnoreCase);
         _depSourceSearch = "";
         _depTargetSearch = "";
+        _depTargetShowOnlySelected = false;
         if (_depTargetFieldId == _depSourceFieldId)
             _depTargetFieldId = Guid.Empty;
     }
@@ -2462,6 +2480,7 @@ else
     {
         _depTargetFieldId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : Guid.Empty;
         _depMappings = new(StringComparer.OrdinalIgnoreCase);
+        _depTargetShowOnlySelected = false;
     }
 
     private void ToggleDepMapping(string sourceValue, string targetValue, bool isChecked)

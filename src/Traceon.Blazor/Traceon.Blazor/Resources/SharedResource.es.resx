@@ -756,6 +756,8 @@
   <data name="Dep_SelectSourceFirst"><value>Selecciona primero un campo de origen</value></data>
   <data name="Dep_TargetField"><value>Campo de Destino</value></data>
   <data name="Dep_AllowedValues"><value>Mostrar solo estos valores</value></data>
+  <data name="Dep_ShowOnlySelected"><value>Solo seleccionados</value></data>
+  <data name="Dep_ShowOnlySelectedTooltip"><value>Mostrar solo los valores de destino actualmente seleccionados para este origen.</value></data>
   <data name="Dep_PickSourceValue"><value>Selecciona un valor a la izquierda para configurar los valores permitidos en el destino.</value></data>
   <data name="Dep_WhenValueIs"><value>Cuando el valor es</value></data>
   <data name="Dep_NoDropdownValues"><value>Uno o ambos campos seleccionados no tienen valores desplegables configurados.</value></data>
