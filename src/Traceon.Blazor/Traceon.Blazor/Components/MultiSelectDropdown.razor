@@ -1,4 +1,7 @@
 @inject IStringLocalizer<SharedResource> L
+@inject DropdownCoordinator DropdownCoordinator
+@inject IJSRuntime JS
+@implements IDisposable
 
 @if (_isOpen)
 {
@@ -41,7 +44,7 @@
             @if (Options.Count > 8)
             {
                 <div class="px-2 pt-2 pb-1 flex-shrink-0">
-                    <input type="text" class="form-control form-control-sm"
+                    <input @ref="_searchInput" type="text" class="form-control form-control-sm"
                            placeholder="@L["Common_Search"]..."
                            @bind="_searchText"
                            @bind:event="oninput" />
@@ -98,8 +101,44 @@
     private HashSet<string> _pendingValues = new(StringComparer.OrdinalIgnoreCase);
     private bool _isOpen;
     private string _searchText = "";
+    private Guid _coordinatorToken;
+    private ElementReference _searchInput;
+    private bool _focusOnNextRender;
+    private static bool? _isTouchDevice;
 
     private bool _hasPendingChanges => !_pendingValues.SetEquals(_committedValues);
+
+    protected override void OnInitialized()
+    {
+        _coordinatorToken = DropdownCoordinator.Register(ForceClose);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusOnNextRender) return;
+        _focusOnNextRender = false;
+
+        if (Options.Count <= 8) return;
+
+        _isTouchDevice ??= await JS.InvokeAsync<bool>("isTouchDevice");
+        if (_isTouchDevice == true) return;
+
+        try { await _searchInput.FocusAsync(); } catch { }
+    }
+
+    public void Dispose()
+    {
+        DropdownCoordinator.Unregister(_coordinatorToken);
+    }
+
+    private void ForceClose()
+    {
+        if (!_isOpen) return;
+        _isOpen = false;
+        _pendingValues = new HashSet<string>(_committedValues, StringComparer.OrdinalIgnoreCase);
+        _searchText = "";
+        StateHasChanged();
+    }
 
     protected override void OnParametersSet()
     {
@@ -112,7 +151,11 @@
     {
         _isOpen = !_isOpen;
         if (_isOpen)
+        {
             _pendingValues = new HashSet<string>(_committedValues, StringComparer.OrdinalIgnoreCase);
+            DropdownCoordinator.NotifyOpened(_coordinatorToken);
+            _focusOnNextRender = true;
+        }
         _searchText = "";
     }
 

@@ -58,6 +58,7 @@ builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<LocalizationService>();
 builder.Services.AddScoped<UserPreferenceService>();
 builder.Services.AddScoped<TrashService>();
+builder.Services.AddScoped<DropdownCoordinator>();
 
 var host = builder.Build();
 

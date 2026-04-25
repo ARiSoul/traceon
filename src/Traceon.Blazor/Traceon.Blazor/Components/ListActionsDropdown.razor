@@ -1,4 +1,6 @@
 @inject IStringLocalizer<SharedResource> L
+@inject DropdownCoordinator DropdownCoordinator
+@implements IDisposable
 
 @if (_isOpen)
 {
@@ -95,6 +97,24 @@
     [Parameter] public EventCallback OnAfterAction { get; set; }
 
     private bool _isOpen;
+    private Guid _coordinatorToken;
+
+    protected override void OnInitialized()
+    {
+        _coordinatorToken = DropdownCoordinator.Register(ForceClose);
+    }
+
+    public void Dispose()
+    {
+        DropdownCoordinator.Unregister(_coordinatorToken);
+    }
+
+    private void ForceClose()
+    {
+        if (!_isOpen) return;
+        _isOpen = false;
+        StateHasChanged();
+    }
 
     private async Task HandlePrimaryActionAsync()
     {
@@ -102,7 +122,12 @@
         await PrimaryAction.InvokeAsync();
     }
 
-    private void ToggleDropdown() => _isOpen = !_isOpen;
+    private void ToggleDropdown()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+            DropdownCoordinator.NotifyOpened(_coordinatorToken);
+    }
 
     private void CloseDropdown() => _isOpen = false;
 
