@@ -29,6 +29,7 @@ public sealed record ActionFieldResponse
     public required Guid? DropdownTrendValueFieldId { get; init; }
     public required TrendAggregation DropdownTrendAggregation { get; init; }
     public required TrendChartType DropdownTrendChartType { get; init; }
+    public AutoCounterConfig? AutoCounterConfig { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime? UpdatedAtUtc { get; init; }
 }

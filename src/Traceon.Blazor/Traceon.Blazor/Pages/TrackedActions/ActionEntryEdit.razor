@@ -78,6 +78,12 @@ else
                                     <span class="text-danger">*</span>
                                 }
                                 <span class="badge bg-secondary ms-1" style="font-size: 0.65rem;">@model.Field.FieldType</span>
+                                @if (!_isEdit && IsAutoCounterField(model))
+                                {
+                                    <span class="badge bg-info-subtle text-info-emphasis ms-1" style="font-size: 0.65rem;" title="@L["Entry_AutoCounterTooltip"]">
+                                        <i class="bi bi-magic me-1"></i>@L["Entry_AutoBadge"]
+                                    </span>
+                                }
                             </label>
 
                             @if (!string.IsNullOrEmpty(model.Field.Description))
@@ -92,7 +98,8 @@ else
                                            class="form-control"
                                            placeholder="@model.Field.Name"
                                            data-select-on-focus
-                                           @bind="model.TextValue" />
+                                           @bind="model.TextValue"
+                                           @bind:after="OnFieldValueChangedAsync" />
                                     break;
 
                                 case FieldType.Integer:
@@ -104,7 +111,8 @@ else
                                                max="@model.Field.MaxValue"
                                                placeholder="@model.Field.Name"
                                                data-select-on-focus
-                                               @bind="model.IntValue" />
+                                               @bind="model.IntValue"
+                                               @bind:after="() => OnFieldEditedAsync(model)" />
                                         @if (model.Field.Unit != "UN")
                                         {
                                             <span class="input-group-text">@model.Field.Unit</span>
@@ -121,7 +129,8 @@ else
                                                max="@model.Field.MaxValue"
                                                placeholder="@model.Field.Name"
                                                data-select-on-focus
-                                               @bind="model.DecimalValue" />
+                                               @bind="model.DecimalValue"
+                                               @bind:after="() => OnFieldEditedAsync(model)" />
                                         @if (model.Field.Unit != "UN")
                                         {
                                             <span class="input-group-text">@model.Field.Unit</span>
@@ -132,7 +141,8 @@ else
                                 case FieldType.Date:
                                     <input type="date"
                                            class="form-control"
-                                           @bind="model.DateValue" />
+                                           @bind="model.DateValue"
+                                           @bind:after="OnFieldValueChangedAsync" />
                                     break;
 
                                 case FieldType.Boolean:
@@ -140,7 +150,8 @@ else
                                         <input type="checkbox"
                                                class="form-check-input"
                                                id="@($"field-{model.Field.Id}")"
-                                               @bind="model.BoolValue" />
+                                               @bind="model.BoolValue"
+                                               @bind:after="OnFieldValueChangedAsync" />
                                         <label class="form-check-label" for="@($"field-{model.Field.Id}")">
                                             @(model.BoolValue ? L["Common_Yes"] : L["Common_No"])
                                         </label>
@@ -518,11 +529,17 @@ else
             _fieldModels = fields.Select(f =>
             {
                 var model = new EntryFieldModel { Field = f };
-                model.LoadValue(f.DefaultValue);
+                // AutoCounter fields compute their own initial value via the live preview
+                // (StartValue when no prior match, otherwise previous + Step). Skipping the
+                // static DefaultValue here ensures it doesn't preempt the calculation by
+                // making the input look "already filled" to RefreshAutoCounterPreviewsAsync.
+                if (f.InitialValueBehavior != InitialValueBehavior.AutoCounter)
+                    model.LoadValue(f.DefaultValue);
                 return model;
             }).ToList();
 
             await LoadComputedInitialValuesAsync();
+            await RefreshAutoCounterPreviewsAsync();
         }
 
         try { _depRules = await DepRuleService.GetByTrackedActionAsync(TrackedActionId); } catch { _depRules = []; }
@@ -678,6 +695,65 @@ else
         }
     }
 
+    // ── Field-edit hooks for AutoCounter preview ──
+
+    private Task OnFieldValueChangedAsync() => RefreshAutoCounterPreviewsAsync();
+
+    private Task OnFieldEditedAsync(EntryFieldModel model)
+    {
+        // User typed into an Integer/Decimal field directly: this is no longer auto-filled.
+        // For AutoCounter target fields, this means the user is overriding our suggestion.
+        if (IsAutoCounterField(model)) model.IsAutoFilled = false;
+        return RefreshAutoCounterPreviewsAsync();
+    }
+
+    // ── AutoCounter live preview ──
+
+    private bool IsAutoCounterField(EntryFieldModel m) =>
+        m.Field.InitialValueBehavior == InitialValueBehavior.AutoCounter
+        && m.Field.FieldType is FieldType.Integer or FieldType.Decimal;
+
+    private async Task RefreshAutoCounterPreviewsAsync()
+    {
+        if (_isEdit) return;
+
+        var autoFields = _fieldModels.Where(IsAutoCounterField).ToList();
+        if (autoFields.Count == 0) return;
+
+        var currentValues = _fieldModels
+            .Select(m => new ActionEntryFieldValue(m.Field.Id, m.ResolveValue()))
+            .Where(v => !string.IsNullOrWhiteSpace(v.Value))
+            .ToList();
+
+        foreach (var model in autoFields)
+        {
+            // Only auto-fill if user hasn't entered a value (don't overwrite manual input).
+            var existing = model.ResolveValue();
+            if (!string.IsNullOrWhiteSpace(existing) && !model.IsAutoFilled) continue;
+
+            var preview = await EntryService.PreviewAutoCounterAsync(
+                TrackedActionId,
+                new AutoCounterPreviewRequest(model.Field.Id, currentValues));
+
+            if (preview is null)
+            {
+                if (model.IsAutoFilled)
+                {
+                    if (model.Field.FieldType == FieldType.Integer) model.IntValue = null;
+                    else model.DecimalValue = null;
+                    model.IsAutoFilled = false;
+                }
+                continue;
+            }
+
+            if (model.Field.FieldType == FieldType.Integer)
+                model.IntValue = (int)Math.Round(preview.Value);
+            else
+                model.DecimalValue = preview.Value;
+            model.IsAutoFilled = true;
+        }
+    }
+
     private static DateTime? GetPeriodStart(InitialValuePeriodUnit unit, int count)
     {
         if (unit == InitialValuePeriodUnit.AllTime || count <= 0) return null;
@@ -790,6 +866,9 @@ else
         public decimal? DecimalValue { get; set; }
         public DateTime? DateValue { get; set; }
         public bool BoolValue { get; set; }
+
+        /// <summary>True when the current value came from the AutoCounter preview, not user typing.</summary>
+        public bool IsAutoFilled { get; set; }
 
         private string[]? _dropdownOverride;
         private string? _dropdownValuesOverride;
@@ -980,10 +1059,11 @@ else
 
     // ── Dependency rule evaluation ──
 
-    private void OnDropdownChanged(EntryFieldModel model, string? value)
+    private async Task OnDropdownChanged(EntryFieldModel model, string? value)
     {
         model.TextValue = value;
         EvaluateDependencyRules();
+        await RefreshAutoCounterPreviewsAsync();
     }
 
     private void EvaluateDependencyRules()

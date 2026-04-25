@@ -65,6 +65,8 @@ public sealed class ActionFieldService(
                             DropdownTrendValueFieldId = af.DropdownTrendValueFieldId,
                             DropdownTrendAggregation = (Contracts.Enums.TrendAggregation)af.DropdownTrendAggregation,
                             DropdownTrendChartType = (Contracts.Enums.TrendChartType)af.DropdownTrendChartType
+                            // AutoCounterConfig is only populated through ToResponse (materialized path);
+                            // OData/IQueryable callers don't need it and JSON deserialization can't translate to SQL.
                         };
 
         return Result<IQueryable<ActionFieldResponse>>.Success(queryable);
@@ -152,7 +154,8 @@ public sealed class ActionFieldService(
             request.InitialValuePeriodCount,
             request.DropdownTrendValueFieldId,
             (int)request.DropdownTrendAggregation,
-            (int)request.DropdownTrendChartType);
+            (int)request.DropdownTrendChartType,
+            ActionFieldMappingExtensions.SerializeAutoCounter(request.AutoCounterConfig));
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -199,7 +202,8 @@ public sealed class ActionFieldService(
             request.InitialValuePeriodCount,
             request.DropdownTrendValueFieldId,
             request.DropdownTrendAggregation.HasValue ? (int)request.DropdownTrendAggregation.Value : null,
-            request.DropdownTrendChartType.HasValue ? (int)request.DropdownTrendChartType.Value : null);
+            request.DropdownTrendChartType.HasValue ? (int)request.DropdownTrendChartType.Value : null,
+            ActionFieldMappingExtensions.SerializeAutoCounter(request.AutoCounterConfig));
 
         await repository.UpdateAsync(entity, cancellationToken);
 

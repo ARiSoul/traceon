@@ -15,4 +15,5 @@ public interface IActionEntryService
     Task<Result<BulkOperationResponse>> BulkDeleteAsync(Guid trackedActionId, BulkDeleteEntriesRequest request, CancellationToken cancellationToken = default);
     Task<Result<BulkOperationResponse>> BulkUpdateFieldsAsync(Guid trackedActionId, BulkUpdateEntryFieldsRequest request, CancellationToken cancellationToken = default);
     Task<Result> RestoreAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<AutoCounterPreviewResponse>> PreviewAutoCounterAsync(Guid trackedActionId, AutoCounterPreviewRequest request, CancellationToken cancellationToken = default);
 }

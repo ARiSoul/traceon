@@ -299,6 +299,7 @@
                             <option value="@InitialValueBehavior.MinValue">@L["FieldEditor_IV_Min"]</option>
                             <option value="@InitialValueBehavior.MaxValue">@L["FieldEditor_IV_Max"]</option>
                             <option value="@InitialValueBehavior.AvgValue">@L["FieldEditor_IV_Avg"]</option>
+                            <option value="@InitialValueBehavior.AutoCounter">@L["FieldEditor_IV_AutoCounter"]</option>
                         }
                     </select>
                 </div>
@@ -323,6 +324,162 @@
                     }
                 }
             </div>
+
+            @if (_initialValueBehavior == InitialValueBehavior.AutoCounter && Field.FieldType is FieldType.Integer or FieldType.Decimal)
+            {
+                <div class="border rounded p-2 mt-2 bg-body">
+                    <div class="form-text mb-2">@L["FieldEditor_AutoCounterHint"]</div>
+
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm mb-1">@L["FieldEditor_AC_Direction"]</label>
+                            <select class="form-select form-select-sm" @bind="_autoDirection">
+                                <option value="inc">@L["FieldEditor_AC_Increment"]</option>
+                                <option value="dec">@L["FieldEditor_AC_Decrement"]</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm mb-1">@L["FieldEditor_AC_Step"]</label>
+                            @if (Field.FieldType == FieldType.Integer)
+                            {
+                                <input type="number" step="1" min="0" class="form-control form-control-sm" @bind="_autoStepInt" />
+                            }
+                            else
+                            {
+                                <input type="number" min="0" class="form-control form-control-sm" @bind="_autoStepDecimal" />
+                            }
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm mb-1">@L["FieldEditor_AC_StartValue"]</label>
+                            @if (Field.FieldType == FieldType.Integer)
+                            {
+                                <input type="number" step="1" class="form-control form-control-sm" @bind="_autoStartInt" />
+                            }
+                            else
+                            {
+                                <input type="number" class="form-control form-control-sm" @bind="_autoStartDecimal" />
+                            }
+                        </div>
+                        @if (_autoConditions.Count > 1)
+                        {
+                            <div class="col-md-3">
+                                <label class="form-label form-label-sm mb-1">@L["FieldEditor_AC_ConditionLogic"]</label>
+                                <select class="form-select form-select-sm" @bind="_autoConditionLogic">
+                                    <option value="@FilterLogic.And">@L["FieldEditor_AC_LogicAnd"]</option>
+                                    <option value="@FilterLogic.Or">@L["FieldEditor_AC_LogicOr"]</option>
+                                </select>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 mb-1">
+                        <strong class="small">@L["FieldEditor_AC_Conditions"]</strong>
+                        <button type="button" class="btn btn-outline-primary btn-sm" @onclick="AddAutoCondition" disabled="@(EligibleConditionFields.Count == 0)">
+                            <i class="bi bi-plus-lg me-1"></i>@L["FieldEditor_AC_AddCondition"]
+                        </button>
+                    </div>
+
+                    @if (_autoConditions.Count == 0)
+                    {
+                        <div class="text-muted small fst-italic">@L["FieldEditor_AC_NoConditionsHint"]</div>
+                    }
+                    else
+                    {
+                        @for (var i = 0; i < _autoConditions.Count; i++)
+                        {
+                            var idx = i;
+                            var c = _autoConditions[idx];
+                            var refField = SiblingFields.FirstOrDefault(f => f.Id == c.FieldId);
+                            <div class="row g-2 align-items-end mb-2">
+                                <div class="col-md-4">
+                                    <label class="form-label form-label-sm mb-1">@L["FieldEditor_AC_Field"]</label>
+                                    <select class="form-select form-select-sm" value="@c.FieldId" @onchange="e => OnAutoConditionFieldChanged(idx, e.Value?.ToString())">
+                                        <option value="">— @L["Common_Select"] —</option>
+                                        @foreach (var ef in EligibleConditionFields)
+                                        {
+                                            <option value="@ef.Id">@ef.Name (@ef.FieldType)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label form-label-sm mb-1">@L["FieldEditor_AC_Operator"]</label>
+                                    <select class="form-select form-select-sm"
+                                            value="@(c.UseCurrentValue ? FilterOperator.Equals : c.Operator)"
+                                            disabled="@c.UseCurrentValue"
+                                            @onchange="e => OnAutoConditionOperatorChanged(idx, e.Value?.ToString())">
+                                        @foreach (var op in OperatorsFor(refField?.FieldType))
+                                        {
+                                            <option value="@op">@OperatorLabel(op)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label form-label-sm mb-1">@L["FieldEditor_AC_Value"]</label>
+                                    @if (c.UseCurrentValue)
+                                    {
+                                        <input class="form-control form-control-sm" disabled value="@L["FieldEditor_AC_UseCurrentValuePlaceholder"]" />
+                                    }
+                                    else if (refField is null)
+                                    {
+                                        <input class="form-control form-control-sm" disabled />
+                                    }
+                                    else if (c.Operator is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty)
+                                    {
+                                        <input class="form-control form-control-sm" disabled placeholder="—" />
+                                    }
+                                    else if (refField.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
+                                    {
+                                        var opts = string.IsNullOrWhiteSpace(refField.DropdownValues)
+                                            ? new List<string>()
+                                            : DropdownValuesHelper.Split(refField.DropdownValues).ToList();
+                                        <SearchableSelect Value="@c.Value"
+                                                          ValueChanged="v => OnAutoConditionValueChanged(idx, v)"
+                                                          Options="opts"
+                                                          Placeholder="@L["Common_Select"]"
+                                                          Small="true" />
+                                    }
+                                    else if (refField.FieldType == FieldType.Boolean)
+                                    {
+                                        <select class="form-select form-select-sm" value="@c.Value" @onchange="e => OnAutoConditionValueChanged(idx, e.Value?.ToString())">
+                                            <option value="">—</option>
+                                            <option value="true">@L["Common_Yes"]</option>
+                                            <option value="false">@L["Common_No"]</option>
+                                        </select>
+                                    }
+                                    else if (refField.FieldType == FieldType.Date)
+                                    {
+                                        <input type="date" class="form-control form-control-sm" value="@c.Value" @onchange="e => OnAutoConditionValueChanged(idx, e.Value?.ToString())" />
+                                    }
+                                    else if (refField.FieldType is FieldType.Integer or FieldType.Decimal)
+                                    {
+                                        <input type="number" class="form-control form-control-sm" value="@c.Value" @onchange="e => OnAutoConditionValueChanged(idx, e.Value?.ToString())" />
+                                    }
+                                    else
+                                    {
+                                        <input class="form-control form-control-sm" value="@c.Value" @onchange="e => OnAutoConditionValueChanged(idx, e.Value?.ToString())" />
+                                    }
+                                </div>
+                                <div class="col-md-1 d-flex justify-content-end">
+                                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveAutoCondition(idx)" title="@L["Common_Remove"]">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check form-check-sm small">
+                                        <input class="form-check-input" type="checkbox" id="@($"acuc-{Field.Id}-{idx}")"
+                                               checked="@c.UseCurrentValue"
+                                               @onchange="e => OnAutoConditionUseCurrentChanged(idx, (bool)(e.Value ?? false))" />
+                                        <label class="form-check-label text-muted" for="@($"acuc-{Field.Id}-{idx}")"
+                                               title="@L["FieldEditor_AC_UseCurrentValueHint"]">
+                                            @L["FieldEditor_AC_UseCurrentValue"]
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            }
 
             <div class="d-flex gap-2 mt-3">
                 <button class="btn btn-success btn-sm" @onclick="SaveAsync" disabled="@_saving">
@@ -388,6 +545,76 @@
     private decimal? _defaultDecimal;
     private DateTime? _defaultDate;
 
+    // AutoCounter
+    private string _autoDirection = "inc";
+    private int _autoStepInt = 1;
+    private decimal _autoStepDecimal = 1m;
+    private int _autoStartInt;
+    private decimal _autoStartDecimal;
+    private FilterLogic _autoConditionLogic = FilterLogic.And;
+    private List<AutoCounterCondition> _autoConditions = [];
+
+    private List<ActionFieldResponse> EligibleConditionFields =>
+        SiblingFields.Where(f => f.Id != Field.Id).ToList();
+
+    private static FilterOperator[] OperatorsFor(FieldType? type) => type switch
+    {
+        FieldType.Dropdown or FieldType.CompositeDropdown => [FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty],
+        FieldType.Boolean => [FilterOperator.Equals, FilterOperator.NotEquals],
+        FieldType.Integer or FieldType.Decimal => [FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.GreaterThan, FilterOperator.GreaterThanOrEqual, FilterOperator.LessThan, FilterOperator.LessThanOrEqual, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty],
+        FieldType.Date => [FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.GreaterThan, FilterOperator.LessThan, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty],
+        _ => [FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.Contains, FilterOperator.NotContains, FilterOperator.StartsWith, FilterOperator.EndsWith, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty]
+    };
+
+    private string OperatorLabel(FilterOperator op) => L[$"FilterOp_{op}"];
+
+    private void AddAutoCondition()
+    {
+        var firstField = EligibleConditionFields.FirstOrDefault();
+        if (firstField is null) return;
+        _autoConditions.Add(new AutoCounterCondition(firstField.Id, FilterOperator.Equals, null));
+    }
+
+    private void RemoveAutoCondition(int idx)
+    {
+        if (idx < 0 || idx >= _autoConditions.Count) return;
+        _autoConditions.RemoveAt(idx);
+    }
+
+    private void OnAutoConditionFieldChanged(int idx, string? raw)
+    {
+        if (!Guid.TryParse(raw, out var fid)) return;
+        var cur = _autoConditions[idx];
+        // Reset value when switching field types (operator may no longer apply).
+        var refField = SiblingFields.FirstOrDefault(f => f.Id == fid);
+        var ops = OperatorsFor(refField?.FieldType);
+        var op = ops.Contains(cur.Operator) ? cur.Operator : FilterOperator.Equals;
+        _autoConditions[idx] = new AutoCounterCondition(fid, op, null);
+    }
+
+    private void OnAutoConditionOperatorChanged(int idx, string? raw)
+    {
+        if (!Enum.TryParse<FilterOperator>(raw, out var op)) return;
+        var cur = _autoConditions[idx];
+        var value = (op is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty) ? null : cur.Value;
+        _autoConditions[idx] = cur with { Operator = op, Value = value };
+    }
+
+    private void OnAutoConditionValueChanged(int idx, string? value)
+    {
+        var cur = _autoConditions[idx];
+        _autoConditions[idx] = cur with { Value = value };
+    }
+
+    private void OnAutoConditionUseCurrentChanged(int idx, bool useCurrent)
+    {
+        var cur = _autoConditions[idx];
+        // Force operator to Equals and clear the literal value when switching to dynamic mode.
+        _autoConditions[idx] = useCurrent
+            ? cur with { UseCurrentValue = true, Operator = FilterOperator.Equals, Value = null }
+            : cur with { UseCurrentValue = false };
+    }
+
     private string[] ParsedDropdownValues =>
         string.IsNullOrWhiteSpace(Field.DropdownValues)
             ? []
@@ -440,6 +667,38 @@
                 break;
         }
 
+        // Load AutoCounter config
+        var ac = Field.AutoCounterConfig;
+        if (ac is not null)
+        {
+            _autoDirection = ac.Step < 0 ? "dec" : "inc";
+            var absStep = Math.Abs(ac.Step);
+            _autoStepInt = (int)Math.Round(absStep);
+            _autoStepDecimal = absStep == 0 ? 1m : absStep;
+            if (Field.FieldType == FieldType.Integer)
+            {
+                _autoStartInt = (int)Math.Round(ac.StartValue);
+                _autoStartDecimal = ac.StartValue;
+            }
+            else
+            {
+                _autoStartDecimal = ac.StartValue;
+                _autoStartInt = (int)Math.Round(ac.StartValue);
+            }
+            _autoConditionLogic = ac.ConditionLogic;
+            _autoConditions = ac.Conditions is null ? [] : new List<AutoCounterCondition>(ac.Conditions);
+        }
+        else
+        {
+            _autoDirection = "inc";
+            _autoStepInt = 1;
+            _autoStepDecimal = 1m;
+            _autoStartInt = 0;
+            _autoStartDecimal = 0m;
+            _autoConditionLogic = FilterLogic.And;
+            _autoConditions = [];
+        }
+
         // Load default value
         if (!string.IsNullOrWhiteSpace(Field.DefaultValue))
         {
@@ -482,13 +741,15 @@
 
         var (minValue, maxValue) = ResolveMinMax();
         var defaultVal = ResolveDefaultValue();
+        var autoCounter = BuildAutoCounterConfig();
 
         var request = new UpdateActionFieldRequest(
             _name, _description, maxValue, minValue, _isRequired, defaultVal, _unit, _order,
             _summaryMetrics, _trendAggregation, _trendChartType, _targetValue,
             _targetValueMode,
             _initialValueBehavior, _initialValuePeriodUnit, _initialValuePeriodCount,
-            _dropdownTrendValueFieldId, _dropdownTrendAggregation, _dropdownTrendChartType);
+            _dropdownTrendValueFieldId, _dropdownTrendAggregation, _dropdownTrendChartType,
+            autoCounter);
 
         var (ok, errs) = await ActionFieldService.UpdateAsync(TrackedActionId, Field.Id, request);
 
@@ -503,6 +764,33 @@
         }
 
         _saving = false;
+    }
+
+    private AutoCounterConfig? BuildAutoCounterConfig()
+    {
+        if (_initialValueBehavior != InitialValueBehavior.AutoCounter) return null;
+        if (Field.FieldType is not (FieldType.Integer or FieldType.Decimal)) return null;
+
+        var absStep = Field.FieldType == FieldType.Integer ? (decimal)_autoStepInt : _autoStepDecimal;
+        if (absStep <= 0) absStep = 1m;
+        var step = _autoDirection == "dec" ? -absStep : absStep;
+
+        var startValue = Field.FieldType == FieldType.Integer ? (decimal)_autoStartInt : _autoStartDecimal;
+
+        // Drop incomplete conditions (no field, or — for literal value-needing operators — no value).
+        // UseCurrentValue conditions don't require a Value (they read the in-progress entry at compute time).
+        var validConditions = _autoConditions
+            .Where(c => c.FieldId != Guid.Empty)
+            .Where(c => c.UseCurrentValue
+                        || c.Operator is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty
+                        || !string.IsNullOrEmpty(c.Value))
+            .ToList();
+
+        return new AutoCounterConfig(
+            step,
+            startValue,
+            _autoConditionLogic,
+            validConditions.Count > 0 ? validConditions : null);
     }
 
     private string? ResolveDefaultValue() => Field.FieldType switch

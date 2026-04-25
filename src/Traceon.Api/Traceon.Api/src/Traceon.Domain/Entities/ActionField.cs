@@ -23,6 +23,7 @@ public sealed class ActionField : Entity
     public Guid? DropdownTrendValueFieldId { get; private set; }
     public int DropdownTrendAggregation { get; private set; }
     public int DropdownTrendChartType { get; private set; }
+    public string? AutoCounterConfigJson { get; private set; }
 
     private ActionField(
         Guid trackedActionId, Guid fieldDefinitionId, string name, string? description,
@@ -30,7 +31,8 @@ public sealed class ActionField : Entity
         string unit, int order, int summaryMetrics, int trendAggregation, int trendChartType,
         decimal? targetValue, int targetValueMode, int initialValueBehavior, int initialValuePeriodUnit,
         int initialValuePeriodCount, Guid? dropdownTrendValueFieldId,
-        int dropdownTrendAggregation, int dropdownTrendChartType)
+        int dropdownTrendAggregation, int dropdownTrendChartType,
+        string? autoCounterConfigJson)
     {
         TrackedActionId = trackedActionId;
         FieldDefinitionId = fieldDefinitionId;
@@ -53,6 +55,7 @@ public sealed class ActionField : Entity
         DropdownTrendValueFieldId = dropdownTrendValueFieldId;
         DropdownTrendAggregation = dropdownTrendAggregation;
         DropdownTrendChartType = dropdownTrendChartType;
+        AutoCounterConfigJson = autoCounterConfigJson;
     }
 
     public static ActionField Create(
@@ -64,7 +67,8 @@ public sealed class ActionField : Entity
         int initialValueBehavior = 0,
         int initialValuePeriodUnit = 0, int initialValuePeriodCount = 0,
         Guid? dropdownTrendValueFieldId = null, int dropdownTrendAggregation = 0,
-        int dropdownTrendChartType = 0)
+        int dropdownTrendChartType = 0,
+        string? autoCounterConfigJson = null)
     {
         if (trackedActionId == Guid.Empty)
             throw new ArgumentException("Tracked action ID is required.", nameof(trackedActionId));
@@ -76,7 +80,7 @@ public sealed class ActionField : Entity
             string.IsNullOrWhiteSpace(unit) ? "UN" : unit.Trim(), order, summaryMetrics,
             trendAggregation, trendChartType, targetValue, targetValueMode, initialValueBehavior,
             initialValuePeriodUnit, initialValuePeriodCount, dropdownTrendValueFieldId,
-            dropdownTrendAggregation, dropdownTrendChartType);
+            dropdownTrendAggregation, dropdownTrendChartType, autoCounterConfigJson);
     }
 
     public void Update(
@@ -88,7 +92,8 @@ public sealed class ActionField : Entity
         int? initialValueBehavior = null,
         int? initialValuePeriodUnit = null, int? initialValuePeriodCount = null,
         Guid? dropdownTrendValueFieldId = null, int? dropdownTrendAggregation = null,
-        int? dropdownTrendChartType = null)
+        int? dropdownTrendChartType = null,
+        string? autoCounterConfigJson = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         Name = name.Trim();
@@ -110,6 +115,7 @@ public sealed class ActionField : Entity
         DropdownTrendValueFieldId = dropdownTrendValueFieldId;
         if (dropdownTrendAggregation.HasValue) DropdownTrendAggregation = dropdownTrendAggregation.Value;
         if (dropdownTrendChartType.HasValue) DropdownTrendChartType = dropdownTrendChartType.Value;
+        AutoCounterConfigJson = autoCounterConfigJson;
         MarkUpdated();
     }
 }

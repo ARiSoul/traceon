@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Traceon.Contracts.ActionFields;
 using Traceon.Contracts.Enums;
 using Traceon.Domain.Entities;
@@ -35,6 +36,17 @@ public static class ActionFieldMappingExtensions
             InitialValuePeriodCount = entity.InitialValuePeriodCount,
             DropdownTrendValueFieldId = entity.DropdownTrendValueFieldId,
             DropdownTrendAggregation = (TrendAggregation)entity.DropdownTrendAggregation,
-            DropdownTrendChartType = (TrendChartType)entity.DropdownTrendChartType
+            DropdownTrendChartType = (TrendChartType)entity.DropdownTrendChartType,
+            AutoCounterConfig = DeserializeAutoCounter(entity.AutoCounterConfigJson)
         };
+
+    public static string? SerializeAutoCounter(AutoCounterConfig? config)
+        => config is null ? null : JsonSerializer.Serialize(config);
+
+    public static AutoCounterConfig? DeserializeAutoCounter(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try { return JsonSerializer.Deserialize<AutoCounterConfig>(json); }
+        catch { return null; }
+    }
 }

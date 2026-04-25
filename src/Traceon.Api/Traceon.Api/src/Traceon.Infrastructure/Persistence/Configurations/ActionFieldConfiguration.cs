@@ -75,6 +75,9 @@ internal sealed class ActionFieldConfiguration : IEntityTypeConfiguration<Action
             .IsRequired()
             .HasDefaultValue(0);
 
+        builder.Property(e => e.AutoCounterConfigJson)
+            .HasMaxLength(4000);
+
         builder.HasIndex(e => e.TrackedActionId);
 
         builder.HasOne<FieldDefinition>()

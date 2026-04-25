@@ -21,4 +21,5 @@ public sealed record UpdateActionFieldRequest(
     int? InitialValuePeriodCount = null,
     Guid? DropdownTrendValueFieldId = null,
     TrendAggregation? DropdownTrendAggregation = null,
-    TrendChartType? DropdownTrendChartType = null);
+    TrendChartType? DropdownTrendChartType = null,
+    AutoCounterConfig? AutoCounterConfig = null);

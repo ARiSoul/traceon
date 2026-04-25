@@ -6,5 +6,6 @@ public enum InitialValueBehavior
     LastValue = 1,
     MinValue = 2,
     MaxValue = 3,
-    AvgValue = 4
+    AvgValue = 4,
+    AutoCounter = 5
 }

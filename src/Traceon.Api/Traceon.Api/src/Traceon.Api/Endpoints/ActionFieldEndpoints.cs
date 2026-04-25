@@ -1,4 +1,3 @@
-using Microsoft.OData.Edm;
 using Traceon.Api.Extensions;
 using Traceon.Api.Filters;
 using Traceon.Contracts.ActionFields;
@@ -25,18 +24,11 @@ internal static class ActionFieldEndpoints
 
     private static async Task<IResult> GetByTrackedActionIdAsync(
         Guid trackedActionId,
-        HttpRequest request,
         IActionFieldService service,
-        IEdmModel edmModel,
         CancellationToken cancellationToken)
-    {
-        var result = await service.QueryByTrackedActionIdAsync(trackedActionId, cancellationToken);
-
-        if (!result.IsSuccess)
-            return TypedResults.NotFound(result.Error);
-
-        return TypedResults.Ok(result.Value.ApplyODataQuery(request, edmModel));
-    }
+        // Materialized path so AutoCounterConfig (deserialized from JSON) round-trips.
+        // OData was unused on this endpoint and the JSON column can't translate to SQL anyway.
+        => (await service.GetByTrackedActionIdAsync(trackedActionId, cancellationToken)).ToHttpResult();
 
     private static async Task<IResult> GetByIdAsync(
         Guid trackedActionId,

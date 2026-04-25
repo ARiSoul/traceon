@@ -253,7 +253,28 @@
   <data name="FieldEditor_IV_Min"><value>Minimum</value></data>
   <data name="FieldEditor_IV_Max"><value>Maximum</value></data>
   <data name="FieldEditor_IV_Avg"><value>Average</value></data>
+  <data name="FieldEditor_IV_AutoCounter"><value>Auto-counter</value></data>
   <data name="FieldEditor_IV_Period"><value>Period</value></data>
+  <data name="FieldEditor_AutoCounterHint"><value>Each new entry's value is computed from the previous matching entry plus the step. Conditions filter which prior entries count as a match. Without conditions, every entry of this action is a match.</value></data>
+  <data name="FieldEditor_AC_Direction"><value>Direction</value></data>
+  <data name="FieldEditor_AC_Increment"><value>Increment</value></data>
+  <data name="FieldEditor_AC_Decrement"><value>Decrement</value></data>
+  <data name="FieldEditor_AC_Step"><value>Step</value></data>
+  <data name="FieldEditor_AC_StartValue"><value>Start value (no prior match)</value></data>
+  <data name="FieldEditor_AC_ConditionLogic"><value>Combine with</value></data>
+  <data name="FieldEditor_AC_LogicAnd"><value>All (AND)</value></data>
+  <data name="FieldEditor_AC_LogicOr"><value>Any (OR)</value></data>
+  <data name="FieldEditor_AC_Conditions"><value>Conditions</value></data>
+  <data name="FieldEditor_AC_AddCondition"><value>Add condition</value></data>
+  <data name="FieldEditor_AC_NoConditionsHint"><value>No conditions — every prior entry of this action will match.</value></data>
+  <data name="FieldEditor_AC_Field"><value>Field</value></data>
+  <data name="FieldEditor_AC_Operator"><value>Operator</value></data>
+  <data name="FieldEditor_AC_Value"><value>Value</value></data>
+  <data name="FieldEditor_AC_UseCurrentValue"><value>Use current entry value (match prior entries with the same value)</value></data>
+  <data name="FieldEditor_AC_UseCurrentValueHint"><value>When enabled, the rule matches prior entries whose value for this field equals whatever the in-progress entry has. Useful for per-group counters (e.g. Episode counter per Show + Season).</value></data>
+  <data name="FieldEditor_AC_UseCurrentValuePlaceholder"><value>(in-progress value)</value></data>
+  <data name="Entry_AutoBadge"><value>auto</value></data>
+  <data name="Entry_AutoCounterTooltip"><value>This value is auto-filled from the previous matching entry. You can override it.</value></data>
   <data name="FieldEditor_SourceFieldDef"><value>Source custom field</value></data>
 
   <!-- ═══ Settings ═══ -->

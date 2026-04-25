@@ -13,7 +13,8 @@
       "Bash(grep -E \"\\\\.\\(razor|cs\\)$\")",
       "Bash(grep -E \"\\\\.cs$\")",
       "Bash(git *)",
-      "Bash(awk '/_period|PeriodSelect|_selectedPeriod|presets|RangePreset|datetime-local/ {print NR\": \"$0}' /c/Users/rjrso/source/repos/traceon/src/Traceon.Blazor/Traceon.Blazor/Pages/Dashboard/Dashboard.razor)"
+      "Bash(awk '/_period|PeriodSelect|_selectedPeriod|presets|RangePreset|datetime-local/ {print NR\": \"$0}' /c/Users/rjrso/source/repos/traceon/src/Traceon.Blazor/Traceon.Blazor/Pages/Dashboard/Dashboard.razor)",
+      "Skill(update-config)"
     ]
   }
 }

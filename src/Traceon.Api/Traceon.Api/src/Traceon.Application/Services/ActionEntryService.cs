@@ -1,6 +1,8 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Traceon.Application.Common;
 using Traceon.Contracts.ActionEntries;
+using Traceon.Contracts.Enums;
 using Traceon.Application.Interfaces;
 using Traceon.Application.Logging;
 using Traceon.Application.Mapping;
@@ -13,6 +15,7 @@ public sealed class ActionEntryService(
     IActionEntryRepository entryRepository,
     ITrackedActionRepository actionRepository,
     IActionFieldRepository fieldRepository,
+    IAutoCounterCalculator autoCounterCalculator,
     ICurrentUserService currentUser,
     ILogger<ActionEntryService> logger) : IActionEntryService
 {
@@ -103,10 +106,27 @@ public sealed class ActionEntryService(
 
         var entity = ActionEntry.Create(trackedActionId, request.OccurredAtUtc, request.Notes, request.ReceiptImportBatchId);
 
-        if (request.FieldValues is not null)
+        var submittedByFieldId = (request.FieldValues ?? [])
+            .GroupBy(fv => fv.ActionFieldId)
+            .ToDictionary(g => g.Key, g => g.Last().Value);
+
+        // Apply submitted values first.
+        foreach (var (fieldId, value) in submittedByFieldId)
+            entity.SetFieldValue(fieldId, value);
+
+        // Auto-fill any AutoCounter field that was left blank by the client.
+        var actionFields = await fieldRepository.GetByTrackedActionIdAsync(trackedActionId, cancellationToken);
+        foreach (var field in actionFields)
         {
-            foreach (var fv in request.FieldValues)
-                entity.SetFieldValue(fv.ActionFieldId, fv.Value);
+            if (field.InitialValueBehavior != (int)InitialValueBehavior.AutoCounter) continue;
+
+            var submitted = submittedByFieldId.TryGetValue(field.Id, out var s) ? s : null;
+            if (!string.IsNullOrWhiteSpace(submitted)) continue;
+
+            var computed = await autoCounterCalculator.ComputeAsync(field, trackedActionId, submittedByFieldId, cancellationToken);
+            if (computed is null) continue;
+
+            entity.SetFieldValue(field.Id, computed.Value.ToString(CultureInfo.InvariantCulture));
         }
 
         await entryRepository.AddAsync(entity, cancellationToken);
@@ -243,6 +263,29 @@ public sealed class ActionEntryService(
 
         logger.ActionEntriesBulkUpdated(validEntries.Count, trackedActionId);
         return Result<BulkOperationResponse>.Success(new BulkOperationResponse { AffectedCount = validEntries.Count });
+    }
+
+    public async Task<Result<AutoCounterPreviewResponse>> PreviewAutoCounterAsync(
+        Guid trackedActionId, AutoCounterPreviewRequest request, CancellationToken cancellationToken = default)
+    {
+        var action = await actionRepository.GetByIdAsync(trackedActionId, cancellationToken);
+        if (action is null || action.UserId != currentUser.UserId)
+        {
+            logger.TrackedActionNotFound(trackedActionId);
+            return Result<AutoCounterPreviewResponse>.Failure(
+                $"Tracked action with ID '{trackedActionId}' was not found.");
+        }
+
+        var field = await fieldRepository.GetByIdAsync(request.TargetActionFieldId, cancellationToken);
+        if (field is null || field.TrackedActionId != trackedActionId)
+            return Result<AutoCounterPreviewResponse>.Failure("Target field not found.");
+
+        var current = (request.FieldValues ?? [])
+            .GroupBy(fv => fv.ActionFieldId)
+            .ToDictionary(g => g.Key, g => g.Last().Value);
+
+        var value = await autoCounterCalculator.ComputeAsync(field, trackedActionId, current, cancellationToken);
+        return Result<AutoCounterPreviewResponse>.Success(new AutoCounterPreviewResponse(field.Id, value));
     }
 
     public async Task<Result> RestoreAsync(Guid id, CancellationToken cancellationToken = default)

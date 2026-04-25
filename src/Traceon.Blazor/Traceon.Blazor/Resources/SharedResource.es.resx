@@ -254,7 +254,28 @@
   <data name="FieldEditor_IV_Min"><value>Mínimo</value></data>
   <data name="FieldEditor_IV_Max"><value>Máximo</value></data>
   <data name="FieldEditor_IV_Avg"><value>Promedio</value></data>
+  <data name="FieldEditor_IV_AutoCounter"><value>Contador automático</value></data>
   <data name="FieldEditor_IV_Period"><value>Período</value></data>
+  <data name="FieldEditor_AutoCounterHint"><value>El valor de cada nuevo registro se calcula a partir del registro anterior coincidente más el paso. Las condiciones filtran qué registros previos se consideran coincidentes. Sin condiciones, cada registro de esta acción coincide.</value></data>
+  <data name="FieldEditor_AC_Direction"><value>Dirección</value></data>
+  <data name="FieldEditor_AC_Increment"><value>Incrementar</value></data>
+  <data name="FieldEditor_AC_Decrement"><value>Decrementar</value></data>
+  <data name="FieldEditor_AC_Step"><value>Paso</value></data>
+  <data name="FieldEditor_AC_StartValue"><value>Valor inicial (sin coincidencia previa)</value></data>
+  <data name="FieldEditor_AC_ConditionLogic"><value>Combinar con</value></data>
+  <data name="FieldEditor_AC_LogicAnd"><value>Todas (Y)</value></data>
+  <data name="FieldEditor_AC_LogicOr"><value>Cualquiera (O)</value></data>
+  <data name="FieldEditor_AC_Conditions"><value>Condiciones</value></data>
+  <data name="FieldEditor_AC_AddCondition"><value>Añadir condición</value></data>
+  <data name="FieldEditor_AC_NoConditionsHint"><value>Sin condiciones — cada registro previo de esta acción coincidirá.</value></data>
+  <data name="FieldEditor_AC_Field"><value>Campo</value></data>
+  <data name="FieldEditor_AC_Operator"><value>Operador</value></data>
+  <data name="FieldEditor_AC_Value"><value>Valor</value></data>
+  <data name="FieldEditor_AC_UseCurrentValue"><value>Usar el valor actual del registro (coincidir con registros previos con el mismo valor)</value></data>
+  <data name="FieldEditor_AC_UseCurrentValueHint"><value>Cuando está activo, la regla coincide con registros previos cuyo valor en este campo es igual al del registro en curso. Útil para contadores por grupo (p. ej. contador de episodios por Serie + Temporada).</value></data>
+  <data name="FieldEditor_AC_UseCurrentValuePlaceholder"><value>(valor en curso)</value></data>
+  <data name="Entry_AutoBadge"><value>auto</value></data>
+  <data name="Entry_AutoCounterTooltip"><value>Este valor se rellena automáticamente desde el registro anterior coincidente. Puedes sobrescribirlo.</value></data>
   <data name="FieldEditor_SourceFieldDef"><value>Campo personalizado de origen</value></data>
 
   <!-- ═══ Ajustes ═══ -->

@@ -82,6 +82,23 @@ public sealed class ActionEntryService(HttpClient http)
         return await ToResultAsync(response);
     }
 
+    public async Task<decimal?> PreviewAutoCounterAsync(
+        Guid trackedActionId, AutoCounterPreviewRequest request)
+    {
+        try
+        {
+            var response = await http.PostAsJsonAsync(
+                $"/api/tracked-actions/{trackedActionId}/entries/auto-counter-preview", request);
+            if (!response.IsSuccessStatusCode) return null;
+            var preview = await response.Content.ReadFromJsonAsync<AutoCounterPreviewResponse>();
+            return preview?.Value;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static async Task<(bool Success, IReadOnlyList<string> Errors)> ToResultAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)

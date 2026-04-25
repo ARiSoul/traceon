@@ -22,4 +22,5 @@ public sealed record CreateActionFieldRequest(
     int InitialValuePeriodCount = 0,
     Guid? DropdownTrendValueFieldId = null,
     TrendAggregation DropdownTrendAggregation = TrendAggregation.AllPoints,
-    TrendChartType DropdownTrendChartType = TrendChartType.Line);
+    TrendChartType DropdownTrendChartType = TrendChartType.Line,
+    AutoCounterConfig? AutoCounterConfig = null);

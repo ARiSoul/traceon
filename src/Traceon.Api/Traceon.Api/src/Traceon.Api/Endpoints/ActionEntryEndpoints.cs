@@ -21,6 +21,7 @@ internal static class ActionEntryEndpoints
         group.MapPost("/{id:guid}/restore", RestoreAsync);
         group.MapPost("/bulk-delete", BulkDeleteAsync).AddEndpointFilter<ValidationFilter<BulkDeleteEntriesRequest>>();
         group.MapPost("/bulk-update-fields", BulkUpdateFieldsAsync).AddEndpointFilter<ValidationFilter<BulkUpdateEntryFieldsRequest>>();
+        group.MapPost("/auto-counter-preview", PreviewAutoCounterAsync);
 
         return group;
     }
@@ -90,4 +91,11 @@ internal static class ActionEntryEndpoints
         IActionEntryService service,
         CancellationToken cancellationToken)
         => (await service.BulkUpdateFieldsAsync(trackedActionId, request, cancellationToken)).ToHttpResult();
+
+    private static async Task<IResult> PreviewAutoCounterAsync(
+        Guid trackedActionId,
+        AutoCounterPreviewRequest request,
+        IActionEntryService service,
+        CancellationToken cancellationToken)
+        => (await service.PreviewAutoCounterAsync(trackedActionId, request, cancellationToken)).ToHttpResult();
 }
