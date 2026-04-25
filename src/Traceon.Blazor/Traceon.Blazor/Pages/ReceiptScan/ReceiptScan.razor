@@ -2525,7 +2525,12 @@
             // 3. Create one entry per included receipt item
             var includedItems = _receiptItems.Where(i => i.Include).ToList();
 
-            var occurredAt = DateTime.SpecifyKind(_importDate, DateTimeKind.Utc);
+            // Combine the receipt's date with the current local time-of-day so each imported entry
+            // reads naturally in the entries list (sorted alongside manually-created entries) rather
+            // than collapsing to midnight UTC. Match how a regular entry-create call resolves its
+            // OccurredAtUtc — local "now" converted to UTC, with the date overridden to the receipt's.
+            var nowLocal = DateTime.Now;
+            var occurredAt = _importDate.Date.Add(nowLocal.TimeOfDay).ToUniversalTime();
             var batchId = Guid.NewGuid();
 
             foreach (var item in includedItems)
