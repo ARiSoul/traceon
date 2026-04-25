@@ -1182,4 +1182,29 @@
   <data name="Chart_QuickNavPrompt"><value>Select a chart…</value></data>
   <data name="Chart_ScrollToTop"><value>Scroll to top</value></data>
   <data name="Analytics_Trend"><value>Trend</value></data>
+
+  <!-- ═══ Entry Templates ═══ -->
+  <data name="EntryTemplate_ManageLink"><value>Templates</value></data>
+  <data name="EntryTemplate_ListTitle"><value>Entry Templates</value></data>
+  <data name="EntryTemplate_ListSubtitle"><value>Reusable starting points for new entries on this action.</value></data>
+  <data name="EntryTemplate_New"><value>New template</value></data>
+  <data name="EntryTemplate_NewTitle"><value>New entry template</value></data>
+  <data name="EntryTemplate_EditTitle"><value>Edit entry template</value></data>
+  <data name="EntryTemplate_NameLabel"><value>Template name</value></data>
+  <data name="EntryTemplate_NamePlaceholder"><value>e.g. Monthly rent, Weekly groceries</value></data>
+  <data name="EntryTemplate_NotesLabel"><value>Notes pre-fill</value></data>
+  <data name="EntryTemplate_NotesPlaceholder"><value>Optional notes that get pre-filled on the entry</value></data>
+  <data name="EntryTemplate_FieldsHeader"><value>Field values</value></data>
+  <data name="EntryTemplate_FieldsHint"><value>Set values that will pre-fill when this template is applied. Leave blank to skip a field.</value></data>
+  <data name="EntryTemplate_Empty"><value>No templates yet. Create one to speed up recurring entries.</value></data>
+  <data name="EntryTemplate_NoFields"><value>This action has no fields configured yet.</value></data>
+  <data name="EntryTemplate_Saved"><value>Template saved.</value></data>
+  <data name="EntryTemplate_DeleteConfirm"><value>Delete this template? Existing entries created from it are not affected.</value></data>
+  <data name="EntryTemplate_FieldCount"><value>{0} field(s)</value></data>
+  <data name="EntryTemplate_StartFrom"><value>Start from template…</value></data>
+  <data name="EntryTemplate_StartFromNone"><value>(blank entry)</value></data>
+  <data name="EntryTemplate_SaveAs"><value>Save as template…</value></data>
+  <data name="EntryTemplate_SkipBehaviorHint"><value>Auto-counter fields are skipped — they compute their own value at entry creation. Other fields can still take an override here; leaving them blank keeps their configured behavior (last value, default, etc.).</value></data>
+  <data name="EntryTemplate_AutoCounterBadge"><value>auto-counter</value></data>
+  <data name="EntryTemplate_AutoCounterPlaceholder"><value>Computed at entry creation</value></data>
 </root>

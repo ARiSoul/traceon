@@ -1179,4 +1179,29 @@
   <data name="Analytics_Trend"><value>Tendencia</value></data>
   <data name="Analytics_ResetLayout"><value>Restablecer diseño</value></data>
   <data name="Analytics_ResetLayoutHint"><value>Restaurar visibilidad y orden de gráficos predeterminados</value></data>
+
+  <!-- ═══ Entry Templates ═══ -->
+  <data name="EntryTemplate_ManageLink"><value>Plantillas</value></data>
+  <data name="EntryTemplate_ListTitle"><value>Plantillas de registro</value></data>
+  <data name="EntryTemplate_ListSubtitle"><value>Puntos de partida reutilizables para nuevos registros de esta acción.</value></data>
+  <data name="EntryTemplate_New"><value>Nueva plantilla</value></data>
+  <data name="EntryTemplate_NewTitle"><value>Nueva plantilla de registro</value></data>
+  <data name="EntryTemplate_EditTitle"><value>Editar plantilla de registro</value></data>
+  <data name="EntryTemplate_NameLabel"><value>Nombre de la plantilla</value></data>
+  <data name="EntryTemplate_NamePlaceholder"><value>p. ej. Alquiler mensual, Compra semanal</value></data>
+  <data name="EntryTemplate_NotesLabel"><value>Pre-relleno de notas</value></data>
+  <data name="EntryTemplate_NotesPlaceholder"><value>Notas opcionales que se rellenan en el registro</value></data>
+  <data name="EntryTemplate_FieldsHeader"><value>Valores de campos</value></data>
+  <data name="EntryTemplate_FieldsHint"><value>Define los valores que se rellenarán al aplicar esta plantilla. Deja en blanco para omitir un campo.</value></data>
+  <data name="EntryTemplate_Empty"><value>Aún no hay plantillas. Crea una para agilizar registros recurrentes.</value></data>
+  <data name="EntryTemplate_NoFields"><value>Esta acción todavía no tiene campos configurados.</value></data>
+  <data name="EntryTemplate_Saved"><value>Plantilla guardada.</value></data>
+  <data name="EntryTemplate_DeleteConfirm"><value>¿Eliminar esta plantilla? Los registros creados a partir de ella no se verán afectados.</value></data>
+  <data name="EntryTemplate_FieldCount"><value>{0} campo(s)</value></data>
+  <data name="EntryTemplate_StartFrom"><value>Empezar desde plantilla…</value></data>
+  <data name="EntryTemplate_StartFromNone"><value>(registro en blanco)</value></data>
+  <data name="EntryTemplate_SaveAs"><value>Guardar como plantilla…</value></data>
+  <data name="EntryTemplate_SkipBehaviorHint"><value>Los campos con contador automático se omiten — calculan su propio valor al crear el registro. Los demás campos pueden recibir un valor de anulación aquí; si los dejas en blanco, conservan su comportamiento configurado (último valor, predeterminado, etc.).</value></data>
+  <data name="EntryTemplate_AutoCounterBadge"><value>contador-auto</value></data>
+  <data name="EntryTemplate_AutoCounterPlaceholder"><value>Calculado al crear el registro</value></data>
 </root>

@@ -41,6 +41,7 @@ builder.Services.AddScoped<DropdownValueService>();
 builder.Services.AddScoped<DropdownValueMetadataService>();
 builder.Services.AddScoped<ActionFieldService>();
 builder.Services.AddScoped<ActionEntryService>();
+builder.Services.AddScoped<EntryTemplateService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<FieldAnalyticsRuleService>();
 builder.Services.AddScoped<FieldDependencyRuleService>();

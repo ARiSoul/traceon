@@ -233,6 +233,11 @@ else
             }
             else if (_activeTab == "entries")
             {
+                <div class="d-flex justify-content-end mb-2">
+                    <a href="@($"/tracked-actions/{Id}/entry-templates")" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-bookmark me-1"></i>@L["EntryTemplate_ManageLink"]
+                    </a>
+                </div>
                 <EntryDataGrid TrackedActionId="Id" LockActionFilter="true" ActionFields="_fields" StorageKey="@($"action-entries-{Id}")" />
             }
             else if (_activeTab == "analytics")

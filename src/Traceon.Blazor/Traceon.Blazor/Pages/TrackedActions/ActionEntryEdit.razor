@@ -35,6 +35,21 @@ else
 {
     <div class="card">
         <div class="card-body">
+            @if (!_isEdit && _templates.Count > 0)
+            {
+                <div class="mb-3">
+                    <label class="form-label small text-muted mb-1">
+                        <i class="bi bi-bookmark me-1"></i>@L["EntryTemplate_StartFrom"]
+                    </label>
+                    <SearchableSelect Value="@_selectedTemplateId"
+                                      ValueChanged="ApplyTemplateAsync"
+                                      Options="_templates.Select(t => t.Id.ToString()).ToList()"
+                                      DisplaySelector="TemplateNameById"
+                                      Placeholder="@L["EntryTemplate_StartFromNone"]"
+                                      Small="true" />
+                </div>
+            }
+
             <!-- Occurrence & Notes -->
             <div class="row g-3">
                 <div class="col-md-6">
@@ -430,22 +445,59 @@ else
             }
 
             <div class="card-footer bg-body-tertiary">
-            <div class="d-flex justify-content-between">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <a href="@_returnUrl" class="btn btn-outline-secondary">
                     <i class="bi bi-x-circle me-1"></i>@L["Common_Cancel"]
                 </a>
-                <button class="btn btn-success" @onclick="SaveAsync" disabled="@_saving">
-                    @if (_saving)
-                    {
-                        <span class="spinner-border spinner-border-sm me-1"></span>
-                    }
-                    else
-                    {
-                        <i class="bi bi-check-circle me-1"></i>
-                    }
-                    @(_isEdit ? L["Common_SaveChanges"] : L["Entry_SaveEntry"])
-                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            @onclick="ToggleSaveAsTemplate" disabled="@_saving">
+                        <i class="bi bi-bookmark-plus me-1"></i>@L["EntryTemplate_SaveAs"]
+                    </button>
+                    <button class="btn btn-success" @onclick="SaveAsync" disabled="@_saving">
+                        @if (_saving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle me-1"></i>
+                        }
+                        @(_isEdit ? L["Common_SaveChanges"] : L["Entry_SaveEntry"])
+                    </button>
+                </div>
             </div>
+            @if (_saveTemplateOpen)
+            {
+                <div class="mt-2 p-2 border rounded bg-body">
+                    <div class="d-flex gap-2 align-items-center">
+                        <input type="text" class="form-control form-control-sm"
+                               placeholder="@L["EntryTemplate_NamePlaceholder"]"
+                               @bind="_saveTemplateName" @bind:event="oninput"
+                               @onkeydown="OnSaveTemplateKeyDown" />
+                        <button class="btn btn-success btn-sm"
+                                disabled="@(string.IsNullOrWhiteSpace(_saveTemplateName) || _saveTemplateBusy)"
+                                @onclick="SaveAsTemplateAsync">
+                            @if (_saveTemplateBusy)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-check-lg"></i>
+                            }
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm"
+                                @onclick="() => { _saveTemplateOpen = false; _saveTemplateMessage = null; }">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_saveTemplateMessage))
+                    {
+                        <div class="form-text mt-1">@_saveTemplateMessage</div>
+                    }
+                </div>
+            }
         </div>
     </div>
 
@@ -459,6 +511,7 @@ else
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
     [Inject] private ActionFieldService FieldService { get; set; } = default!;
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
+    [Inject] private EntryTemplateService TemplateService { get; set; } = default!;
     [Inject] private FieldDefinitionService FieldDefService { get; set; } = default!;
     [Inject] private FieldDependencyRuleService DepRuleService { get; set; } = default!;
     [Inject] private ConnectedActionRuleService ConnRuleService { get; set; } = default!;
@@ -479,6 +532,14 @@ else
     private Guid? _quickAddFieldId;
     private string _quickAddValue = string.Empty;
     private bool _quickAddSaving;
+
+    // Entry templates (new-entry flow only)
+    private List<EntryTemplateResponse> _templates = [];
+    private string? _selectedTemplateId;
+    private bool _saveTemplateOpen;
+    private string _saveTemplateName = string.Empty;
+    private bool _saveTemplateBusy;
+    private string? _saveTemplateMessage;
 
     // Dependency rules
     private List<FieldDependencyRuleResponse> _depRules = [];
@@ -522,6 +583,9 @@ else
                     return model;
                 }).ToList();
             }
+
+            // Templates list is needed so "Save as template…" can refresh after a successful save.
+            await LoadTemplatesAsync();
         }
         else
         {
@@ -540,6 +604,7 @@ else
 
             await LoadComputedInitialValuesAsync();
             await RefreshAutoCounterPreviewsAsync();
+            await LoadTemplatesAsync();
         }
 
         try { _depRules = await DepRuleService.GetByTrackedActionAsync(TrackedActionId); } catch { _depRules = []; }
@@ -583,6 +648,115 @@ else
             {
                 // Best-effort; metadata button just won't show.
             }
+        }
+    }
+
+    // ── Entry templates ──
+
+    private async Task LoadTemplatesAsync()
+    {
+        try
+        {
+            _templates = (await TemplateService.GetByTrackedActionAsync(TrackedActionId))
+                .OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        }
+        catch
+        {
+            _templates = [];
+        }
+    }
+
+    private string TemplateNameById(string id)
+    {
+        if (!Guid.TryParse(id, out var guid)) return id;
+        return _templates.FirstOrDefault(t => t.Id == guid)?.Name ?? id;
+    }
+
+    private async Task ApplyTemplateAsync(string? rawId)
+    {
+        _selectedTemplateId = rawId;
+        if (!Guid.TryParse(rawId, out var templateId)) return;
+
+        var template = _templates.FirstOrDefault(t => t.Id == templateId);
+        if (template is null) return;
+
+        // Carry the template's notes if it has any (don't wipe an in-progress note with empty).
+        if (!string.IsNullOrWhiteSpace(template.Notes))
+            _notes = template.Notes;
+
+        // Apply field values: skip AutoCounter targets (they compute their own value);
+        // for any other field with a non-null/non-empty template value, override the model.
+        // Fields the template leaves blank keep whatever the form already had (LastValue
+        // pre-fill, default, or user-typed value), so the template is purely additive.
+        foreach (var fv in template.FieldValues)
+        {
+            var model = _fieldModels.FirstOrDefault(m => m.Field.Id == fv.ActionFieldId);
+            if (model is null) continue;
+            if (model.Field.InitialValueBehavior == InitialValueBehavior.AutoCounter) continue;
+            if (string.IsNullOrEmpty(fv.Value)) continue;
+
+            model.LoadValue(fv.Value);
+            // Manual override clears the auto-fill flag so a subsequent AutoCounter recompute
+            // doesn't rewrite an explicitly-templated value.
+            model.IsAutoFilled = false;
+        }
+
+        // Templated dropdowns may flip dependency rules and AutoCounter conditions.
+        EvaluateDependencyRules();
+        await RefreshAutoCounterPreviewsAsync();
+    }
+
+    private void ToggleSaveAsTemplate()
+    {
+        _saveTemplateOpen = !_saveTemplateOpen;
+        _saveTemplateMessage = null;
+        if (_saveTemplateOpen && string.IsNullOrEmpty(_saveTemplateName))
+            _saveTemplateName = string.Empty;
+    }
+
+    private async Task OnSaveTemplateKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_saveTemplateName) && !_saveTemplateBusy)
+            await SaveAsTemplateAsync();
+        else if (e.Key == "Escape")
+        {
+            _saveTemplateOpen = false;
+            _saveTemplateMessage = null;
+        }
+    }
+
+    private async Task SaveAsTemplateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_saveTemplateName) || _saveTemplateBusy) return;
+
+        _saveTemplateBusy = true;
+        _saveTemplateMessage = null;
+
+        // Capture the form's current state. Skip AutoCounter targets (they're computed) and any
+        // field whose user-facing value is null/empty (we don't want to lock blanks into the template).
+        var fieldValues = _fieldModels
+            .Where(m => m.Field.InitialValueBehavior != InitialValueBehavior.AutoCounter)
+            .Select(m => new EntryTemplateFieldValue(m.Field.Id, m.ResolveValue()))
+            .Where(v => !string.IsNullOrWhiteSpace(v.Value))
+            .ToList();
+
+        var (success, errors) = await TemplateService.CreateAsync(
+            TrackedActionId,
+            new CreateEntryTemplateRequest(_saveTemplateName.Trim(), _notes, fieldValues));
+
+        _saveTemplateBusy = false;
+
+        if (success)
+        {
+            _saveTemplateMessage = L["EntryTemplate_Saved"];
+            _saveTemplateName = string.Empty;
+            _saveTemplateOpen = false;
+            await LoadTemplatesAsync();
+        }
+        else
+        {
+            _saveTemplateMessage = errors.Count > 0 ? string.Join("; ", errors) : "Failed to save template.";
         }
     }
 

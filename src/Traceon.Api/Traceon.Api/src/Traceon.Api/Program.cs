@@ -82,6 +82,7 @@ app.MapReceiptScanEndpoints().RequireAuthorization();
 app.MapReceiptScanDraftEndpoints().RequireAuthorization();
 app.MapActionEntryEndpoints().RequireAuthorization();
 app.MapEntryEndpoints().RequireAuthorization();
+app.MapEntryTemplateEndpoints().RequireAuthorization();
 app.MapTagEndpoints().RequireAuthorization();
 app.MapDataPortabilityEndpoints();
 app.MapFeedbackEndpoints();

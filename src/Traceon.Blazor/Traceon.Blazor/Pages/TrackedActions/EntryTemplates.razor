@@ -1,0 +1,137 @@
+@page "/tracked-actions/{TrackedActionId:guid}/entry-templates"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+@inject NavigationManager Nav
+
+<PageTitle>@L["EntryTemplate_ListTitle"] - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-bookmark me-2"></i>@L["EntryTemplate_ListTitle"]
+        </h3>
+        <p class="text-muted mb-0">
+            @L["EntryTemplate_ListSubtitle"]
+            @if (_actionName is not null)
+            {
+                <strong class="ms-1">@_actionName</strong>
+            }
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="@($"/tracked-actions/{TrackedActionId}/edit")" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>@L["Common_Back"]
+        </a>
+        <a href="@($"/tracked-actions/{TrackedActionId}/entry-templates/new")" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>@L["EntryTemplate_New"]
+        </a>
+    </div>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else if (_templates.Count == 0)
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>@L["EntryTemplate_Empty"]
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>@L["Common_Name"]</th>
+                        <th class="d-none d-md-table-cell">@L["EntryTemplate_NotesLabel"]</th>
+                        <th class="text-center">@L["EntryTemplate_FieldsHeader"]</th>
+                        <th class="d-none d-md-table-cell">@L["Common_Created"]</th>
+                        <th class="text-end"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in _templates)
+                    {
+                        var captured = t;
+                        <tr style="cursor: pointer;" @onclick="() => Edit(captured.Id)">
+                            <td><strong>@captured.Name</strong></td>
+                            <td class="d-none d-md-table-cell text-muted text-truncate" style="max-width: 320px;">
+                                @captured.Notes
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">@captured.FieldValues.Count</span>
+                            </td>
+                            <td class="d-none d-md-table-cell text-muted small">
+                                @captured.CreatedAtUtc.ToLocalTime().ToString("g")
+                            </td>
+                            <td class="text-end" @onclick:stopPropagation="true">
+                                <button class="btn btn-outline-primary btn-sm me-1" @onclick="() => Edit(captured.Id)" title="@L["Common_Edit"]">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteAsync(captured)" title="@L["Common_Delete"]">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid TrackedActionId { get; set; }
+    [Inject] private TrackedActionService ActionService { get; set; } = default!;
+    [Inject] private EntryTemplateService TemplateService { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private bool _loading = true;
+    private string? _actionName;
+    private List<EntryTemplateResponse> _templates = [];
+    private IReadOnlyList<string> _errors = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var action = await ActionService.GetByIdAsync(TrackedActionId);
+        _actionName = action?.Name;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _templates = (await TemplateService.GetByTrackedActionAsync(TrackedActionId))
+                .OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void Edit(Guid templateId)
+        => Nav.NavigateTo($"/tracked-actions/{TrackedActionId}/entry-templates/{templateId}/edit");
+
+    private async Task DeleteAsync(EntryTemplateResponse template)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", L["EntryTemplate_DeleteConfirm"].Value);
+        if (!confirmed) return;
+
+        var (success, errors) = await TemplateService.DeleteAsync(TrackedActionId, template.Id);
+        if (success)
+            await ReloadAsync();
+        else
+            _errors = errors;
+    }
+}

@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddScoped<IFieldDefinitionService, FieldDefinitionService>();
         services.AddScoped<IActionFieldService, ActionFieldService>();
         services.AddScoped<IActionEntryService, ActionEntryService>();
+        services.AddScoped<IEntryTemplateService, EntryTemplateService>();
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<IFieldAnalyticsRuleService, FieldAnalyticsRuleService>();
         services.AddScoped<IFieldDependencyRuleService, FieldDependencyRuleService>();

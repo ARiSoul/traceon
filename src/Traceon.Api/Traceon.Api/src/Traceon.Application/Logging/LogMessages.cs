@@ -80,6 +80,22 @@ internal static partial class LogMessages
     [LoggerMessage(Level = LogLevel.Information, Message = "{Count} action entries bulk-updated for tracked action '{TrackedActionId}'.")]
     public static partial void ActionEntriesBulkUpdated(this ILogger logger, int count, Guid trackedActionId);
 
+    // EntryTemplate
+    [LoggerMessage(Level = LogLevel.Information, Message = "Entry template '{Name}' created with ID '{Id}' for tracked action '{TrackedActionId}'.")]
+    public static partial void EntryTemplateCreated(this ILogger logger, string name, Guid id, Guid trackedActionId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Entry template '{Id}' updated.")]
+    public static partial void EntryTemplateUpdated(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Entry template '{Id}' deleted.")]
+    public static partial void EntryTemplateDeleted(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Entry template '{Id}' restored.")]
+    public static partial void EntryTemplateRestored(this ILogger logger, Guid id);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Entry template with ID '{Id}' was not found.")]
+    public static partial void EntryTemplateNotFound(this ILogger logger, Guid id);
+
     // Tag
     [LoggerMessage(Level = LogLevel.Information, Message = "Tag '{Name}' created with ID '{Id}'.")]
     public static partial void TagCreated(this ILogger logger, string name, Guid id);

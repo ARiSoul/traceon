@@ -1,0 +1,362 @@
+@page "/tracked-actions/{TrackedActionId:guid}/entry-templates/new"
+@page "/tracked-actions/{TrackedActionId:guid}/entry-templates/{TemplateId:guid}/edit"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+@inject NavigationManager Nav
+
+<PageTitle>@(_isEdit ? L["EntryTemplate_EditTitle"] : L["EntryTemplate_NewTitle"]) - Traceon</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">
+            <i class="bi bi-@(_isEdit ? "pencil-square" : "plus-square") me-2"></i>
+            @(_isEdit ? L["EntryTemplate_EditTitle"] : L["EntryTemplate_NewTitle"])
+        </h3>
+        <p class="text-muted mb-0">
+            @if (_actionName is not null)
+            {
+                <strong>@_actionName</strong>
+            }
+        </p>
+    </div>
+    <a href="@($"/tracked-actions/{TrackedActionId}/entry-templates")" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>@L["Common_Back"]
+    </a>
+</div>
+
+<ErrorAlert Errors="_errors" OnDismiss="() => _errors = []" />
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">
+                        @L["EntryTemplate_NameLabel"] <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control"
+                           placeholder="@L["EntryTemplate_NamePlaceholder"]"
+                           data-select-on-focus
+                           @bind="_name" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">
+                        @L["EntryTemplate_NotesLabel"] <span class="text-muted fw-normal">(@L["Common_Optional"])</span>
+                    </label>
+                    <textarea class="form-control" rows="2"
+                              placeholder="@L["EntryTemplate_NotesPlaceholder"]"
+                              data-select-on-focus
+                              @bind="_notes"></textarea>
+                </div>
+            </div>
+
+            @if (_fieldModels.Count > 0)
+            {
+                <hr />
+                <h6 class="mb-1">
+                    <i class="bi bi-sliders me-1"></i>@L["EntryTemplate_FieldsHeader"]
+                </h6>
+                <p class="text-muted small mb-2">@L["EntryTemplate_FieldsHint"]</p>
+                <p class="text-muted small fst-italic mb-3">@L["EntryTemplate_SkipBehaviorHint"]</p>
+
+                <div class="row g-3">
+                    @foreach (var model in _fieldModels)
+                    {
+                        <div class="@FieldColumnClass(model.Field.FieldType)">
+                            <label class="form-label">
+                                @model.Field.Name
+                                <span class="badge bg-secondary ms-1" style="font-size: 0.65rem;">@model.Field.FieldType</span>
+                                @if (IsBehaviorDriven(model.Field))
+                                {
+                                    <span class="badge bg-info-subtle text-info-emphasis ms-1" style="font-size: 0.65rem;" title="@L["EntryTemplate_SkipBehaviorHint"]">
+                                        <i class="bi bi-magic me-1"></i>@L["EntryTemplate_AutoCounterBadge"]
+                                    </span>
+                                }
+                                else if (model.Field.InitialValueBehavior != InitialValueBehavior.DefaultValue)
+                                {
+                                    <span class="badge bg-light text-muted border ms-1" style="font-size: 0.65rem;">
+                                        @model.Field.InitialValueBehavior
+                                    </span>
+                                }
+                            </label>
+
+                            @if (IsBehaviorDriven(model.Field))
+                            {
+                                <input class="form-control" disabled value="@L["EntryTemplate_AutoCounterPlaceholder"]" />
+                            }
+                            else
+                            {
+                                @switch (model.Field.FieldType)
+                                {
+                                    case FieldType.Text:
+                                        <input type="text" class="form-control" data-select-on-focus
+                                               placeholder="@model.Field.Name" @bind="model.TextValue" />
+                                        break;
+                                    case FieldType.Integer:
+                                        <input type="number" step="1" class="form-control" data-select-on-focus
+                                               @bind="model.IntValue" />
+                                        break;
+                                    case FieldType.Decimal:
+                                        <input type="number" step="any" class="form-control" data-select-on-focus
+                                               @bind="model.DecimalValue" />
+                                        break;
+                                    case FieldType.Date:
+                                        <input type="date" class="form-control" @bind="model.DateValue" />
+                                        break;
+                                    case FieldType.Boolean:
+                                        <div class="form-check form-switch mt-1">
+                                            <input type="checkbox" class="form-check-input"
+                                                   id="@($"tpl-field-{model.Field.Id}")"
+                                                   @bind="model.BoolValue" />
+                                            <label class="form-check-label" for="@($"tpl-field-{model.Field.Id}")">
+                                                @(model.BoolValue ? L["Common_Yes"] : L["Common_No"])
+                                            </label>
+                                        </div>
+                                        break;
+                                    case FieldType.Dropdown:
+                                        <SearchableSelect Value="@model.TextValue"
+                                                          ValueChanged="v => model.TextValue = v"
+                                                          Options="model.DropdownOptions.ToList()"
+                                                          Placeholder="@L["Entry_Select"]" />
+                                        break;
+                                    case FieldType.CompositeDropdown:
+                                        <SearchableSelect Value="@model.TextValue"
+                                                          ValueChanged="v => model.TextValue = v"
+                                                          Groups="model.CompositeGroups"
+                                                          Placeholder="@L["Entry_Select"]" />
+                                        break;
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <hr />
+                <div class="alert alert-warning mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>@L["EntryTemplate_NoFields"]
+                </div>
+            }
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button class="btn btn-outline-secondary" @onclick="Cancel">
+                    @L["Common_Cancel"]
+                </button>
+                <button class="btn btn-primary" disabled="@_saving" @onclick="SaveAsync">
+                    @if (_saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    <i class="bi bi-check-circle me-1"></i>@L["Common_Save"]
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid TrackedActionId { get; set; }
+    [Parameter] public Guid? TemplateId { get; set; }
+
+    [Inject] private TrackedActionService ActionService { get; set; } = default!;
+    [Inject] private ActionFieldService FieldService { get; set; } = default!;
+    [Inject] private EntryTemplateService TemplateService { get; set; } = default!;
+    [Inject] private FieldDefinitionService FieldDefinitionService { get; set; } = default!;
+
+    private bool _loading = true;
+    private bool _saving;
+    private bool _isEdit => TemplateId.HasValue;
+    private string? _actionName;
+    private string _name = string.Empty;
+    private string? _notes;
+    private List<TemplateFieldModel> _fieldModels = [];
+    private IReadOnlyList<string> _errors = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var action = await ActionService.GetByIdAsync(TrackedActionId);
+        _actionName = action?.Name;
+
+        var fields = await FieldService.GetByTrackedActionAsync(TrackedActionId);
+        _fieldModels = fields.Select(f => new TemplateFieldModel { Field = f }).ToList();
+
+        await ResolveCompositeDropdownsAsync();
+
+        if (_isEdit)
+        {
+            var template = await TemplateService.GetByIdAsync(TrackedActionId, TemplateId!.Value);
+            if (template is not null)
+            {
+                _name = template.Name;
+                _notes = template.Notes;
+                foreach (var fv in template.FieldValues)
+                {
+                    var model = _fieldModels.FirstOrDefault(m => m.Field.Id == fv.ActionFieldId);
+                    model?.LoadValue(fv.Value);
+                }
+            }
+        }
+
+        _loading = false;
+    }
+
+    private async Task ResolveCompositeDropdownsAsync()
+    {
+        var compositeModels = _fieldModels
+            .Where(m => m.Field.FieldType == FieldType.CompositeDropdown
+                        && !string.IsNullOrWhiteSpace(m.Field.DropdownValues)
+                        && m.Field.DropdownValues!.StartsWith("ref:", StringComparison.Ordinal))
+            .ToList();
+
+        if (compositeModels.Count == 0) return;
+
+        var allDefs = await FieldDefinitionService.GetAllAsync();
+        var defsById = allDefs.ToDictionary(d => d.Id);
+
+        foreach (var model in compositeModels)
+        {
+            var refIds = model.Field.DropdownValues!["ref:".Length..]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
+                .Where(id => id != Guid.Empty)
+                .ToList();
+
+            var groups = new List<(string GroupName, string[] Values)>();
+            foreach (var refId in refIds)
+            {
+                if (!defsById.TryGetValue(refId, out var def)) continue;
+                if (string.IsNullOrWhiteSpace(def.DropdownValues)) continue;
+
+                var values = DropdownValuesHelper.Split(def.DropdownValues)
+                    .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                    .ToArray();
+
+                if (values.Length > 0)
+                    groups.Add((def.DefaultName, values));
+            }
+
+            model.CompositeGroups = groups
+                .OrderBy(g => g.GroupName, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _errors = [L["Validation_NameRequired"]];
+            return;
+        }
+
+        _saving = true;
+        _errors = [];
+
+        var fieldValues = _fieldModels
+            .Where(m => !IsBehaviorDriven(m.Field))
+            .Select(m => new EntryTemplateFieldValue(m.Field.Id, m.ResolveValue()))
+            .Where(v => !string.IsNullOrWhiteSpace(v.Value))
+            .ToList();
+
+        bool success;
+        IReadOnlyList<string> errors;
+        if (_isEdit)
+        {
+            (success, errors) = await TemplateService.UpdateAsync(
+                TrackedActionId, TemplateId!.Value,
+                new UpdateEntryTemplateRequest(_name, _notes, fieldValues));
+        }
+        else
+        {
+            (success, errors) = await TemplateService.CreateAsync(
+                TrackedActionId,
+                new CreateEntryTemplateRequest(_name, _notes, fieldValues));
+        }
+
+        _saving = false;
+
+        if (success)
+            Nav.NavigateTo($"/tracked-actions/{TrackedActionId}/entry-templates");
+        else
+            _errors = errors;
+    }
+
+    private void Cancel()
+        => Nav.NavigateTo($"/tracked-actions/{TrackedActionId}/entry-templates");
+
+    // Only AutoCounter is computed at entry-create time and would actively conflict with a template
+    // override. LastValue / Min / Max / Avg / DefaultValue just pre-fill the form on open, so a
+    // template value (when provided) simply takes priority over the behavior-pre-fill — which is
+    // exactly what the user wants for fixed-amount recurring entries. Leaving the template's value
+    // blank lets the behavior apply as before.
+    private static bool IsBehaviorDriven(ActionFieldResponse field) =>
+        field.InitialValueBehavior is InitialValueBehavior.AutoCounter;
+
+    private static string FieldColumnClass(FieldType type) => type switch
+    {
+        FieldType.Boolean => "col-6 col-md-4",
+        FieldType.Date => "col-12 col-md-6",
+        _ => "col-12 col-md-6"
+    };
+
+    private sealed class TemplateFieldModel
+    {
+        public required ActionFieldResponse Field { get; init; }
+        public string? TextValue { get; set; }
+        public int? IntValue { get; set; }
+        public decimal? DecimalValue { get; set; }
+        public DateTime? DateValue { get; set; }
+        public bool BoolValue { get; set; }
+        public List<(string GroupName, string[] Values)> CompositeGroups { get; set; } = [];
+
+        public string[] DropdownOptions =>
+            string.IsNullOrWhiteSpace(Field.DropdownValues) || Field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal)
+                ? []
+                : DropdownValuesHelper.Split(Field.DropdownValues)
+                    .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToArray();
+
+        public void LoadValue(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                if (Field.FieldType == FieldType.Boolean) BoolValue = false;
+                return;
+            }
+            switch (Field.FieldType)
+            {
+                case FieldType.Boolean:
+                    BoolValue = value.Equals("true", StringComparison.OrdinalIgnoreCase);
+                    break;
+                case FieldType.Integer when int.TryParse(value, CultureInfo.InvariantCulture, out var i):
+                    IntValue = i;
+                    break;
+                case FieldType.Decimal when decimal.TryParse(value, CultureInfo.InvariantCulture, out var d):
+                    DecimalValue = d;
+                    break;
+                case FieldType.Date when DateTime.TryParse(value, CultureInfo.InvariantCulture, out var dt):
+                    DateValue = dt;
+                    break;
+                default:
+                    TextValue = value;
+                    break;
+            }
+        }
+
+        public string? ResolveValue() => Field.FieldType switch
+        {
+            FieldType.Boolean => BoolValue.ToString().ToLowerInvariant(),
+            FieldType.Integer => IntValue?.ToString(CultureInfo.InvariantCulture),
+            FieldType.Decimal => DecimalValue?.ToString(CultureInfo.InvariantCulture),
+            FieldType.Date => DateValue?.ToString("yyyy-MM-dd"),
+            _ => TextValue
+        };
+    }
+}

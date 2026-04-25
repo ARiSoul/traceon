@@ -15,6 +15,8 @@ public sealed class TraceonDbContext(DbContextOptions<TraceonDbContext> options)
     public DbSet<ActionField> ActionFields => Set<ActionField>();
     public DbSet<ActionEntry> ActionEntries => Set<ActionEntry>();
     public DbSet<ActionEntryField> ActionEntryFields => Set<ActionEntryField>();
+    public DbSet<EntryTemplate> EntryTemplates => Set<EntryTemplate>();
+    public DbSet<EntryTemplateField> EntryTemplateFields => Set<EntryTemplateField>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<TrackedActionTag> TrackedActionTags => Set<TrackedActionTag>();
     public DbSet<FieldAnalyticsRule> FieldAnalyticsRules => Set<FieldAnalyticsRule>();

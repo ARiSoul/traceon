@@ -1179,4 +1179,29 @@
   <data name="Analytics_Trend"><value>Tendência</value></data>
   <data name="Analytics_ResetLayout"><value>Repor disposição</value></data>
   <data name="Analytics_ResetLayoutHint"><value>Restaurar visibilidade e ordem predefinidas dos gráficos</value></data>
+
+  <!-- ═══ Entry Templates ═══ -->
+  <data name="EntryTemplate_ManageLink"><value>Modelos</value></data>
+  <data name="EntryTemplate_ListTitle"><value>Modelos de registo</value></data>
+  <data name="EntryTemplate_ListSubtitle"><value>Pontos de partida reutilizáveis para novos registos desta ação.</value></data>
+  <data name="EntryTemplate_New"><value>Novo modelo</value></data>
+  <data name="EntryTemplate_NewTitle"><value>Novo modelo de registo</value></data>
+  <data name="EntryTemplate_EditTitle"><value>Editar modelo de registo</value></data>
+  <data name="EntryTemplate_NameLabel"><value>Nome do modelo</value></data>
+  <data name="EntryTemplate_NamePlaceholder"><value>ex.: Renda mensal, Compras semanais</value></data>
+  <data name="EntryTemplate_NotesLabel"><value>Pré-preenchimento de notas</value></data>
+  <data name="EntryTemplate_NotesPlaceholder"><value>Notas opcionais que serão pré-preenchidas no registo</value></data>
+  <data name="EntryTemplate_FieldsHeader"><value>Valores dos campos</value></data>
+  <data name="EntryTemplate_FieldsHint"><value>Define os valores que serão pré-preenchidos ao aplicar este modelo. Deixa em branco para ignorar um campo.</value></data>
+  <data name="EntryTemplate_Empty"><value>Sem modelos ainda. Cria um para acelerar registos recorrentes.</value></data>
+  <data name="EntryTemplate_NoFields"><value>Esta ação ainda não tem campos configurados.</value></data>
+  <data name="EntryTemplate_Saved"><value>Modelo gravado.</value></data>
+  <data name="EntryTemplate_DeleteConfirm"><value>Eliminar este modelo? Os registos criados a partir dele não são afetados.</value></data>
+  <data name="EntryTemplate_FieldCount"><value>{0} campo(s)</value></data>
+  <data name="EntryTemplate_StartFrom"><value>Começar a partir de modelo…</value></data>
+  <data name="EntryTemplate_StartFromNone"><value>(registo em branco)</value></data>
+  <data name="EntryTemplate_SaveAs"><value>Guardar como modelo…</value></data>
+  <data name="EntryTemplate_SkipBehaviorHint"><value>Os campos com contador automático são ignorados — calculam o próprio valor ao criar o registo. Os restantes campos podem receber um valor de substituição aqui; deixá-los em branco mantém o comportamento configurado (último valor, predefinido, etc.).</value></data>
+  <data name="EntryTemplate_AutoCounterBadge"><value>contador-auto</value></data>
+  <data name="EntryTemplate_AutoCounterPlaceholder"><value>Calculado ao criar o registo</value></data>
 </root>
