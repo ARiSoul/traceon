@@ -18,6 +18,7 @@ public static class ActionFieldMappingExtensions
             FieldType = fieldDefinition.Type,
             Id = entity.Id,
             IsRequired = entity.IsRequired,
+            IsMultiselect = entity.IsMultiselect,
             MaxValue = entity.MaxValue,
             MinValue = entity.MinValue,
             Name = entity.Name,

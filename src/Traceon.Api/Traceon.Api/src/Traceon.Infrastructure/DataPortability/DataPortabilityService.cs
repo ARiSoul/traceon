@@ -99,7 +99,7 @@ public sealed class DataPortabilityService(TraceonDbContext db)
                         Fields = e.Fields.Select(ef => new EntryFieldExport
                         {
                             ActionFieldId = ef.ActionFieldId,
-                            Value = ef.Value
+                            Values = ef.Values.OrderBy(v => v.Order).Select(v => v.Value).ToList()
                         }).ToList()
                     }).ToList()
             }).ToList()
@@ -250,7 +250,14 @@ public sealed class DataPortabilityService(TraceonDbContext db)
                 {
                     if (actionFieldIdMap.TryGetValue(efExport.ActionFieldId, out var newFieldId))
                     {
-                        db.ActionEntryFields.Add(ActionEntryField.Create(entry.Id, newFieldId, efExport.Value));
+                        // Prefer the new Values list; fall back to legacy single Value for old exports.
+                        var values = efExport.Values is { Count: > 0 }
+                            ? efExport.Values
+                            : (efExport.Value is { } v ? [v] : null);
+
+                        var slot = ActionEntryField.Create(entry.Id, newFieldId);
+                        slot.SetValues(values);
+                        db.ActionEntryFields.Add(slot);
                     }
                 }
 

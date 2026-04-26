@@ -13,12 +13,16 @@ namespace Traceon.Api.Extensions;
 
 internal static class ODataExtensions
 {
+    private const int DefaultMaxAnyAllDepth = 2;
+
     private static readonly ODataValidationSettings ValidationSettings = new()
     {
         AllowedQueryOptions = AllowedQueryOptions.Filter | AllowedQueryOptions.OrderBy |
                               AllowedQueryOptions.Top | AllowedQueryOptions.Skip |
                               AllowedQueryOptions.Count,
-        MaxTop = 100
+        MaxTop = 100,
+        // Multi-select field values nest one any() inside another (FieldValues/any → Values/any).
+        MaxAnyAllExpressionDepth = DefaultMaxAnyAllDepth
     };
 
     public static IEdmModel BuildTraceonEdmModel()
@@ -46,7 +50,8 @@ internal static class ODataExtensions
             ? new ODataValidationSettings
             {
                 AllowedQueryOptions = ValidationSettings.AllowedQueryOptions,
-                MaxTop = effectiveMaxTop
+                MaxTop = effectiveMaxTop,
+                MaxAnyAllExpressionDepth = DefaultMaxAnyAllDepth
             }
             : ValidationSettings;
 

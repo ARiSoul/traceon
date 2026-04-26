@@ -12,14 +12,18 @@ internal sealed class EntryTemplateFieldConfiguration : IEntityTypeConfiguration
 
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Value)
-            .HasMaxLength(2000);
-
         builder.HasIndex(e => e.EntryTemplateId);
 
         builder.HasOne<ActionField>()
             .WithMany()
             .HasForeignKey(e => e.ActionFieldId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(e => e.Values)
+            .WithOne()
+            .HasForeignKey(v => v.EntryTemplateFieldId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(e => e.Values).HasField("_values");
     }
 }

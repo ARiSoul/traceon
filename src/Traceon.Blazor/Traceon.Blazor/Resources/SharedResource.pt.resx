@@ -211,6 +211,9 @@
   <data name="Fields_MaxDate"><value>Data Máxima</value></data>
   <data name="Fields_DefaultValue"><value>Valor Predefinido</value></data>
   <data name="Fields_RequiredByDefault"><value>Obrigatório por predefinição</value></data>
+  <data name="Fields_Multiselect"><value>Permitir múltiplos valores</value></data>
+  <data name="Fields_MultiselectShort"><value>Multi</value></data>
+  <data name="Fields_MultiselectHint"><value>Quando ativo, este dropdown permite escolher vários valores por entrada.</value></data>
   <data name="Fields_DropdownValues"><value>Valores do Dropdown</value></data>
   <data name="Fields_DropdownHint"><value>Introduza valores separados por vírgula para as opções do dropdown.</value></data>
   <data name="Fields_DropdownPlaceholder"><value>Valores separados por vírgula, ex.: Baixo, Médio, Alto</value></data>

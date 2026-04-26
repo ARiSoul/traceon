@@ -4,9 +4,11 @@ public sealed class EntryTemplateField : Entity
 {
     public Guid EntryTemplateId { get; set; }
     public Guid ActionFieldId { get; set; }
-    public string? Value { get; set; }
 
-    public static EntryTemplateField Create(Guid entryTemplateId, Guid actionFieldId, string? value)
+    private readonly List<EntryTemplateFieldValue> _values = [];
+    public IReadOnlyCollection<EntryTemplateFieldValue> Values => _values.AsReadOnly();
+
+    public static EntryTemplateField Create(Guid entryTemplateId, Guid actionFieldId)
     {
         if (entryTemplateId == Guid.Empty)
             throw new ArgumentException("Entry template ID is required.", nameof(entryTemplateId));
@@ -17,14 +19,27 @@ public sealed class EntryTemplateField : Entity
         return new EntryTemplateField
         {
             EntryTemplateId = entryTemplateId,
-            ActionFieldId = actionFieldId,
-            Value = value?.Trim()
+            ActionFieldId = actionFieldId
         };
     }
 
-    public void UpdateValue(string? value)
+    public void SetValues(IEnumerable<string>? values)
     {
-        Value = value?.Trim();
+        _values.Clear();
+
+        if (values is null)
+        {
+            MarkUpdated();
+            return;
+        }
+
+        var order = 0;
+        foreach (var raw in values)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) continue;
+            _values.Add(EntryTemplateFieldValue.Create(Id, raw.Trim(), order++));
+        }
+
         MarkUpdated();
     }
 }

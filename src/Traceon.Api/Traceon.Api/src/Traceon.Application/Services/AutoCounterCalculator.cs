@@ -71,9 +71,13 @@ public sealed class AutoCounterCalculator(
             if (!MatchesAllConditions(entry, config, currentValues)) continue;
 
             var priorField = entry.Fields.FirstOrDefault(f => f.ActionFieldId == targetField.Id);
-            if (priorField?.Value is null) continue;
+            var priorValueString = priorField?.Values
+                .OrderBy(v => v.Order)
+                .Select(v => v.Value)
+                .FirstOrDefault();
+            if (priorValueString is null) continue;
 
-            if (!decimal.TryParse(priorField.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var priorValue))
+            if (!decimal.TryParse(priorValueString, NumberStyles.Any, CultureInfo.InvariantCulture, out var priorValue))
                 continue;
 
             var next = priorValue + config.Step;
@@ -108,7 +112,12 @@ public sealed class AutoCounterCalculator(
 
         bool MatchOne(AutoCounterCondition c)
         {
-            var actual = entry.Fields.FirstOrDefault(f => f.ActionFieldId == c.FieldId)?.Value;
+            var actual = entry.Fields
+                .FirstOrDefault(f => f.ActionFieldId == c.FieldId)
+                ?.Values
+                .OrderBy(v => v.Order)
+                .Select(v => v.Value)
+                .FirstOrDefault();
             if (c.UseCurrentValue)
             {
                 var expected = currentValues.GetValueOrDefault(c.FieldId);

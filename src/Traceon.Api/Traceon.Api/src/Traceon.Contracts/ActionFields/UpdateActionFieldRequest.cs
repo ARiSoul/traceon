@@ -22,4 +22,5 @@ public sealed record UpdateActionFieldRequest(
     Guid? DropdownTrendValueFieldId = null,
     TrendAggregation? DropdownTrendAggregation = null,
     TrendChartType? DropdownTrendChartType = null,
-    AutoCounterConfig? AutoCounterConfig = null);
+    AutoCounterConfig? AutoCounterConfig = null,
+    bool IsMultiselect = false);

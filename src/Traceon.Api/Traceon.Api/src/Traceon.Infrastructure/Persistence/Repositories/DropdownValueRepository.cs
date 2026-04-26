@@ -87,10 +87,14 @@ internal sealed class DropdownValueRepository(TraceonDbContext context) : IDropd
                 return;
             }
 
-            // 2. Cascade to ActionEntryFields
-            await context.ActionEntryFields
-                .Where(aef => actionFieldIds.Contains(aef.ActionFieldId) && aef.Value == oldValue)
-                .ExecuteUpdateAsync(s => s.SetProperty(aef => aef.Value, newValue), cancellationToken);
+            // 2. Cascade to ActionEntryFieldValues (the value list lives in the child table now)
+            await context.ActionEntryFieldValues
+                .Where(v => v.Value == oldValue
+                            && context.ActionEntryFields
+                                .Where(aef => actionFieldIds.Contains(aef.ActionFieldId))
+                                .Select(aef => aef.Id)
+                                .Contains(v.ActionEntryFieldId))
+                .ExecuteUpdateAsync(s => s.SetProperty(v => v.Value, newValue), cancellationToken);
 
             // 3. Cascade to FieldDependencyRules — SourceValue
             await context.FieldDependencyRules

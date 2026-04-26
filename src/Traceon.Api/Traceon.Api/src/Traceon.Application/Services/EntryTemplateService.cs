@@ -70,7 +70,7 @@ public sealed class EntryTemplateService(
         if (request.FieldValues is not null)
         {
             foreach (var fv in request.FieldValues)
-                entity.SetFieldValue(fv.ActionFieldId, fv.Value);
+                entity.SetFieldValues(fv.ActionFieldId, fv.Values);
         }
 
         await templateRepository.AddAsync(entity, cancellationToken);
@@ -104,7 +104,7 @@ public sealed class EntryTemplateService(
         entity.Update(request.Name, request.Notes);
 
         var fieldValues = request.FieldValues?
-            .Select(fv => (fv.ActionFieldId, fv.Value))
+            .Select(fv => (fv.ActionFieldId, (IReadOnlyList<string>)(fv.Values ?? [])))
             .ToList();
 
         await templateRepository.UpdateAsync(entity, fieldValues, cancellationToken);

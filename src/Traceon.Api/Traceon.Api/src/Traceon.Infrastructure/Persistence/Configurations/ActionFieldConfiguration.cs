@@ -78,6 +78,10 @@ internal sealed class ActionFieldConfiguration : IEntityTypeConfiguration<Action
         builder.Property(e => e.AutoCounterConfigJson)
             .HasMaxLength(4000);
 
+        builder.Property(e => e.IsMultiselect)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.HasIndex(e => e.TrackedActionId);
 
         builder.HasOne<FieldDefinition>()

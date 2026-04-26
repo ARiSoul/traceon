@@ -174,6 +174,61 @@ else
                                     break;
 
                                 case FieldType.Dropdown:
+                                    if (model.IsMulti)
+                                    {
+                                        <div class="d-flex flex-column gap-1">
+                                            <div class="d-flex gap-1 align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <MultiSelectDropdown Options="model.DropdownOptions.ToList()"
+                                                                         SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
+                                                                         SelectedValuesChanged="vs => OnMultiDropdownChanged(model, vs)"
+                                                                         Placeholder="@L["Entry_Select"]" />
+                                                </div>
+                                                <button class="btn btn-outline-secondary flex-shrink-0" type="button"
+                                                        title="@L["Dropdown_AddNew"]"
+                                                        @onclick="() => ToggleQuickAdd(model.Field.Id)">
+                                                    <i class="bi bi-plus-lg"></i>
+                                                </button>
+                                            </div>
+                                            @if (model.MultiValues.Count > 0)
+                                            {
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    @foreach (var v in model.MultiValues)
+                                                    {
+                                                        var captured = v;
+                                                        <span class="badge bg-primary d-inline-flex align-items-center gap-1">
+                                                            @captured
+                                                            <button type="button" class="btn-close btn-close-white"
+                                                                    style="font-size: 0.5rem;"
+                                                                    @onclick="() => RemoveMultiValue(model, captured)"
+                                                                    aria-label="@L["Common_Remove"]"></button>
+                                                        </span>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                        @if (_quickAddFieldId == model.Field.Id)
+                                        {
+                                            <div class="input-group input-group-sm mt-1">
+                                                <input type="text" class="form-control" placeholder="@L["Dropdown_NewValue"]"
+                                                       @bind="_quickAddValue" @bind:event="oninput"
+                                                       @onkeydown="@(e => OnQuickAddKeyDown(e, model))" />
+                                                <button class="btn btn-success" type="button"
+                                                        disabled="@(string.IsNullOrWhiteSpace(_quickAddValue) || _quickAddSaving)"
+                                                        @onclick="() => QuickAddDropdownValueAsync(model)">
+                                                    @if (_quickAddSaving)
+                                                    { <span class="spinner-border spinner-border-sm"></span> }
+                                                    else
+                                                    { <i class="bi bi-check-lg"></i> }
+                                                </button>
+                                                <button class="btn btn-outline-secondary" type="button"
+                                                        @onclick="() => _quickAddFieldId = null">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        }
+                                        break;
+                                    }
                                     <div class="d-flex gap-1">
                                         <div class="flex-grow-1">
                                             <SearchableSelect Value="@model.TextValue"
@@ -222,6 +277,47 @@ else
                                     break;
 
                                 case FieldType.CompositeDropdown:
+                                    if (model.IsMulti)
+                                    {
+                                        var compositeOptions = model.CompositeGroups
+                                            .SelectMany(g => g.Values)
+                                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                                            .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                                            .ToList();
+                                        <div class="d-flex flex-column gap-1">
+                                            <div class="d-flex gap-1 align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <MultiSelectDropdown Options="compositeOptions"
+                                                                         SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
+                                                                         SelectedValuesChanged="vs => OnMultiDropdownChanged(model, vs)"
+                                                                         Placeholder="@L["Entry_Select"]" />
+                                                </div>
+                                                <button class="btn btn-outline-secondary flex-shrink-0" type="button"
+                                                        title="@L["Dropdown_AddNew"]"
+                                                        @onclick="() => ToggleCompositeQuickAdd(model)">
+                                                    <i class="bi bi-plus-lg"></i>
+                                                </button>
+                                            </div>
+                                            @if (model.MultiValues.Count > 0)
+                                            {
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    @foreach (var v in model.MultiValues)
+                                                    {
+                                                        var captured = v;
+                                                        <span class="badge bg-primary d-inline-flex align-items-center gap-1">
+                                                            @captured
+                                                            <button type="button" class="btn-close btn-close-white"
+                                                                    style="font-size: 0.5rem;"
+                                                                    @onclick="() => RemoveMultiValue(model, captured)"
+                                                                    aria-label="@L["Common_Remove"]"></button>
+                                                        </span>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
                                     <div class="d-flex gap-1">
                                         <div class="flex-grow-1">
                                             <SearchableSelect Value="@model.TextValue"
@@ -235,6 +331,7 @@ else
                                             <i class="bi bi-plus-lg"></i>
                                         </button>
                                     </div>
+                                    }
                                     @if (_compositeQuickAdd?.Model == model)
                                     {
                                         <div class="card card-body mt-2 p-2 border-primary">
@@ -579,7 +676,7 @@ else
                 {
                     var existing = entry.FieldValues.FirstOrDefault(v => v.ActionFieldId == f.Id);
                     var model = new EntryFieldModel { Field = f };
-                    model.LoadValue(existing?.Value);
+                    model.LoadValues(existing?.Values);
                     return model;
                 }).ToList();
             }
@@ -696,7 +793,7 @@ else
             if (model.Field.InitialValueBehavior == InitialValueBehavior.AutoCounter) continue;
             if (string.IsNullOrEmpty(fv.Value)) continue;
 
-            model.LoadValue(fv.Value);
+            model.LoadValues(fv.Values);
             // Manual override clears the auto-fill flag so a subsequent AutoCounter recompute
             // doesn't rewrite an explicitly-templated value.
             model.IsAutoFilled = false;
@@ -737,8 +834,8 @@ else
         // field whose user-facing value is null/empty (we don't want to lock blanks into the template).
         var fieldValues = _fieldModels
             .Where(m => m.Field.InitialValueBehavior != InitialValueBehavior.AutoCounter)
-            .Select(m => new EntryTemplateFieldValue(m.Field.Id, m.ResolveValue()))
-            .Where(v => !string.IsNullOrWhiteSpace(v.Value))
+            .Select(m => new EntryTemplateFieldInput(m.Field.Id, m.ResolveValues()))
+            .Where(v => v.Values?.Any(x => !string.IsNullOrWhiteSpace(x)) == true)
             .ToList();
 
         var (success, errors) = await TemplateService.CreateAsync(
@@ -895,8 +992,8 @@ else
         if (autoFields.Count == 0) return;
 
         var currentValues = _fieldModels
-            .Select(m => new ActionEntryFieldValue(m.Field.Id, m.ResolveValue()))
-            .Where(v => !string.IsNullOrWhiteSpace(v.Value))
+            .Select(m => new ActionEntryFieldInput(m.Field.Id, m.ResolveValues()))
+            .Where(v => v.Values?.Any(x => !string.IsNullOrWhiteSpace(x)) == true)
             .ToList();
 
         foreach (var model in autoFields)
@@ -961,7 +1058,7 @@ else
 
         var occurredUtc = _occurredLocal.ToUniversalTime();
         var fieldValues = _fieldModels.Count > 0
-            ? _fieldModels.Select(m => new ActionEntryFieldValue(m.Field.Id, m.ResolveValue())).ToList()
+            ? _fieldModels.Select(m => new ActionEntryFieldInput(m.Field.Id, m.ResolveValues())).ToList()
             : null;
 
         bool success;
@@ -1040,6 +1137,12 @@ else
         public decimal? DecimalValue { get; set; }
         public DateTime? DateValue { get; set; }
         public bool BoolValue { get; set; }
+
+        /// <summary>Selected values for multi-select dropdowns. Empty/null for single-value fields.</summary>
+        public List<string> MultiValues { get; set; } = [];
+
+        public bool IsMulti => Field.IsMultiselect
+            && Field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown;
 
         /// <summary>True when the current value came from the AutoCounter preview, not user typing.</summary>
         public bool IsAutoFilled { get; set; }
@@ -1137,14 +1240,45 @@ else
             }
         }
 
-        public string? ResolveValue() => Field.FieldType switch
+        public string? ResolveValue()
         {
-            FieldType.Boolean => BoolValue.ToString().ToLowerInvariant(),
-            FieldType.Integer => IntValue?.ToString(CultureInfo.InvariantCulture),
-            FieldType.Decimal => DecimalValue?.ToString(CultureInfo.InvariantCulture),
-            FieldType.Date => DateValue?.ToString("yyyy-MM-dd"),
-            _ => TextValue
-        };
+            if (IsMulti)
+                return MultiValues.FirstOrDefault();
+            return Field.FieldType switch
+            {
+                FieldType.Boolean => BoolValue.ToString().ToLowerInvariant(),
+                FieldType.Integer => IntValue?.ToString(CultureInfo.InvariantCulture),
+                FieldType.Decimal => DecimalValue?.ToString(CultureInfo.InvariantCulture),
+                FieldType.Date => DateValue?.ToString("yyyy-MM-dd"),
+                _ => TextValue
+            };
+        }
+
+        public List<string>? ResolveValues()
+        {
+            if (IsMulti)
+            {
+                var clean = MultiValues
+                    .Where(v => !string.IsNullOrWhiteSpace(v))
+                    .Select(v => v.Trim())
+                    .ToList();
+                return clean.Count > 0 ? clean : null;
+            }
+            return ResolveValue() is { } v ? [v] : null;
+        }
+
+        public void LoadValues(IReadOnlyList<string>? values)
+        {
+            if (IsMulti)
+            {
+                MultiValues = values is null
+                    ? []
+                    : values.Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v.Trim()).ToList();
+                TextValue = MultiValues.FirstOrDefault();
+                return;
+            }
+            LoadValue(values is { Count: > 0 } ? values[0] : null);
+        }
     }
 
     private void ToggleQuickAdd(Guid fieldId)
@@ -1236,6 +1370,25 @@ else
     private async Task OnDropdownChanged(EntryFieldModel model, string? value)
     {
         model.TextValue = value;
+        EvaluateDependencyRules();
+        await RefreshAutoCounterPreviewsAsync();
+    }
+
+    private async Task OnMultiDropdownChanged(EntryFieldModel model, HashSet<string> selected)
+    {
+        model.MultiValues = selected.Where(v => !string.IsNullOrWhiteSpace(v)).ToList();
+        // Mirror first value into TextValue so dependency rules / metadata lookups (which read
+        // single-value semantics) can still observe one of the chosen values.
+        model.TextValue = model.MultiValues.FirstOrDefault();
+        model.IsAutoFilled = false;
+        EvaluateDependencyRules();
+        await RefreshAutoCounterPreviewsAsync();
+    }
+
+    private async Task RemoveMultiValue(EntryFieldModel model, string value)
+    {
+        model.MultiValues.RemoveAll(v => string.Equals(v, value, StringComparison.OrdinalIgnoreCase));
+        model.TextValue = model.MultiValues.FirstOrDefault();
         EvaluateDependencyRules();
         await RefreshAutoCounterPreviewsAsync();
     }
@@ -1634,7 +1787,7 @@ else
 
     // ── Connected Action Linked Entries ──
 
-    private async Task CreateLinkedEntriesAsync(DateTime occurredUtc, List<ActionEntryFieldValue> sourceFieldValues)
+    private async Task CreateLinkedEntriesAsync(DateTime occurredUtc, List<ActionEntryFieldInput> sourceFieldValues)
     {
         _linkedMessages = [];
         var sourceValues = sourceFieldValues.ToDictionary(fv => fv.ActionFieldId, fv => fv.Value);
@@ -1677,7 +1830,7 @@ else
         }
     }
 
-    private async Task EnsureDropdownValuesExistAsync(Guid targetActionId, List<ActionEntryFieldValue> fieldValues)
+    private async Task EnsureDropdownValuesExistAsync(Guid targetActionId, List<ActionEntryFieldInput> fieldValues)
     {
         if (fieldValues.Count == 0) return;
 
@@ -1806,11 +1959,11 @@ else
         return true;
     }
 
-    private List<ActionEntryFieldValue> BuildTargetFieldValues(string? mappingsJson, Dictionary<Guid, string?> sourceValues)
+    private List<ActionEntryFieldInput> BuildTargetFieldValues(string? mappingsJson, Dictionary<Guid, string?> sourceValues)
     {
         if (string.IsNullOrWhiteSpace(mappingsJson)) return [];
 
-        var result = new List<ActionEntryFieldValue>();
+        var result = new List<ActionEntryFieldInput>();
         try
         {
             using var doc = System.Text.Json.JsonDocument.Parse(mappingsJson);
@@ -1853,7 +2006,8 @@ else
                     sourceValues.TryGetValue(sourceFieldId, out value);
                 }
 
-                result.Add(new ActionEntryFieldValue(targetFieldId, value));
+                if (value is null) continue;
+                result.Add(new ActionEntryFieldInput(targetFieldId, [value]));
             }
         }
         catch { }

@@ -691,6 +691,7 @@ else
             var fieldId = field.Id;
             var fieldUnit = field.Unit;
             var fieldType = field.FieldType;
+            var fieldIsMulti = field.IsMultiselect;
 
             _columns.Add(new()
             {
@@ -698,7 +699,26 @@ else
                 Selector = x => x.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == fieldId)?.Value ?? "",
                 Template = item => builder =>
                 {
-                    var value = item.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == fieldId)?.Value;
+                    var fv = item.FieldValues.FirstOrDefault(f => f.ActionFieldId == fieldId);
+                    var values = fv?.Values ?? [];
+
+                    if (fieldIsMulti && fieldType is FieldType.Dropdown or FieldType.CompositeDropdown && values.Count > 0)
+                    {
+                        builder.OpenElement(0, "div");
+                        builder.AddAttribute(1, "class", "d-flex flex-wrap gap-1");
+                        var seq = 2;
+                        foreach (var v in values)
+                        {
+                            builder.OpenElement(seq++, "span");
+                            builder.AddAttribute(seq++, "class", "badge bg-secondary");
+                            builder.AddContent(seq++, v);
+                            builder.CloseElement();
+                        }
+                        builder.CloseElement();
+                        return;
+                    }
+
+                    var value = values.Count > 0 ? values[0] : null;
                     if (!string.IsNullOrEmpty(value))
                     {
                         if (fieldType == FieldType.Boolean)
@@ -775,30 +795,30 @@ else
 
                 if (field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
                 {
-                    // Multi-select: pipe-delimited values → OR clauses
+                    // Multi-select: pipe-delimited values → OR clauses against Values collection
                     var selectedValues = value.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     if (selectedValues.Length == 1)
                     {
                         var escaped = selectedValues[0].Replace("'", "''");
-                        clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Value eq '{escaped}')");
+                        clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Values/any(v: v eq '{escaped}'))");
                     }
                     else if (selectedValues.Length > 1)
                     {
                         var orParts = selectedValues
-                            .Select(v => $"fv/Value eq '{v.Replace("'", "''")}'")
+                            .Select(v => $"v eq '{v.Replace("'", "''")}'")
                             .ToList();
-                        clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and ({string.Join(" or ", orParts)}))");
+                        clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Values/any(v: {string.Join(" or ", orParts)}))");
                     }
                 }
                 else if (field.FieldType is FieldType.Boolean)
                 {
                     var escaped = value.Replace("'", "''");
-                    clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Value eq '{escaped}')");
+                    clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Values/any(v: v eq '{escaped}'))");
                 }
                 else
                 {
                     var lower = value.Replace("'", "''").ToLowerInvariant();
-                    clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and contains(tolower(fv/Value),'{lower}'))");
+                    clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Values/any(v: contains(tolower(v),'{lower}')))");
                 }
             }
         }
@@ -1343,7 +1363,7 @@ else
 
         var fieldValues = _bulkFieldValues
             .Where(kv => !string.IsNullOrEmpty(kv.Value))
-            .Select(kv => new ActionEntryFieldValue(kv.Key, kv.Value))
+            .Select(kv => new ActionEntryFieldInput(kv.Key, [kv.Value]))
             .ToList();
 
         var occurredAtUtc = _bulkEditOccurredAt && _bulkOccurredAt.HasValue

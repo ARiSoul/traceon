@@ -19,7 +19,7 @@ public static class ActionEntryMappingExtensions
                 Id = f.Id,
                 ActionFieldId = f.ActionFieldId,
                 ActionFieldName = fieldNames.TryGetValue(f.ActionFieldId, out var fieldName) ? fieldName : string.Empty,
-                Value = f.Value
+                Values = [.. f.Values.OrderBy(v => v.Order).Select(v => v.Value)]
             })],
             CreatedAtUtc = entity.CreatedAtUtc,
             UpdatedAtUtc = entity.UpdatedAtUtc

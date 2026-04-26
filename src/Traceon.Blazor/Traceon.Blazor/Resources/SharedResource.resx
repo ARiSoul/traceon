@@ -210,6 +210,9 @@
   <data name="Fields_MaxDate"><value>Max Date</value></data>
   <data name="Fields_DefaultValue"><value>Default Value</value></data>
   <data name="Fields_RequiredByDefault"><value>Required by default</value></data>
+  <data name="Fields_Multiselect"><value>Allow multiple values</value></data>
+  <data name="Fields_MultiselectShort"><value>Multi</value></data>
+  <data name="Fields_MultiselectHint"><value>When enabled, this dropdown lets you pick multiple values per entry.</value></data>
   <data name="Fields_DropdownValues"><value>Dropdown Values</value></data>
   <data name="Fields_DropdownHint"><value>Enter comma-separated values for the dropdown options.</value></data>
   <data name="Fields_DropdownPlaceholder"><value>Comma-separated values, e.g.: Low, Medium, High</value></data>

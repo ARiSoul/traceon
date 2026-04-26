@@ -14,6 +14,7 @@ public sealed record ActionFieldResponse
     public required decimal? MaxValue { get; init; }
     public required decimal? MinValue { get; init; }
     public required bool IsRequired { get; init; }
+    public required bool IsMultiselect { get; init; }
     public required string? DefaultValue { get; init; }
     public required string? DropdownValues { get; init; }
     public required string Unit { get; init; }

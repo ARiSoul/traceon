@@ -201,8 +201,15 @@ public sealed class DashboardService(
 
                 case FieldType.Dropdown:
                 case FieldType.CompositeDropdown:
-                    var dist = entriesWithValues
-                        .GroupBy(x => x.Value!)
+                    // Explode multi-select dropdowns so each chosen value contributes to the count.
+                    var dropdownValues = entries
+                        .SelectMany(e => e.FieldValues
+                            .Where(fv => fv.ActionFieldId == field.Id)
+                            .SelectMany(fv => fv.Values))
+                        .Where(v => !string.IsNullOrWhiteSpace(v))
+                        .ToList();
+                    var dist = dropdownValues
+                        .GroupBy(v => v)
                         .OrderByDescending(g => g.Count())
                         .Select(g => new DropdownDataPoint(g.Key, g.Count()))
                         .ToList();
@@ -364,7 +371,8 @@ public sealed class DashboardService(
                 !fieldMap.TryGetValue(rule.GroupByFieldId, out var groupByField))
                 continue;
 
-            // Optionally filter entries by the filter field
+            // Optionally filter entries by the filter field — multi-value: any of the entry's
+            // values for the filter field matches.
             var filteredEntries = entries;
             if (rule.FilterFieldId.HasValue && rule.FilterValue is not null)
             {
@@ -372,24 +380,29 @@ public sealed class DashboardService(
                 filteredEntries = entries
                     .Where(e =>
                     {
-                        var raw = e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.FilterFieldId.Value)?.Value;
-                        var resolved = rule.FilterMetadataFieldId.HasValue && filterField is not null
-                            ? ResolveMetadataValue(metadataLookup, filterField.FieldDefinitionId, raw, rule.FilterMetadataFieldId.Value)
-                            : raw;
-                        return string.Equals(resolved, rule.FilterValue, StringComparison.OrdinalIgnoreCase);
+                        var rawValues = e.FieldValues
+                            .FirstOrDefault(fv => fv.ActionFieldId == rule.FilterFieldId.Value)
+                            ?.Values ?? [];
+                        if (rawValues.Count == 0) return false;
+                        return rawValues.Any(raw =>
+                        {
+                            var resolved = rule.FilterMetadataFieldId.HasValue && filterField is not null
+                                ? ResolveMetadataValue(metadataLookup, filterField.FieldDefinitionId, raw, rule.FilterMetadataFieldId.Value)
+                                : raw;
+                            return string.Equals(resolved, rule.FilterValue, StringComparison.OrdinalIgnoreCase);
+                        });
                     })
                     .ToList();
             }
 
-            // Extract (date, groupKey, measureValue) tuples from each entry
+            // Extract (date, groupKey, measureValue) tuples — exploded per group-by value so a
+            // multi-select group-by field contributes the entry's measure to every group it lists.
             var pairs = filteredEntries
-                .Select(e =>
+                .SelectMany(e =>
                 {
-                    var rawGroupVal = e.FieldValues
-                        .FirstOrDefault(fv => fv.ActionFieldId == rule.GroupByFieldId)?.Value;
-                    var groupVal = rule.GroupByMetadataFieldId.HasValue
-                        ? ResolveMetadataValue(metadataLookup, groupByField.FieldDefinitionId, rawGroupVal, rule.GroupByMetadataFieldId.Value)
-                        : rawGroupVal;
+                    var rawGroupValues = e.FieldValues
+                        .FirstOrDefault(fv => fv.ActionFieldId == rule.GroupByFieldId)
+                        ?.Values ?? [];
                     var measureVal = e.FieldValues
                         .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
                     var signVal = rule.SignFieldId.HasValue
@@ -401,8 +414,19 @@ public sealed class DashboardService(
                     var offsetVal = rule.OffsetValueFieldId.HasValue
                         ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.OffsetValueFieldId.Value)?.Value
                         : null;
-                    return (Date: e.OccurredAtUtc, GroupKey: groupVal, MeasureValue: measureVal, SignValue: signVal,
-                            OffsetTriggerValue: offsetTriggerVal, OffsetValue: offsetVal);
+
+                    var groupSources = rawGroupValues.Count == 0
+                        ? new List<string?> { null }
+                        : rawGroupValues.Cast<string?>().ToList();
+
+                    return groupSources.Select(rawGroupVal =>
+                    {
+                        var groupVal = rule.GroupByMetadataFieldId.HasValue
+                            ? ResolveMetadataValue(metadataLookup, groupByField.FieldDefinitionId, rawGroupVal, rule.GroupByMetadataFieldId.Value)
+                            : rawGroupVal;
+                        return (Date: e.OccurredAtUtc, GroupKey: groupVal, MeasureValue: measureVal, SignValue: signVal,
+                                OffsetTriggerValue: offsetTriggerVal, OffsetValue: offsetVal);
+                    });
                 })
                 .Where(p => !string.IsNullOrWhiteSpace(p.GroupKey))
                 .ToList();
@@ -990,14 +1014,15 @@ public sealed class DashboardService(
             weekBuckets.Add(new WeekBucket(weekStart, count));
         }
 
-        // Field analytics
+        // Field analytics — multi-select fields contribute every chosen value to the stats.
         var fieldStats = new List<FieldStats>();
         foreach (var field in fields)
         {
             var values = entries
-                .SelectMany(e => e.FieldValues)
-                .Where(fv => fv.ActionFieldId == field.Id && !string.IsNullOrWhiteSpace(fv.Value))
-                .Select(fv => fv.Value!)
+                .SelectMany(e => e.FieldValues
+                    .Where(fv => fv.ActionFieldId == field.Id)
+                    .SelectMany(fv => fv.Values))
+                .Where(v => !string.IsNullOrWhiteSpace(v))
                 .ToList();
 
             fieldStats.Add(BuildFieldStats(field, values, sorted));
@@ -1145,17 +1170,19 @@ public sealed class DashboardService(
         ActionFieldResponse valueField,
         List<ActionEntryResponse> entries)
     {
-        // For each entry, extract (date, dropdownValue, numericValue)
+        // Explode by each chosen dropdown value so multi-select dropdowns produce one
+        // contribution per value (the same numeric measure repeats across each value's series).
         var tuples = entries
-            .Select(e =>
+            .SelectMany(e =>
             {
-                var ddVal = e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == dropdownField.Id)?.Value;
+                var ddValues = e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == dropdownField.Id)?.Values ?? [];
                 var numVal = e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == valueField.Id)?.Value;
-                return (Date: e.OccurredAtUtc, DropdownValue: ddVal, NumericValue: numVal);
+                return ddValues
+                    .Where(dv => !string.IsNullOrWhiteSpace(dv))
+                    .Select(dv => (Date: e.OccurredAtUtc, DropdownValue: dv, NumericValue: numVal));
             })
-            .Where(t => !string.IsNullOrWhiteSpace(t.DropdownValue)
-                     && decimal.TryParse(t.NumericValue, CultureInfo.InvariantCulture, out _))
-            .Select(t => (t.Date, DropdownValue: t.DropdownValue!, NumericValue: decimal.Parse(t.NumericValue!, CultureInfo.InvariantCulture)))
+            .Where(t => decimal.TryParse(t.NumericValue, CultureInfo.InvariantCulture, out _))
+            .Select(t => (t.Date, DropdownValue: t.DropdownValue, NumericValue: decimal.Parse(t.NumericValue!, CultureInfo.InvariantCulture)))
             .ToList();
 
         if (tuples.Count == 0) return null;

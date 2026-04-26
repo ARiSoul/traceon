@@ -51,7 +51,7 @@ public sealed class ActionEntryService(
                                            Id = f.Id,
                                            ActionFieldId = f.ActionFieldId,
                                            ActionFieldName = af.Name,
-                                           Value = f.Value
+                                           Values = f.Values.OrderBy(v => v.Order).Select(v => v.Value).ToList()
                                        }).ToList(),
                         UpdatedAtUtc = e.UpdatedAtUtc
                     };
@@ -108,11 +108,15 @@ public sealed class ActionEntryService(
 
         var submittedByFieldId = (request.FieldValues ?? [])
             .GroupBy(fv => fv.ActionFieldId)
-            .ToDictionary(g => g.Key, g => g.Last().Value);
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)(g.Last().Values ?? []));
 
         // Apply submitted values first.
-        foreach (var (fieldId, value) in submittedByFieldId)
-            entity.SetFieldValue(fieldId, value);
+        foreach (var (fieldId, values) in submittedByFieldId)
+            entity.SetFieldValues(fieldId, values);
+
+        // AutoCounter operates on single-string-per-field semantics; flatten to first value for its inputs.
+        var autoCounterInputs = submittedByFieldId
+            .ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value.FirstOrDefault());
 
         // Auto-fill any AutoCounter field that was left blank by the client.
         var actionFields = await fieldRepository.GetByTrackedActionIdAsync(trackedActionId, cancellationToken);
@@ -120,13 +124,13 @@ public sealed class ActionEntryService(
         {
             if (field.InitialValueBehavior != (int)InitialValueBehavior.AutoCounter) continue;
 
-            var submitted = submittedByFieldId.TryGetValue(field.Id, out var s) ? s : null;
+            var submitted = autoCounterInputs.TryGetValue(field.Id, out var s) ? s : null;
             if (!string.IsNullOrWhiteSpace(submitted)) continue;
 
-            var computed = await autoCounterCalculator.ComputeAsync(field, trackedActionId, submittedByFieldId, cancellationToken);
+            var computed = await autoCounterCalculator.ComputeAsync(field, trackedActionId, autoCounterInputs, cancellationToken);
             if (computed is null) continue;
 
-            entity.SetFieldValue(field.Id, computed.Value.ToString(CultureInfo.InvariantCulture));
+            entity.SetFieldValues(field.Id, [computed.Value.ToString(CultureInfo.InvariantCulture)]);
         }
 
         await entryRepository.AddAsync(entity, cancellationToken);
@@ -149,7 +153,7 @@ public sealed class ActionEntryService(
         entity.Update(request.OccurredAtUtc, request.Notes);
 
         var fieldValues = request.FieldValues?
-            .Select(fv => (fv.ActionFieldId, fv.Value))
+            .Select(fv => (fv.ActionFieldId, (IReadOnlyList<string>)(fv.Values ?? [])))
             .ToList();
 
         await entryRepository.UpdateAsync(entity, fieldValues, cancellationToken);
@@ -227,8 +231,8 @@ public sealed class ActionEntryService(
                 "None of the specified entries belong to this tracked action.", ResultErrorType.Validation);
 
         var incomingByFieldId = request.FieldValues.Count > 0
-            ? request.FieldValues.ToDictionary(fv => fv.ActionFieldId, fv => fv.Value)
-            : new Dictionary<Guid, string?>();
+            ? request.FieldValues.ToDictionary(fv => fv.ActionFieldId, fv => (IReadOnlyList<string>)(fv.Values ?? []))
+            : new Dictionary<Guid, IReadOnlyList<string>>();
 
         foreach (var entry in validEntries)
         {
@@ -241,18 +245,21 @@ public sealed class ActionEntryService(
                 entry.MarkUpdated();
 
             // Merge field values: keep existing, override only the ones in the request
-            IReadOnlyList<(Guid ActionFieldId, string? Value)>? merged = null;
+            IReadOnlyList<(Guid ActionFieldId, IReadOnlyList<string> Values)>? merged = null;
             if (incomingByFieldId.Count > 0)
             {
                 var mergedList = entry.Fields
-                    .Select(f => (f.ActionFieldId, incomingByFieldId.TryGetValue(f.ActionFieldId, out var v) ? v : f.Value))
+                    .Select(f => (f.ActionFieldId,
+                                  (IReadOnlyList<string>)(incomingByFieldId.TryGetValue(f.ActionFieldId, out var vs)
+                                      ? vs
+                                      : f.Values.OrderBy(v => v.Order).Select(v => v.Value).ToList())))
                     .ToList();
 
                 // Add any incoming fields that didn't exist on this entry yet
                 foreach (var fv in request.FieldValues)
                 {
                     if (!mergedList.Any(m => m.ActionFieldId == fv.ActionFieldId))
-                        mergedList.Add((fv.ActionFieldId, fv.Value));
+                        mergedList.Add((fv.ActionFieldId, (IReadOnlyList<string>)(fv.Values ?? [])));
                 }
 
                 merged = mergedList;
@@ -282,7 +289,7 @@ public sealed class ActionEntryService(
 
         var current = (request.FieldValues ?? [])
             .GroupBy(fv => fv.ActionFieldId)
-            .ToDictionary(g => g.Key, g => g.Last().Value);
+            .ToDictionary(g => g.Key, g => (string?)(g.Last().Values?.FirstOrDefault()));
 
         var value = await autoCounterCalculator.ComputeAsync(field, trackedActionId, current, cancellationToken);
         return Result<AutoCounterPreviewResponse>.Success(new AutoCounterPreviewResponse(field.Id, value));
@@ -347,7 +354,7 @@ public sealed class ActionEntryService(
                                       Id = f.Id,
                                       ActionFieldId = f.ActionFieldId,
                                       ActionFieldName = af.Name,
-                                      Value = f.Value
+                                      Values = f.Values.OrderBy(v => v.Order).Select(v => v.Value).ToList()
                                   }).ToList(),
                    CreatedAtUtc = e.CreatedAtUtc,
                    UpdatedAtUtc = e.UpdatedAtUtc

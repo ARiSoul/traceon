@@ -104,30 +104,35 @@ public static class CustomChartEvaluationService
         FilterConditionDto condition,
         Dictionary<Guid, ActionFieldResponse> fieldMap)
     {
-        var rawValue = entry.FieldValues
-            .FirstOrDefault(fv => fv.ActionFieldId == condition.FieldId)?.Value;
+        var values = entry.FieldValues
+            .FirstOrDefault(fv => fv.ActionFieldId == condition.FieldId)
+            ?.Values ?? [];
 
         var fieldType = fieldMap.TryGetValue(condition.FieldId, out var field)
             ? field.FieldType
             : FieldType.Text;
 
+        // Multi-value semantics:
+        //   Equals/Contains/StartsWith/EndsWith/In/numeric-comparisons/Between → "any value matches"
+        //   NotEquals/NotContains/NotIn → "no value matches"
+        //   IsEmpty/IsNotEmpty → on the values list as a whole
         return condition.Operator switch
         {
-            FilterOperator.Equals => StringEquals(rawValue, condition.Value),
-            FilterOperator.NotEquals => !StringEquals(rawValue, condition.Value),
-            FilterOperator.Contains => rawValue?.Contains(condition.Value ?? "", StringComparison.OrdinalIgnoreCase) == true,
-            FilterOperator.NotContains => rawValue?.Contains(condition.Value ?? "", StringComparison.OrdinalIgnoreCase) != true,
-            FilterOperator.StartsWith => rawValue?.StartsWith(condition.Value ?? "", StringComparison.OrdinalIgnoreCase) == true,
-            FilterOperator.EndsWith => rawValue?.EndsWith(condition.Value ?? "", StringComparison.OrdinalIgnoreCase) == true,
-            FilterOperator.IsEmpty => string.IsNullOrWhiteSpace(rawValue),
-            FilterOperator.IsNotEmpty => !string.IsNullOrWhiteSpace(rawValue),
-            FilterOperator.GreaterThan => CompareValues(rawValue, condition.Value, fieldType) > 0,
-            FilterOperator.GreaterThanOrEqual => CompareValues(rawValue, condition.Value, fieldType) >= 0,
-            FilterOperator.LessThan => CompareValues(rawValue, condition.Value, fieldType) < 0,
-            FilterOperator.LessThanOrEqual => CompareValues(rawValue, condition.Value, fieldType) <= 0,
-            FilterOperator.Between => IsBetween(rawValue, condition.Value, condition.ValueTo, fieldType),
-            FilterOperator.In => IsIn(rawValue, condition.Value),
-            FilterOperator.NotIn => !IsIn(rawValue, condition.Value),
+            FilterOperator.Equals => values.Any(v => StringEquals(v, condition.Value)),
+            FilterOperator.NotEquals => !values.Any(v => StringEquals(v, condition.Value)),
+            FilterOperator.Contains => values.Any(v => v.Contains(condition.Value ?? "", StringComparison.OrdinalIgnoreCase)),
+            FilterOperator.NotContains => !values.Any(v => v.Contains(condition.Value ?? "", StringComparison.OrdinalIgnoreCase)),
+            FilterOperator.StartsWith => values.Any(v => v.StartsWith(condition.Value ?? "", StringComparison.OrdinalIgnoreCase)),
+            FilterOperator.EndsWith => values.Any(v => v.EndsWith(condition.Value ?? "", StringComparison.OrdinalIgnoreCase)),
+            FilterOperator.IsEmpty => values.Count == 0 || values.All(string.IsNullOrWhiteSpace),
+            FilterOperator.IsNotEmpty => values.Any(v => !string.IsNullOrWhiteSpace(v)),
+            FilterOperator.GreaterThan => values.Any(v => CompareValues(v, condition.Value, fieldType) > 0),
+            FilterOperator.GreaterThanOrEqual => values.Any(v => CompareValues(v, condition.Value, fieldType) >= 0),
+            FilterOperator.LessThan => values.Any(v => CompareValues(v, condition.Value, fieldType) < 0),
+            FilterOperator.LessThanOrEqual => values.Any(v => CompareValues(v, condition.Value, fieldType) <= 0),
+            FilterOperator.Between => values.Any(v => IsBetween(v, condition.Value, condition.ValueTo, fieldType)),
+            FilterOperator.In => values.Any(v => IsIn(v, condition.Value)),
+            FilterOperator.NotIn => !values.Any(v => IsIn(v, condition.Value)),
             _ => true
         };
     }
@@ -180,15 +185,12 @@ public static class CustomChartEvaluationService
     {
         if (chart.GroupByFieldId.HasValue)
         {
-            // Group by field value
+            // Explode by each value the entry has for the group-by field — multi-select fields
+            // contribute the same entry to multiple groups (e.g. "fries" and "salad").
             return entries
-                .GroupBy(e =>
-                {
-                    var val = e.FieldValues
-                        .FirstOrDefault(fv => fv.ActionFieldId == chart.GroupByFieldId.Value)?.Value;
-                    return string.IsNullOrWhiteSpace(val) ? "(empty)" : val.Trim();
-                })
-                .ToDictionary(g => g.Key, g => g.ToList());
+                .SelectMany(e => ExplodeByFieldValues(e, chart.GroupByFieldId.Value))
+                .GroupBy(x => x.Key)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.Entry).ToList());
         }
 
         if (chart.TimeGrouping != TimeGrouping.None)
@@ -201,6 +203,21 @@ public static class CustomChartEvaluationService
 
         // No grouping — everything in one bucket
         return new Dictionary<string, List<ActionEntryResponse>> { ["All"] = entries };
+    }
+
+    private static IEnumerable<(string Key, ActionEntryResponse Entry)> ExplodeByFieldValues(
+        ActionEntryResponse entry, Guid fieldId)
+    {
+        var fv = entry.FieldValues.FirstOrDefault(f => f.ActionFieldId == fieldId);
+        var values = fv?.Values
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Select(v => v.Trim())
+            .ToList();
+
+        if (values is null || values.Count == 0)
+            return [(Key: "(empty)", Entry: entry)];
+
+        return values.Select(v => (Key: v, Entry: entry));
     }
 
     private static string GetTimeBucketKey(DateTime date, TimeGrouping grouping) => grouping switch
@@ -291,20 +308,16 @@ public static class CustomChartEvaluationService
     {
         if (chart.GroupByFieldId.HasValue)
         {
-            // Multiple series: one per group-by value
+            // Explode by group-by field's values so multi-select fields produce one series per value.
             var byGroup = entries
-                .GroupBy(e =>
-                {
-                    var val = e.FieldValues
-                        .FirstOrDefault(fv => fv.ActionFieldId == chart.GroupByFieldId.Value)?.Value;
-                    return string.IsNullOrWhiteSpace(val) ? "(empty)" : val.Trim();
-                })
+                .SelectMany(e => ExplodeByFieldValues(e, chart.GroupByFieldId.Value))
+                .GroupBy(x => x.Key)
                 .Take(15); // limit series count
 
             return byGroup.Select(g => new CrossFieldTimeSeries
             {
                 SeriesLabel = g.Key,
-                Points = BuildTimeSeriesPoints(g.ToList(), chart)
+                Points = BuildTimeSeriesPoints(g.Select(x => x.Entry).ToList(), chart)
             }).ToList();
         }
 

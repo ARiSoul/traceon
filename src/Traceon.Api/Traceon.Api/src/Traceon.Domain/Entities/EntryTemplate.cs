@@ -37,17 +37,21 @@ public sealed class EntryTemplate : Entity
         MarkUpdated();
     }
 
-    public void SetFieldValue(Guid actionFieldId, string? value)
+    public void SetFieldValues(Guid actionFieldId, IEnumerable<string>? values)
     {
         if (actionFieldId == Guid.Empty)
             throw new ArgumentException("Action field ID is required.", nameof(actionFieldId));
 
         var existing = _fields.FirstOrDefault(f => f.ActionFieldId == actionFieldId);
-
         if (existing is not null)
-            existing.UpdateValue(value);
-        else
-            _fields.Add(EntryTemplateField.Create(Id, actionFieldId, value));
+        {
+            existing.SetValues(values);
+            return;
+        }
+
+        var slot = EntryTemplateField.Create(Id, actionFieldId);
+        slot.SetValues(values);
+        _fields.Add(slot);
     }
 
     public void ClearFields() => _fields.Clear();

@@ -73,7 +73,7 @@ public sealed class ActionEntryService(HttpClient http)
     }
 
     public async Task<(bool Success, IReadOnlyList<string> Errors)> BulkUpdateFieldsAsync(
-        Guid trackedActionId, List<Guid> entryIds, List<ActionEntryFieldValue> fieldValues,
+        Guid trackedActionId, List<Guid> entryIds, List<ActionEntryFieldInput> fieldValues,
         DateTime? occurredAtUtc = null, string? notes = null, bool updateNotes = false)
     {
         var response = await http.PostAsJsonAsync(

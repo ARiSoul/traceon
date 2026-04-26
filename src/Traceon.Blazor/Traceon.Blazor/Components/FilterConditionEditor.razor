@@ -85,6 +85,18 @@
                         </div>
                     }
                     else if (selectedField?.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown
+                             && condition.Operator is FilterOperator.In or FilterOperator.NotIn
+                             && GetDropdownOptions(selectedField).Length > 0)
+                    {
+                        var capturedIdx = idx;
+                        <div class="col-10 col-md-3">
+                            <MultiSelectDropdown Options="GetDropdownOptions(selectedField).ToList()"
+                                                 SelectedValues="ParseInValues(condition.Value)"
+                                                 SelectedValuesChanged="vs => OnInValuesChanged(capturedIdx, vs)"
+                                                 Placeholder="@L["Common_Select"]" />
+                        </div>
+                    }
+                    else if (selectedField?.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown
                              && condition.Operator is FilterOperator.Equals or FilterOperator.NotEquals
                              && GetDropdownOptions(selectedField).Length > 0)
                     {
@@ -236,6 +248,19 @@
         var groups = new List<FilterGroupDto>(Group.Groups ?? []);
         if (index < groups.Count) groups[index] = updated;
         await NotifyChanged(Group with { Groups = groups });
+    }
+
+    private static HashSet<string> ParseInValues(string? raw) =>
+        string.IsNullOrWhiteSpace(raw)
+            ? new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(
+                raw.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                StringComparer.OrdinalIgnoreCase);
+
+    private async Task OnInValuesChanged(int index, HashSet<string> selected)
+    {
+        var joined = selected.Count == 0 ? null : string.Join("|", selected);
+        await UpdateConditionValue(index, joined, null);
     }
 
     private string[] GetDropdownOptions(ActionFieldResponse field)

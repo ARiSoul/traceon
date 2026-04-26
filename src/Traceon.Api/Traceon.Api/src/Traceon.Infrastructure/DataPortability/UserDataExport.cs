@@ -89,5 +89,7 @@ public sealed class ActionEntryExport
 public sealed class EntryFieldExport
 {
     public Guid ActionFieldId { get; set; }
+    public List<string>? Values { get; set; }
+    /// <summary>Legacy single-value field, kept so older export files still import correctly.</summary>
     public string? Value { get; set; }
 }

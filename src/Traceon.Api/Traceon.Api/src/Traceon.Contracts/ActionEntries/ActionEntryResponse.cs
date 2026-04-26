@@ -18,5 +18,7 @@ public sealed record ActionEntryFieldResponse
     public required Guid Id { get; init; }
     public required Guid ActionFieldId { get; init; }
     public required string ActionFieldName { get; init; }
-    public required string? Value { get; init; }
+    public required List<string> Values { get; init; }
+
+    public string? Value => Values is { Count: > 0 } ? Values[0] : null;
 }

@@ -2,7 +2,7 @@ namespace Traceon.Contracts.ActionEntries;
 
 public sealed record AutoCounterPreviewRequest(
     Guid TargetActionFieldId,
-    List<ActionEntryFieldValue>? FieldValues);
+    List<ActionEntryFieldInput>? FieldValues);
 
 public sealed record AutoCounterPreviewResponse(
     Guid TargetActionFieldId,

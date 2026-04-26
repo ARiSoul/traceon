@@ -121,16 +121,77 @@ else
                                         </div>
                                         break;
                                     case FieldType.Dropdown:
-                                        <SearchableSelect Value="@model.TextValue"
-                                                          ValueChanged="v => model.TextValue = v"
-                                                          Options="model.DropdownOptions.ToList()"
-                                                          Placeholder="@L["Entry_Select"]" />
+                                        if (model.IsMulti)
+                                        {
+                                            <div class="d-flex flex-column gap-1">
+                                                <MultiSelectDropdown Options="model.DropdownOptions.ToList()"
+                                                                     SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
+                                                                     SelectedValuesChanged="vs => OnTemplateMultiChanged(model, vs)"
+                                                                     Placeholder="@L["Entry_Select"]" />
+                                                @if (model.MultiValues.Count > 0)
+                                                {
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        @foreach (var v in model.MultiValues)
+                                                        {
+                                                            var captured = v;
+                                                            <span class="badge bg-primary d-inline-flex align-items-center gap-1">
+                                                                @captured
+                                                                <button type="button" class="btn-close btn-close-white"
+                                                                        style="font-size: 0.5rem;"
+                                                                        @onclick="() => RemoveTemplateMultiValue(model, captured)"
+                                                                        aria-label="@L["Common_Remove"]"></button>
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <SearchableSelect Value="@model.TextValue"
+                                                              ValueChanged="v => model.TextValue = v"
+                                                              Options="model.DropdownOptions.ToList()"
+                                                              Placeholder="@L["Entry_Select"]" />
+                                        }
                                         break;
                                     case FieldType.CompositeDropdown:
-                                        <SearchableSelect Value="@model.TextValue"
-                                                          ValueChanged="v => model.TextValue = v"
-                                                          Groups="model.CompositeGroups"
-                                                          Placeholder="@L["Entry_Select"]" />
+                                        if (model.IsMulti)
+                                        {
+                                            var compositeOptions = model.CompositeGroups
+                                                .SelectMany(g => g.Values)
+                                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                                .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase)
+                                                .ToList();
+                                            <div class="d-flex flex-column gap-1">
+                                                <MultiSelectDropdown Options="compositeOptions"
+                                                                     SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
+                                                                     SelectedValuesChanged="vs => OnTemplateMultiChanged(model, vs)"
+                                                                     Placeholder="@L["Entry_Select"]" />
+                                                @if (model.MultiValues.Count > 0)
+                                                {
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        @foreach (var v in model.MultiValues)
+                                                        {
+                                                            var captured = v;
+                                                            <span class="badge bg-primary d-inline-flex align-items-center gap-1">
+                                                                @captured
+                                                                <button type="button" class="btn-close btn-close-white"
+                                                                        style="font-size: 0.5rem;"
+                                                                        @onclick="() => RemoveTemplateMultiValue(model, captured)"
+                                                                        aria-label="@L["Common_Remove"]"></button>
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <SearchableSelect Value="@model.TextValue"
+                                                              ValueChanged="v => model.TextValue = v"
+                                                              Groups="model.CompositeGroups"
+                                                              Placeholder="@L["Entry_Select"]" />
+                                        }
                                         break;
                                 }
                             }
@@ -200,7 +261,7 @@ else
                 foreach (var fv in template.FieldValues)
                 {
                     var model = _fieldModels.FirstOrDefault(m => m.Field.Id == fv.ActionFieldId);
-                    model?.LoadValue(fv.Value);
+                    model?.LoadValues(fv.Values);
                 }
             }
         }
@@ -262,8 +323,8 @@ else
 
         var fieldValues = _fieldModels
             .Where(m => !IsBehaviorDriven(m.Field))
-            .Select(m => new EntryTemplateFieldValue(m.Field.Id, m.ResolveValue()))
-            .Where(v => !string.IsNullOrWhiteSpace(v.Value))
+            .Select(m => new EntryTemplateFieldInput(m.Field.Id, m.ResolveValues()))
+            .Where(v => v.Values?.Any(x => !string.IsNullOrWhiteSpace(x)) == true)
             .ToList();
 
         bool success;
@@ -300,6 +361,18 @@ else
     private static bool IsBehaviorDriven(ActionFieldResponse field) =>
         field.InitialValueBehavior is InitialValueBehavior.AutoCounter;
 
+    private void OnTemplateMultiChanged(TemplateFieldModel model, HashSet<string> selected)
+    {
+        model.MultiValues = selected.Where(v => !string.IsNullOrWhiteSpace(v)).ToList();
+        model.TextValue = model.MultiValues.FirstOrDefault();
+    }
+
+    private void RemoveTemplateMultiValue(TemplateFieldModel model, string value)
+    {
+        model.MultiValues.RemoveAll(v => string.Equals(v, value, StringComparison.OrdinalIgnoreCase));
+        model.TextValue = model.MultiValues.FirstOrDefault();
+    }
+
     private static string FieldColumnClass(FieldType type) => type switch
     {
         FieldType.Boolean => "col-6 col-md-4",
@@ -315,7 +388,11 @@ else
         public decimal? DecimalValue { get; set; }
         public DateTime? DateValue { get; set; }
         public bool BoolValue { get; set; }
+        public List<string> MultiValues { get; set; } = [];
         public List<(string GroupName, string[] Values)> CompositeGroups { get; set; } = [];
+
+        public bool IsMulti => Field.IsMultiselect
+            && Field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown;
 
         public string[] DropdownOptions =>
             string.IsNullOrWhiteSpace(Field.DropdownValues) || Field.DropdownValues.StartsWith("ref:", StringComparison.Ordinal)
@@ -350,13 +427,44 @@ else
             }
         }
 
-        public string? ResolveValue() => Field.FieldType switch
+        public void LoadValues(IReadOnlyList<string>? values)
         {
-            FieldType.Boolean => BoolValue.ToString().ToLowerInvariant(),
-            FieldType.Integer => IntValue?.ToString(CultureInfo.InvariantCulture),
-            FieldType.Decimal => DecimalValue?.ToString(CultureInfo.InvariantCulture),
-            FieldType.Date => DateValue?.ToString("yyyy-MM-dd"),
-            _ => TextValue
-        };
+            if (IsMulti)
+            {
+                MultiValues = values is null
+                    ? []
+                    : values.Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v.Trim()).ToList();
+                TextValue = MultiValues.FirstOrDefault();
+                return;
+            }
+            LoadValue(values is { Count: > 0 } ? values[0] : null);
+        }
+
+        public string? ResolveValue()
+        {
+            if (IsMulti)
+                return MultiValues.FirstOrDefault();
+            return Field.FieldType switch
+            {
+                FieldType.Boolean => BoolValue.ToString().ToLowerInvariant(),
+                FieldType.Integer => IntValue?.ToString(CultureInfo.InvariantCulture),
+                FieldType.Decimal => DecimalValue?.ToString(CultureInfo.InvariantCulture),
+                FieldType.Date => DateValue?.ToString("yyyy-MM-dd"),
+                _ => TextValue
+            };
+        }
+
+        public List<string>? ResolveValues()
+        {
+            if (IsMulti)
+            {
+                var clean = MultiValues
+                    .Where(v => !string.IsNullOrWhiteSpace(v))
+                    .Select(v => v.Trim())
+                    .ToList();
+                return clean.Count > 0 ? clean : null;
+            }
+            return ResolveValue() is { } v ? [v] : null;
+        }
     }
 }

@@ -2535,7 +2535,7 @@
 
             foreach (var item in includedItems)
             {
-                var fieldValues = new List<ActionEntryFieldValue>();
+                var fieldValues = new List<ActionEntryFieldInput>();
 
                 // Map OCR columns to action fields via column mappings
                 foreach (var mapping in _columnMappings.Where(m => m.TargetFieldId != Guid.Empty))
@@ -2552,7 +2552,7 @@
 
                     if (value is not null)
                     {
-                        fieldValues.Add(new ActionEntryFieldValue(mapping.TargetFieldId, value));
+                        fieldValues.Add(new ActionEntryFieldInput(mapping.TargetFieldId, [value]));
                     }
                 }
 
@@ -2562,7 +2562,7 @@
                     var catValue = item.GetCategoryValue(field.Id);
                     if (!string.IsNullOrEmpty(catValue) && catValue != "__new__")
                     {
-                        fieldValues.Add(new ActionEntryFieldValue(field.Id, catValue));
+                        fieldValues.Add(new ActionEntryFieldInput(field.Id, [catValue]));
                     }
                 }
 
@@ -2581,7 +2581,7 @@
 
                     if (!string.IsNullOrEmpty(fixedVal))
                     {
-                        fieldValues.Add(new ActionEntryFieldValue(fm.FieldId, fixedVal));
+                        fieldValues.Add(new ActionEntryFieldInput(fm.FieldId, [fixedVal]));
                     }
                 }
 
@@ -2615,7 +2615,7 @@
         if (_reviewReceiptDiscount is not { } discount || discount <= 0) return;
         if (_receiptConfig?.DiscountFieldId is not { } discountFieldId) return;
 
-        var fieldValues = new List<ActionEntryFieldValue>();
+        var fieldValues = new List<ActionEntryFieldInput>();
 
         if (!string.IsNullOrEmpty(_receiptConfig.StaticFieldValues))
         {
@@ -2628,7 +2628,7 @@
                     {
                         if (Guid.TryParse(key, out var fid) && !string.IsNullOrEmpty(val))
                         {
-                            fieldValues.Add(new ActionEntryFieldValue(fid, val));
+                            fieldValues.Add(new ActionEntryFieldInput(fid, [val]));
                         }
                     }
                 }
@@ -2650,7 +2650,7 @@
 
             if (!string.IsNullOrEmpty(fixedVal))
             {
-                fieldValues.Add(new ActionEntryFieldValue(fm.FieldId, fixedVal));
+                fieldValues.Add(new ActionEntryFieldInput(fm.FieldId, [fixedVal]));
                 mappedFieldIds.Add(fm.FieldId);
             }
         }
@@ -2658,19 +2658,19 @@
         if (_receiptConfig.TotalFieldId is { } totalFieldId)
         {
             fieldValues.RemoveAll(fv => fv.ActionFieldId == totalFieldId);
-            fieldValues.Add(new ActionEntryFieldValue(totalFieldId, "0"));
+            fieldValues.Add(new ActionEntryFieldInput(totalFieldId, ["0"]));
         }
 
         fieldValues.RemoveAll(fv => fv.ActionFieldId == discountFieldId);
-        fieldValues.Add(new ActionEntryFieldValue(
+        fieldValues.Add(new ActionEntryFieldInput(
             discountFieldId,
-            discount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+            [discount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)]));
 
         if (_receiptConfig.ReceiptDiscountTypeFieldId is { } typeFieldId &&
             !string.IsNullOrWhiteSpace(_receiptConfig.ReceiptDiscountTypeValue))
         {
             fieldValues.RemoveAll(fv => fv.ActionFieldId == typeFieldId);
-            fieldValues.Add(new ActionEntryFieldValue(typeFieldId, _receiptConfig.ReceiptDiscountTypeValue));
+            fieldValues.Add(new ActionEntryFieldInput(typeFieldId, [_receiptConfig.ReceiptDiscountTypeValue]));
         }
 
         var request = new CreateActionEntryRequest(
