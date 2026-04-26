@@ -1,0 +1,62 @@
+@inject IStringLocalizer<SharedResource> L
+@using System.Text
+@using System.Text.RegularExpressions
+
+<div class="markdown-display @(Truncate ? "text-truncate-2" : "")">
+    @((MarkupString)RenderedHtml)
+</div>
+
+@code {
+    [Parameter] public string? Source { get; set; }
+    [Parameter] public bool Truncate { get; set; }
+
+    private string RenderedHtml => RenderMarkdown(Source);
+
+    /// <summary>
+    /// Minimal markdown renderer: bold, italic, code spans, line breaks, paragraphs.
+    /// HTML-escapes input first to prevent injection.
+    /// </summary>
+    private static string RenderMarkdown(string? source)
+    {
+        if (string.IsNullOrWhiteSpace(source)) return "";
+
+        // 1. HTML-encode raw input
+        var encoded = System.Net.WebUtility.HtmlEncode(source);
+
+        // 2. Inline formatting (apply on already-encoded text — markdown chars survived encoding).
+        // Bold: **text** or __text__
+        encoded = Regex.Replace(encoded, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
+        encoded = Regex.Replace(encoded, @"__(.+?)__", "<strong>$1</strong>");
+        // Italic: *text* or _text_ (after bold so we don't eat single chars from **)
+        encoded = Regex.Replace(encoded, @"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", "<em>$1</em>");
+        encoded = Regex.Replace(encoded, @"(?<!_)_(?!_)(.+?)(?<!_)_(?!_)", "<em>$1</em>");
+        // Inline code: `text`
+        encoded = Regex.Replace(encoded, @"`([^`]+?)`", "<code>$1</code>");
+
+        // 3. Paragraphs and line breaks
+        var paragraphs = encoded.Split(["\r\n\r\n", "\n\n"], StringSplitOptions.None);
+        var sb = new StringBuilder();
+        foreach (var p in paragraphs)
+        {
+            var trimmed = p.Trim();
+            if (string.IsNullOrEmpty(trimmed)) continue;
+            sb.Append("<p>");
+            sb.Append(trimmed.Replace("\n", "<br>"));
+            sb.Append("</p>");
+        }
+        return sb.ToString();
+    }
+}
+
+<style>
+    .markdown-display p { margin-bottom: 0.5rem; }
+    .markdown-display p:last-child { margin-bottom: 0; }
+    .markdown-display code { background-color: var(--bs-secondary-bg); padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.92em; }
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .text-truncate-2 p { display: inline; }
+</style>

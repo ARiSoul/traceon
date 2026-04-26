@@ -82,6 +82,13 @@ internal sealed class ActionFieldConfiguration : IEntityTypeConfiguration<Action
             .IsRequired()
             .HasDefaultValue(false);
 
+        builder.Property(e => e.DisplayStyle)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(e => e.DisplayStyleConfigJson)
+            .HasMaxLength(2000);
+
         builder.HasIndex(e => e.TrackedActionId);
 
         builder.HasOne<FieldDefinition>()

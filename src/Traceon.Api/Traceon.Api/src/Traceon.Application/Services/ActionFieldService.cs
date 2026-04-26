@@ -65,9 +65,10 @@ public sealed class ActionFieldService(
                             DropdownTrendValueFieldId = af.DropdownTrendValueFieldId,
                             DropdownTrendAggregation = (Contracts.Enums.TrendAggregation)af.DropdownTrendAggregation,
                             DropdownTrendChartType = (Contracts.Enums.TrendChartType)af.DropdownTrendChartType,
-                            IsMultiselect = af.IsMultiselect
-                            // AutoCounterConfig is only populated through ToResponse (materialized path);
-                            // OData/IQueryable callers don't need it and JSON deserialization can't translate to SQL.
+                            IsMultiselect = af.IsMultiselect,
+                            DisplayStyle = (Contracts.Enums.DisplayStyle)af.DisplayStyle
+                            // AutoCounterConfig and DisplayStyleConfig are populated only through ToResponse
+                            // (materialized path); OData/IQueryable callers can't translate JSON deserialization to SQL.
                         };
 
         return Result<IQueryable<ActionFieldResponse>>.Success(queryable);
@@ -157,7 +158,9 @@ public sealed class ActionFieldService(
             (int)request.DropdownTrendAggregation,
             (int)request.DropdownTrendChartType,
             ActionFieldMappingExtensions.SerializeAutoCounter(request.AutoCounterConfig),
-            request.IsMultiselect);
+            request.IsMultiselect,
+            (int)request.DisplayStyle,
+            ActionFieldMappingExtensions.SerializeDisplayStyle(request.DisplayStyleConfig));
 
         await repository.AddAsync(entity, cancellationToken);
 
@@ -206,7 +209,9 @@ public sealed class ActionFieldService(
             request.DropdownTrendAggregation.HasValue ? (int)request.DropdownTrendAggregation.Value : null,
             request.DropdownTrendChartType.HasValue ? (int)request.DropdownTrendChartType.Value : null,
             ActionFieldMappingExtensions.SerializeAutoCounter(request.AutoCounterConfig),
-            request.IsMultiselect);
+            request.IsMultiselect,
+            (int)request.DisplayStyle,
+            ActionFieldMappingExtensions.SerializeDisplayStyle(request.DisplayStyleConfig));
 
         await repository.UpdateAsync(entity, cancellationToken);
 

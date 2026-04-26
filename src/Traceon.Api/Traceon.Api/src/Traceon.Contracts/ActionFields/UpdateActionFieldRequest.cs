@@ -23,4 +23,6 @@ public sealed record UpdateActionFieldRequest(
     TrendAggregation? DropdownTrendAggregation = null,
     TrendChartType? DropdownTrendChartType = null,
     AutoCounterConfig? AutoCounterConfig = null,
-    bool IsMultiselect = false);
+    bool IsMultiselect = false,
+    DisplayStyle DisplayStyle = DisplayStyle.Default,
+    DisplayStyleConfig? DisplayStyleConfig = null);

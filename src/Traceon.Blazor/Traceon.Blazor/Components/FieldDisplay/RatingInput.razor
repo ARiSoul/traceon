@@ -1,0 +1,55 @@
+@inject IStringLocalizer<SharedResource> L
+
+<div class="d-inline-flex align-items-center gap-1" role="radiogroup" aria-label="@L["DisplayStyle_Rating"]">
+    @for (var i = 1; i <= Count; i++)
+    {
+        var captured = i;
+        var thresholdValue = captured * ValuePerIcon;
+        var isActive = Value >= thresholdValue;
+        <button type="button"
+                class="btn btn-link p-0 lh-1 @(IsReadOnly ? "pe-none" : "")"
+                style="@($"font-size: {Size}; color: {(isActive ? ActiveColor : InactiveColor)}; text-decoration: none;")"
+                disabled="@IsReadOnly"
+                title="@($"{thresholdValue}")"
+                @onclick="() => OnStarClick(captured)">
+            <i class="bi bi-@Icon" style="@(isActive ? "" : "opacity:.35;")"></i>
+        </button>
+    }
+    @if (ShowClear && !IsReadOnly && Value > 0)
+    {
+        <button type="button" class="btn btn-link btn-sm text-muted p-0 ms-2"
+                title="@L["Common_Clear"]"
+                @onclick="ClearAsync">
+            <i class="bi bi-x-circle"></i>
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public decimal Value { get; set; }
+    [Parameter] public EventCallback<decimal> ValueChanged { get; set; }
+    [Parameter] public int Count { get; set; } = 5;
+    [Parameter] public decimal ValuePerIcon { get; set; } = 1m;
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool ShowClear { get; set; } = true;
+    [Parameter] public string Size { get; set; } = "1.4rem";
+    /// <summary>Bootstrap Icons name without the "bi-" prefix. Defaults to a filled star.</summary>
+    [Parameter] public string Icon { get; set; } = "star-fill";
+    [Parameter] public string ActiveColor { get; set; } = "#f5b50a";
+    [Parameter] public string InactiveColor { get; set; } = "#bbb";
+
+    private async Task OnStarClick(int starIndex)
+    {
+        if (IsReadOnly) return;
+        var newValue = starIndex * ValuePerIcon;
+        // Click the same star twice → clear (toggle behavior).
+        if (Value == newValue) newValue = 0;
+        await ValueChanged.InvokeAsync(newValue);
+    }
+
+    private async Task ClearAsync()
+    {
+        if (IsReadOnly) return;
+        await ValueChanged.InvokeAsync(0);
+    }
+}

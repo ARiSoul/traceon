@@ -1,0 +1,40 @@
+@inject IStringLocalizer<SharedResource> L
+
+<div class="d-flex align-items-center gap-2">
+    <input type="range" class="form-range flex-grow-1"
+           min="@MinDisplay" max="@MaxDisplay" step="@StepDisplay"
+           value="@Value.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+           @oninput="OnInputAsync"
+           disabled="@IsReadOnly" />
+    <span class="text-muted small text-nowrap" style="min-width: 3rem; text-align: right;">
+        @FormatValue()@(string.IsNullOrEmpty(Unit) ? "" : $" {Unit}")
+    </span>
+</div>
+
+@code {
+    [Parameter] public decimal Value { get; set; }
+    [Parameter] public EventCallback<decimal> ValueChanged { get; set; }
+    [Parameter] public decimal? Min { get; set; }
+    [Parameter] public decimal? Max { get; set; }
+    [Parameter] public decimal Step { get; set; } = 1m;
+    [Parameter] public string? Unit { get; set; }
+    [Parameter] public bool IsInteger { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; }
+
+    private string MinDisplay => (Min ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    private string MaxDisplay => (Max ?? 100m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    private string StepDisplay => Step.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private async Task OnInputAsync(ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any,
+                             System.Globalization.CultureInfo.InvariantCulture, out var v))
+        {
+            await ValueChanged.InvokeAsync(IsInteger ? Math.Round(v) : v);
+        }
+    }
+
+    private string FormatValue() => IsInteger
+        ? ((int)Math.Round(Value)).ToString(System.Globalization.CultureInfo.CurrentCulture)
+        : Value.ToString(System.Globalization.CultureInfo.CurrentCulture);
+}

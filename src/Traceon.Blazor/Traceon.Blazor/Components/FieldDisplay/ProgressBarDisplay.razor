@@ -1,0 +1,49 @@
+@inject IStringLocalizer<SharedResource> L
+
+<div class="d-flex align-items-center gap-2 @(Compact ? "small" : "")">
+    <div class="progress flex-grow-1" style="@(Compact ? "height: 6px;" : "height: 10px; min-width: 80px;")">
+        <div class="progress-bar @ProgressColor" role="progressbar"
+             style="@($"width: {Percent.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;")"
+             aria-valuenow="@((int)Percent)" aria-valuemin="0" aria-valuemax="100">
+        </div>
+    </div>
+    @if (ShowLabel)
+    {
+        <span class="text-muted small text-nowrap">@FormatValue()@(string.IsNullOrEmpty(Unit) ? "" : $" {Unit}")</span>
+    }
+</div>
+
+@code {
+    [Parameter] public decimal Value { get; set; }
+    [Parameter] public decimal? Min { get; set; }
+    [Parameter] public decimal? Max { get; set; }
+    [Parameter] public string? Unit { get; set; }
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public bool ShowLabel { get; set; } = true;
+    [Parameter] public bool IsInteger { get; set; }
+
+    // Cap to [0, 100] so a value beyond Max still renders a full bar (instead of overflowing).
+    private decimal Percent
+    {
+        get
+        {
+            var lo = Min ?? 0m;
+            var hi = Max ?? 100m;
+            if (hi <= lo) return 0m;
+            var ratio = (Value - lo) / (hi - lo) * 100m;
+            return Math.Max(0m, Math.Min(100m, ratio));
+        }
+    }
+
+    private string ProgressColor => Percent switch
+    {
+        >= 75 => "bg-success",
+        >= 50 => "bg-info",
+        >= 25 => "bg-warning",
+        _ => "bg-secondary"
+    };
+
+    private string FormatValue() => IsInteger
+        ? ((int)Math.Round(Value)).ToString(System.Globalization.CultureInfo.CurrentCulture)
+        : Value.ToString(System.Globalization.CultureInfo.CurrentCulture);
+}

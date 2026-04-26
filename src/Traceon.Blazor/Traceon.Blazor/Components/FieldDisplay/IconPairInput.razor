@@ -1,0 +1,34 @@
+@inject IStringLocalizer<SharedResource> L
+
+<button type="button"
+        class="btn btn-link p-0 lh-1 @(IsReadOnly ? "pe-none" : "")"
+        style="@($"font-size: {Size}; color: {(Value ? OnColor : OffColor)}; text-decoration: none;")"
+        disabled="@IsReadOnly"
+        title="@(Value ? OnLabel : OffLabel)"
+        @onclick="ToggleAsync">
+    <i class="bi bi-@(Value ? OnIcon : OffIcon)"></i>
+</button>
+@if (ShowLabel)
+{
+    <span class="ms-2 small text-muted">@(Value ? OnLabel : OffLabel)</span>
+}
+
+@code {
+    [Parameter] public bool Value { get; set; }
+    [Parameter] public EventCallback<bool> ValueChanged { get; set; }
+    [Parameter] public string OnIcon { get; set; } = "heart-fill";
+    [Parameter] public string OffIcon { get; set; } = "heart";
+    [Parameter] public string OnColor { get; set; } = "#dc3545";
+    [Parameter] public string OffColor { get; set; } = "#bbb";
+    [Parameter] public string OnLabel { get; set; } = "";
+    [Parameter] public string OffLabel { get; set; } = "";
+    [Parameter] public string Size { get; set; } = "1.4rem";
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool ShowLabel { get; set; } = true;
+
+    private async Task ToggleAsync()
+    {
+        if (IsReadOnly) return;
+        await ValueChanged.InvokeAsync(!Value);
+    }
+}

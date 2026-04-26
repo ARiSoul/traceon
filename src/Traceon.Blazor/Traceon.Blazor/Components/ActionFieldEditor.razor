@@ -173,8 +173,202 @@
                 </div>
             </div>
 
+            @if (Field.FieldType == FieldType.Text)
+            {
+                <hr class="my-2" />
+                <div class="d-flex align-items-center gap-1 mb-2">
+                    <i class="bi bi-palette text-muted"></i>
+                    <strong class="small">@L["FieldEditor_DisplayStyle"]</strong>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label form-label-sm mb-1">@L["FieldEditor_DisplayStyleLabel"]</label>
+                        <select class="form-select form-select-sm" @bind="_displayStyle">
+                            <option value="@DisplayStyle.Default">@L["DisplayStyle_DefaultText"]</option>
+                            <option value="@DisplayStyle.Textarea">@L["DisplayStyle_Textarea"]</option>
+                            <option value="@DisplayStyle.Markdown">@L["DisplayStyle_Markdown"]</option>
+                        </select>
+                    </div>
+                    @if (_displayStyle is DisplayStyle.Textarea or DisplayStyle.Markdown)
+                    {
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_Rows"]</label>
+                            <input type="number" min="2" max="20" class="form-control form-control-sm" @bind="_textRows" />
+                        </div>
+                        <div class="col-md-5 d-flex align-items-end">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>@(_displayStyle == DisplayStyle.Markdown ? L["DisplayStyle_MarkdownHint"] : L["DisplayStyle_TextareaHint"])
+                            </small>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (Field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
+            {
+                <hr class="my-2" />
+                <div class="d-flex align-items-center gap-1 mb-2">
+                    <i class="bi bi-palette text-muted"></i>
+                    <strong class="small">@L["FieldEditor_DisplayStyle"]</strong>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label form-label-sm mb-1">@L["FieldEditor_DisplayStyleLabel"]</label>
+                        <select class="form-select form-select-sm" @bind="_displayStyle">
+                            <option value="@DisplayStyle.Default">@L["DisplayStyle_DefaultDropdown"]</option>
+                            <option value="@DisplayStyle.Chips">@L["DisplayStyle_Chips"]</option>
+                            @if (!Field.IsMultiselect && Field.FieldType == FieldType.Dropdown)
+                            {
+                                <option value="@DisplayStyle.Radio">@L["DisplayStyle_Radio"]</option>
+                            }
+                        </select>
+                    </div>
+                    @if (_displayStyle == DisplayStyle.Chips)
+                    {
+                        <div class="col-md-8 d-flex align-items-end">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@L["DisplayStyle_ChipsHint"]</small>
+                        </div>
+                    }
+                    else if (_displayStyle == DisplayStyle.Radio)
+                    {
+                        <div class="col-md-8 d-flex align-items-end">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@L["DisplayStyle_RadioHint"]</small>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (Field.FieldType == FieldType.Boolean)
+            {
+                <hr class="my-2" />
+                <div class="d-flex align-items-center gap-1 mb-2">
+                    <i class="bi bi-palette text-muted"></i>
+                    <strong class="small">@L["FieldEditor_DisplayStyle"]</strong>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label form-label-sm mb-1">@L["FieldEditor_DisplayStyleLabel"]</label>
+                        <select class="form-select form-select-sm" @bind="_displayStyle">
+                            <option value="@DisplayStyle.Default">@L["DisplayStyle_DefaultToggle"]</option>
+                            <option value="@DisplayStyle.Checkbox">@L["DisplayStyle_Checkbox"]</option>
+                            <option value="@DisplayStyle.IconPair">@L["DisplayStyle_IconPair"]</option>
+                        </select>
+                    </div>
+                    @if (_displayStyle == DisplayStyle.IconPair)
+                    {
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_OnIcon"]</label>
+                            <input type="text" class="form-control form-control-sm" placeholder="heart-fill" @bind="_iconPairOnIcon" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_OffIcon"]</label>
+                            <input type="text" class="form-control form-control-sm" placeholder="heart" @bind="_iconPairOffIcon" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_OnColor"]</label>
+                            <input type="color" class="form-control form-control-color form-control-sm" @bind="_iconPairOnColor" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_OffColor"]</label>
+                            <input type="color" class="form-control form-control-color form-control-sm" @bind="_iconPairOffColor" />
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>@L["DisplayStyle_IconPairHint"]
+                            </small>
+                            <div class="mt-1">
+                                <span class="me-2">@L["Common_Preview"]:</span>
+                                <i class="bi bi-@(string.IsNullOrWhiteSpace(_iconPairOnIcon) ? "heart-fill" : _iconPairOnIcon)" style="@($"color: {_iconPairOnColor}; font-size: 1.2rem;")"></i>
+                                <span class="text-muted small mx-2">/</span>
+                                <i class="bi bi-@(string.IsNullOrWhiteSpace(_iconPairOffIcon) ? "heart" : _iconPairOffIcon)" style="@($"color: {_iconPairOffColor}; font-size: 1.2rem;")"></i>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
             @if (Field.FieldType is FieldType.Integer or FieldType.Decimal)
             {
+                <hr class="my-2" />
+                <div class="d-flex align-items-center gap-1 mb-2">
+                    <i class="bi bi-palette text-muted"></i>
+                    <strong class="small">@L["FieldEditor_DisplayStyle"]</strong>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label form-label-sm mb-1">@L["FieldEditor_DisplayStyleLabel"]</label>
+                        <select class="form-select form-select-sm" @bind="_displayStyle">
+                            <option value="@DisplayStyle.Default">@L["DisplayStyle_Default"]</option>
+                            <option value="@DisplayStyle.Rating">@L["DisplayStyle_Rating"]</option>
+                            <option value="@DisplayStyle.IconRepeat">@L["DisplayStyle_IconRepeat"]</option>
+                            <option value="@DisplayStyle.ProgressBar">@L["DisplayStyle_ProgressBar"]</option>
+                            <option value="@DisplayStyle.Slider">@L["DisplayStyle_Slider"]</option>
+                        </select>
+                    </div>
+                    @if (_displayStyle == DisplayStyle.Rating)
+                    {
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_StarCount"]</label>
+                            <input type="number" min="1" max="20" class="form-control form-control-sm" @bind="_ratingCount" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_ValuePerStar"]</label>
+                            <input type="number" min="0" step="any" class="form-control form-control-sm" @bind="_ratingValuePerIcon" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@($"max: {_ratingCount * _ratingValuePerIcon}")</small>
+                        </div>
+                    }
+                    else if (_displayStyle == DisplayStyle.IconRepeat)
+                    {
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_IconCount"]</label>
+                            <input type="number" min="1" max="20" class="form-control form-control-sm" @bind="_ratingCount" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_ValuePerIcon"]</label>
+                            <input type="number" min="0" step="any" class="form-control form-control-sm" @bind="_ratingValuePerIcon" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_Icon"]</label>
+                            <input type="text" class="form-control form-control-sm" placeholder="heart-fill" @bind="_iconRepeatIcon" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_OnColor"]</label>
+                            <input type="color" class="form-control form-control-color form-control-sm" @bind="_iconRepeatColor" />
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>@L["DisplayStyle_IconRepeatHint"]
+                            </small>
+                            <div class="mt-1 d-flex align-items-center gap-1">
+                                <span class="me-2">@L["Common_Preview"]:</span>
+                                @for (var i = 0; i < Math.Max(1, _ratingCount); i++)
+                                {
+                                    <i class="bi bi-@(string.IsNullOrWhiteSpace(_iconRepeatIcon) ? "heart-fill" : _iconRepeatIcon)" style="@($"color: {_iconRepeatColor}; font-size: 1.2rem;")"></i>
+                                }
+                                <small class="text-muted ms-2">max: @(_ratingCount * _ratingValuePerIcon)</small>
+                            </div>
+                        </div>
+                    }
+                    else if (_displayStyle == DisplayStyle.ProgressBar)
+                    {
+                        <div class="col-md-8 d-flex align-items-end">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@L["DisplayStyle_ProgressBarHint"]</small>
+                        </div>
+                    }
+                    else if (_displayStyle == DisplayStyle.Slider)
+                    {
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm mb-1">@L["DisplayStyle_Step"]</label>
+                            <input type="number" min="0" step="any" class="form-control form-control-sm" @bind="_sliderStep" />
+                        </div>
+                        <div class="col-md-5 d-flex align-items-end">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>@L["DisplayStyle_SliderHint"]</small>
+                        </div>
+                    }
+                </div>
+
                 <hr class="my-2" />
                 <div class="d-flex align-items-center gap-1 mb-2">
                     <i class="bi bi-bar-chart-line text-muted"></i>
@@ -532,6 +726,17 @@
     private string? _description;
     private bool _isRequired;
     private bool _isMultiselect;
+    private DisplayStyle _displayStyle = DisplayStyle.Default;
+    private int _ratingCount = 5;
+    private decimal _ratingValuePerIcon = 1m;
+    private decimal _sliderStep = 1m;
+    private string _iconPairOnIcon = "heart-fill";
+    private string _iconPairOffIcon = "heart";
+    private string _iconPairOnColor = "#dc3545";
+    private string _iconPairOffColor = "#bbbbbb";
+    private int _textRows = 4;
+    private string _iconRepeatIcon = "heart-fill";
+    private string _iconRepeatColor = "#dc3545";
     private string? _defaultValue;
     private string? _unit;
     private int _order;
@@ -654,6 +859,21 @@
         _description = Field.Description;
         _isRequired = Field.IsRequired;
         _isMultiselect = Field.IsMultiselect;
+        _displayStyle = Field.DisplayStyle;
+        _ratingCount = Field.DisplayStyleConfig?.Count ?? 5;
+        _ratingValuePerIcon = Field.DisplayStyleConfig?.ValuePerIcon ?? 1m;
+        _sliderStep = Field.DisplayStyleConfig?.Step ?? (Field.FieldType == FieldType.Integer ? 1m : 0.1m);
+        _iconPairOnIcon = Field.DisplayStyleConfig?.Icon ?? "heart-fill";
+        _iconPairOffIcon = Field.DisplayStyleConfig?.OffIcon ?? "heart";
+        _iconPairOnColor = Field.DisplayStyleConfig?.OnColor ?? "#dc3545";
+        _iconPairOffColor = Field.DisplayStyleConfig?.OffColor ?? "#bbbbbb";
+        _textRows = Field.DisplayStyleConfig?.Rows ?? 4;
+        _iconRepeatIcon = Field.DisplayStyle == DisplayStyle.IconRepeat
+            ? (Field.DisplayStyleConfig?.Icon ?? "heart-fill")
+            : "heart-fill";
+        _iconRepeatColor = Field.DisplayStyle == DisplayStyle.IconRepeat
+            ? (Field.DisplayStyleConfig?.OnColor ?? "#dc3545")
+            : "#dc3545";
         _defaultValue = Field.DefaultValue;
         _unit = Field.Unit;
         _order = Field.Order;
@@ -758,6 +978,8 @@
         var defaultVal = ResolveDefaultValue();
         var autoCounter = BuildAutoCounterConfig();
 
+        var displayStyleConfig = BuildDisplayStyleConfig();
+
         var request = new UpdateActionFieldRequest(
             _name, _description, maxValue, minValue, _isRequired, defaultVal, _unit, _order,
             _summaryMetrics, _trendAggregation, _trendChartType, _targetValue,
@@ -765,7 +987,9 @@
             _initialValueBehavior, _initialValuePeriodUnit, _initialValuePeriodCount,
             _dropdownTrendValueFieldId, _dropdownTrendAggregation, _dropdownTrendChartType,
             autoCounter,
-            IsMultiselect: _isMultiselect && Field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown);
+            IsMultiselect: _isMultiselect && Field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown,
+            DisplayStyle: _displayStyle,
+            DisplayStyleConfig: displayStyleConfig);
 
         var (ok, errs) = await ActionFieldService.UpdateAsync(TrackedActionId, Field.Id, request);
 
@@ -781,6 +1005,30 @@
 
         _saving = false;
     }
+
+    private DisplayStyleConfig? BuildDisplayStyleConfig() => _displayStyle switch
+    {
+        DisplayStyle.Rating when Field.FieldType is FieldType.Integer or FieldType.Decimal =>
+            new DisplayStyleConfig(Count: Math.Max(1, _ratingCount), ValuePerIcon: _ratingValuePerIcon > 0 ? _ratingValuePerIcon : 1m),
+        DisplayStyle.IconRepeat when Field.FieldType is FieldType.Integer or FieldType.Decimal =>
+            new DisplayStyleConfig(
+                Count: Math.Max(1, _ratingCount),
+                ValuePerIcon: _ratingValuePerIcon > 0 ? _ratingValuePerIcon : 1m,
+                Icon: string.IsNullOrWhiteSpace(_iconRepeatIcon) ? "heart-fill" : _iconRepeatIcon.Trim(),
+                OnColor: _iconRepeatColor),
+        DisplayStyle.Slider when Field.FieldType is FieldType.Integer or FieldType.Decimal =>
+            new DisplayStyleConfig(Step: _sliderStep > 0 ? _sliderStep : 1m),
+        DisplayStyle.IconPair when Field.FieldType == FieldType.Boolean =>
+            new DisplayStyleConfig(
+                Icon: string.IsNullOrWhiteSpace(_iconPairOnIcon) ? "heart-fill" : _iconPairOnIcon.Trim(),
+                OffIcon: string.IsNullOrWhiteSpace(_iconPairOffIcon) ? "heart" : _iconPairOffIcon.Trim(),
+                OnColor: _iconPairOnColor,
+                OffColor: _iconPairOffColor),
+        (DisplayStyle.Textarea or DisplayStyle.Markdown) when Field.FieldType == FieldType.Text =>
+            new DisplayStyleConfig(Rows: Math.Max(2, _textRows)),
+        // ProgressBar / Default / Checkbox / Chips / Radio don't need extra config.
+        _ => null
+    };
 
     private AutoCounterConfig? BuildAutoCounterConfig()
     {

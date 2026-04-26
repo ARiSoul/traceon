@@ -692,6 +692,11 @@ else
             var fieldUnit = field.Unit;
             var fieldType = field.FieldType;
             var fieldIsMulti = field.IsMultiselect;
+            var fieldDisplayStyle = field.DisplayStyle;
+            var fieldRatingCount = field.DisplayStyleConfig?.Count ?? 5;
+            var fieldRatingValuePerIcon = field.DisplayStyleConfig?.ValuePerIcon ?? 1m;
+            var fieldMin = field.MinValue;
+            var fieldMax = field.MaxValue;
 
             _columns.Add(new()
             {
@@ -721,13 +726,78 @@ else
                     var value = values.Count > 0 ? values[0] : null;
                     if (!string.IsNullOrEmpty(value))
                     {
+                        if (fieldDisplayStyle is DisplayStyle.Rating or DisplayStyle.IconRepeat
+                            && fieldType is FieldType.Integer or FieldType.Decimal
+                            && decimal.TryParse(value, CultureInfo.InvariantCulture, out var ratingNum))
+                        {
+                            var cellIcon = fieldDisplayStyle == DisplayStyle.IconRepeat
+                                ? (field.DisplayStyleConfig?.Icon ?? "heart-fill")
+                                : "star-fill";
+                            var cellColor = fieldDisplayStyle == DisplayStyle.IconRepeat
+                                ? (field.DisplayStyleConfig?.OnColor ?? "#dc3545")
+                                : "#f5b50a";
+                            builder.OpenComponent<RatingInput>(0);
+                            builder.AddAttribute(1, "Value", ratingNum);
+                            builder.AddAttribute(2, "Count", fieldRatingCount);
+                            builder.AddAttribute(3, "ValuePerIcon", fieldRatingValuePerIcon);
+                            builder.AddAttribute(4, "IsReadOnly", true);
+                            builder.AddAttribute(5, "ShowClear", false);
+                            builder.AddAttribute(6, "Size", "0.95rem");
+                            builder.AddAttribute(7, "Icon", cellIcon);
+                            builder.AddAttribute(8, "ActiveColor", cellColor);
+                            builder.CloseComponent();
+                            return;
+                        }
+
+                        if (fieldDisplayStyle == DisplayStyle.Markdown
+                            && fieldType == FieldType.Text)
+                        {
+                            builder.OpenComponent<MarkdownDisplay>(0);
+                            builder.AddAttribute(1, "Source", value);
+                            builder.AddAttribute(2, "Truncate", true);
+                            builder.CloseComponent();
+                            return;
+                        }
+
+                        if (fieldDisplayStyle is DisplayStyle.ProgressBar or DisplayStyle.Slider
+                            && fieldType is FieldType.Integer or FieldType.Decimal
+                            && decimal.TryParse(value, CultureInfo.InvariantCulture, out var barNum))
+                        {
+                            builder.OpenComponent<ProgressBarDisplay>(0);
+                            builder.AddAttribute(1, "Value", barNum);
+                            builder.AddAttribute(2, "Min", fieldMin);
+                            builder.AddAttribute(3, "Max", fieldMax);
+                            builder.AddAttribute(4, "Unit", fieldUnit == "UN" ? null : fieldUnit);
+                            builder.AddAttribute(5, "Compact", true);
+                            builder.AddAttribute(6, "IsInteger", fieldType == FieldType.Integer);
+                            builder.CloseComponent();
+                            return;
+                        }
+
                         if (fieldType == FieldType.Boolean)
                         {
-                            var icon = value.Equals("true", StringComparison.OrdinalIgnoreCase)
-                                ? "check-circle-fill text-success" : "x-circle-fill text-danger";
-                            builder.OpenElement(0, "i");
-                            builder.AddAttribute(1, "class", $"bi bi-{icon}");
-                            builder.CloseElement();
+                            var boolVal = value.Equals("true", StringComparison.OrdinalIgnoreCase);
+                            if (fieldDisplayStyle == DisplayStyle.IconPair && field.DisplayStyleConfig is { } cfg)
+                            {
+                                var iconName = boolVal
+                                    ? (cfg.Icon ?? "heart-fill")
+                                    : (cfg.OffIcon ?? "heart");
+                                var color = boolVal
+                                    ? (cfg.OnColor ?? "#dc3545")
+                                    : (cfg.OffColor ?? "#bbb");
+                                builder.OpenElement(0, "i");
+                                builder.AddAttribute(1, "class", $"bi bi-{iconName}");
+                                builder.AddAttribute(2, "style", $"color: {color}; font-size: 1.05rem;");
+                                builder.CloseElement();
+                            }
+                            else
+                            {
+                                var icon = boolVal
+                                    ? "check-circle-fill text-success" : "x-circle-fill text-danger";
+                                builder.OpenElement(0, "i");
+                                builder.AddAttribute(1, "class", $"bi bi-{icon}");
+                                builder.CloseElement();
+                            }
                         }
                         else
                         {

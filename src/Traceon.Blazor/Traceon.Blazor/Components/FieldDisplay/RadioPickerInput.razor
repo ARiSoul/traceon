@@ -1,0 +1,32 @@
+@inject IStringLocalizer<SharedResource> L
+
+<div class="d-flex flex-wrap gap-3">
+    @foreach (var option in Options)
+    {
+        var inputId = $"{Name}-{option.GetHashCode()}";
+        <div class="form-check">
+            <input class="form-check-input" type="radio"
+                   name="@Name" id="@inputId" value="@option"
+                   checked="@IsSelected(option)"
+                   disabled="@IsReadOnly"
+                   @onchange="() => OnSelectAsync(option)" />
+            <label class="form-check-label" for="@inputId">@option</label>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<string> Options { get; set; } = [];
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public string Name { get; set; } = Guid.NewGuid().ToString("N");
+    [Parameter] public bool IsReadOnly { get; set; }
+
+    private bool IsSelected(string option) => string.Equals(Value, option, StringComparison.OrdinalIgnoreCase);
+
+    private async Task OnSelectAsync(string option)
+    {
+        if (IsReadOnly) return;
+        await ValueChanged.InvokeAsync(option);
+    }
+}

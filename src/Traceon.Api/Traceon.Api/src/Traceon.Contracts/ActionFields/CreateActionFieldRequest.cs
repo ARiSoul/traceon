@@ -24,4 +24,6 @@ public sealed record CreateActionFieldRequest(
     TrendAggregation DropdownTrendAggregation = TrendAggregation.AllPoints,
     TrendChartType DropdownTrendChartType = TrendChartType.Line,
     AutoCounterConfig? AutoCounterConfig = null,
-    bool IsMultiselect = false);
+    bool IsMultiselect = false,
+    DisplayStyle DisplayStyle = DisplayStyle.Default,
+    DisplayStyleConfig? DisplayStyleConfig = null);
