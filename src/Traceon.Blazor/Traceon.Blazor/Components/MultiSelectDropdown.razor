@@ -84,7 +84,7 @@
                 <button type="button" class="btn btn-primary btn-sm py-0 px-2"
                         disabled="@(!_hasPendingChanges)"
                         @onclick="ApplyAsync">
-                    <i class="bi bi-funnel me-1"></i>@L["DataGrid_Filter"]
+                    <i class="bi bi-@(ApplyIcon ?? "funnel") me-1"></i>@(ApplyLabel ?? L["DataGrid_Filter"])
                 </button>
             </div>
         </div>
@@ -96,6 +96,10 @@
     [Parameter] public string Placeholder { get; set; } = "";
     [Parameter] public HashSet<string> SelectedValues { get; set; } = [];
     [Parameter] public EventCallback<HashSet<string>> SelectedValuesChanged { get; set; }
+    /// <summary>Optional override for the apply button label. Defaults to "Filter".</summary>
+    [Parameter] public string? ApplyLabel { get; set; }
+    /// <summary>Optional override for the apply button icon (Bootstrap Icons name without "bi-" prefix). Defaults to "funnel".</summary>
+    [Parameter] public string? ApplyIcon { get; set; }
 
     private HashSet<string> _committedValues = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _pendingValues = new(StringComparer.OrdinalIgnoreCase);

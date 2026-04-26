@@ -42,4 +42,5 @@ public sealed class EntryTemplateField : Entity
 
         MarkUpdated();
     }
+
 }

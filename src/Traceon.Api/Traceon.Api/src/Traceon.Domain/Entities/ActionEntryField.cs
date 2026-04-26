@@ -42,4 +42,5 @@ public sealed class ActionEntryField : Entity
 
         MarkUpdated();
     }
+
 }

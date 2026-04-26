@@ -182,7 +182,9 @@ else
                                                     <MultiSelectDropdown Options="model.DropdownOptions.ToList()"
                                                                          SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
                                                                          SelectedValuesChanged="vs => OnMultiDropdownChanged(model, vs)"
-                                                                         Placeholder="@L["Entry_Select"]" />
+                                                                         Placeholder="@L["Entry_Select"]"
+                                                                         ApplyLabel="@L["Common_Save"]"
+                                                                         ApplyIcon="check-lg" />
                                                 </div>
                                                 <button class="btn btn-outline-secondary flex-shrink-0" type="button"
                                                         title="@L["Dropdown_AddNew"]"
@@ -290,7 +292,9 @@ else
                                                     <MultiSelectDropdown Options="compositeOptions"
                                                                          SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
                                                                          SelectedValuesChanged="vs => OnMultiDropdownChanged(model, vs)"
-                                                                         Placeholder="@L["Entry_Select"]" />
+                                                                         Placeholder="@L["Entry_Select"]"
+                                                                         ApplyLabel="@L["Common_Save"]"
+                                                                         ApplyIcon="check-lg" />
                                                 </div>
                                                 <button class="btn btn-outline-secondary flex-shrink-0" type="button"
                                                         title="@L["Dropdown_AddNew"]"
@@ -658,7 +662,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _returnUrl = ReturnUrl ?? "/";
+        // SupplyParameterFromQuery doesn't always unescape percent-encoded values; do it explicitly
+        // so a returnUrl like "%2Fdashboard%2Faction%2F<guid>%2Fdetail" navigates to the actual route.
+        _returnUrl = string.IsNullOrEmpty(ReturnUrl) ? "/" : Uri.UnescapeDataString(ReturnUrl);
 
         var action = await ActionService.GetByIdAsync(TrackedActionId);
         _actionName = action?.Name;

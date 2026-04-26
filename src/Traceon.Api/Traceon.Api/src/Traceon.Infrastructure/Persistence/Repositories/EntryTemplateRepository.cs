@@ -40,28 +40,45 @@ internal sealed class EntryTemplateRepository(TraceonDbContext context) : IEntry
     {
         if (fieldValues is not null)
         {
-            var existingFields = await context.EntryTemplateFields
-                .Include(f => f.Values)
-                .Where(f => f.EntryTemplateId == template.Id)
-                .ToListAsync(cancellationToken);
-
             var incomingByFieldId = fieldValues.ToDictionary(f => f.ActionFieldId, f => f.Values);
 
-            foreach (var existing in existingFields.Where(f => !incomingByFieldId.ContainsKey(f.ActionFieldId)).ToList())
-                context.EntryTemplateFields.Remove(existing);
+            var slotsToRemove = template.Fields
+                .Where(f => !incomingByFieldId.ContainsKey(f.ActionFieldId))
+                .ToList();
+
+            foreach (var slot in slotsToRemove)
+                context.EntryTemplateFields.Remove(slot);
 
             foreach (var (actionFieldId, values) in fieldValues)
             {
-                var existing = existingFields.FirstOrDefault(f => f.ActionFieldId == actionFieldId);
-                if (existing is not null)
+                var existing = template.Fields.FirstOrDefault(f => f.ActionFieldId == actionFieldId);
+
+                if (existing is null)
                 {
-                    existing.SetValues(values);
+                    var slot = EntryTemplateField.Create(template.Id, actionFieldId);
+                    context.EntryTemplateFields.Add(slot);
+
+                    var order = 0;
+                    foreach (var raw in values ?? [])
+                    {
+                        if (string.IsNullOrWhiteSpace(raw)) continue;
+                        context.EntryTemplateFieldValues.Add(
+                            EntryTemplateFieldValue.Create(slot.Id, raw.Trim(), order++));
+                    }
                 }
                 else
                 {
-                    var slot = EntryTemplateField.Create(template.Id, actionFieldId);
-                    slot.SetValues(values);
-                    context.EntryTemplateFields.Add(slot);
+                    foreach (var oldValue in existing.Values.ToList())
+                        context.EntryTemplateFieldValues.Remove(oldValue);
+
+                    var order = 0;
+                    foreach (var raw in values ?? [])
+                    {
+                        if (string.IsNullOrWhiteSpace(raw)) continue;
+                        context.EntryTemplateFieldValues.Add(
+                            EntryTemplateFieldValue.Create(existing.Id, raw.Trim(), order++));
+                    }
+                    existing.MarkUpdated();
                 }
             }
         }

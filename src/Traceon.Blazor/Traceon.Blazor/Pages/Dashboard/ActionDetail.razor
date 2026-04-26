@@ -25,7 +25,7 @@
         <a href="@BuildEntriesUrl()" class="btn btn-outline-secondary">
             <i class="bi bi-journal-text me-1"></i>@L["Dashboard_ViewEntries"]
         </a>
-        <a href="/tracked-actions/@ActionId/entries/new?returnUrl=%2Fdashboard%2Faction%2F@ActionId%2Fdetail"
+        <a href="@($"/tracked-actions/{ActionId}/entries/new?returnUrl={Uri.EscapeDataString($"/dashboard/action/{ActionId}/detail")}")"
            class="btn btn-outline-primary">
             <i class="bi bi-plus-circle me-1"></i>@L["Dashboard_NewEntry"]
         </a>

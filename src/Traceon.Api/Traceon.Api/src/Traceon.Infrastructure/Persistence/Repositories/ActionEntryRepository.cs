@@ -54,28 +54,50 @@ internal sealed class ActionEntryRepository(TraceonDbContext context) : IActionE
     {
         if (fieldValues is not null)
         {
-            var existingFields = await context.ActionEntryFields
-                .Include(f => f.Values)
-                .Where(f => f.ActionEntryId == entry.Id)
-                .ToListAsync(cancellationToken);
-
             var incomingByFieldId = fieldValues.ToDictionary(f => f.ActionFieldId, f => f.Values);
 
-            foreach (var existing in existingFields.Where(f => !incomingByFieldId.ContainsKey(f.ActionFieldId)).ToList())
-                context.ActionEntryFields.Remove(existing);
+            // Slots not present in incoming → delete (cascade-deletes their AEFV children).
+            var slotsToRemove = entry.Fields
+                .Where(f => !incomingByFieldId.ContainsKey(f.ActionFieldId))
+                .ToList();
 
+            foreach (var slot in slotsToRemove)
+                context.ActionEntryFields.Remove(slot);
+
+            // For each incoming field, drive the change tracker explicitly: remove old AEFV
+            // rows by name (so EF doesn't have to detect orphans through collection mutation),
+            // then add new ones. New slots are tracked via Add; existing slots only need their
+            // child rows replaced.
             foreach (var (actionFieldId, values) in fieldValues)
             {
-                var existing = existingFields.FirstOrDefault(f => f.ActionFieldId == actionFieldId);
-                if (existing is not null)
+                var existing = entry.Fields.FirstOrDefault(f => f.ActionFieldId == actionFieldId);
+
+                if (existing is null)
                 {
-                    existing.SetValues(values);
+                    var slot = ActionEntryField.Create(entry.Id, actionFieldId);
+                    context.ActionEntryFields.Add(slot);
+
+                    var order = 0;
+                    foreach (var raw in values ?? [])
+                    {
+                        if (string.IsNullOrWhiteSpace(raw)) continue;
+                        context.ActionEntryFieldValues.Add(
+                            ActionEntryFieldValue.Create(slot.Id, raw.Trim(), order++));
+                    }
                 }
                 else
                 {
-                    var slot = ActionEntryField.Create(entry.Id, actionFieldId);
-                    slot.SetValues(values);
-                    context.ActionEntryFields.Add(slot);
+                    foreach (var oldValue in existing.Values.ToList())
+                        context.ActionEntryFieldValues.Remove(oldValue);
+
+                    var order = 0;
+                    foreach (var raw in values ?? [])
+                    {
+                        if (string.IsNullOrWhiteSpace(raw)) continue;
+                        context.ActionEntryFieldValues.Add(
+                            ActionEntryFieldValue.Create(existing.Id, raw.Trim(), order++));
+                    }
+                    existing.MarkUpdated();
                 }
             }
         }

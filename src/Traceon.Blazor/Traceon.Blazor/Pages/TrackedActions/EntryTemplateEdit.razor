@@ -127,7 +127,9 @@ else
                                                 <MultiSelectDropdown Options="model.DropdownOptions.ToList()"
                                                                      SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
                                                                      SelectedValuesChanged="vs => OnTemplateMultiChanged(model, vs)"
-                                                                     Placeholder="@L["Entry_Select"]" />
+                                                                     Placeholder="@L["Entry_Select"]"
+                                                                     ApplyLabel="@L["Common_Save"]"
+                                                                     ApplyIcon="check-lg" />
                                                 @if (model.MultiValues.Count > 0)
                                                 {
                                                     <div class="d-flex flex-wrap gap-1">
@@ -166,7 +168,9 @@ else
                                                 <MultiSelectDropdown Options="compositeOptions"
                                                                      SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
                                                                      SelectedValuesChanged="vs => OnTemplateMultiChanged(model, vs)"
-                                                                     Placeholder="@L["Entry_Select"]" />
+                                                                     Placeholder="@L["Entry_Select"]"
+                                                                     ApplyLabel="@L["Common_Save"]"
+                                                                     ApplyIcon="check-lg" />
                                                 @if (model.MultiValues.Count > 0)
                                                 {
                                                     <div class="d-flex flex-wrap gap-1">

@@ -386,14 +386,15 @@ else
         {
             if (!_isEdit && created is not null && _model.Type == FieldType.Dropdown)
             {
+                _saving = false;
                 Nav.NavigateTo($"/field-definitions/{created.Id}/edit");
                 return;
             }
             Nav.NavigateTo("/field-definitions");
+            return;
         }
-        else
-            _errors = errors.Count > 0 ? errors : [L["Common_ErrorOccurred"]];
 
+        _errors = errors.Count > 0 ? errors : [L["Common_ErrorOccurred"]];
         _saving = false;
     }
 
