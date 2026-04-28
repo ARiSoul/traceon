@@ -17,11 +17,8 @@ public sealed class ChartVisibilityService(HttpClient http)
             using var response = await http.SendAsync(request);
             response.EnsureSuccessStatusCode();
 
-            var payload = await response.Content.ReadFromJsonAsync<ChartVisibilityResponse>()
+            return await response.Content.ReadFromJsonAsync<ChartVisibilityResponse>()
                 ?? new ChartVisibilityResponse([], []);
-
-            Console.WriteLine($"[ChartVisibility] GET {trackedActionId}: hidden={payload.HiddenKeys.Count}, order=[{string.Join(",", payload.ChartOrder)}]");
-            return payload;
         }
         catch (Exception ex)
         {
@@ -53,11 +50,9 @@ public sealed class ChartVisibilityService(HttpClient http)
     {
         try
         {
-            var orderList = chartOrder.ToList();
             var response = await http.PutAsJsonAsync(
                 $"/api/tracked-actions/{trackedActionId}/chart-visibility/order",
-                new UpdateChartOrderRequest(orderList));
-            Console.WriteLine($"[ChartVisibility] PUT order {trackedActionId} status={(int)response.StatusCode}: [{string.Join(",", orderList)}]");
+                new UpdateChartOrderRequest(chartOrder.ToList()));
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
