@@ -95,7 +95,21 @@
             <i class="bi bi-info-circle me-1"></i>Layout diagnostics
         </summary>
         <div class="mt-1 p-2 border rounded" style="word-break: break-all; font-family: monospace; font-size: 0.75rem;">
-            @_layoutLoadDiag
+            <div class="mb-2">@_layoutLoadDiag</div>
+            <div class="mb-2">In-memory _hiddenCharts (@_hiddenCharts.Count): @(string.Join(", ", _hiddenCharts.OrderBy(k => k)))</div>
+            <div class="mb-2">In-memory _chartOrder (@_chartOrder.Count): @(string.Join(", ", _chartOrder))</div>
+            @if (_data is not null)
+            {
+                <div class="mb-2 fw-bold">Effective render evaluation (data keys ↦ hidden? / order):</div>
+                <ul class="mb-0 ps-3">
+                    @foreach (var entry in BuildAllChartEntries())
+                    {
+                        var hidden = _hiddenCharts.Contains(entry.Key);
+                        var ord = GetChartOrder(entry.Key);
+                        <li>@entry.Key — hidden=@hidden, order=@ord</li>
+                    }
+                </ul>
+            }
         </div>
     </details>
 }
