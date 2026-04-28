@@ -152,6 +152,7 @@
   <data name="Dashboard_LastNYears"><value>Últimos N Anos</value></data>
   <data name="Dashboard_CustomRange"><value>Intervalo Personalizado</value></data>
   <data name="Dashboard_SpecificMonth"><value>Mês Específico</value></data>
+  <data name="Dashboard_Since"><value>Desde</value></data>
   <data name="Dashboard_Days"><value>Dias</value></data>
   <data name="Dashboard_Months"><value>Meses</value></data>
   <data name="Dashboard_Years"><value>Anos</value></data>

@@ -1,0 +1,144 @@
+@inject IStringLocalizer<SharedResource> L
+
+<div class="col-12 col-md-3">
+    <label class="form-label form-label-sm mb-1">
+        <i class="bi bi-calendar-range me-1"></i>@L["Dashboard_Period"]
+    </label>
+    <select class="form-select form-select-sm" value="@State.Mode" @onchange="OnModeChanged">
+        <option value="all">@L["Common_AllTime"]</option>
+        <option value="days">@L["Dashboard_LastNDays"]</option>
+        <option value="months">@L["Dashboard_LastNMonths"]</option>
+        <option value="years">@L["Dashboard_LastNYears"]</option>
+        <option value="month">@L["Dashboard_SpecificMonth"]</option>
+        <option value="since">@L["Dashboard_Since"]</option>
+        <option value="custom">@L["Dashboard_CustomRange"]</option>
+    </select>
+</div>
+
+@if (State.Mode is "days" or "months" or "years")
+{
+    <div class="col-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">
+            @(State.Mode switch { "days" => L["Dashboard_Days"], "months" => L["Dashboard_Months"], _ => L["Dashboard_Years"] })
+        </label>
+        <input type="number" class="form-control form-control-sm" min="1"
+               value="@State.Value" @onchange="OnValueChanged" />
+    </div>
+}
+else if (State.Mode == "month")
+{
+    <div class="col-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">@L["Dashboard_Month"]</label>
+        <input type="month" class="form-control form-control-sm"
+               value="@State.SelectedMonth?.ToString("yyyy-MM")"
+               @onchange="OnMonthChanged" />
+    </div>
+}
+else if (State.Mode == "since")
+{
+    <div class="col-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">@L["Dashboard_Since"]</label>
+        <input type="date" class="form-control form-control-sm"
+               value="@State.SinceDate?.ToString("yyyy-MM-dd")"
+               @onchange="OnSinceChanged" />
+    </div>
+}
+else if (State.Mode == "custom")
+{
+    <div class="col-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">@L["Dashboard_From"]</label>
+        <input type="date" class="form-control form-control-sm"
+               value="@State.CustomFrom?.ToString("yyyy-MM-dd")"
+               @onchange="OnFromChanged" />
+    </div>
+    <div class="col-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
+        <input type="date" class="form-control form-control-sm"
+               value="@State.CustomTo?.ToString("yyyy-MM-dd")"
+               @onchange="OnToChanged" />
+    </div>
+}
+
+@if (ShowDateField && State.Mode != "all")
+{
+    <div class="col-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">@L["Filter_DateField"]</label>
+        <select class="form-select form-select-sm" value="@State.DateField" @onchange="OnDateFieldChanged">
+            <option value="OccurredAtUtc">@L["Filter_Occurred"]</option>
+            <option value="CreatedAtUtc">@L["Common_Created"]</option>
+        </select>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public PeriodFilterState State { get; set; } = default!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public bool ShowDateField { get; set; }
+
+    private async Task OnModeChanged(ChangeEventArgs e)
+    {
+        State.Mode = e.Value?.ToString() ?? "all";
+
+        State.Value = State.Mode switch
+        {
+            "days" => 30,
+            "months" => 1,
+            "years" => 1,
+            _ => State.Value
+        };
+        if (State.Mode == "custom" && !State.CustomFrom.HasValue && !State.CustomTo.HasValue)
+        {
+            State.CustomFrom = DateTime.Today.AddMonths(-1);
+            State.CustomTo = DateTime.Today;
+        }
+        if (State.Mode == "month" && !State.SelectedMonth.HasValue)
+        {
+            State.SelectedMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        }
+        if (State.Mode == "since" && !State.SinceDate.HasValue)
+        {
+            State.SinceDate = DateTime.Today.AddMonths(-1);
+        }
+
+        await Notify();
+    }
+
+    private async Task OnValueChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v) && v > 0)
+            State.Value = v;
+        await Notify();
+    }
+
+    private async Task OnMonthChanged(ChangeEventArgs e)
+    {
+        State.SelectedMonth = DateTime.TryParse(e.Value?.ToString() + "-01", out var d) ? d : null;
+        await Notify();
+    }
+
+    private async Task OnSinceChanged(ChangeEventArgs e)
+    {
+        State.SinceDate = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await Notify();
+    }
+
+    private async Task OnFromChanged(ChangeEventArgs e)
+    {
+        State.CustomFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await Notify();
+    }
+
+    private async Task OnToChanged(ChangeEventArgs e)
+    {
+        State.CustomTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+        await Notify();
+    }
+
+    private async Task OnDateFieldChanged(ChangeEventArgs e)
+    {
+        State.DateField = e.Value?.ToString() ?? "OccurredAtUtc";
+        await Notify();
+    }
+
+    private Task Notify() => OnChanged.HasDelegate ? OnChanged.InvokeAsync() : Task.CompletedTask;
+}

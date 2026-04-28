@@ -151,6 +151,7 @@
   <data name="Dashboard_LastNYears"><value>Last N Years</value></data>
   <data name="Dashboard_CustomRange"><value>Custom Range</value></data>
   <data name="Dashboard_SpecificMonth"><value>Specific Month</value></data>
+  <data name="Dashboard_Since"><value>Since</value></data>
   <data name="Dashboard_Days"><value>Days</value></data>
   <data name="Dashboard_Months"><value>Months</value></data>
   <data name="Dashboard_Years"><value>Years</value></data>

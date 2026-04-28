@@ -36,52 +36,7 @@
 
 <!-- Period Filter -->
 <div class="row g-2 mb-4 align-items-end">
-    <div class="col-12 col-md-3">
-        <label class="form-label form-label-sm mb-1">
-            <i class="bi bi-calendar-range me-1"></i>@L["Dashboard_Period"]
-        </label>
-        <select class="form-select form-select-sm" value="@_periodMode" @onchange="OnPeriodModeInput">
-            <option value="all">@L["Common_AllTime"]</option>
-            <option value="days">@L["Dashboard_LastNDays"]</option>
-            <option value="months">@L["Dashboard_LastNMonths"]</option>
-            <option value="years">@L["Dashboard_LastNYears"]</option>
-            <option value="month">@L["Dashboard_SpecificMonth"]</option>
-            <option value="custom">@L["Dashboard_CustomRange"]</option>
-        </select>
-    </div>
-    @if (_periodMode is "days" or "months" or "years")
-    {
-        <div class="col-6 col-md-2">
-            <label class="form-label form-label-sm mb-1">
-                @(_periodMode switch { "days" => L["Dashboard_Days"], "months" => L["Dashboard_Months"], _ => L["Dashboard_Years"] })
-            </label>
-            <input type="number" class="form-control form-control-sm" min="1"
-                   value="@_periodValue" @onchange="e => { if (int.TryParse(e.Value?.ToString(), out var v) && v > 0) _periodValue = v; }" />
-        </div>
-    }
-    else if (_periodMode == "month")
-    {
-        <div class="col-6 col-md-2">
-            <label class="form-label form-label-sm mb-1">@L["Dashboard_Month"]</label>
-            <input type="month"
-                   class="form-control form-control-sm"
-                   value="@_selectedMonth?.ToString("yyyy-MM")"
-                   @onchange="OnMonthInput" />
-        </div>
-    }
-    else if (_periodMode == "custom")
-    {
-        <div class="col-6 col-md-2">
-            <label class="form-label form-label-sm mb-1">@L["Dashboard_From"]</label>
-            <input type="date" class="form-control form-control-sm"
-                   value="@_customFrom?.ToString("yyyy-MM-dd")" @onchange="e => _customFrom = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null" />
-        </div>
-        <div class="col-6 col-md-2">
-            <label class="form-label form-label-sm mb-1">@L["Dashboard_To"]</label>
-            <input type="date" class="form-control form-control-sm"
-                   value="@_customTo?.ToString("yyyy-MM-dd")" @onchange="e => _customTo = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null" />
-        </div>
-    }
+    <PeriodFilter State="_periodState" />
     <div class="col-auto">
         <button class="btn btn-primary btn-sm" @onclick="ApplyFiltersAsync" disabled="@(_loading || _applying)">
             @if (_applying)
@@ -905,6 +860,7 @@ else
     [SupplyParameterFromQuery(Name = "from")] public string? FromParam { get; set; }
     [SupplyParameterFromQuery(Name = "to")] public string? ToParam { get; set; }
     [SupplyParameterFromQuery(Name = "month")] public string? MonthParam { get; set; }
+    [SupplyParameterFromQuery(Name = "since")] public string? SinceParam { get; set; }
     [Inject] private DashboardService DashService { get; set; } = default!;
     [Inject] private ChartVisibilityService ChartVisibility { get; set; } = default!;
     [Inject] private CustomChartApiService CustomChartApi { get; set; } = default!;
@@ -932,13 +888,9 @@ else
     private List<CustomChartResponse> _customChartDefinitions = [];
     private Dictionary<Guid, string[]> _resolvedDropdownValues = [];
 
-    private string _periodMode = "all";
-    private int _periodValue = 90;
-    private DateTime? _customFrom;
-    private DateTime? _customTo;
-    private DateTime? _selectedMonth;
+    private PeriodFilterState _periodState = new() { Value = 90 };
 
-    private bool _hasActiveFilters => _periodMode != "all";
+    private bool _hasActiveFilters => _periodState.IsActive();
 
     private ApexChartOptions<DailyCount> _frequencyOptions = new();
 
@@ -952,11 +904,12 @@ else
         // If navigated with explicit period params, use them; otherwise restore from storage
         if (!string.IsNullOrEmpty(PeriodParam))
         {
-            _periodMode = PeriodParam;
-            if (PeriodValueParam.HasValue) _periodValue = PeriodValueParam.Value;
-            if (DateTime.TryParse(FromParam, out var f)) _customFrom = f;
-            if (DateTime.TryParse(ToParam, out var t)) _customTo = t;
-            if (DateTime.TryParse(MonthParam + "-01", out var m)) _selectedMonth = m;
+            _periodState.Mode = PeriodParam;
+            if (PeriodValueParam.HasValue) _periodState.Value = PeriodValueParam.Value;
+            if (DateTime.TryParse(FromParam, out var f)) _periodState.CustomFrom = f;
+            if (DateTime.TryParse(ToParam, out var t)) _periodState.CustomTo = t;
+            if (DateTime.TryParse(MonthParam + "-01", out var m)) _periodState.SelectedMonth = m;
+            if (DateTime.TryParse(SinceParam, out var s)) _periodState.SinceDate = s;
         }
         else
         {
@@ -968,16 +921,6 @@ else
         try { _actionFields = await FieldService.GetByTrackedActionAsync(ActionId); } catch { }
         try { _resolvedDropdownValues = await ResolveCompositeDropdownValuesAsync(_actionFields); } catch { }
         try { _customChartDefinitions = await CustomChartApi.GetByTrackedActionAsync(ActionId); } catch { }
-    }
-
-    private void OnPeriodModeInput(ChangeEventArgs e)
-    {
-        _periodMode = e.Value?.ToString() ?? "all";
-    }
-
-    private void OnMonthInput(ChangeEventArgs e)
-    {
-        _selectedMonth = DateTime.TryParse(e.Value?.ToString() + "-01", out var d) ? d : null;
     }
 
     private void BuildFrequencyOptions()
@@ -1610,16 +1553,6 @@ else
         </div>
     };
 
-    private (DateTime? From, DateTime? To) ResolveDateRange() => _periodMode switch
-    {
-        "days" => (DateTime.UtcNow.AddDays(-_periodValue), null),
-        "months" => (DateTime.UtcNow.AddMonths(-_periodValue), null),
-        "years" => (DateTime.UtcNow.AddYears(-_periodValue), null),
-        "month" when _selectedMonth.HasValue => (_selectedMonth.Value, _selectedMonth.Value.AddMonths(1)),
-        "custom" => (_customFrom, _customTo?.AddDays(1)),
-        _ => (null, null)
-    };
-
     private async Task LoadAsync()
     {
         _loading = true;
@@ -1632,7 +1565,7 @@ else
     {
         try
         {
-            var (from, to) = ResolveDateRange();
+            var (from, to) = _periodState.Resolve();
             _data = await DashService.LoadActionDetailAsync(ActionId, from, to);
             _loadKey++;
             RebuildNaturalKeyOrder();
@@ -1672,11 +1605,7 @@ else
     private async Task ResetFiltersAsync()
     {
         _applying = true;
-        _periodMode = "all";
-        _periodValue = 90;
-        _customFrom = null;
-        _customTo = null;
-        _selectedMonth = null;
+        _periodState = new PeriodFilterState { Value = 90 };
         try { await LocalStorage.RemoveItemAsync(DetailStorageKey); } catch { }
         await LoadDataCoreAsync();
         _applying = false;
@@ -1690,11 +1619,12 @@ else
         {
             var state = await LocalStorage.GetItemAsync<ActionDetailFilterState>(DetailStorageKey);
             if (state is null) return;
-            if (state.PeriodMode is not null) _periodMode = state.PeriodMode;
-            if (state.PeriodValue.HasValue) _periodValue = state.PeriodValue.Value;
-            _customFrom = state.CustomFrom;
-            _customTo = state.CustomTo;
-            _selectedMonth = state.SelectedMonth;
+            if (state.PeriodMode is not null) _periodState.Mode = state.PeriodMode;
+            if (state.PeriodValue.HasValue) _periodState.Value = state.PeriodValue.Value;
+            _periodState.CustomFrom = state.CustomFrom;
+            _periodState.CustomTo = state.CustomTo;
+            _periodState.SelectedMonth = state.SelectedMonth;
+            _periodState.SinceDate = state.SinceDate;
         }
         catch { /* best effort */ }
     }
@@ -1705,11 +1635,12 @@ else
         {
             await LocalStorage.SetItemAsync(DetailStorageKey, new ActionDetailFilterState
             {
-                PeriodMode = _periodMode,
-                PeriodValue = _periodValue,
-                CustomFrom = _customFrom,
-                CustomTo = _customTo,
-                SelectedMonth = _selectedMonth
+                PeriodMode = _periodState.Mode,
+                PeriodValue = _periodState.Value,
+                CustomFrom = _periodState.CustomFrom,
+                CustomTo = _periodState.CustomTo,
+                SelectedMonth = _periodState.SelectedMonth,
+                SinceDate = _periodState.SinceDate
             });
         }
         catch { /* best effort */ }
@@ -1722,6 +1653,7 @@ else
         public DateTime? CustomFrom { get; set; }
         public DateTime? CustomTo { get; set; }
         public DateTime? SelectedMonth { get; set; }
+        public DateTime? SinceDate { get; set; }
     }
 
     // ── Chart visibility persistence (per-user, per-action via API) ──
@@ -1990,7 +1922,7 @@ else
 
     private string BuildEntriesUrl()
     {
-        var (from, to) = ResolveDateRange();
+        var (from, to) = _periodState.Resolve();
         var url = $"/entries/action/{ActionId}";
         var queryParams = new List<string>();
         if (from.HasValue) queryParams.Add($"from={from.Value:yyyy-MM-dd}");
