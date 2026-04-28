@@ -221,11 +221,11 @@ else if (_data is not null)
         @foreach (var action in FilteredActions)
         {
             <div class="card mb-3 action-stats-card">
-                <div class="card-header d-flex justify-content-between align-items-center"
+                <div class="card-header d-flex flex-column flex-sm-row justify-content-sm-between align-items-stretch align-items-sm-center gap-2"
                      style="cursor: pointer;"
                      @onclick="() => ToggleAction(action.ActionId)">
-                    <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden">
-                        <i class="bi bi-@(_expandedActions.Contains(action.ActionId) ? "chevron-down" : "chevron-right") text-muted"></i>
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden flex-wrap">
+                        <i class="bi bi-@(_expandedActions.Contains(action.ActionId) ? "chevron-down" : "chevron-right") text-muted flex-shrink-0"></i>
                         <strong class="text-truncate">@action.Name</strong>
                         @if (action.Tags.Count > 0)
                         {
@@ -235,7 +235,7 @@ else if (_data is not null)
                             }
                         }
                     </div>
-                    <div class="d-flex align-items-center gap-3 flex-shrink-0">
+                    <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0">
                         <span class="badge bg-primary rounded-pill">@action.EntryCount @L["Dashboard_Entries"]</span>
                         @if (action.Streak > 0)
                         {

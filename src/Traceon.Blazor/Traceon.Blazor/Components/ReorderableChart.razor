@@ -1,35 +1,9 @@
-@inject IStringLocalizer<SharedResource> L
-
-<div class="chart-item @(IsDragging ? "chart-item-dragging" : "") @(IsDropTarget ? "chart-item-droptarget" : "")"
-     style="order: @Order"
-     data-chart-key="@ChartKey"
-     draggable="true"
-     @ondragstart="HandleDragStart"
-     @ondragover="HandleDragOver" @ondragover:preventDefault
-     @ondragleave="HandleDragLeave"
-     @ondrop="HandleDrop"
-     @ondragend="HandleDragEnd">
-    <div class="chart-drag-handle" title="@L["Chart_DragHint"]">
-        <i class="bi bi-grip-vertical"></i>
-    </div>
+<div class="chart-item" style="order: @Order" data-chart-key="@ChartKey">
     @ChildContent
 </div>
 
 @code {
     [Parameter, EditorRequired] public string ChartKey { get; set; } = "";
     [Parameter] public int Order { get; set; }
-    [Parameter] public bool IsDragging { get; set; }
-    [Parameter] public bool IsDropTarget { get; set; }
-    [Parameter] public EventCallback<string> OnDragStart { get; set; }
-    [Parameter] public EventCallback<string> OnDragOver { get; set; }
-    [Parameter] public EventCallback<string> OnDragLeave { get; set; }
-    [Parameter] public EventCallback<string> OnDrop { get; set; }
-    [Parameter] public EventCallback OnDragEnd { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
-
-    private Task HandleDragStart() => OnDragStart.InvokeAsync(ChartKey);
-    private Task HandleDragOver() => OnDragOver.InvokeAsync(ChartKey);
-    private Task HandleDragLeave() => OnDragLeave.InvokeAsync(ChartKey);
-    private Task HandleDrop() => OnDrop.InvokeAsync(ChartKey);
-    private Task HandleDragEnd() => OnDragEnd.InvokeAsync();
 }

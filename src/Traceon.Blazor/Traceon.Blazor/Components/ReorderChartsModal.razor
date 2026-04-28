@@ -1,0 +1,164 @@
+@inject IStringLocalizer<SharedResource> L
+
+@if (_isOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog"
+         style="background-color: rgba(0,0,0,0.5);" @onclick="CloseAsync">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document"
+             @onclick:stopPropagation>
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title mb-0">
+                        <i class="bi bi-arrows-move me-1"></i>@L["Reorder_Title"]
+                    </h6>
+                    <button type="button" class="btn-close" @onclick="CloseAsync"></button>
+                </div>
+                <div class="modal-body py-2">
+                    <small class="text-muted d-block mb-2">@L["Reorder_Subtitle"]</small>
+
+                    @if (_localOrder.Count == 0)
+                    {
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-bar-chart fs-3 d-block mb-2"></i>
+                            @L["Reorder_NoCharts"]
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @for (var i = 0; i < _localOrder.Count; i++)
+                            {
+                                var idx = i;
+                                var entry = _localOrder[idx];
+                                <li class="list-group-item d-flex align-items-center gap-2 px-2 py-2"
+                                    @key="entry.Key">
+                                    <span class="text-muted small" style="min-width: 1.75rem;">@(idx + 1).</span>
+                                    <span class="flex-grow-1 text-truncate @(entry.Hidden ? "text-muted" : "")"
+                                          title="@entry.Label">
+                                        @entry.Label
+                                        @if (entry.Hidden)
+                                        {
+                                            <span class="badge bg-secondary ms-1" style="font-size: 0.6rem;">
+                                                <i class="bi bi-eye-slash me-1"></i>@L["Reorder_Hidden"]
+                                            </span>
+                                        }
+                                    </span>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-secondary"
+                                                title="@L["Reorder_MoveToTop"]"
+                                                disabled="@(idx == 0)"
+                                                @onclick="() => MoveToTop(idx)">
+                                            <i class="bi bi-chevron-double-up"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary"
+                                                title="@L["Reorder_MoveUp"]"
+                                                disabled="@(idx == 0)"
+                                                @onclick="() => MoveUp(idx)">
+                                            <i class="bi bi-chevron-up"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary"
+                                                title="@L["Reorder_MoveDown"]"
+                                                disabled="@(idx == _localOrder.Count - 1)"
+                                                @onclick="() => MoveDown(idx)">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary"
+                                                title="@L["Reorder_MoveToBottom"]"
+                                                disabled="@(idx == _localOrder.Count - 1)"
+                                                @onclick="() => MoveToBottom(idx)">
+                                            <i class="bi bi-chevron-double-down"></i>
+                                        </button>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+                <div class="modal-footer py-2">
+                    <button class="btn btn-primary btn-sm" @onclick="DoneAsync" disabled="@_saving">
+                        @if (_saving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-lg me-1"></i>
+                        }
+                        @L["Reorder_Done"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    public sealed record ChartEntry(string Key, string Label, bool Hidden);
+
+    [Parameter] public EventCallback<List<string>> OnApply { get; set; }
+
+    private bool _isOpen;
+    private bool _saving;
+    private bool _dirty;
+    private List<ChartEntry> _localOrder = [];
+
+    public void Show(IEnumerable<ChartEntry> entries)
+    {
+        _localOrder = entries.ToList();
+        _dirty = false;
+        _isOpen = true;
+        StateHasChanged();
+    }
+
+    private void MoveUp(int idx)
+    {
+        if (idx <= 0) return;
+        (_localOrder[idx - 1], _localOrder[idx]) = (_localOrder[idx], _localOrder[idx - 1]);
+        _dirty = true;
+    }
+
+    private void MoveDown(int idx)
+    {
+        if (idx >= _localOrder.Count - 1) return;
+        (_localOrder[idx + 1], _localOrder[idx]) = (_localOrder[idx], _localOrder[idx + 1]);
+        _dirty = true;
+    }
+
+    private void MoveToTop(int idx)
+    {
+        if (idx <= 0) return;
+        var item = _localOrder[idx];
+        _localOrder.RemoveAt(idx);
+        _localOrder.Insert(0, item);
+        _dirty = true;
+    }
+
+    private void MoveToBottom(int idx)
+    {
+        if (idx >= _localOrder.Count - 1) return;
+        var item = _localOrder[idx];
+        _localOrder.RemoveAt(idx);
+        _localOrder.Add(item);
+        _dirty = true;
+    }
+
+    private async Task DoneAsync()
+    {
+        if (_dirty && OnApply.HasDelegate)
+        {
+            _saving = true;
+            StateHasChanged();
+            try
+            {
+                await OnApply.InvokeAsync(_localOrder.Select(e => e.Key).ToList());
+            }
+            finally
+            {
+                _saving = false;
+            }
+        }
+        _isOpen = false;
+    }
+
+    private Task CloseAsync() => DoneAsync();
+}

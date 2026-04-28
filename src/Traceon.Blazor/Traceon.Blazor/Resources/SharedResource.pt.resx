@@ -169,6 +169,17 @@
   <data name="Dashboard_NoEntriesYet"><value>Sem registos ainda para esta acção.</value></data>
   <data name="Dashboard_AddEntry"><value>Adicionar Registo</value></data>
   <data name="Dashboard_TotalEntries_Label"><value>Total de Registos</value></data>
+  <data name="Reorder_Title"><value>Reordenar Gráficos</value></data>
+  <data name="Reorder_Subtitle"><value>Usa os botões para mover gráficos. As alterações são guardadas ao clicar em Concluído.</value></data>
+  <data name="Reorder_OpenButton"><value>Reordenar</value></data>
+  <data name="Reorder_Hidden"><value>Oculto</value></data>
+  <data name="Reorder_MoveUp"><value>Subir</value></data>
+  <data name="Reorder_MoveDown"><value>Descer</value></data>
+  <data name="Reorder_MoveToTop"><value>Mover para o topo</value></data>
+  <data name="Reorder_MoveToBottom"><value>Mover para o fim</value></data>
+  <data name="Reorder_Done"><value>Concluído</value></data>
+  <data name="Reorder_SaveFailed"><value>Não foi possível guardar o layout — tenta novamente.</value></data>
+  <data name="Reorder_NoCharts"><value>Sem gráficos para reordenar.</value></data>
   <data name="Dashboard_LastEntry"><value>Último Registo</value></data>
   <data name="Dashboard_AvgGap"><value>Intervalo Médio</value></data>
   <data name="Dashboard_DayStreak"><value>Sequência Diária</value></data>

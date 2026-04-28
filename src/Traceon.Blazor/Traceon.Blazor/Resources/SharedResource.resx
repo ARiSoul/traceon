@@ -168,6 +168,17 @@
   <data name="Dashboard_NoEntriesYet"><value>No entries yet for this action.</value></data>
   <data name="Dashboard_AddEntry"><value>Add Entry</value></data>
   <data name="Dashboard_TotalEntries_Label"><value>Total Entries</value></data>
+  <data name="Reorder_Title"><value>Reorder Charts</value></data>
+  <data name="Reorder_Subtitle"><value>Use the buttons to move charts. Changes are saved when you click Done.</value></data>
+  <data name="Reorder_OpenButton"><value>Reorder</value></data>
+  <data name="Reorder_Hidden"><value>Hidden</value></data>
+  <data name="Reorder_MoveUp"><value>Move up</value></data>
+  <data name="Reorder_MoveDown"><value>Move down</value></data>
+  <data name="Reorder_MoveToTop"><value>Move to top</value></data>
+  <data name="Reorder_MoveToBottom"><value>Move to bottom</value></data>
+  <data name="Reorder_Done"><value>Done</value></data>
+  <data name="Reorder_SaveFailed"><value>Couldn't save layout — please try again.</value></data>
+  <data name="Reorder_NoCharts"><value>No charts to reorder.</value></data>
   <data name="Dashboard_LastEntry"><value>Last Entry</value></data>
   <data name="Dashboard_AvgGap"><value>Avg. Gap</value></data>
   <data name="Dashboard_DayStreak"><value>Day Streak</value></data>

@@ -13,8 +13,9 @@ public sealed class ChartVisibilityService(HttpClient http)
                 $"/api/tracked-actions/{trackedActionId}/chart-visibility");
             return response ?? new ChartVisibilityResponse([], []);
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"[ChartVisibility] GET failed: {ex.Message}");
             return new ChartVisibilityResponse([], []);
         }
     }
@@ -22,31 +23,35 @@ public sealed class ChartVisibilityService(HttpClient http)
     public async Task<List<string>> GetHiddenKeysAsync(Guid trackedActionId)
         => (await GetAsync(trackedActionId)).HiddenKeys;
 
-    public async Task SaveHiddenKeysAsync(Guid trackedActionId, IEnumerable<string> hiddenKeys)
+    public async Task<bool> SaveHiddenKeysAsync(Guid trackedActionId, IEnumerable<string> hiddenKeys)
     {
         try
         {
-            await http.PutAsJsonAsync(
+            var response = await http.PutAsJsonAsync(
                 $"/api/tracked-actions/{trackedActionId}/chart-visibility",
                 new UpdateChartVisibilityRequest(hiddenKeys.ToList()));
+            return response.IsSuccessStatusCode;
         }
-        catch
+        catch (Exception ex)
         {
-            // best effort
+            Console.Error.WriteLine($"[ChartVisibility] PUT hidden-keys failed: {ex.Message}");
+            return false;
         }
     }
 
-    public async Task SaveChartOrderAsync(Guid trackedActionId, IEnumerable<string> chartOrder)
+    public async Task<bool> SaveChartOrderAsync(Guid trackedActionId, IEnumerable<string> chartOrder)
     {
         try
         {
-            await http.PutAsJsonAsync(
+            var response = await http.PutAsJsonAsync(
                 $"/api/tracked-actions/{trackedActionId}/chart-visibility/order",
                 new UpdateChartOrderRequest(chartOrder.ToList()));
+            return response.IsSuccessStatusCode;
         }
-        catch
+        catch (Exception ex)
         {
-            // best effort
+            Console.Error.WriteLine($"[ChartVisibility] PUT chart-order failed: {ex.Message}");
+            return false;
         }
     }
 }
