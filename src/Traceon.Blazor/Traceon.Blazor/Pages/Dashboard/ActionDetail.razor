@@ -88,6 +88,18 @@
     </div>
 }
 
+@if (_layoutLoadDiag is not null)
+{
+    <details class="mb-3 small text-muted">
+        <summary style="cursor: pointer;">
+            <i class="bi bi-info-circle me-1"></i>Layout diagnostics
+        </summary>
+        <div class="mt-1 p-2 border rounded" style="word-break: break-all; font-family: monospace; font-size: 0.75rem;">
+            @_layoutLoadDiag
+        </div>
+    </details>
+}
+
 <ReorderChartsModal @ref="_reorderModal" OnApply="OnReorderAppliedAsync" />
 
 @if (_showChartVisibility && _data is not null)
@@ -1627,6 +1639,7 @@ else
     // ── Chart visibility persistence (per-user, per-action via API) ──
 
     private string? _layoutSaveError;
+    private string? _layoutLoadDiag;
     private ReorderChartsModal? _reorderModal;
 
     private async void ToggleChartVisibility(string chartKey, bool hide)
@@ -1650,6 +1663,11 @@ else
             _hiddenCharts = new HashSet<string>(response.HiddenKeys, StringComparer.Ordinal);
         if (response.ChartOrder.Count > 0)
             _chartOrder = response.ChartOrder.ToList();
+
+        var ts = DateTime.Now.ToString("HH:mm:ss");
+        var hiddenList = response.HiddenKeys.Count == 0 ? "(none)" : string.Join(", ", response.HiddenKeys);
+        var orderList = response.ChartOrder.Count == 0 ? "(none)" : string.Join(", ", response.ChartOrder);
+        _layoutLoadDiag = $"[{ts}] Loaded layout — hidden ({response.HiddenKeys.Count}): {hiddenList} | order ({response.ChartOrder.Count}): {orderList}";
     }
 
     private async Task ResetChartLayoutAsync()
