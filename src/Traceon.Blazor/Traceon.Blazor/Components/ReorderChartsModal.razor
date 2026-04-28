@@ -25,15 +25,26 @@
                     }
                     else
                     {
-                        <ul class="list-group list-group-flush">
+                        <ul class="list-group list-group-flush reorder-list">
                             @for (var i = 0; i < _localOrder.Count; i++)
                             {
                                 var idx = i;
                                 var entry = _localOrder[idx];
-                                <li class="list-group-item d-flex align-items-center gap-2 px-2 py-2"
-                                    @key="entry.Key">
+                                var isDragging = _draggingIdx == idx;
+                                var isDropTarget = _dropTargetIdx == idx && _draggingIdx is not null && _draggingIdx != idx;
+                                <li class="list-group-item d-flex align-items-center gap-2 px-2 py-2 reorder-row @(isDragging ? "reorder-row-dragging" : "") @(isDropTarget ? "reorder-row-droptarget" : "")"
+                                    @key="entry.Key"
+                                    draggable="true"
+                                    @ondragstart="() => OnDragStart(idx)"
+                                    @ondragover="() => OnDragOver(idx)" @ondragover:preventDefault
+                                    @ondragleave="() => OnDragLeave(idx)"
+                                    @ondrop="() => OnDrop(idx)"
+                                    @ondragend="OnDragEnd">
+                                    <span class="text-muted reorder-grip" title="@L["Reorder_DragHint"]">
+                                        <i class="bi bi-grip-vertical"></i>
+                                    </span>
                                     <span class="text-muted small" style="min-width: 1.75rem;">@(idx + 1).</span>
-                                    <span class="flex-grow-1 text-truncate @(entry.Hidden ? "text-muted" : "")"
+                                    <span class="flex-grow-1 text-truncate min-w-0 @(entry.Hidden ? "text-muted" : "")"
                                           title="@entry.Label">
                                         @entry.Label
                                         @if (entry.Hidden)
@@ -43,7 +54,7 @@
                                             </span>
                                         }
                                     </span>
-                                    <div class="btn-group btn-group-sm" role="group">
+                                    <div class="btn-group btn-group-sm flex-shrink-0" role="group">
                                         <button type="button" class="btn btn-outline-secondary"
                                                 title="@L["Reorder_MoveToTop"]"
                                                 disabled="@(idx == 0)"
@@ -101,11 +112,15 @@
     private bool _saving;
     private bool _dirty;
     private List<ChartEntry> _localOrder = [];
+    private int? _draggingIdx;
+    private int? _dropTargetIdx;
 
     public void Show(IEnumerable<ChartEntry> entries)
     {
         _localOrder = entries.ToList();
         _dirty = false;
+        _draggingIdx = null;
+        _dropTargetIdx = null;
         _isOpen = true;
         StateHasChanged();
     }
@@ -140,6 +155,46 @@
         _localOrder.RemoveAt(idx);
         _localOrder.Add(item);
         _dirty = true;
+    }
+
+    private void OnDragStart(int idx)
+    {
+        _draggingIdx = idx;
+        _dropTargetIdx = null;
+    }
+
+    private void OnDragOver(int idx)
+    {
+        if (_draggingIdx is null || _draggingIdx == idx) return;
+        if (_dropTargetIdx != idx)
+            _dropTargetIdx = idx;
+    }
+
+    private void OnDragLeave(int idx)
+    {
+        if (_dropTargetIdx == idx)
+            _dropTargetIdx = null;
+    }
+
+    private void OnDrop(int targetIdx)
+    {
+        var srcIdx = _draggingIdx;
+        _draggingIdx = null;
+        _dropTargetIdx = null;
+        if (srcIdx is null || srcIdx == targetIdx) return;
+
+        var item = _localOrder[srcIdx.Value];
+        _localOrder.RemoveAt(srcIdx.Value);
+        var insertAt = srcIdx.Value < targetIdx ? targetIdx : targetIdx;
+        if (insertAt > _localOrder.Count) insertAt = _localOrder.Count;
+        _localOrder.Insert(insertAt, item);
+        _dirty = true;
+    }
+
+    private void OnDragEnd()
+    {
+        _draggingIdx = null;
+        _dropTargetIdx = null;
     }
 
     private async Task DoneAsync()

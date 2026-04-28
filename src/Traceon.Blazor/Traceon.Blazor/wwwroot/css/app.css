@@ -183,6 +183,34 @@ code {
     min-width: 0;
 }
 
+/* ── Reorder modal: row drag visual cues ── */
+.reorder-row {
+    cursor: default;
+    transition: background-color 0.12s ease, opacity 0.12s ease;
+}
+
+.reorder-row .reorder-grip {
+    cursor: grab;
+    opacity: 0.45;
+}
+
+.reorder-row:hover .reorder-grip {
+    opacity: 0.85;
+}
+
+.reorder-row .reorder-grip:active {
+    cursor: grabbing;
+}
+
+.reorder-row.reorder-row-dragging {
+    opacity: 0.45;
+}
+
+.reorder-row.reorder-row-droptarget {
+    background-color: rgba(13, 110, 253, 0.15);
+    border-top: 2px solid #0d6efd;
+}
+
 /* ── Orderable chart list ── */
 .chart-list {
     display: flex;

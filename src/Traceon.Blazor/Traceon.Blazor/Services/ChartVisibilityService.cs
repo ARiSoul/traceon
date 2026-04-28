@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using Traceon.Contracts.Analytics;
 
 namespace Traceon.Blazor.Services;
@@ -9,9 +10,18 @@ public sealed class ChartVisibilityService(HttpClient http)
     {
         try
         {
-            var response = await http.GetFromJsonAsync<ChartVisibilityResponse>(
+            var request = new HttpRequestMessage(HttpMethod.Get,
                 $"/api/tracked-actions/{trackedActionId}/chart-visibility");
-            return response ?? new ChartVisibilityResponse([], []);
+            request.SetBrowserRequestCache(BrowserRequestCache.NoStore);
+
+            using var response = await http.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var payload = await response.Content.ReadFromJsonAsync<ChartVisibilityResponse>()
+                ?? new ChartVisibilityResponse([], []);
+
+            Console.WriteLine($"[ChartVisibility] GET {trackedActionId}: hidden={payload.HiddenKeys.Count}, order=[{string.Join(",", payload.ChartOrder)}]");
+            return payload;
         }
         catch (Exception ex)
         {
@@ -43,9 +53,11 @@ public sealed class ChartVisibilityService(HttpClient http)
     {
         try
         {
+            var orderList = chartOrder.ToList();
             var response = await http.PutAsJsonAsync(
                 $"/api/tracked-actions/{trackedActionId}/chart-visibility/order",
-                new UpdateChartOrderRequest(chartOrder.ToList()));
+                new UpdateChartOrderRequest(orderList));
+            Console.WriteLine($"[ChartVisibility] PUT order {trackedActionId} status={(int)response.StatusCode}: [{string.Join(",", orderList)}]");
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)

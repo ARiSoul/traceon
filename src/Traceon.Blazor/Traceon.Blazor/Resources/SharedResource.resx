@@ -179,6 +179,7 @@
   <data name="Reorder_Done"><value>Done</value></data>
   <data name="Reorder_SaveFailed"><value>Couldn't save layout — please try again.</value></data>
   <data name="Reorder_NoCharts"><value>No charts to reorder.</value></data>
+  <data name="Reorder_DragHint"><value>Drag to reorder</value></data>
   <data name="Dashboard_LastEntry"><value>Last Entry</value></data>
   <data name="Dashboard_AvgGap"><value>Avg. Gap</value></data>
   <data name="Dashboard_DayStreak"><value>Day Streak</value></data>

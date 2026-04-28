@@ -180,6 +180,7 @@
   <data name="Reorder_Done"><value>Concluído</value></data>
   <data name="Reorder_SaveFailed"><value>Não foi possível guardar o layout — tenta novamente.</value></data>
   <data name="Reorder_NoCharts"><value>Sem gráficos para reordenar.</value></data>
+  <data name="Reorder_DragHint"><value>Arrasta para reordenar</value></data>
   <data name="Dashboard_LastEntry"><value>Último Registo</value></data>
   <data name="Dashboard_AvgGap"><value>Intervalo Médio</value></data>
   <data name="Dashboard_DayStreak"><value>Sequência Diária</value></data>
