@@ -19,13 +19,23 @@
             <label class="form-label form-label-sm mb-1">
                 <i class="bi bi-funnel me-1"></i>@L["EntryGrid_Action"]
             </label>
-            <select class="form-select form-select-sm" value="@_selectedActionId" @onchange="OnActionFilterChanged">
-                <option value="">@L["EntryGrid_AllActions"]</option>
-                @foreach (var action in _availableActions)
+            <div class="input-group input-group-sm">
+                <select class="form-select form-select-sm" value="@_selectedActionId" @onchange="OnActionFilterChanged">
+                    <option value="">@L["EntryGrid_AllActions"]</option>
+                    @foreach (var action in _availableActions)
+                    {
+                        <option value="@action.Id">@action.Name</option>
+                    }
+                </select>
+                @if (Guid.TryParse(_selectedActionId, out var _filteredActionId) && _filteredActionId != Guid.Empty)
                 {
-                    <option value="@action.Id">@action.Name</option>
+                    <a class="btn btn-outline-secondary"
+                       href="@($"/tracked-actions/{_filteredActionId}/edit")"
+                       title="@L["EntryGrid_OpenAction"]">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
                 }
-            </select>
+            </div>
         </div>
     }
 
@@ -844,6 +854,7 @@ else
     {
         return
         [
+            ListAction.Link(L["EntryGrid_OpenAction"], $"/tracked-actions/{entry.TrackedActionId}/edit", "box-arrow-up-right", ListActionStyle.Info),
             ListAction.Button(L["Common_Delete"], () => DeleteAsync(entry), "trash", ListActionStyle.Danger),
         ];
     }

@@ -12,8 +12,17 @@
             @(_isEdit ? L["Entry_EditTitle"] : L["Entry_NewTitle"])
         </h3>
         <p class="text-muted mb-0">
-            @(_isEdit ? L["Entry_EditSubtitle"] : L["Entry_NewSubtitle"])
-            <strong>@(_actionName ?? "...")</strong>
+            <span class="me-1">@(_isEdit ? L["Entry_EditSubtitle"] : L["Entry_NewSubtitle"])</span>
+            @if (!string.IsNullOrEmpty(_actionName))
+            {
+                <a href="@($"/tracked-actions/{TrackedActionId}/edit")"
+                   class="fw-bold text-decoration-none"
+                   title="@L["Entry_OpenAction"]">@_actionName <i class="bi bi-box-arrow-up-right small"></i></a>
+            }
+            else
+            {
+                <strong>...</strong>
+            }
         </p>
     </div>
     <a href="@_returnUrl" class="btn btn-outline-secondary">
@@ -334,27 +343,101 @@ else
                                 case FieldType.Dropdown:
                                     if (model.Field.DisplayStyle == DisplayStyle.Chips)
                                     {
-                                        if (model.IsMulti)
+                                        <div class="d-flex gap-1 align-items-start">
+                                            <div class="flex-grow-1">
+                                                @if (model.IsMulti)
+                                                {
+                                                    <ChipPickerInput Options="model.DropdownOptions.ToList()"
+                                                                     SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
+                                                                     SelectedValuesChanged="vs => OnMultiDropdownChanged(model, vs)"
+                                                                     IsMulti="true" />
+                                                }
+                                                else
+                                                {
+                                                    <ChipPickerInput Options="model.DropdownOptions.ToList()"
+                                                                     Value="@model.TextValue"
+                                                                     ValueChanged="v => OnDropdownChanged(model, v)" />
+                                                }
+                                            </div>
+                                            @if (!model.IsMulti && TryGetDropdownMetadataEntity(model, out _))
+                                            {
+                                                <button class="btn btn-outline-primary btn-sm flex-shrink-0" type="button"
+                                                        title="@L["DropdownEditor_ChipMetadataTitle"]"
+                                                        @onclick="() => OpenDropdownMetadataAsync(model)">
+                                                    <i class="bi bi-tags"></i>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-secondary btn-sm flex-shrink-0" type="button"
+                                                    title="@L["Dropdown_AddNew"]"
+                                                    @onclick="() => ToggleQuickAdd(model.Field.Id)">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </div>
+                                        @if (_quickAddFieldId == model.Field.Id)
                                         {
-                                            <ChipPickerInput Options="model.DropdownOptions.ToList()"
-                                                             SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
-                                                             SelectedValuesChanged="vs => OnMultiDropdownChanged(model, vs)"
-                                                             IsMulti="true" />
-                                        }
-                                        else
-                                        {
-                                            <ChipPickerInput Options="model.DropdownOptions.ToList()"
-                                                             Value="@model.TextValue"
-                                                             ValueChanged="v => OnDropdownChanged(model, v)" />
+                                            <div class="input-group input-group-sm mt-1">
+                                                <input type="text" class="form-control" placeholder="@L["Dropdown_NewValue"]"
+                                                       @bind="_quickAddValue" @bind:event="oninput"
+                                                       @onkeydown="@(e => OnQuickAddKeyDown(e, model))" />
+                                                <button class="btn btn-success" type="button"
+                                                        disabled="@(string.IsNullOrWhiteSpace(_quickAddValue) || _quickAddSaving)"
+                                                        @onclick="() => QuickAddDropdownValueAsync(model)">
+                                                    @if (_quickAddSaving)
+                                                    { <span class="spinner-border spinner-border-sm"></span> }
+                                                    else
+                                                    { <i class="bi bi-check-lg"></i> }
+                                                </button>
+                                                <button class="btn btn-outline-secondary" type="button"
+                                                        @onclick="() => _quickAddFieldId = null">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
                                         }
                                         break;
                                     }
                                     if (model.Field.DisplayStyle == DisplayStyle.Radio && !model.IsMulti)
                                     {
-                                        <RadioPickerInput Options="model.DropdownOptions.ToList()"
-                                                          Value="@model.TextValue"
-                                                          ValueChanged="v => OnDropdownChanged(model, v)"
-                                                          Name="@($"radio-{model.Field.Id}")" />
+                                        <div class="d-flex gap-1 align-items-start">
+                                            <div class="flex-grow-1">
+                                                <RadioPickerInput Options="model.DropdownOptions.ToList()"
+                                                                  Value="@model.TextValue"
+                                                                  ValueChanged="v => OnDropdownChanged(model, v)"
+                                                                  Name="@($"radio-{model.Field.Id}")" />
+                                            </div>
+                                            @if (TryGetDropdownMetadataEntity(model, out _))
+                                            {
+                                                <button class="btn btn-outline-primary btn-sm flex-shrink-0" type="button"
+                                                        title="@L["DropdownEditor_ChipMetadataTitle"]"
+                                                        @onclick="() => OpenDropdownMetadataAsync(model)">
+                                                    <i class="bi bi-tags"></i>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-secondary btn-sm flex-shrink-0" type="button"
+                                                    title="@L["Dropdown_AddNew"]"
+                                                    @onclick="() => ToggleQuickAdd(model.Field.Id)">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </div>
+                                        @if (_quickAddFieldId == model.Field.Id)
+                                        {
+                                            <div class="input-group input-group-sm mt-1">
+                                                <input type="text" class="form-control" placeholder="@L["Dropdown_NewValue"]"
+                                                       @bind="_quickAddValue" @bind:event="oninput"
+                                                       @onkeydown="@(e => OnQuickAddKeyDown(e, model))" />
+                                                <button class="btn btn-success" type="button"
+                                                        disabled="@(string.IsNullOrWhiteSpace(_quickAddValue) || _quickAddSaving)"
+                                                        @onclick="() => QuickAddDropdownValueAsync(model)">
+                                                    @if (_quickAddSaving)
+                                                    { <span class="spinner-border spinner-border-sm"></span> }
+                                                    else
+                                                    { <i class="bi bi-check-lg"></i> }
+                                                </button>
+                                                <button class="btn btn-outline-secondary" type="button"
+                                                        @onclick="() => _quickAddFieldId = null">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        }
                                         break;
                                     }
                                     if (model.IsMulti)
@@ -464,22 +547,30 @@ else
                                 case FieldType.CompositeDropdown:
                                     if (model.Field.DisplayStyle == DisplayStyle.Chips)
                                     {
-                                        if (model.IsMulti)
-                                        {
-                                            <ChipPickerInput Groups="model.CompositeGroups"
-                                                             SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
-                                                             SelectedValuesChanged="vs => OnMultiDropdownChanged(model, vs)"
-                                                             IsMulti="true" />
-                                        }
-                                        else
-                                        {
-                                            <ChipPickerInput Groups="model.CompositeGroups"
-                                                             Value="@model.TextValue"
-                                                             ValueChanged="v => OnDropdownChanged(model, v)" />
-                                        }
-                                        break;
+                                        <div class="d-flex gap-1 align-items-start">
+                                            <div class="flex-grow-1">
+                                                @if (model.IsMulti)
+                                                {
+                                                    <ChipPickerInput Groups="model.CompositeGroups"
+                                                                     SelectedValues="@(new HashSet<string>(model.MultiValues, StringComparer.OrdinalIgnoreCase))"
+                                                                     SelectedValuesChanged="vs => OnMultiDropdownChanged(model, vs)"
+                                                                     IsMulti="true" />
+                                                }
+                                                else
+                                                {
+                                                    <ChipPickerInput Groups="model.CompositeGroups"
+                                                                     Value="@model.TextValue"
+                                                                     ValueChanged="v => OnDropdownChanged(model, v)" />
+                                                }
+                                            </div>
+                                            <button class="btn btn-outline-secondary btn-sm flex-shrink-0" type="button"
+                                                    title="@L["Dropdown_AddNew"]"
+                                                    @onclick="() => ToggleCompositeQuickAdd(model)">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </div>
                                     }
-                                    if (model.IsMulti)
+                                    else if (model.IsMulti)
                                     {
                                         var compositeOptions = model.CompositeGroups
                                             .SelectMany(g => g.Values)

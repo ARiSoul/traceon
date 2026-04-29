@@ -53,14 +53,76 @@ else if (_items.Count == 0)
 }
 else
 {
-    @foreach (var group in _items.GroupBy(i => i.Type).OrderBy(g => g.Key))
-    {
-        <div class="card mb-3">
-            <div class="card-header d-flex align-items-center">
-                <i class="bi @GetTypeIcon(group.Key) me-2"></i>
-                <strong>@GetTypeLabel(group.Key)</strong>
-                <span class="badge bg-secondary ms-2">@group.Count()</span>
+    <div class="row g-2 mb-3">
+        <div class="col-12 col-md-5">
+            <label class="form-label form-label-sm mb-1">
+                <i class="bi bi-search me-1"></i>@L["Trash_Filter_Search"]
+            </label>
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control" placeholder="@L["Trash_Filter_SearchPlaceholder"]"
+                       @bind="_searchText" @bind:event="oninput" />
+                @if (!string.IsNullOrEmpty(_searchText))
+                {
+                    <button class="btn btn-outline-secondary" @onclick="() => _searchText = string.Empty">
+                        <i class="bi bi-x"></i>
+                    </button>
+                }
             </div>
+        </div>
+        <div class="col-12 col-md-7">
+            <label class="form-label form-label-sm mb-1">
+                <i class="bi bi-funnel me-1"></i>@L["Trash_Filter_Types"]
+            </label>
+            <div class="d-flex flex-wrap gap-1">
+                @foreach (var type in _items.Select(i => i.Type).Distinct().OrderBy(t => t))
+                {
+                    var captured = type;
+                    var active = _typeFilter.Count == 0 || _typeFilter.Contains(captured);
+                    <button type="button" class="btn btn-sm @(active ? "btn-primary" : "btn-outline-secondary")"
+                            @onclick="() => ToggleTypeFilter(captured)">
+                        <i class="bi @GetTypeIcon(captured) me-1"></i>@GetTypeLabel(captured)
+                    </button>
+                }
+                @if (_typeFilter.Count > 0)
+                {
+                    <button type="button" class="btn btn-sm btn-link"
+                            @onclick="() => _typeFilter.Clear()">
+                        @L["Trash_Filter_ClearTypes"]
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    var filteredItems = _items
+        .Where(i => _typeFilter.Count == 0 || _typeFilter.Contains(i.Type))
+        .Where(i => string.IsNullOrEmpty(_searchText)
+                    || (i.Name?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false))
+        .ToList();
+
+    if (filteredItems.Count == 0)
+    {
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-funnel display-6 d-block mb-2"></i>
+            @L["Trash_Filter_NoMatches"]
+        </div>
+    }
+
+    foreach (var group in filteredItems.GroupBy(i => i.Type).OrderBy(g => g.Key))
+    {
+        var groupKey = group.Key;
+        var collapsed = _collapsedTypes.Contains(groupKey);
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center" role="button"
+                 style="cursor: pointer;"
+                 @onclick="() => ToggleCollapsed(groupKey)">
+                <i class="bi @GetTypeIcon(groupKey) me-2"></i>
+                <strong>@GetTypeLabel(groupKey)</strong>
+                <span class="badge bg-secondary ms-2">@group.Count()</span>
+                <i class="bi bi-chevron-@(collapsed ? "down" : "up") ms-auto text-muted"></i>
+            </div>
+            @if (!collapsed)
+            {
             <ul class="list-group list-group-flush">
                 @foreach (var item in group.OrderByDescending(i => i.DeletedAtUtc))
                 {
@@ -99,6 +161,7 @@ else
                     </li>
                 }
             </ul>
+            }
         </div>
     }
 }
@@ -185,6 +248,22 @@ else
 
     private TrashPreviewResponse? _preview;
     private PendingDelete? _pendingDelete;
+
+    private string _searchText = string.Empty;
+    private HashSet<string> _typeFilter = [];
+    private HashSet<string> _collapsedTypes = [];
+
+    private void ToggleTypeFilter(string type)
+    {
+        if (!_typeFilter.Add(type))
+            _typeFilter.Remove(type);
+    }
+
+    private void ToggleCollapsed(string type)
+    {
+        if (!_collapsedTypes.Add(type))
+            _collapsedTypes.Remove(type);
+    }
 
     private sealed record PendingDelete(string Message, List<TrashItemRef> Items, bool ClearAll);
 

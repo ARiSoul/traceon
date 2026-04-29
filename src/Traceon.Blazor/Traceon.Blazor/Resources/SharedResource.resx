@@ -381,6 +381,7 @@
   <data name="Entry_EditTitle"><value>Edit Entry</value></data>
   <data name="Entry_NewSubtitle"><value>Record a new entry for</value></data>
   <data name="Entry_EditSubtitle"><value>Update this entry for</value></data>
+  <data name="Entry_OpenAction"><value>Open action</value></data>
   <data name="Entry_SaveEntry"><value>Save Entry</value></data>
   <data name="Entry_Select"><value>— Select —</value></data>
   <data name="Dropdown_AddNew"><value>Add new value</value></data>
@@ -419,6 +420,7 @@
   <data name="EntryGrid_Date"><value>Date</value></data>
   <data name="EntryGrid_Notes"><value>Notes</value></data>
   <data name="EntryGrid_AllActions"><value>All Actions</value></data>
+  <data name="EntryGrid_OpenAction"><value>Open action</value></data>
   <data name="EntryGrid_Empty"><value>No entries yet. Start tracking!</value></data>
   <data name="EntryGrid_FieldFilters"><value>Field Filters</value></data>
   <data name="EntryGrid_AllValues"><value>All</value></data>
@@ -895,6 +897,11 @@
   <data name="Common_Restore"><value>Restore</value></data>
   <data name="Common_RestoreSuccess"><value>Item restored successfully.</value></data>
   <data name="Trash_DeletedAt"><value>Deleted</value></data>
+  <data name="Trash_Filter_Search"><value>Search</value></data>
+  <data name="Trash_Filter_SearchPlaceholder"><value>Filter by name…</value></data>
+  <data name="Trash_Filter_Types"><value>Types</value></data>
+  <data name="Trash_Filter_ClearTypes"><value>Clear</value></data>
+  <data name="Trash_Filter_NoMatches"><value>No items match the current filters.</value></data>
   <data name="Settings_DataRetention"><value>Data Retention</value></data>
   <data name="Settings_DataRetentionHint"><value>Choose how long deleted items are kept before being permanently removed.</value></data>
   <data name="Settings_RetentionDays"><value>Retention Period</value></data>

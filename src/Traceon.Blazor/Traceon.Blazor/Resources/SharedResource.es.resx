@@ -382,6 +382,7 @@
   <data name="Entry_EditTitle"><value>Editar Registro</value></data>
   <data name="Entry_NewSubtitle"><value>Registrar un nuevo registro para</value></data>
   <data name="Entry_EditSubtitle"><value>Actualizar este registro para</value></data>
+  <data name="Entry_OpenAction"><value>Abrir acción</value></data>
   <data name="Entry_SaveEntry"><value>Guardar Registro</value></data>
   <data name="Entry_Select"><value>— Seleccionar —</value></data>
   <data name="Dropdown_AddNew"><value>Agregar nuevo valor</value></data>
@@ -414,6 +415,7 @@
   <data name="EntryGrid_Date"><value>Fecha</value></data>
   <data name="EntryGrid_Notes"><value>Notas</value></data>
   <data name="EntryGrid_AllActions"><value>Todas las Acciones</value></data>
+  <data name="EntryGrid_OpenAction"><value>Abrir acción</value></data>
   <data name="EntryGrid_Empty"><value>Sin registros todavía. ¡Empieza a registrar!</value></data>
   <data name="EntryGrid_FieldFilters"><value>Filtros de Campos</value></data>
   <data name="EntryGrid_AllValues"><value>Todos</value></data>
@@ -892,6 +894,11 @@
   <data name="Common_Restore"><value>Restaurar</value></data>
   <data name="Common_RestoreSuccess"><value>Elemento restaurado correctamente.</value></data>
   <data name="Trash_DeletedAt"><value>Eliminado</value></data>
+  <data name="Trash_Filter_Search"><value>Buscar</value></data>
+  <data name="Trash_Filter_SearchPlaceholder"><value>Filtrar por nombre…</value></data>
+  <data name="Trash_Filter_Types"><value>Tipos</value></data>
+  <data name="Trash_Filter_ClearTypes"><value>Limpiar</value></data>
+  <data name="Trash_Filter_NoMatches"><value>Ningún elemento coincide con los filtros actuales.</value></data>
   <data name="Settings_DataRetention"><value>Retención de Datos</value></data>
   <data name="Settings_DataRetentionHint"><value>Elige cuánto tiempo se conservan los elementos eliminados antes de ser eliminados permanentemente.</value></data>
   <data name="Settings_RetentionDays"><value>Período de Retención</value></data>
