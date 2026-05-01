@@ -103,7 +103,7 @@
                     <div class="border-top mt-1 pt-1">
                         <div class="searchable-select-option px-2 py-1 rounded small text-primary"
                              style="cursor: pointer;"
-                             @onclick="() => Select(ExtraOptionValue)">
+                             @onclick="SelectExtra">
                             @ExtraOptionLabel
                         </div>
                     </div>
@@ -122,6 +122,7 @@
     [Parameter] public bool Small { get; set; }
     [Parameter] public string? ExtraOptionLabel { get; set; }
     [Parameter] public string? ExtraOptionValue { get; set; }
+    [Parameter] public EventCallback<string> ExtraOptionSelected { get; set; }
     [Parameter] public Func<string, string>? DisplaySelector { get; set; }
 
     private bool _isOpen;
@@ -189,6 +190,17 @@
         _searchText = "";
         if (!string.Equals(Value, value, StringComparison.Ordinal))
             await ValueChanged.InvokeAsync(value);
+    }
+
+    private async Task SelectExtra()
+    {
+        var captured = _searchText?.Trim() ?? string.Empty;
+        _isOpen = false;
+        _searchText = "";
+        if (ExtraOptionSelected.HasDelegate && !string.IsNullOrEmpty(captured))
+            await ExtraOptionSelected.InvokeAsync(captured);
+        else
+            await ValueChanged.InvokeAsync(ExtraOptionValue);
     }
 
     private List<string> Filter(List<string> options)

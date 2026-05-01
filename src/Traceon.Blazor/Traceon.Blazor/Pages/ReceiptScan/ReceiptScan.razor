@@ -574,6 +574,7 @@
                                                           Placeholder="@($"— {L["Receipt_Uncategorized"]} —")"
                                                           ExtraOptionLabel="@($"+ {L["Receipt_NewValue"]}...")"
                                                           ExtraOptionValue="__new__"
+                                                          ExtraOptionSelected="t => OnNewValueEntered(item, fieldId, t)"
                                                           Small="true" />
                                         @if (currentValue == "__new__")
                                         {
@@ -884,6 +885,7 @@
                               Placeholder="@($"— {L["Receipt_Uncategorized"]} —")"
                               ExtraOptionLabel="@($"+ {L["Receipt_NewValue"]}...")"
                               ExtraOptionValue="__new__"
+                              ExtraOptionSelected="t => OnNewValueEntered(item, fieldId, t)"
                               Small="true" />
             @if (currentValue == "__new__")
             {
@@ -994,7 +996,12 @@
                                 <div class="mb-3">
                                     <label class="form-label small mb-1">@L["RcptCfg_Value"]</label>
                                     @{
-                                        var valueOptions = _ruleEditFieldId != Guid.Empty && _resolvedDropdownOptions.TryGetValue(_ruleEditFieldId, out var opts) ? opts : [];
+                                        var ruleEditField = _ruleEditFieldId != Guid.Empty
+                                            ? _dropdownFields.FirstOrDefault(f => f.Id == _ruleEditFieldId)
+                                            : null;
+                                        var valueOptions = ruleEditField is not null
+                                            ? GetDropdownOptionsWithSessionAdditions(ruleEditField)
+                                            : [];
                                     }
                                     <SearchableSelect Value="@_ruleEditValue"
                                                       ValueChanged="v => _ruleEditValue = v ?? string.Empty"
@@ -1002,6 +1009,7 @@
                                                       Placeholder="@($"— {L["Common_Select"]} —")"
                                                       ExtraOptionLabel="@($"+ {L["Receipt_NewValue"]}...")"
                                                       ExtraOptionValue="__new__"
+                                                      ExtraOptionSelected="OnRuleEditNewValueFromSearch"
                                                       Small="true" />
                                     @if (_ruleEditValue == "__new__")
                                     {
@@ -1010,19 +1018,6 @@
                                                @bind="_ruleEditNewValue" />
                                     }
                                 </div>
-
-                                @if (_mappingRules.Count > 0)
-                                {
-                                    <div class="mb-3">
-                                        <label class="form-label small mb-1">@L["RcptCfg_OrAddToExisting"]</label>
-                                        <SearchableSelect Value="@(_ruleEditExistingRuleId != Guid.Empty ? _ruleEditExistingRuleId.ToString() : null)"
-                                                          ValueChanged="v => OnSelectExistingRule(v)"
-                                                          Options="@(_mappingRules.Select(r => r.Id.ToString()).ToList())"
-                                                          DisplaySelector="@(id => { var rule = _mappingRules.FirstOrDefault(x => x.Id.ToString() == id); return rule is not null ? $"{rule.TargetFieldName} → {rule.Value}" : id; })"
-                                                          Placeholder="@($"— {L["RcptCfg_NewRule"]} —")"
-                                                          Small="true" />
-                                    </div>
-                                }
                             }
                         </div>
                         <div class="modal-footer py-2">
@@ -1646,7 +1641,7 @@
         }
     }
 
-    private void GoBack()
+    private async Task GoBack()
     {
         if (_currentStep <= 0) return;
 
@@ -1658,7 +1653,20 @@
             _currentStep--;
 
         if (_currentStep >= 2)
-            _ = SaveDraftAsync();
+        {
+            await SaveDraftAsync();
+            return;
+        }
+
+        // Landing on step 0: re-show the draft picker if pending drafts exist
+        // so the user can pick another one or resume, instead of seeing the
+        // empty "new scan" state.
+        try
+        {
+            _drafts = await DraftService.GetMyDraftsAsync();
+            _showDraftPicker = _drafts.Count > 0;
+        }
+        catch { /* best effort */ }
     }
 
     private void ProceedToReview()
@@ -2070,13 +2078,54 @@
     private List<string> GetDropdownOptions(ActionFieldResponse field) =>
         _resolvedDropdownOptions.TryGetValue(field.Id, out var options) ? options : [];
 
+    // Includes pending in-session values that the user just created on other rows
+    // (typed via the "+ New Value" inline input) so they show up as picks for subsequent
+    // rows instead of forcing the user to re-type them.
+    private List<string> GetDropdownOptionsWithSessionAdditions(ActionFieldResponse field)
+    {
+        var persisted = GetDropdownOptions(field);
+        var session = CollectSessionAddedValues(field);
+        if (session.Count == 0) return persisted;
+
+        var seen = new HashSet<string>(persisted, StringComparer.OrdinalIgnoreCase);
+        var combined = new List<string>(persisted);
+        foreach (var v in session)
+            if (seen.Add(v)) combined.Add(v);
+        return combined;
+    }
+
+    private List<string> CollectSessionAddedValues(ActionFieldResponse field)
+    {
+        var persisted = GetDropdownOptions(field);
+        var persistedSet = persisted.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var added = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var i in _receiptItems)
+        {
+            var v = i.GetCategoryValue(field.Id);
+            if (string.IsNullOrEmpty(v) || v == "__new__") continue;
+            if (persistedSet.Contains(v)) continue;
+            if (seen.Add(v)) added.Add(v);
+        }
+
+        if (_batchValues.TryGetValue(field.Id, out var bv)
+            && !string.IsNullOrEmpty(bv) && bv != "__new__"
+            && !persistedSet.Contains(bv) && seen.Add(bv))
+        {
+            added.Add(bv);
+        }
+
+        return added;
+    }
+
     /// <summary>
     /// Returns filtered dropdown options for a specific item and field,
     /// applying dependency rules based on the item's current selections.
     /// </summary>
     private List<string> GetItemDropdownOptions(ReceiptItemRow item, ActionFieldResponse field)
     {
-        var allOptions = GetDropdownOptions(field);
+        var allOptions = GetDropdownOptionsWithSessionAdditions(field);
         if (_depRules.Count == 0) return allOptions;
 
         var rulesForTarget = _depRules
@@ -2127,7 +2176,7 @@
     /// </summary>
     private List<string> GetBatchDropdownOptions(ActionFieldResponse field)
     {
-        var allOptions = GetDropdownOptions(field);
+        var allOptions = GetDropdownOptionsWithSessionAdditions(field);
         if (_depRules.Count == 0) return allOptions;
 
         var rulesForTarget = _depRules
@@ -2295,23 +2344,10 @@
         _ruleEditFieldId = Guid.Empty;
     }
 
-    private void OnSelectExistingRule(string? ruleIdStr)
+    private void OnRuleEditNewValueFromSearch(string searchText)
     {
-        if (Guid.TryParse(ruleIdStr, out var ruleId) && ruleId != Guid.Empty)
-        {
-            var rule = _mappingRules.FirstOrDefault(r => r.Id == ruleId);
-            if (rule is not null)
-            {
-                _ruleEditExistingRuleId = rule.Id;
-                _ruleEditFieldId = rule.TargetFieldId;
-                _ruleEditValue = rule.Value;
-                // Keep the user's pattern text (the keyword to add)
-            }
-        }
-        else
-        {
-            _ruleEditExistingRuleId = Guid.Empty;
-        }
+        _ruleEditValue = "__new__";
+        _ruleEditNewValue = searchText;
     }
 
     private async Task SaveInlineRuleAsync()
