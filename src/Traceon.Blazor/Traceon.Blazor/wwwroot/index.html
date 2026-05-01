@@ -34,8 +34,13 @@
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script>
         document.addEventListener("focusin", function (e) {
-            if (e.target.hasAttribute("data-select-on-focus")) {
-                e.target.select();
+            var t = e.target;
+            if (!t || typeof t.select !== "function") return;
+            if (t.hasAttribute("data-no-select-on-focus")) return;
+            var isNumeric = t.tagName === "INPUT" && t.type === "number";
+            if (isNumeric || t.hasAttribute("data-select-on-focus")) {
+                // Defer so browsers (esp. mobile) that reset selection on focus don't undo it.
+                setTimeout(function () { try { t.select(); } catch (_) { } }, 0);
             }
         });
         window.scrollToElement = function (element) {

@@ -47,7 +47,7 @@ public sealed class HybridReceiptOcrService(
         - Discount lines may appear indented below the item, on the same line in parentheses, or as a separate line with a negative value
         - For separate discount lines, attach the discount to the preceding item rather than creating a new item
         - discount is the absolute amount subtracted from that item (always positive or null)
-        - totalPrice is the final price AFTER discount for that item
+        - totalPrice is the final price AFTER discount for that item. CRITICAL: many receipts print the gross line extension (quantity × unitPrice) on the item line and the discount on a separate line below — in that case you MUST subtract the discount yourself, not copy the printed gross. Example: a row "1,144 x 12,99 = 14,86" followed by a discount line "-2,29" must produce totalPrice = 12.57 (= 1.144 × 12.99 − 2.29), NOT 14.86.
         - totalDiscount is ONLY a receipt-wide / receipt-scoped discount applied AFTER the subtotal (e.g. "10% off total", "$5 loyalty credit", coupon on the whole order). DO NOT sum per-item discounts into totalDiscount. If there is no explicit receipt-wide discount line, return null.
         - Use null for any value you cannot determine
         - Dates must be in ISO 8601 format (yyyy-MM-ddTHH:mm:ss)
@@ -197,9 +197,7 @@ public sealed class HybridReceiptOcrService(
 
         var items = (parsed.Items ?? []).Select(i =>
         {
-            var totalPrice = i.TotalPrice ?? (i.Quantity.HasValue && i.UnitPrice.HasValue
-                ? i.Quantity.Value * i.UnitPrice.Value - (i.Discount ?? 0)
-                : i.UnitPrice.HasValue ? i.UnitPrice.Value - (i.Discount ?? 0) : null);
+            var totalPrice = ReconcileLineTotal(i.Quantity, i.UnitPrice, i.Discount, i.TotalPrice);
 
             return new ReceiptScanLineItemResponse
             {
@@ -226,6 +224,31 @@ public sealed class HybridReceiptOcrService(
             Total = parsed.Total,
             Confidence = 0.9
         });
+    }
+
+    // ── Line total reconciliation ───────────────────────────────
+
+    // Some receipts print the gross extension (qty × unitPrice) on the item line and the
+    // discount on a separate line; the LLM occasionally returns the printed gross instead
+    // of subtracting the discount. When the returned totalPrice matches the gross within
+    // rounding tolerance and a discount is present, recompute as gross − discount.
+    internal static decimal? ReconcileLineTotal(decimal? quantity, decimal? unitPrice, decimal? discount, decimal? totalPrice)
+    {
+        if (!quantity.HasValue || !unitPrice.HasValue)
+        {
+            if (totalPrice.HasValue) return totalPrice;
+            return unitPrice.HasValue ? unitPrice.Value - (discount ?? 0) : null;
+        }
+
+        var gross = quantity.Value * unitPrice.Value;
+        var net = gross - (discount ?? 0);
+
+        if (!totalPrice.HasValue) return net;
+        if ((discount ?? 0) <= 0) return totalPrice;
+
+        var matchesGross = Math.Abs(totalPrice.Value - gross) < 0.02m;
+        var matchesNet = Math.Abs(totalPrice.Value - net) < 0.02m;
+        return matchesGross && !matchesNet ? net : totalPrice;
     }
 
     // ── Internal DTOs ───────────────────────────────────────────

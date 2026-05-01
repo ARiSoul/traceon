@@ -32,7 +32,7 @@ public sealed class LlmReceiptOcrService(
         - Discounts can be item-level (e.g. "2 for $5") or separate lines (e.g. "20% off -$1.00"). Sometimes it may appear in an idented line below the item it applies to, or on the same line in parentheses. Always try to associate discounts with the correct item.
         - For separate discount lines, attach the discount to the preceding item rather than creating a new item
         - discount is the absolute amount subtracted from that item (always positive or null)
-        - totalPrice is the final price AFTER discount for that item
+        - totalPrice is the final price AFTER discount for that item. CRITICAL: many receipts print the gross line extension (quantity × unitPrice) on the item line and the discount on a separate line below — in that case you MUST subtract the discount yourself, not copy the printed gross. Example: a row "1,144 x 12,99 = 14,86" followed by a discount line "-2,29" must produce totalPrice = 12.57 (= 1.144 × 12.99 − 2.29), NOT 14.86.
         - Use null for any value you cannot determine
         - Dates must be in ISO 8601 format (yyyy-MM-ddTHH:mm:ss)
         - All monetary values are numbers (no currency symbols)
@@ -127,9 +127,7 @@ public sealed class LlmReceiptOcrService(
 
             var items = (parsed.Items ?? []).Select(i =>
             {
-                var totalPrice = i.TotalPrice ?? (i.Quantity.HasValue && i.UnitPrice.HasValue
-                    ? i.Quantity.Value * i.UnitPrice.Value - (i.Discount ?? 0)
-                    : i.UnitPrice.HasValue ? i.UnitPrice.Value - (i.Discount ?? 0) : null);
+                var totalPrice = Hybrid.HybridReceiptOcrService.ReconcileLineTotal(i.Quantity, i.UnitPrice, i.Discount, i.TotalPrice);
 
                 return new ReceiptScanLineItemResponse
                 {
