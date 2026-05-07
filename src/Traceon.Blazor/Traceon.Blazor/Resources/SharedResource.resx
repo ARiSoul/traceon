@@ -907,7 +907,6 @@
   <data name="Settings_RetentionDays"><value>Retention Period</value></data>
   <data name="Settings_Days"><value>days</value></data>
   <data name="Settings_DataRetentionInfo"><value>Deleted items older than this period will be permanently removed by the background cleanup job.</value></data>
-  <data name="Common_Save"><value>Save</value></data>
   <data name="Common_SavedSuccessfully"><value>Settings saved successfully.</value></data>
 
   <!-- ═══ Receipt Scan / OCR ═══ -->
@@ -1189,6 +1188,7 @@
   <data name="CustomChart_ClearFilters"><value>Clear Filters</value></data>
   <data name="CustomChart_FilterLogicAnd"><value>AND</value></data>
   <data name="CustomChart_FilterLogicOr"><value>OR</value></data>
+  <data name="CustomChart_FilterField_Notes"><value>Notes</value></data>
   <data name="CustomChart_AddCondition"><value>Add Condition</value></data>
   <data name="CustomChart_AddGroup"><value>Add Group</value></data>
   <data name="CustomChart_RemoveCondition"><value>Remove</value></data>

@@ -348,7 +348,6 @@ else
     private string _selectedActionId = "";
     private string _encodedReturnUrl = "";
     private bool _showFilters;
-    private bool _loadingFields;
     private bool _ready;
 
     // Period filter state
@@ -873,9 +872,6 @@ else
 
         if (Guid.TryParse(_selectedActionId, out var actionId) && actionId != Guid.Empty)
         {
-            _loadingFields = true;
-            StateHasChanged();
-
             try
             {
                 _activeFields = await ActionFieldService.GetByTrackedActionAsync(actionId);
@@ -884,7 +880,6 @@ else
             {
                 _activeFields = [];
             }
-            _loadingFields = false;
         }
         else
         {

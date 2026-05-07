@@ -904,7 +904,6 @@
   <data name="Settings_RetentionDays"><value>Período de Retenção</value></data>
   <data name="Settings_Days"><value>dias</value></data>
   <data name="Settings_DataRetentionInfo"><value>Itens eliminados mais antigos que este período serão removidos permanentemente pelo processo de limpeza.</value></data>
-  <data name="Common_Save"><value>Guardar</value></data>
   <data name="Common_SavedSuccessfully"><value>Definições guardadas com sucesso.</value></data>
 
   <!-- ═══ Receipt Scan / OCR ═══ -->
@@ -1186,6 +1185,7 @@
   <data name="CustomChart_ClearFilters"><value>Limpar Filtros</value></data>
   <data name="CustomChart_FilterLogicAnd"><value>E</value></data>
   <data name="CustomChart_FilterLogicOr"><value>OU</value></data>
+  <data name="CustomChart_FilterField_Notes"><value>Notas</value></data>
   <data name="CustomChart_AddCondition"><value>Adicionar Condição</value></data>
   <data name="CustomChart_AddGroup"><value>Adicionar Grupo</value></data>
   <data name="CustomChart_RemoveCondition"><value>Remover</value></data>

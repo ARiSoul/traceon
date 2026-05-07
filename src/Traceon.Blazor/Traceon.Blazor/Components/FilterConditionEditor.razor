@@ -40,6 +40,7 @@
                             value="@condition.FieldId"
                             @onchange="e => UpdateConditionField(idx, e)">
                         <option value="@Guid.Empty">— @L["CustomChart_SelectField"] —</option>
+                        <option value="@WellKnownFilterFieldIds.Notes">@L["CustomChart_FilterField_Notes"]</option>
                         @foreach (var field in AvailableFields)
                         {
                             <option value="@field.Id">@field.Name (@field.FieldType)</option>

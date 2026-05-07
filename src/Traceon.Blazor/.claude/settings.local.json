@@ -15,7 +15,9 @@
       "Bash(git *)",
       "Bash(awk '/_period|PeriodSelect|_selectedPeriod|presets|RangePreset|datetime-local/ {print NR\": \"$0}' /c/Users/rjrso/source/repos/traceon/src/Traceon.Blazor/Traceon.Blazor/Pages/Dashboard/Dashboard.razor)",
       "Skill(update-config)",
-      "PowerShell(Get-Clipboard *)"
+      "PowerShell(Get-Clipboard *)",
+      "Bash(grep -i \"\\\\.cs$\")",
+      "PowerShell(dotnet nuget list *)"
     ]
   }
 }

@@ -191,7 +191,8 @@ public sealed class CustomChartService(
         {
             foreach (var condition in group.Conditions)
             {
-                if (!validFieldIds.Contains(condition.FieldId))
+                if (!WellKnownFilterFieldIds.IsWellKnown(condition.FieldId)
+                    && !validFieldIds.Contains(condition.FieldId))
                     return $"Filter references unknown field '{condition.FieldId}'.";
 
                 switch (condition.Operator)

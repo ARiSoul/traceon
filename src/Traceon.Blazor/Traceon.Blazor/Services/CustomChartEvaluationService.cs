@@ -104,13 +104,24 @@ public static class CustomChartEvaluationService
         FilterConditionDto condition,
         Dictionary<Guid, ActionFieldResponse> fieldMap)
     {
-        var values = entry.FieldValues
-            .FirstOrDefault(fv => fv.ActionFieldId == condition.FieldId)
-            ?.Values ?? [];
+        List<string> values;
+        FieldType fieldType;
 
-        var fieldType = fieldMap.TryGetValue(condition.FieldId, out var field)
-            ? field.FieldType
-            : FieldType.Text;
+        if (condition.FieldId == WellKnownFilterFieldIds.Notes)
+        {
+            values = string.IsNullOrEmpty(entry.Notes) ? [] : [entry.Notes];
+            fieldType = FieldType.Text;
+        }
+        else
+        {
+            values = entry.FieldValues
+                .FirstOrDefault(fv => fv.ActionFieldId == condition.FieldId)
+                ?.Values ?? [];
+
+            fieldType = fieldMap.TryGetValue(condition.FieldId, out var field)
+                ? field.FieldType
+                : FieldType.Text;
+        }
 
         // Multi-value semantics:
         //   Equals/Contains/StartsWith/EndsWith/In/numeric-comparisons/Between → "any value matches"
