@@ -1186,6 +1186,11 @@
   <data name="CustomChart_FilterLogicAnd"><value>Y</value></data>
   <data name="CustomChart_FilterLogicOr"><value>O</value></data>
   <data name="CustomChart_FilterField_Notes"><value>Notas</value></data>
+  <data name="Drilldown_Title"><value>Detalle</value></data>
+  <data name="Drilldown_FilteredBy"><value>Filtrado por</value></data>
+  <data name="Drilldown_Field"><value>Campo</value></data>
+  <data name="Drilldown_DateRange"><value>Rango de fechas</value></data>
+  <data name="EntryGrid_LockedByDrilldown"><value>Bloqueado por el detalle</value></data>
   <data name="CustomChart_AddCondition"><value>Añadir Condición</value></data>
   <data name="CustomChart_AddGroup"><value>Añadir Grupo</value></data>
   <data name="CustomChart_RemoveCondition"><value>Eliminar</value></data>

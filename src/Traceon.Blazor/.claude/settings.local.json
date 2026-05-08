@@ -17,7 +17,18 @@
       "Skill(update-config)",
       "PowerShell(Get-Clipboard *)",
       "Bash(grep -i \"\\\\.cs$\")",
-      "PowerShell(dotnet nuget list *)"
+      "PowerShell(dotnet nuget list *)",
+      "PowerShell(Get-ChildItem *)",
+      "Bash(grep *)",
+      "Bash(1\" \"/c/Users/rjrso/.nuget/packages/blazor-apexcharts/6.1.0/lib/net10.0/Blazor-ApexCharts.xml\" | head -80)",
+      "Bash(command -v ildasm)",
+      "Bash(command -v dotnet-ilspycmd)",
+      "Bash(dotnet tool *)",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"$env:USERPROFILE\\\\.nuget\\\\packages\\\\blazor-apexcharts\\\\6.1.0\\\\lib\\\\net10.0\\\\Blazor-ApexCharts.dll\"\\); $text = [System.Text.Encoding]::ASCII.GetString\\($bytes\\); \\($text -split \"`0\" | Where-Object { $_ -match \"ShouldFixDataSelection|FixLineDataSelection|FixData\" } | Select-Object -First 30\\) -join \"`n\")",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"$env:USERPROFILE\\\\.nuget\\\\packages\\\\blazor-apexcharts\\\\6.1.0\\\\lib\\\\net10.0\\\\Blazor-ApexCharts.dll\"\\); $text = [System.Text.Encoding]::ASCII.GetString\\($bytes\\); \\($text -split \"`0\" | Where-Object { $_ -match \"ApexPointSeries|GetCachedSeries|RenderChart|OrderBy|ShowAsync|GetActualSeries|CurrentSeries\" } | Select-Object -Unique -First 30\\) -join \"`n\")",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"$env:USERPROFILE\\\\.nuget\\\\packages\\\\blazor-apexcharts\\\\6.1.0\\\\lib\\\\net10.0\\\\Blazor-ApexCharts.dll\"\\); $text = [System.Text.Encoding]::ASCII.GetString\\($bytes\\); \\($text -split \"`0\" | Where-Object { $_ -match \"T:ApexCharts.Events|class ApexCharts.Events|class Events|set_DataPointSelection|set_Click|JsFunctionString\" } | Select-Object -Unique -First 30\\) -join \"`n\")",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"$env:USERPROFILE\\\\.nuget\\\\packages\\\\blazor-apexcharts\\\\6.1.0\\\\lib\\\\net10.0\\\\Blazor-ApexCharts.dll\"\\); $text = [System.Text.Encoding]::ASCII.GetString\\($bytes\\); \\($text -split \"`0\" | Where-Object { $_ -match \"Clicked``1|HoverData|ZoomedData|SelectionData\" } | Select-Object -Unique -First 20\\) -join \"`n\")",
+      "PowerShell(Get-Content *)"
     ]
   }
 }

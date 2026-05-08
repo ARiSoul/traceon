@@ -515,7 +515,11 @@ else
                             </button>
                         }
                     </div>
-                    <div @key="@($"{chartKey}-{(hasFilter ? string.Join(',', selected!) : "all")}-{_loadKey}")">
+                    @{
+                        var ddtFieldId = _actionFields.FirstOrDefault(f => f.Name == trend.FieldName)?.Id;
+                    }
+                    <div @key="@($"{chartKey}-{(hasFilter ? string.Join(',', selected!) : "all")}-{_loadKey}")"
+                         id="@(ddtFieldId.HasValue ? $"chart-wrapper-ddt-{ddtFieldId.Value:N}" : null)">
                         @{
                             var visibleColors = hasFilter
                                 ? trend.Series
@@ -612,6 +616,7 @@ else
                             }
                             else if (result.DisplayType is AnalyticsDisplayType.BarChart or AnalyticsDisplayType.StackedBar)
                             {
+                                <div id="@($"chart-wrapper-cf-{result.RuleId:N}")">
                                 <ApexChart TItem="CrossFieldGroup"
                                            Options="BuildCrossFieldBarOptions(result)"
                                            Height="250">
@@ -623,9 +628,11 @@ else
                                                     YValue="g => g.Value"
                                                     OrderByDescending="g => g.Y" />
                                 </ApexChart>
+                                </div>
                             }
                             else if (result.DisplayType == AnalyticsDisplayType.PieChart)
                             {
+                                <div id="@($"chart-wrapper-cf-{result.RuleId:N}")">
                                 <ApexChart TItem="CrossFieldGroup"
                                            Options="BuildCrossFieldPieOptions(result)"
                                            Height="280">
@@ -637,6 +644,7 @@ else
                                                     YValue="g => g.Value"
                                                     OrderByDescending="g => g.Y" />
                                 </ApexChart>
+                                </div>
                             }
                             else
                             {
@@ -652,7 +660,10 @@ else
                                         <tbody>
                                             @foreach (var grp in result.Groups.OrderByDescending(g => g.Value))
                                             {
-                                                <tr>
+                                                var capturedKey = grp.Key;
+                                                var capturedRule = _analyticsRules.FirstOrDefault(r => r.Id == result.RuleId);
+                                                <tr @onclick="() => OpenCrossFieldDrilldown(result, capturedRule, capturedKey, null, null)"
+                                                    style="@(capturedRule is not null ? "cursor: pointer;" : "")">
                                                     <td>@grp.Key</td>
                                                     <td class="text-end fw-bold">
                                                         @FormatCrossFieldValue(grp.Value, result)
@@ -740,7 +751,8 @@ else
             <CustomChartRenderer @key="@($"cc-{result.ChartId}-{_loadKey}")"
                                  Result="result"
                                  OnEdit="() => { if (chartDef is not null) _chartFormModal?.ShowEdit(chartDef); }"
-                                 OnDelete="() => DeleteCustomChartAsync(result.ChartId)" />
+                                 OnDelete="() => DeleteCustomChartAsync(result.ChartId)"
+                                 OnDataPointClicked="OnChartDrilldown" />
         </ReorderableChart>
     }
 
@@ -819,6 +831,17 @@ else
             @onclick="ScrollToTopAsync">
         <i class="bi bi-arrow-up"></i>
     </button>
+
+    <DrilldownModal Show="_showDrilldown"
+                    OnClose="CloseDrilldown"
+                    TrackedActionId="ActionId"
+                    ActionFields="_actionFields"
+                    AppliedFilter="_drilldownContext?.Filter"
+                    AppliedFilterChips="_drilldownContext?.Chips"
+                    LockedFieldFilters="_drilldownContext?.LockedFieldFilters"
+                    InitialFrom="_drilldownContext?.FromUtc"
+                    InitialTo="_drilldownContext?.ToUtc"
+                    Title="@_drilldownContext?.Title" />
 }
 
 @code {
@@ -834,6 +857,7 @@ else
     [Inject] private CustomChartApiService CustomChartApi { get; set; } = default!;
     [Inject] private ActionFieldService FieldService { get; set; } = default!;
     [Inject] private FieldDefinitionService FieldDefinitionService { get; set; } = default!;
+    [Inject] private FieldAnalyticsRuleService AnalyticsRuleService { get; set; } = default!;
     @using Blazored.LocalStorage
     [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -854,6 +878,7 @@ else
     private CustomChartFormModal? _chartFormModal;
     private List<ActionFieldResponse> _actionFields = [];
     private List<CustomChartResponse> _customChartDefinitions = [];
+    private List<FieldAnalyticsRuleResponse> _analyticsRules = [];
     private Dictionary<Guid, string[]> _resolvedDropdownValues = [];
 
     private PeriodFilterState _periodState = new() { Value = 90 };
@@ -889,6 +914,7 @@ else
         try { _actionFields = await FieldService.GetByTrackedActionAsync(ActionId); } catch { }
         try { _resolvedDropdownValues = await ResolveCompositeDropdownValuesAsync(_actionFields); } catch { }
         try { _customChartDefinitions = await CustomChartApi.GetByTrackedActionAsync(ActionId); } catch { }
+        try { _analyticsRules = await AnalyticsRuleService.GetByTrackedActionAsync(ActionId); } catch { }
     }
 
     private void BuildFrequencyOptions()
@@ -1053,6 +1079,7 @@ else
             },
             Yaxis = [new YAxis { Title = new AxisTitle { Text = unitLabel } }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Markers = new Markers { Size = 4 },
             Colors = colors,
             Legend = new Legend { Position = LegendPosition.Bottom, Show = false },
             Tooltip = new Tooltip { X = new TooltipX { Format = "dd MMM yyyy" } }
@@ -1209,7 +1236,8 @@ else
                 </button>
             }
         </div>
-        <div @key="@($"{chartKey}-{(hasFilter ? string.Join(',', selected!) : "all")}-{_loadKey}")">
+        <div @key="@($"{chartKey}-{(hasFilter ? string.Join(',', selected!) : "all")}-{_loadKey}")"
+             id="@($"chart-wrapper-cf-{result.RuleId:N}")">
             <ApexChart TItem="NumericDataPoint"
                        Options="BuildCrossFieldTimeSeriesOptions(result, visibleColors)"
                        Height="300">
@@ -1254,6 +1282,7 @@ else
             },
             Yaxis = [new YAxis { Title = new AxisTitle { Text = yTitle } }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Markers = new Markers { Size = 4 },
             Colors = colors,
             Legend = new Legend { Position = LegendPosition.Bottom, Show = false },
             Tooltip = new Tooltip { X = new TooltipX { Format = "dd MMM yyyy" } }
@@ -1388,6 +1417,7 @@ else
         var mainUnitSuffix = isAggregateMode ? unitSuffix : "";
 
         <!-- Overview bar chart -->
+        <div id="@($"chart-wrapper-cf-{result.RuleId:N}")">
         <ApexChart TItem="CrossFieldGroup"
                    Options="BuildCrossFieldBarOptions(result)"
                    Height="200">
@@ -1399,6 +1429,7 @@ else
                             YValue="g => g.Value"
                             OrderByDescending="g => g.Y" />
         </ApexChart>
+        </div>
 
         <!-- Hierarchical breakdown -->
         <div class="mt-3">
@@ -1406,9 +1437,13 @@ else
             {
                 var grpPct = grandTotal > 0 ? (double)(grp.Value / grandTotal * 100) : 0;
                 var maxSubVal = grp.SubGroups.Count > 0 ? grp.SubGroups.Max(s => s.Value) : 1;
+                var capturedGrpKey = grp.Key;
+                var capturedRule = _analyticsRules.FirstOrDefault(r => r.Id == result.RuleId);
 
                 <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1"
+                         @onclick="() => OpenCrossFieldDrilldown(result, capturedRule, capturedGrpKey, null, null)"
+                         style="@(capturedRule is not null ? "cursor: pointer;" : "")">
                         <span class="fw-semibold">
                             <i class="bi bi-folder2 me-1 text-primary"></i>@grp.Key
                         </span>
@@ -1448,7 +1483,10 @@ else
                             {
                                 var subWidthPct = maxSubVal != 0 ? (int)(sub.Value / maxSubVal * 100) : 0;
                                 var subLabel = isAggregateMode ? FormatMetricValue(sub.Value) + mainUnitSuffix : ((int)sub.Value).ToString();
-                                <div class="d-flex align-items-center gap-2 mb-1">
+                                var capturedSubKey = sub.Key;
+                                <div class="d-flex align-items-center gap-2 mb-1"
+                                     @onclick="() => OpenCrossFieldDrilldown(result, capturedRule, capturedGrpKey, capturedSubKey, null)"
+                                     style="@(capturedRule is not null ? "cursor: pointer;" : "")">
                                     <span class="text-truncate" style="min-width: 80px; max-width: 140px; font-size: 0.8rem;">@sub.Key</span>
                                     <div class="flex-grow-1">
                                         <div class="progress" style="height: 14px;">
@@ -1790,6 +1828,109 @@ else
             }
             catch { }
         }
+
+        await RegisterCrossFieldClickHandlersAsync();
+        await RegisterDropdownTrendClickHandlersAsync();
+    }
+
+    private readonly HashSet<Guid> _registeredCrossFieldRules = [];
+    private readonly HashSet<Guid> _registeredDropdownTrends = [];
+
+    private async Task RegisterCrossFieldClickHandlersAsync()
+    {
+        if (_data is null) return;
+        foreach (var result in _data.CrossFieldResults)
+        {
+            if (_registeredCrossFieldRules.Contains(result.RuleId)) continue;
+            var rule = _analyticsRules.FirstOrDefault(r => r.Id == result.RuleId);
+            if (rule is null) continue;
+
+            // Capture for closure.
+            var captured = result;
+            ChartClickRegistry.Register(result.RuleId, (s, d) =>
+                _ = InvokeAsync(() => OnCrossFieldChartClicked(captured, rule, s, d)));
+
+            try
+            {
+                await JS.InvokeVoidAsync("attachChartDrilldownListener",
+                    $"chart-wrapper-cf-{result.RuleId:N}", result.RuleId.ToString());
+                _registeredCrossFieldRules.Add(result.RuleId);
+            }
+            catch { /* element not yet in DOM (e.g. hidden chart); will retry next render */ }
+        }
+    }
+
+    private async Task RegisterDropdownTrendClickHandlersAsync()
+    {
+        if (_data is null) return;
+        foreach (var trend in _data.DropdownValueTrends)
+        {
+            var fieldId = _actionFields.FirstOrDefault(f => f.Name == trend.FieldName)?.Id;
+            if (!fieldId.HasValue) continue;
+            if (_registeredDropdownTrends.Contains(fieldId.Value)) continue;
+
+            var captured = trend;
+            ChartClickRegistry.Register(fieldId.Value, (s, d) =>
+                _ = InvokeAsync(() => OnDropdownTrendClicked(captured, fieldId.Value, s, d)));
+
+            try
+            {
+                await JS.InvokeVoidAsync("attachChartDrilldownListener",
+                    $"chart-wrapper-ddt-{fieldId.Value:N}", fieldId.Value.ToString());
+                _registeredDropdownTrends.Add(fieldId.Value);
+            }
+            catch { /* hidden chart, retry next render */ }
+        }
+    }
+
+    private void OnDropdownTrendClicked(DropdownValueTrendSeries trend, Guid fieldId, int seriesIndex, int dataPointIndex)
+    {
+        // Re-derive the visible series so that toggle-legend filtering doesn't desync the index.
+        var chartKey = $"ddt-{trend.FieldName}";
+        _selectedSeries.TryGetValue(chartKey, out var selected);
+        var hasFilter = selected is { Count: > 0 };
+        var visibleSeries = hasFilter
+            ? trend.Series.Where(s => selected!.Contains(s.ValueLabel)).ToList()
+            : trend.Series;
+
+        if (seriesIndex < 0 || seriesIndex >= visibleSeries.Count) return;
+        var series = visibleSeries[seriesIndex];
+        if (dataPointIndex < 0 || dataPointIndex >= series.Points.Count) return;
+        var point = series.Points[dataPointIndex];
+
+        _drilldownContext = DrilldownContextBuilder.BuildDropdownValueTrend(
+            trend.FieldName, trend.ValueFieldName, fieldId, series.ValueLabel, point.Date);
+        _showDrilldown = true;
+        StateHasChanged();
+    }
+
+    private void OnCrossFieldChartClicked(CrossFieldResult result, FieldAnalyticsRuleResponse rule, int seriesIndex, int dataPointIndex)
+    {
+        if (result.DisplayType == AnalyticsDisplayType.TimeSeries)
+        {
+            if (seriesIndex < 0 || seriesIndex >= result.TimeSeriesData.Count) return;
+            var series = result.TimeSeriesData[seriesIndex];
+            if (dataPointIndex < 0 || dataPointIndex >= series.Points.Count) return;
+            var point = series.Points[dataPointIndex];
+            OpenCrossFieldDrilldown(result, rule, series.SeriesLabel, null, point.Date);
+            return;
+        }
+
+        // Bar/pie/CountByValue overview: rendered groups are sorted by value descending.
+        var rendered = result.Groups.OrderByDescending(g => g.Value).ToList();
+        if (dataPointIndex < 0 || dataPointIndex >= rendered.Count) return;
+        OpenCrossFieldDrilldown(result, rule, rendered[dataPointIndex].Key, null, null);
+    }
+
+    private void OpenCrossFieldDrilldown(CrossFieldResult result, FieldAnalyticsRuleResponse? rule, string? groupKey, string? subGroupKey, DateTime? pointDate)
+    {
+        if (rule is null) return;
+        var (periodFrom, periodTo) = _periodState.Resolve();
+        _drilldownContext = DrilldownContextBuilder.BuildCrossField(
+            rule, result.Label, groupKey, subGroupKey, pointDate,
+            _actionFields.ToDictionary(f => f.Id), periodFrom, periodTo);
+        _showDrilldown = true;
+        StateHasChanged();
     }
 
     [JSInvokable]
@@ -1835,6 +1976,12 @@ else
     public void Dispose()
     {
         _dotNetRef?.Dispose();
+        foreach (var ruleId in _registeredCrossFieldRules)
+            ChartClickRegistry.Unregister(ruleId);
+        _registeredCrossFieldRules.Clear();
+        foreach (var fieldId in _registeredDropdownTrends)
+            ChartClickRegistry.Unregister(fieldId);
+        _registeredDropdownTrends.Clear();
     }
 
     private async Task DeleteCustomChartAsync(Guid chartId)
@@ -1931,5 +2078,30 @@ else
         return value == Math.Truncate(value.Value)
             ? value.Value.ToString("F0")
             : value.Value.ToString("F2");
+    }
+
+    // ── Drilldown ──
+
+    private bool _showDrilldown;
+    private DrilldownContext? _drilldownContext;
+
+    private void OnChartDrilldown(ChartClickContext click)
+    {
+        if (_data is null) return;
+
+        var chart = _customChartDefinitions.FirstOrDefault(c => c.Id == click.ChartId);
+        var result = _data.CustomChartResults.FirstOrDefault(r => r.ChartId == click.ChartId);
+        if (chart is null || result is null) return;
+
+        var (periodFrom, periodTo) = _periodState.Resolve();
+        _drilldownContext = DrilldownContextBuilder.Build(
+            chart, result, click, _actionFields.ToDictionary(f => f.Id), periodFrom, periodTo);
+        _showDrilldown = true;
+    }
+
+    private void CloseDrilldown()
+    {
+        _showDrilldown = false;
+        _drilldownContext = null;
     }
 }

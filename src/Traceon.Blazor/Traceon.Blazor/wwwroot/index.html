@@ -121,6 +121,88 @@
         window.isTouchDevice = function () {
             return window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
         };
+        console.log('[traceon] index.html script loaded — drilldown helper active');
+        // ApexCharts' Blazor wrapper (Blazor-ApexCharts 6.1) throws inside JSDataPointSelected
+        // for our chart shapes. We bypass its typed event by listening for raw DOM clicks on
+        // the rendered SVG and resolving series/datapoint indices from element attributes.
+        window.attachChartDrilldownListener = function (wrapperId, chartId) {
+            var wrapper = document.getElementById(wrapperId);
+            if (!wrapper) throw new Error('traceon: chart wrapper not found: ' + wrapperId);
+            if (wrapper._traceonDrilldownAttached) return;
+            wrapper._traceonDrilldownAttached = true;
+            console.log('[traceon] drilldown listener attached', wrapperId, chartId);
+            var dispatch = function (s, d) {
+                if (isNaN(d)) {
+                    console.log('[traceon] click ignored — no datapoint index');
+                    return;
+                }
+                console.log('[traceon] dispatch', chartId, 'series=', s, 'point=', d);
+                DotNet.invokeMethodAsync('Traceon.Blazor', 'OnApexChartClick', chartId, isNaN(s) ? 0 : s, d);
+            };
+            // Walk a candidate element up to a bar / slice / marker and dispatch if found.
+            // Returns true if the click was handled.
+            var resolveAndDispatch = function (el) {
+                if (!el) return false;
+                var bar = el.closest && el.closest('.apexcharts-bar-area, .apexcharts-rangebar-area, .apexcharts-candlestick-area');
+                if (bar) {
+                    var iAttr = bar.getAttribute('i');
+                    if (iAttr === null) {
+                        var seriesEl = bar.closest('.apexcharts-series');
+                        if (seriesEl) iAttr = seriesEl.getAttribute('data-realindex') || seriesEl.getAttribute('rel');
+                    }
+                    dispatch(parseInt(iAttr, 10), parseInt(bar.getAttribute('j'), 10));
+                    return true;
+                }
+                var slice = el.closest && el.closest('.apexcharts-pie-area');
+                if (slice) {
+                    dispatch(0, parseInt(slice.getAttribute('j'), 10));
+                    return true;
+                }
+                var marker = el.closest && el.closest('.apexcharts-marker');
+                if (marker) {
+                    dispatch(parseInt(marker.getAttribute('index'), 10), parseInt(marker.getAttribute('j'), 10));
+                    return true;
+                }
+                return false;
+            };
+            wrapper.addEventListener('click', function (e) {
+                console.log('[traceon] click', e.target);
+                if (resolveAndDispatch(e.target)) return;
+                // ApexCharts overlays a full-size <foreignObject> (legend host) over the chart,
+                // which absorbs clicks before they reach data elements. Fall back to scanning
+                // every element under the cursor for a data hit, plus a small radius so the
+                // user doesn't need pixel-perfect aim on size-4 markers.
+                var tryAt = function (cx, cy) {
+                    if (typeof document.elementsFromPoint !== 'function') return false;
+                    var stack = document.elementsFromPoint(cx, cy);
+                    for (var i = 0; i < stack.length; i++) {
+                        if (resolveAndDispatch(stack[i])) return true;
+                    }
+                    return false;
+                };
+                if (tryAt(e.clientX, e.clientY)) return;
+                // 8 px radius spiral.
+                var R = 12;
+                for (var step = 2; step <= R; step += 2) {
+                    if (tryAt(e.clientX + step, e.clientY)) return;
+                    if (tryAt(e.clientX - step, e.clientY)) return;
+                    if (tryAt(e.clientX, e.clientY + step)) return;
+                    if (tryAt(e.clientX, e.clientY - step)) return;
+                    if (tryAt(e.clientX + step, e.clientY + step)) return;
+                    if (tryAt(e.clientX - step, e.clientY - step)) return;
+                    if (tryAt(e.clientX + step, e.clientY - step)) return;
+                    if (tryAt(e.clientX - step, e.clientY + step)) return;
+                }
+                // Diagnostics: surface what's actually under the cursor and how many markers exist.
+                var stack = document.elementsFromPoint(e.clientX, e.clientY) || [];
+                console.log('[traceon] no data target — stack:',
+                    stack.map(function (el) { return el.tagName + '.' + (el.getAttribute('class') || ''); }).join(' | '));
+                console.log('[traceon] marker count in wrapper:',
+                    wrapper.querySelectorAll('.apexcharts-marker').length,
+                    'bar-area:', wrapper.querySelectorAll('.apexcharts-bar-area').length,
+                    'pie-area:', wrapper.querySelectorAll('.apexcharts-pie-area').length);
+            });
+        };
     </script>
 </body>
 

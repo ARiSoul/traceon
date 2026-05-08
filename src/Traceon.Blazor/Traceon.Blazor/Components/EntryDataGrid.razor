@@ -3,6 +3,18 @@
 @using Blazored.LocalStorage
 @inject ILocalStorageService LocalStorage
 
+@if (AppliedFilter is not null && AppliedFilterChips is { Count: > 0 })
+{
+    <div class="alert alert-info py-2 mb-3 d-flex align-items-center flex-wrap gap-2">
+        <i class="bi bi-funnel-fill me-1"></i>
+        <span class="fw-semibold me-2">@(AppliedFilterTitle ?? L["Drilldown_FilteredBy"]):</span>
+        @foreach (var chip in AppliedFilterChips)
+        {
+            <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">@chip</span>
+        }
+    </div>
+}
+
 <div class="d-md-none mb-2">
     <button class="btn btn-outline-secondary btn-sm w-100" @onclick="() => _showFilters = !_showFilters">
         <i class="bi bi-funnel me-1"></i>
@@ -39,7 +51,7 @@
         </div>
     }
 
-    <PeriodFilter State="_periodState" ShowDateField="true" OnChanged="OnPeriodChangedAsync" />
+    <PeriodFilter State="_periodState" ShowDateField="true" OnChanged="OnPeriodChangedAsync" Disabled="@LockPeriodFilter" />
 </div>
 
 @if (_activeFields.Count > 0)
@@ -53,9 +65,15 @@
         @foreach (var field in _activeFields.OrderBy(f => f.Order))
         {
             var fieldId = field.Id;
+            var lockedValue = LockedFieldFilters?.GetValueOrDefault(fieldId);
             <div class="col-6 col-md-2">
                 <label class="form-label form-label-sm mb-1">@field.Name</label>
-                @if (field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
+                @if (lockedValue is not null)
+                {
+                    <input type="text" class="form-control form-control-sm" value="@lockedValue"
+                           disabled title="@L["EntryGrid_LockedByDrilldown"]" />
+                }
+                else if (field.FieldType is FieldType.Dropdown or FieldType.CompositeDropdown)
                 {
                     var options = _resolvedDropdownOptions.TryGetValue(fieldId, out var opts) ? opts : [];
                     <MultiSelectDropdown Options="options"
@@ -335,6 +353,42 @@ else
     [Parameter]
     public DateTime? InitialTo { get; set; }
 
+    /// <summary>
+    /// When set, ANDed into the server-side query as an extra OData clause. Used for
+    /// chart drilldown — carries the chart's own filter conditions plus the clicked
+    /// segment as a structured filter tree.
+    /// </summary>
+    [Parameter]
+    public FilterGroupDto? AppliedFilter { get; set; }
+
+    /// <summary>
+    /// Heading shown next to the applied-filter chips. Defaults to "Filtered by".
+    /// </summary>
+    [Parameter]
+    public string? AppliedFilterTitle { get; set; }
+
+    /// <summary>
+    /// Human-readable summary of what <see cref="AppliedFilter"/> represents,
+    /// rendered as badges above the grid.
+    /// </summary>
+    [Parameter]
+    public List<string>? AppliedFilterChips { get; set; }
+
+    /// <summary>
+    /// When true, the period filter inputs are rendered disabled. Use together with
+    /// <see cref="InitialFrom"/>/<see cref="InitialTo"/> to pin a drilldown date range.
+    /// </summary>
+    [Parameter]
+    public bool LockPeriodFilter { get; set; }
+
+    /// <summary>
+    /// Field id → exact value pairs that are pre-filled into the field-filter row as
+    /// read-only inputs and applied as exact-equality OData clauses regardless of
+    /// field type. Used by chart drilldown to surface the click context inline.
+    /// </summary>
+    [Parameter]
+    public Dictionary<Guid, string>? LockedFieldFilters { get; set; }
+
     [Inject] private ActionEntryService EntryService { get; set; } = default!;
     [Inject] private TrackedActionService ActionService { get; set; } = default!;
     [Inject] private ActionFieldService ActionFieldService { get; set; } = default!;
@@ -376,8 +430,13 @@ else
 
     private string? _userKey;
 
-    private string? UserScopedStorageKey => _userKey is not null && StorageKey is not null
-        ? $"{_userKey}_{StorageKey}" : StorageKey;
+    private bool _isDrilldown => AppliedFilter is not null || LockedFieldFilters is { Count: > 0 };
+
+    // Drilldowns are transient — don't persist or restore filter state.
+    private string? UserScopedStorageKey =>
+        _isDrilldown
+            ? null
+            : (_userKey is not null && StorageKey is not null ? $"{_userKey}_{StorageKey}" : StorageKey);
 
     private string? EntryStorageKey => UserScopedStorageKey is not null
         ? $"traceon_entry_{UserScopedStorageKey}" : null;
@@ -399,7 +458,8 @@ else
         }
 
         // Restore persisted filters only when not receiving external date context
-        if (!InitialFrom.HasValue && !InitialTo.HasValue)
+        // and not running as a drilldown (which is transient).
+        if (!InitialFrom.HasValue && !InitialTo.HasValue && !_isDrilldown)
         {
             await RestoreEntryFiltersAsync();
         }
@@ -780,6 +840,24 @@ else
         if (dateFilter is not null)
         {
             clauses.Add(dateFilter);
+        }
+
+        // Externally supplied composite filter (e.g. chart drilldown)
+        var applied = FilterGroupOData.ToFilter(AppliedFilter);
+        if (applied is not null)
+        {
+            clauses.Add(applied);
+        }
+
+        // Locked field filters from drilldown — exact equality regardless of field type.
+        if (LockedFieldFilters is not null)
+        {
+            foreach (var (fieldId, value) in LockedFieldFilters)
+            {
+                if (string.IsNullOrEmpty(value)) continue;
+                var escaped = value.Replace("'", "''");
+                clauses.Add($"FieldValues/any(fv: fv/ActionFieldId eq {fieldId} and fv/Values/any(v: v eq '{escaped}'))");
+            }
         }
 
         // Field value filters

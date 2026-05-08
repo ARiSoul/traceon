@@ -257,3 +257,11 @@ code {
         display: none;
     }
 }
+
+/* Make line/area markers clickable for chart drilldown.
+   ApexCharts adds .no-pointer-events to non-hovered markers in line/area charts,
+   which blocks our DOM-level click handler. The parent-class selectors used in
+   apexcharts.css can vary; override on the marker class itself. */
+.apexcharts-marker.no-pointer-events {
+    pointer-events: auto !important;
+}

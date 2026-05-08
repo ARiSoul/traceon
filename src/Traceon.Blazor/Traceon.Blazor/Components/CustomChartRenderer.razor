@@ -1,4 +1,6 @@
 @inject IStringLocalizer<SharedResource> L
+@inject IJSRuntime JS
+@implements IDisposable
 @using Traceon.Contracts.CustomCharts
 
 <div class="card mb-4">
@@ -63,6 +65,59 @@
     [Parameter, EditorRequired] public CustomChartResult Result { get; set; } = default!;
     [Parameter] public EventCallback OnEdit { get; set; }
     [Parameter] public EventCallback OnDelete { get; set; }
+    [Parameter] public EventCallback<ChartClickContext> OnDataPointClicked { get; set; }
+
+    private string ChartWrapperId => $"chart-wrapper-{Result.ChartId:N}";
+    private bool _drilldownAttached;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && OnDataPointClicked.HasDelegate && Result.ChartType != CustomChartType.Table)
+        {
+            ChartClickRegistry.Register(Result.ChartId, OnApexCallback);
+            await JS.InvokeVoidAsync("attachChartDrilldownListener", ChartWrapperId, Result.ChartId.ToString());
+            _drilldownAttached = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_drilldownAttached)
+            ChartClickRegistry.Unregister(Result.ChartId);
+    }
+
+    private Task EmitGroupClickAsync(string? groupKey)
+        => OnDataPointClicked.HasDelegate && !string.IsNullOrEmpty(groupKey)
+            ? OnDataPointClicked.InvokeAsync(new ChartClickContext(Result.ChartId, groupKey, null, null))
+            : Task.CompletedTask;
+
+    // Called by ChartClickRegistry on JS interop thread; marshal to UI sync context.
+    private void OnApexCallback(int seriesIndex, int dataPointIndex)
+    {
+        if (!OnDataPointClicked.HasDelegate) return;
+
+        if (Result.ChartType == CustomChartType.TimeSeries)
+        {
+            if (seriesIndex < 0 || seriesIndex >= Result.TimeSeriesData.Count) return;
+            var series = Result.TimeSeriesData[seriesIndex];
+            if (dataPointIndex < 0 || dataPointIndex >= series.Points.Count) return;
+            var point = series.Points[dataPointIndex];
+            _ = InvokeAsync(() => OnDataPointClicked.InvokeAsync(
+                new ChartClickContext(Result.ChartId, null, series.SeriesLabel, point.Date)));
+            return;
+        }
+
+        // Pie/donut renders Result.Groups sorted by Y desc (per OrderByDescending="g => g.Y").
+        // Bar/line/area/etc. preserve Result.Groups order (already sorted by the evaluator).
+        var rendered = Result.ChartType is CustomChartType.Pie or CustomChartType.Donut
+            ? Result.Groups.OrderByDescending(g => g.Value).ToList()
+            : Result.Groups;
+
+        if (dataPointIndex < 0 || dataPointIndex >= rendered.Count) return;
+        var group = rendered[dataPointIndex];
+        _ = InvokeAsync(() => OnDataPointClicked.InvokeAsync(
+            new ChartClickContext(Result.ChartId, group.Key, null, null)));
+    }
 
     private static readonly List<string> Palette =
     [
@@ -130,24 +185,26 @@
         if (Result.ChartType is CustomChartType.Line or CustomChartType.Area)
         {
             options.Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 };
-            options.Markers = new Markers { Size = 3 };
+            options.Markers = new Markers { Size = 5 };
         }
         if (Result.ChartType == CustomChartType.Area)
         {
             options.Fill = new Fill { Opacity = new Opacity(0.3) };
         }
 
-        <ApexChart TItem="CrossFieldGroup"
-                   Options="options"
-                   Height="250">
-            <ApexPointSeries TItem="CrossFieldGroup"
-                            Items="Result.Groups"
-                            SeriesType="seriesType"
-                            Name="@(Result.MeasureFieldName ?? Result.Title)"
-                            XValue="g => g.Key"
-                            YValue="g => g.Value"
-                            OrderByDescending="g => Result.SortDescending ? g.Y : 0" />
-        </ApexChart>
+        <div id="@ChartWrapperId">
+            <ApexChart TItem="CrossFieldGroup"
+                       Options="options"
+                       Height="250">
+                <ApexPointSeries TItem="CrossFieldGroup"
+                                Items="Result.Groups"
+                                SeriesType="seriesType"
+                                Name="@(Result.MeasureFieldName ?? Result.Title)"
+                                XValue="g => g.Key"
+                                YValue="g => g.Value"
+                                OrderByDescending="g => Result.SortDescending ? g.Y : 0" />
+            </ApexChart>
+        </div>
     };
 
     private RenderFragment RenderPieChart() => __builder =>
@@ -170,17 +227,19 @@
             }
         };
 
-        <ApexChart TItem="CrossFieldGroup"
-                   Options="options"
-                   Height="280">
-            <ApexPointSeries TItem="CrossFieldGroup"
-                            Items="Result.Groups"
-                            SeriesType="@(Result.ChartType == CustomChartType.Pie ? SeriesType.Pie : SeriesType.Donut)"
-                            Name="@(Result.MeasureFieldName ?? Result.Title)"
-                            XValue="g => g.Key"
-                            YValue="g => g.Value"
-                            OrderByDescending="g => g.Y" />
-        </ApexChart>
+        <div id="@ChartWrapperId">
+            <ApexChart TItem="CrossFieldGroup"
+                       Options="options"
+                       Height="280">
+                <ApexPointSeries TItem="CrossFieldGroup"
+                                Items="Result.Groups"
+                                SeriesType="@(Result.ChartType == CustomChartType.Pie ? SeriesType.Pie : SeriesType.Donut)"
+                                Name="@(Result.MeasureFieldName ?? Result.Title)"
+                                XValue="g => g.Key"
+                                YValue="g => g.Value"
+                                OrderByDescending="g => g.Y" />
+            </ApexChart>
+        </div>
     };
 
     private RenderFragment RenderTimeSeries() => __builder =>
@@ -203,11 +262,13 @@
             },
             Yaxis = [new YAxis { Title = new AxisTitle { Text = Result.Unit ?? Result.MeasureFieldName ?? "" } }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Markers = new Markers { Size = 4 },
             Colors = colors,
             Legend = new Legend { Position = LegendPosition.Bottom },
             Tooltip = new Tooltip { X = new TooltipX { Format = "dd MMM yyyy" } }
         };
 
+        <div id="@ChartWrapperId">
         <ApexChart TItem="NumericDataPoint"
                    Options="options"
                    Height="300">
@@ -222,6 +283,7 @@
                                 OrderBy="p => p.X" />
             }
         </ApexChart>
+        </div>
     };
 
     private RenderFragment RenderTable() => __builder =>
@@ -238,7 +300,9 @@
                 <tbody>
                     @foreach (var group in Result.Groups)
                     {
-                        <tr>
+                        var capturedKey = group.Key;
+                        <tr @onclick="() => EmitGroupClickAsync(capturedKey)"
+                            style="@(OnDataPointClicked.HasDelegate ? "cursor: pointer;" : "")">
                             <td>@group.Key</td>
                             <td class="text-end fw-bold">@FormatValue(group.Value)@unit</td>
                         </tr>

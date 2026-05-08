@@ -1,0 +1,44 @@
+@inject IStringLocalizer<SharedResource> L
+
+@if (Show)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-fullscreen" role="document">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title mb-0">
+                        <i class="bi bi-zoom-in me-1"></i>
+                        @(string.IsNullOrEmpty(Title) ? L["Drilldown_Title"] : Title)
+                    </h6>
+                    <button type="button" class="btn-close" @onclick="CloseAsync" aria-label="@L["Common_Close"]"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <EntryDataGrid TrackedActionId="TrackedActionId"
+                                   LockActionFilter="true"
+                                   ActionFields="ActionFields"
+                                   InitialFrom="InitialFrom"
+                                   InitialTo="InitialTo"
+                                   AppliedFilter="AppliedFilter"
+                                   AppliedFilterChips="AppliedFilterChips"
+                                   LockedFieldFilters="LockedFieldFilters"
+                                   LockPeriodFilter="@(InitialFrom.HasValue || InitialTo.HasValue)" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter, EditorRequired] public Guid TrackedActionId { get; set; }
+    [Parameter] public List<ActionFieldResponse>? ActionFields { get; set; }
+    [Parameter] public FilterGroupDto? AppliedFilter { get; set; }
+    [Parameter] public List<string>? AppliedFilterChips { get; set; }
+    [Parameter] public Dictionary<Guid, string>? LockedFieldFilters { get; set; }
+    [Parameter] public DateTime? InitialFrom { get; set; }
+    [Parameter] public DateTime? InitialTo { get; set; }
+    [Parameter] public string? Title { get; set; }
+
+    private Task CloseAsync() => OnClose.InvokeAsync();
+}
