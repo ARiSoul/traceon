@@ -464,12 +464,15 @@ else
             await RestoreEntryFiltersAsync();
         }
 
-        // Apply dashboard date overrides
+        // Apply dashboard date overrides. InitialFrom/InitialTo are true UTC instants from
+        // the drilldown context; the custom-range UI binds to <input type="date"> which reads
+        // CustomFrom/CustomTo as local calendar dates, and Resolve() converts back to UTC.
+        // Project the UTC bounds to their local-day equivalents to keep the round-trip stable.
         if (InitialFrom.HasValue || InitialTo.HasValue)
         {
             _periodState.Mode = "custom";
-            _periodState.CustomFrom = InitialFrom;
-            _periodState.CustomTo = InitialTo;
+            _periodState.CustomFrom = InitialFrom?.ToLocalTime().Date;
+            _periodState.CustomTo = InitialTo?.ToLocalTime().Date;
         }
 
         // Use externally-provided fields, or load them for the pre-selected action
@@ -910,9 +913,9 @@ else
 
         var parts = new List<string>();
         if (from.HasValue)
-            parts.Add($"{_periodState.DateField} ge {from.Value:yyyy-MM-ddTHH:mm:ssZ}");
+            parts.Add($"{_periodState.DateField} ge {from.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ssZ}");
         if (to.HasValue)
-            parts.Add($"{_periodState.DateField} le {to.Value:yyyy-MM-ddTHH:mm:ssZ}");
+            parts.Add($"{_periodState.DateField} le {to.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ssZ}");
 
         return parts.Count > 0 ? string.Join(" and ", parts) : null;
     }

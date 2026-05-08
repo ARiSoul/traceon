@@ -1203,7 +1203,7 @@ else
 
             var filter = $"TrackedActionId eq {TrackedActionId}";
             if (fromUtc.HasValue)
-                filter += $" and OccurredAtUtc ge {fromUtc.Value:yyyy-MM-ddTHH:mm:ssZ}";
+                filter += $" and OccurredAtUtc ge {fromUtc.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ssZ}";
 
             var request = new DataGridRequest(1, 10_000, "OccurredAtUtc", true, null);
             var result = await EntryService.QueryAsync(request, null, filter);

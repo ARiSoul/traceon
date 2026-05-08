@@ -1,4 +1,5 @@
 using System.Globalization;
+using Traceon.Blazor.Helpers;
 using Traceon.Contracts.ActionEntries;
 using Traceon.Contracts.ActionFields;
 using Traceon.Contracts.CustomCharts;
@@ -208,7 +209,7 @@ public static class CustomChartEvaluationService
         {
             // Group by time bucket
             return entries
-                .GroupBy(e => GetTimeBucketKey(e.OccurredAtUtc, chart.TimeGrouping))
+                .GroupBy(e => GetTimeBucketKey(e.OccurredLocal(), chart.TimeGrouping))
                 .ToDictionary(g => g.Key, g => g.ToList());
         }
 
@@ -348,7 +349,7 @@ public static class CustomChartEvaluationService
         CustomChartResponse chart)
     {
         return entries
-            .GroupBy(e => GetTimeBucketDate(e.OccurredAtUtc, chart.TimeGrouping))
+            .GroupBy(e => GetTimeBucketDate(e.OccurredLocal(), chart.TimeGrouping))
             .OrderBy(g => g.Key)
             .Select(g => new NumericDataPoint(
                 g.Key,

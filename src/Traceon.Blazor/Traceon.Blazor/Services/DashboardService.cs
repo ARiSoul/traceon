@@ -32,9 +32,9 @@ public sealed class DashboardService(
         string? dateFilter = null;
         var filterParts = new List<string>();
         if (fromUtc.HasValue)
-            filterParts.Add($"OccurredAtUtc ge {fromUtc.Value:yyyy-MM-ddTHH:mm:ssZ}");
+            filterParts.Add($"OccurredAtUtc ge {fromUtc.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ssZ}");
         if (toUtc.HasValue)
-            filterParts.Add($"OccurredAtUtc le {toUtc.Value:yyyy-MM-ddTHH:mm:ssZ}");
+            filterParts.Add($"OccurredAtUtc le {toUtc.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ssZ}");
         if (filterParts.Count > 0)
             dateFilter = string.Join(" and ", filterParts);
 
@@ -51,8 +51,7 @@ public sealed class DashboardService(
             fieldsByAction[action.Id] = fields;
         }
 
-        var now = DateTime.UtcNow;
-        var today = now.Date;
+        var today = DateTime.Now.Date;
 
         var actionStats = new List<ActionStats>();
         foreach (var action in actions)
@@ -109,9 +108,9 @@ public sealed class DashboardService(
         {
             TotalActions = actions.Count,
             TotalEntries = allEntries.Count,
-            EntriesToday = allEntries.Count(e => e.OccurredAtUtc.Date == today),
-            EntriesThisWeek = allEntries.Count(e => e.OccurredAtUtc >= today.AddDays(-(int)today.DayOfWeek)),
-            EntriesThisMonth = allEntries.Count(e => e.OccurredAtUtc.Year == today.Year && e.OccurredAtUtc.Month == today.Month),
+            EntriesToday = allEntries.Count(e => e.OccurredLocalDate() == today),
+            EntriesThisWeek = allEntries.Count(e => e.OccurredLocal() >= today.AddDays(-(int)today.DayOfWeek)),
+            EntriesThisMonth = allEntries.Count(e => e.OccurredLocalDate().Year == today.Year && e.OccurredLocalDate().Month == today.Month),
             OverallStreak = ComputeOverallStreak(allEntries, today),
             Actions = actionStats,
             GlobalDailyEntries = BuildDailyEntries(allEntries)
@@ -126,9 +125,9 @@ public sealed class DashboardService(
         string? dateFilter = null;
         var filterParts = new List<string> { $"TrackedActionId eq {actionId}" };
         if (fromUtc.HasValue)
-            filterParts.Add($"OccurredAtUtc ge {fromUtc.Value:yyyy-MM-ddTHH:mm:ssZ}");
+            filterParts.Add($"OccurredAtUtc ge {fromUtc.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ssZ}");
         if (toUtc.HasValue)
-            filterParts.Add($"OccurredAtUtc le {toUtc.Value:yyyy-MM-ddTHH:mm:ssZ}");
+            filterParts.Add($"OccurredAtUtc le {toUtc.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ssZ}");
         dateFilter = string.Join(" and ", filterParts);
 
         var request = new DataGridRequest(1, 10_000, "OccurredAtUtc", false, null);
@@ -158,7 +157,7 @@ public sealed class DashboardService(
                 case FieldType.Integer:
                 case FieldType.Decimal:
                     var rawPoints = entriesWithValues
-                        .Select(x => decimal.TryParse(x.Value, CultureInfo.InvariantCulture, out var n) ? new NumericDataPoint(x.Entry.OccurredAtUtc, n) : null)
+                        .Select(x => decimal.TryParse(x.Value, CultureInfo.InvariantCulture, out var n) ? new NumericDataPoint(x.Entry.OccurredLocal(), n) : null)
                         .Where(p => p is not null)
                         .Select(p => p!)
                         .ToList();
@@ -169,6 +168,7 @@ public sealed class DashboardService(
                     {
                         detail.NumericSeries.Add(new NumericFieldSeries
                         {
+                            FieldId = field.Id,
                             Name = field.Name,
                             Unit = field.Unit,
                             IsInteger = field.FieldType == FieldType.Integer,
@@ -182,7 +182,7 @@ public sealed class DashboardService(
 
                 case FieldType.Boolean:
                     var boolByDay = entriesWithValues
-                        .GroupBy(x => x.Entry.OccurredAtUtc.Date)
+                        .GroupBy(x => x.Entry.OccurredLocalDate())
                         .OrderBy(g => g.Key)
                         .Select(g => new BooleanDataPoint(
                             g.Key,
@@ -193,6 +193,7 @@ public sealed class DashboardService(
                     {
                         detail.BooleanSeries.Add(new BooleanFieldSeries
                         {
+                            FieldId = field.Id,
                             Name = field.Name,
                             Points = boolByDay
                         });
@@ -217,6 +218,7 @@ public sealed class DashboardService(
                     {
                         detail.DropdownSeries.Add(new DropdownFieldSeries
                         {
+                            FieldId = field.Id,
                             Name = field.Name,
                             Distribution = dist
                         });
@@ -268,7 +270,7 @@ public sealed class DashboardService(
         {
             var chronoEntries = entries
                 .OrderBy(e => e.OccurredAtUtc)
-                .Select(e => (Date: e.OccurredAtUtc, Val: e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value))
+                .Select(e => (Date: e.OccurredLocal(), Val: e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value))
                 .Where(x => decimal.TryParse(x.Val, CultureInfo.InvariantCulture, out _))
                 .ToList();
 
@@ -424,7 +426,7 @@ public sealed class DashboardService(
                         var groupVal = rule.GroupByMetadataFieldId.HasValue
                             ? ResolveMetadataValue(metadataLookup, groupByField.FieldDefinitionId, rawGroupVal, rule.GroupByMetadataFieldId.Value)
                             : rawGroupVal;
-                        return (Date: e.OccurredAtUtc, GroupKey: groupVal, MeasureValue: measureVal, SignValue: signVal,
+                        return (Date: e.OccurredLocal(), GroupKey: groupVal, MeasureValue: measureVal, SignValue: signVal,
                                 OffsetTriggerValue: offsetTriggerVal, OffsetValue: offsetVal);
                     });
                 })
@@ -754,7 +756,7 @@ public sealed class DashboardService(
                     var measureVal = e.FieldValues
                         .FirstOrDefault(fv => fv.ActionFieldId == rule.MeasureFieldId)?.Value;
                     if (!decimal.TryParse(measureVal, CultureInfo.InvariantCulture, out var val))
-                        return ((decimal?)null, e.OccurredAtUtc, e.Id, e.ReceiptImportBatchId);
+                        return ((decimal?)null, e.OccurredLocal(), e.Id, e.ReceiptImportBatchId);
 
                     var signVal = rule.SignFieldId.HasValue
                         ? e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == rule.SignFieldId.Value)?.Value
@@ -770,7 +772,7 @@ public sealed class DashboardService(
                         : null;
                     val = ApplyOffset(val, offsetTriggerVal, offsetVal, offsetTriggerSet, rule.OffsetDirection);
 
-                    return ((decimal?)val, e.OccurredAtUtc, e.Id, e.ReceiptImportBatchId);
+                    return ((decimal?)val, e.OccurredLocal(), e.Id, e.ReceiptImportBatchId);
                 })
                 .Where(x => x.Item1.HasValue)
                 .Select(x => (Value: x.Item1!.Value, Date: x.Item2, EntryId: x.Item3, BatchId: x.Item4))
@@ -819,7 +821,8 @@ public sealed class DashboardService(
                 MeasureFieldId = rule.MeasureFieldId,
                 Points = points,
                 DiscountTotal = discountTotal,
-                DiscountFieldName = discountFieldName
+                DiscountFieldName = discountFieldName,
+                RuleId = rule.Id
             });
         }
 
@@ -971,7 +974,7 @@ public sealed class DashboardService(
     {
         if (entries.Count == 0) return [];
         var byDay = entries
-            .GroupBy(e => e.OccurredAtUtc.Date)
+            .GroupBy(e => e.OccurredLocalDate())
             .ToDictionary(g => g.Key, g => g.Count());
         var min = byDay.Keys.Min();
         var max = byDay.Keys.Max();
@@ -986,7 +989,7 @@ public sealed class DashboardService(
         List<ActionEntryResponse> entries,
         List<ActionFieldResponse> fields)
     {
-        var today = DateTime.UtcNow.Date;
+        var today = DateTime.Now.Date;
         var sorted = entries.OrderByDescending(e => e.OccurredAtUtc).ToList();
 
         // Streak: consecutive days with at least one entry
@@ -1010,7 +1013,7 @@ public sealed class DashboardService(
         {
             var weekStart = today.AddDays(-((int)today.DayOfWeek) - (w * 7));
             var weekEnd = weekStart.AddDays(7);
-            var count = entries.Count(e => e.OccurredAtUtc.Date >= weekStart && e.OccurredAtUtc.Date < weekEnd);
+            var count = entries.Count(e => e.OccurredLocalDate() >= weekStart && e.OccurredLocalDate() < weekEnd);
             weekBuckets.Add(new WeekBucket(weekStart, count));
         }
 
@@ -1033,9 +1036,9 @@ public sealed class DashboardService(
         foreach (var field in fields.Where(f => f.FieldType is FieldType.Integer or FieldType.Decimal))
         {
             var rawPoints = entries
-                .Select(e => (e.OccurredAtUtc, Val: e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value))
+                .Select(e => (Date: e.OccurredLocal(), Val: e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == field.Id)?.Value))
                 .Where(x => !string.IsNullOrWhiteSpace(x.Val) && decimal.TryParse(x.Val, CultureInfo.InvariantCulture, out _))
-                .Select(x => new NumericDataPoint(x.OccurredAtUtc, decimal.Parse(x.Val!, CultureInfo.InvariantCulture)))
+                .Select(x => new NumericDataPoint(x.Date, decimal.Parse(x.Val!, CultureInfo.InvariantCulture)))
                 .ToList();
 
             var points = AggregateTrendPoints(rawPoints, field.TrendAggregation);
@@ -1044,6 +1047,7 @@ public sealed class DashboardService(
             {
                 numericSeries.Add(new NumericFieldSeries
                 {
+                    FieldId = field.Id,
                     Name = field.Name,
                     Unit = field.Unit,
                     IsInteger = field.FieldType == FieldType.Integer,
@@ -1179,7 +1183,7 @@ public sealed class DashboardService(
                 var numVal = e.FieldValues.FirstOrDefault(fv => fv.ActionFieldId == valueField.Id)?.Value;
                 return ddValues
                     .Where(dv => !string.IsNullOrWhiteSpace(dv))
-                    .Select(dv => (Date: e.OccurredAtUtc, DropdownValue: dv, NumericValue: numVal));
+                    .Select(dv => (Date: e.OccurredLocal(), DropdownValue: dv, NumericValue: numVal));
             })
             .Where(t => decimal.TryParse(t.NumericValue, CultureInfo.InvariantCulture, out _))
             .Select(t => (t.Date, DropdownValue: t.DropdownValue, NumericValue: decimal.Parse(t.NumericValue!, CultureInfo.InvariantCulture)))
@@ -1226,7 +1230,7 @@ public sealed class DashboardService(
         if (sortedDesc.Count == 0) return 0;
 
         var uniqueDays = sortedDesc
-            .Select(e => e.OccurredAtUtc.Date)
+            .Select(e => e.OccurredLocalDate())
             .Distinct()
             .OrderByDescending(d => d)
             .ToList();
@@ -1251,7 +1255,7 @@ public sealed class DashboardService(
         if (allEntries.Count == 0) return 0;
 
         var uniqueDays = allEntries
-            .Select(e => e.OccurredAtUtc.Date)
+            .Select(e => e.OccurredLocalDate())
             .Distinct()
             .OrderByDescending(d => d)
             .ToList();
@@ -1372,12 +1376,18 @@ public sealed class RunningBalanceSeries
     public List<NumericDataPoint> Points { get; init; } = [];
     public decimal? DiscountTotal { get; init; }
     public string? DiscountFieldName { get; init; }
+
+    // Source analytics rule (SignedSum) when the balance comes from a rule. Null for
+    // goal-based balances synthesized from a numeric field's TargetValueMode==Goal —
+    // those have no rule context and so no drilldown filter is applied.
+    public Guid? RuleId { get; init; }
 }
 
 public sealed record DailyCount(DateTime Date, int Count);
 
 public sealed class NumericFieldSeries
 {
+    public required Guid FieldId { get; init; }
     public required string Name { get; init; }
     public required string Unit { get; init; }
     public bool IsInteger { get; init; }
@@ -1391,6 +1401,7 @@ public sealed record NumericDataPoint(DateTime Date, decimal Value);
 
 public sealed class BooleanFieldSeries
 {
+    public required Guid FieldId { get; init; }
     public required string Name { get; init; }
     public List<BooleanDataPoint> Points { get; init; } = [];
 }
@@ -1399,6 +1410,7 @@ public sealed record BooleanDataPoint(DateTime Date, int TrueCount, int FalseCou
 
 public sealed class DropdownFieldSeries
 {
+    public required Guid FieldId { get; init; }
     public required string Name { get; init; }
     public List<DropdownDataPoint> Distribution { get; init; } = [];
 }

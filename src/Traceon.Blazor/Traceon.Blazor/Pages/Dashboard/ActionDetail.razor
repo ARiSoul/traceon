@@ -351,18 +351,20 @@ else
                     <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>@L["Analytics_EntryFrequency"]</h6>
                 </div>
                 <div class="card-body">
-                    <ApexChart TItem="DailyCount"
-                               Options="_frequencyOptions"
-                               Height="250"
-                               @ref="_frequencyChart">
-                        <ApexPointSeries TItem="DailyCount"
-                                        Items="_data.DailyEntries"
-                                        SeriesType="SeriesType.Area"
-                                        Name="@L["Common_Entries"]"
-                                        XValue="d => d.Date"
-                                        YValue="d => d.Count"
-                                        OrderBy="d => d.X" />
-                    </ApexChart>
+                    <div id="chart-wrapper-freq">
+                        <ApexChart TItem="DailyCount"
+                                   Options="_frequencyOptions"
+                                   Height="250"
+                                   @ref="_frequencyChart">
+                            <ApexPointSeries TItem="DailyCount"
+                                            Items="_data.DailyEntries"
+                                            SeriesType="SeriesType.Area"
+                                            Name="@L["Common_Entries"]"
+                                            XValue="d => d.Date"
+                                            YValue="d => d.Count"
+                                            OrderBy="d => d.X" />
+                        </ApexChart>
+                    </div>
                 </div>
             </div>
         </ReorderableChart>
@@ -389,17 +391,19 @@ else
                     </h6>
                 </div>
                 <div class="card-body">
-                    <ApexChart TItem="NumericDataPoint"
-                               Options="BuildNumericOptions(series)"
-                               Height="250">
-                        <ApexPointSeries TItem="NumericDataPoint"
-                                        Items="series.Points"
-                                        SeriesType="MapChartType(series.ChartType)"
-                                        Name="@series.Name"
-                                        XValue="p => p.Date"
-                                        YValue="p => p.Value"
-                                        OrderBy="p => p.X" />
-                    </ApexChart>
+                    <div id="@($"chart-wrapper-num-{series.FieldId:N}")">
+                        <ApexChart TItem="NumericDataPoint"
+                                   Options="BuildNumericOptions(series)"
+                                   Height="250">
+                            <ApexPointSeries TItem="NumericDataPoint"
+                                            Items="series.Points"
+                                            SeriesType="MapChartType(series.ChartType)"
+                                            Name="@series.Name"
+                                            XValue="p => p.Date"
+                                            YValue="p => p.Value"
+                                            OrderBy="p => p.X" />
+                        </ApexChart>
+                    </div>
                 </div>
             </div>
         </ReorderableChart>
@@ -416,24 +420,26 @@ else
                     <h6 class="mb-0"><i class="bi bi-toggles me-2"></i>@series.Name</h6>
                 </div>
                 <div class="card-body">
-                    <ApexChart TItem="BooleanDataPoint"
-                               Options="BuildBooleanOptions(series)"
-                               Height="250">
-                         <ApexPointSeries TItem="BooleanDataPoint"
-                                        Items="series.Points"
-                                        SeriesType="SeriesType.Bar"
-                                        Name="@L["Dashboard_True"]"
-                                        XValue="p => p.Date"
-                                        YValue="p => (decimal)p.TrueCount"
-                                        OrderBy="p => p.X" />
-                        <ApexPointSeries TItem="BooleanDataPoint"
-                                        Items="series.Points"
-                                        SeriesType="SeriesType.Bar"
-                                        Name="@L["Dashboard_False"]"
-                                        XValue="p => p.Date"
-                                        YValue="p => (decimal)p.FalseCount"
-                                        OrderBy="p => p.X" />
-                    </ApexChart>
+                    <div id="@($"chart-wrapper-bool-{series.FieldId:N}")">
+                        <ApexChart TItem="BooleanDataPoint"
+                                   Options="BuildBooleanOptions(series)"
+                                   Height="250">
+                             <ApexPointSeries TItem="BooleanDataPoint"
+                                            Items="series.Points"
+                                            SeriesType="SeriesType.Bar"
+                                            Name="@L["Dashboard_True"]"
+                                            XValue="p => p.Date"
+                                            YValue="p => (decimal)p.TrueCount"
+                                            OrderBy="p => p.X" />
+                            <ApexPointSeries TItem="BooleanDataPoint"
+                                            Items="series.Points"
+                                            SeriesType="SeriesType.Bar"
+                                            Name="@L["Dashboard_False"]"
+                                            XValue="p => p.Date"
+                                            YValue="p => (decimal)p.FalseCount"
+                                            OrderBy="p => p.X" />
+                        </ApexChart>
+                    </div>
                 </div>
             </div>
         </ReorderableChart>
@@ -450,17 +456,19 @@ else
                     <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>@series.Name @L["Analytics_Distribution"]</h6>
                 </div>
                 <div class="card-body">
-                    <ApexChart TItem="DropdownDataPoint"
-                               Options="BuildDonutOptions(series)"
-                               Height="280">
-                        <ApexPointSeries TItem="DropdownDataPoint"
-                                        Items="series.Distribution"
-                                        SeriesType="SeriesType.Donut"
-                                        Name="@L["Metric_Count"]"
-                                        XValue="p => p.Label"
-                                        YValue="p => p.Count"
-                                        OrderByDescending="p => p.Y" />
-                    </ApexChart>
+                    <div id="@($"chart-wrapper-dd-{series.FieldId:N}")">
+                        <ApexChart TItem="DropdownDataPoint"
+                                   Options="BuildDonutOptions(series)"
+                                   Height="280">
+                            <ApexPointSeries TItem="DropdownDataPoint"
+                                            Items="series.Distribution"
+                                            SeriesType="SeriesType.Donut"
+                                            Name="@L["Metric_Count"]"
+                                            XValue="p => p.Label"
+                                            YValue="p => p.Count"
+                                            OrderByDescending="p => p.Y" />
+                        </ApexChart>
+                    </div>
                 </div>
             </div>
         </ReorderableChart>
@@ -725,17 +733,19 @@ else
                 </div>
             </div>
             <div class="card-body">
-                <ApexChart TItem="NumericDataPoint"
-                           Options="BuildBalanceOptions(balance)"
-                           Height="250">
-                    <ApexPointSeries TItem="NumericDataPoint"
-                                    Items="balance.Points"
-                                    SeriesType="SeriesType.Area"
-                                    Name="@L["Analytics_Balance"]"
-                                    XValue="p => p.Date"
-                                    YValue="p => p.Value"
-                                    OrderBy="p => p.X" />
-                </ApexChart>
+                <div id="@BalanceWrapperId(balance)">
+                    <ApexChart TItem="NumericDataPoint"
+                               Options="BuildBalanceOptions(balance)"
+                               Height="250">
+                        <ApexPointSeries TItem="NumericDataPoint"
+                                        Items="balance.Points"
+                                        SeriesType="SeriesType.Area"
+                                        Name="@L["Analytics_Balance"]"
+                                        XValue="p => p.Date"
+                                        YValue="p => p.Value"
+                                        OrderBy="p => p.X" />
+                    </ApexChart>
+                </div>
             </div>
         </div>
         </ReorderableChart>
@@ -934,6 +944,7 @@ else
             Yaxis = [new YAxis { Title = new AxisTitle { Text = L["Common_Entries"].Value }, Min = 0 }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
             Fill = new Fill { Opacity = new Opacity(0.3) },
+            Markers = new Markers { Size = 4 },
             Colors = ["#0d6efd"],
             Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy" } }
         };
@@ -1346,6 +1357,7 @@ else
             Yaxis = [new YAxis { Title = new AxisTitle { Text = yTitle }, DecimalsInFloat = 2 }],
             Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
             Fill = new Fill { Opacity = new Opacity(0.25) },
+            Markers = new Markers { Size = 4 },
             Colors = [balance.CurrentBalance >= 0 ? "#198754" : "#dc3545"],
             Tooltip = new Tooltip { X = new TooltipX { Format = "MMM dd, yyyy HH:mm" } }
         };
@@ -1831,10 +1843,21 @@ else
 
         await RegisterCrossFieldClickHandlersAsync();
         await RegisterDropdownTrendClickHandlersAsync();
+        await RegisterRunningBalanceClickHandlersAsync();
+        await RegisterEntryFrequencyClickHandlerAsync();
+        await RegisterNumericTrendClickHandlersAsync();
+        await RegisterDropdownDistributionClickHandlersAsync();
+        await RegisterBooleanTrendClickHandlersAsync();
     }
 
     private readonly HashSet<Guid> _registeredCrossFieldRules = [];
     private readonly HashSet<Guid> _registeredDropdownTrends = [];
+    private readonly HashSet<Guid> _registeredRunningBalances = [];
+    private readonly HashSet<Guid> _registeredGoalBalances = [];
+    private readonly HashSet<Guid> _registeredNumericTrends = [];
+    private readonly HashSet<Guid> _registeredDropdownDistributions = [];
+    private readonly HashSet<Guid> _registeredBooleanTrends = [];
+    private bool _registeredEntryFrequency;
 
     private async Task RegisterCrossFieldClickHandlersAsync()
     {
@@ -1881,6 +1904,227 @@ else
             }
             catch { /* hidden chart, retry next render */ }
         }
+    }
+
+    // Stable DOM/registry id for a running-balance chart. Rule-based balances use the rule id
+    // (namespaced "bal-…" so they don't collide with the cross-field table that shares it);
+    // goal-based balances (no rule) use the measure field id under "goal-…".
+    private static string? BalanceWrapperId(RunningBalanceSeries balance)
+    {
+        if (balance.RuleId.HasValue) return $"chart-wrapper-bal-{balance.RuleId.Value:N}";
+        if (balance.MeasureFieldId.HasValue) return $"chart-wrapper-goal-{balance.MeasureFieldId.Value:N}";
+        return null;
+    }
+
+    private async Task RegisterRunningBalanceClickHandlersAsync()
+    {
+        if (_data is null) return;
+        foreach (var balance in _data.RunningBalances)
+        {
+            if (balance.RuleId.HasValue)
+            {
+                var ruleId = balance.RuleId.Value;
+                if (_registeredRunningBalances.Contains(ruleId)) continue;
+                var rule = _analyticsRules.FirstOrDefault(r => r.Id == ruleId);
+                if (rule is null) continue;
+
+                // The same rule.Id is already used by the cross-field handler; namespace this
+                // one so the registry doesn't overwrite the table's drilldown.
+                var registryKey = $"bal-{ruleId:N}";
+                var captured = balance;
+                ChartClickRegistry.Register(registryKey, (s, d) =>
+                    _ = InvokeAsync(() => OnRunningBalanceClicked(captured, rule, s, d)));
+
+                try
+                {
+                    await JS.InvokeVoidAsync("attachChartDrilldownListener",
+                        $"chart-wrapper-bal-{ruleId:N}", registryKey);
+                    _registeredRunningBalances.Add(ruleId);
+                }
+                catch { /* hidden chart, retry next render */ }
+            }
+            else if (balance.MeasureFieldId.HasValue)
+            {
+                // Goal-based balance: no rule to pin a filter on, but we know the measure field —
+                // drilldown filters to that day with field IsNotEmpty.
+                var fieldId = balance.MeasureFieldId.Value;
+                if (_registeredGoalBalances.Contains(fieldId)) continue;
+
+                var registryKey = $"goal-{fieldId:N}";
+                var captured = balance;
+                ChartClickRegistry.Register(registryKey, (s, d) =>
+                    _ = InvokeAsync(() => OnGoalBalanceClicked(captured, s, d)));
+
+                try
+                {
+                    await JS.InvokeVoidAsync("attachChartDrilldownListener",
+                        $"chart-wrapper-goal-{fieldId:N}", registryKey);
+                    _registeredGoalBalances.Add(fieldId);
+                }
+                catch { /* hidden chart, retry next render */ }
+            }
+        }
+    }
+
+    private void OnGoalBalanceClicked(RunningBalanceSeries balance, int seriesIndex, int dataPointIndex)
+    {
+        if (dataPointIndex < 0 || dataPointIndex >= balance.Points.Count) return;
+        if (!balance.MeasureFieldId.HasValue) return;
+        var point = balance.Points[dataPointIndex];
+        _drilldownContext = DrilldownContextBuilder.BuildFieldTrend(
+            balance.Label, balance.MeasureFieldId.Value, balance.Label, point.Date);
+        _showDrilldown = true;
+        StateHasChanged();
+    }
+
+    private async Task RegisterBooleanTrendClickHandlersAsync()
+    {
+        if (_data is null) return;
+        foreach (var series in _data.BooleanSeries)
+        {
+            var fieldId = series.FieldId;
+            if (_hiddenCharts.Contains($"bool-{series.Name}")) continue;
+            if (_registeredBooleanTrends.Contains(fieldId)) continue;
+
+            var registryKey = $"bool-{fieldId:N}";
+            var captured = series;
+            ChartClickRegistry.Register(registryKey, (s, d) =>
+                _ = InvokeAsync(() => OnBooleanTrendClicked(captured, s, d)));
+
+            try
+            {
+                await JS.InvokeVoidAsync("attachChartDrilldownListener",
+                    $"chart-wrapper-bool-{fieldId:N}", registryKey);
+                _registeredBooleanTrends.Add(fieldId);
+            }
+            catch { /* hidden chart, retry next render */ }
+        }
+    }
+
+    private void OnBooleanTrendClicked(BooleanFieldSeries series, int seriesIndex, int dataPointIndex)
+    {
+        if (dataPointIndex < 0 || dataPointIndex >= series.Points.Count) return;
+        // SeriesType.Bar order in markup: 0 = True, 1 = False.
+        var isTrueBar = seriesIndex == 0;
+        var point = series.Points[dataPointIndex];
+        _drilldownContext = DrilldownContextBuilder.BuildBooleanTrend(
+            series.Name, series.FieldId, isTrueBar, point.Date);
+        _showDrilldown = true;
+        StateHasChanged();
+    }
+
+    private async Task RegisterDropdownDistributionClickHandlersAsync()
+    {
+        if (_data is null) return;
+        foreach (var series in _data.DropdownSeries)
+        {
+            var fieldId = series.FieldId;
+            if (_hiddenCharts.Contains($"dd-{series.Name}")) continue;
+            if (_registeredDropdownDistributions.Contains(fieldId)) continue;
+
+            var registryKey = $"dd-{fieldId:N}";
+            var captured = series;
+            ChartClickRegistry.Register(registryKey, (s, d) =>
+                _ = InvokeAsync(() => OnDropdownDistributionClicked(captured, s, d)));
+
+            try
+            {
+                await JS.InvokeVoidAsync("attachChartDrilldownListener",
+                    $"chart-wrapper-dd-{fieldId:N}", registryKey);
+                _registeredDropdownDistributions.Add(fieldId);
+            }
+            catch { /* hidden chart, retry next render */ }
+        }
+    }
+
+    private void OnDropdownDistributionClicked(DropdownFieldSeries series, int seriesIndex, int dataPointIndex)
+    {
+        // Distribution is already sorted count-descending in DashboardService, matching the
+        // donut's OrderByDescending — so dataPointIndex maps directly into series.Distribution.
+        if (dataPointIndex < 0 || dataPointIndex >= series.Distribution.Count) return;
+        var slice = series.Distribution[dataPointIndex];
+        var (periodFrom, periodTo) = _periodState.Resolve();
+        _drilldownContext = DrilldownContextBuilder.BuildDropdownDistribution(
+            series.Name, series.FieldId, slice.Label, periodFrom, periodTo);
+        _showDrilldown = true;
+        StateHasChanged();
+    }
+
+    private async Task RegisterNumericTrendClickHandlersAsync()
+    {
+        if (_data is null) return;
+        foreach (var series in _data.NumericSeries)
+        {
+            var fieldId = series.FieldId;
+            if (_hiddenCharts.Contains($"num-{series.Name}")) continue;
+            if (_registeredNumericTrends.Contains(fieldId)) continue;
+
+            var registryKey = $"num-{fieldId:N}";
+            var captured = series;
+            ChartClickRegistry.Register(registryKey, (s, d) =>
+                _ = InvokeAsync(() => OnNumericTrendClicked(captured, s, d)));
+
+            try
+            {
+                await JS.InvokeVoidAsync("attachChartDrilldownListener",
+                    $"chart-wrapper-num-{fieldId:N}", registryKey);
+                _registeredNumericTrends.Add(fieldId);
+            }
+            catch { /* hidden chart, retry next render */ }
+        }
+    }
+
+    private void OnNumericTrendClicked(NumericFieldSeries series, int seriesIndex, int dataPointIndex)
+    {
+        if (dataPointIndex < 0 || dataPointIndex >= series.Points.Count) return;
+        var point = series.Points[dataPointIndex];
+        _drilldownContext = DrilldownContextBuilder.BuildFieldTrend(
+            series.Name, series.FieldId, series.Name, point.Date);
+        _showDrilldown = true;
+        StateHasChanged();
+    }
+
+    private async Task RegisterEntryFrequencyClickHandlerAsync()
+    {
+        if (_data is null || _data.DailyEntries.Count == 0) return;
+        if (_hiddenCharts.Contains("freq")) return;
+        if (_registeredEntryFrequency) return;
+
+        const string registryKey = "freq";
+        ChartClickRegistry.Register(registryKey, (s, d) =>
+            _ = InvokeAsync(() => OnEntryFrequencyClicked(s, d)));
+
+        try
+        {
+            await JS.InvokeVoidAsync("attachChartDrilldownListener", "chart-wrapper-freq", registryKey);
+            _registeredEntryFrequency = true;
+        }
+        catch { /* hidden chart, retry next render */ }
+    }
+
+    private void OnEntryFrequencyClicked(int seriesIndex, int dataPointIndex)
+    {
+        if (_data is null) return;
+        if (dataPointIndex < 0 || dataPointIndex >= _data.DailyEntries.Count) return;
+        var point = _data.DailyEntries[dataPointIndex];
+        _drilldownContext = DrilldownContextBuilder.BuildEntryFrequency(
+            L["Analytics_EntryFrequency"], point.Date);
+        _showDrilldown = true;
+        StateHasChanged();
+    }
+
+    private void OnRunningBalanceClicked(RunningBalanceSeries balance, FieldAnalyticsRuleResponse rule, int seriesIndex, int dataPointIndex)
+    {
+        if (dataPointIndex < 0 || dataPointIndex >= balance.Points.Count) return;
+        var point = balance.Points[dataPointIndex];
+        // No group-by lock on the running balance: the chart aggregates every entry that the
+        // rule's filter accepts. Drill into the day of the clicked step.
+        var (periodFrom, periodTo) = _periodState.Resolve();
+        _drilldownContext = DrilldownContextBuilder.BuildCrossField(
+            rule, balance.Label, groupKey: null, subGroupKey: null, pointDate: point.Date,
+            _actionFields.ToDictionary(f => f.Id), periodFrom, periodTo);
+        _showDrilldown = true;
+        StateHasChanged();
     }
 
     private void OnDropdownTrendClicked(DropdownValueTrendSeries trend, Guid fieldId, int seriesIndex, int dataPointIndex)
@@ -1982,6 +2226,26 @@ else
         foreach (var fieldId in _registeredDropdownTrends)
             ChartClickRegistry.Unregister(fieldId);
         _registeredDropdownTrends.Clear();
+        foreach (var ruleId in _registeredRunningBalances)
+            ChartClickRegistry.Unregister($"bal-{ruleId:N}");
+        _registeredRunningBalances.Clear();
+        foreach (var fieldId in _registeredNumericTrends)
+            ChartClickRegistry.Unregister($"num-{fieldId:N}");
+        _registeredNumericTrends.Clear();
+        foreach (var fieldId in _registeredDropdownDistributions)
+            ChartClickRegistry.Unregister($"dd-{fieldId:N}");
+        _registeredDropdownDistributions.Clear();
+        foreach (var fieldId in _registeredBooleanTrends)
+            ChartClickRegistry.Unregister($"bool-{fieldId:N}");
+        _registeredBooleanTrends.Clear();
+        foreach (var fieldId in _registeredGoalBalances)
+            ChartClickRegistry.Unregister($"goal-{fieldId:N}");
+        _registeredGoalBalances.Clear();
+        if (_registeredEntryFrequency)
+        {
+            ChartClickRegistry.Unregister("freq");
+            _registeredEntryFrequency = false;
+        }
     }
 
     private async Task DeleteCustomChartAsync(Guid chartId)
