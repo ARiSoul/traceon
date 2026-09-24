@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using Traceon.Contracts.ReceiptScan;
 
 namespace Traceon.Blazor.Services;
@@ -22,8 +23,11 @@ public sealed class ReceiptScanService(HttpClient http)
 
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadAsStringAsync();
-            throw new HttpRequestException($"Receipt scan failed ({response.StatusCode}): {error}");
+            var error = ExtractErrorMessage(await response.Content.ReadAsStringAsync());
+            throw new HttpRequestException(
+                string.IsNullOrWhiteSpace(error) ? $"{(int)response.StatusCode} {response.StatusCode}" : error,
+                inner: null,
+                statusCode: response.StatusCode);
         }
 
         var scanResponse = await response.Content.ReadFromJsonAsync<ReceiptScanResponse>()
@@ -47,6 +51,24 @@ public sealed class ReceiptScanService(HttpClient http)
                 TotalPrice = i.TotalPrice
             }).ToList()
         };
+    }
+
+    // The API returns errors as a JSON string (e.g. "\"AI service returned TooManyRequests.\"");
+    // anything else (ProblemDetails, HTML from the proxy) is ignored in favour of the status code.
+    private static string? ExtractErrorMessage(string body)
+    {
+        if (string.IsNullOrWhiteSpace(body) || !body.TrimStart().StartsWith('"'))
+            return null;
+
+        try
+        {
+            var message = JsonSerializer.Deserialize<string>(body);
+            return message is { Length: > 300 } ? message[..300] : message;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 }
 

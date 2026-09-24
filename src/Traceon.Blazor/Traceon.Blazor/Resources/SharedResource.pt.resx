@@ -947,6 +947,10 @@
   <data name="Receipt_ScanNow"><value>Digitalizar Recibo</value></data>
   <data name="Receipt_Scanning"><value>A digitalizar...</value></data>
   <data name="Receipt_ScanFailed"><value>Erro ao digitalizar o recibo. Tente novamente com uma imagem mais clara.</value></data>
+  <data name="Receipt_FileTooLarge"><value>A imagem é demasiado grande ({0} MB). O máximo é {1} MB.</value></data>
+  <data name="Receipt_ImageUnreadable"><value>O browser não conseguiu ler esta imagem. O formato pode não ser suportado (ex.: HEIC) — tente um JPG ou PNG, ou uma captura de ecrã do recibo.</value></data>
+  <data name="Receipt_ScanServiceError"><value>O serviço de digitalização devolveu um erro: {0}</value></data>
+  <data name="Receipt_ScanNetworkError"><value>Não foi possível contactar o servidor. Verifique a ligação e tente novamente.</value></data>
   <data name="Receipt_SelectAction"><value>Selecionar Ação Destino</value></data>
   <data name="Receipt_SelectActionHint"><value>Escolha a ação rastreada onde os artigos do recibo serão importados como entradas.</value></data>
   <data name="Receipt_NoActions"><value>Nenhuma ação com importação de recibos ativada. Ative na aba Importação de Recibos da ação primeiro.</value></data>

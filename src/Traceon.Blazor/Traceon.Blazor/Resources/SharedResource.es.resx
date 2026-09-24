@@ -947,6 +947,10 @@
   <data name="Receipt_ScanNow"><value>Escanear Ticket</value></data>
   <data name="Receipt_Scanning"><value>Escaneando...</value></data>
   <data name="Receipt_ScanFailed"><value>Error al escanear el ticket. Inténtalo de nuevo con una imagen más clara.</value></data>
+  <data name="Receipt_FileTooLarge"><value>La imagen es demasiado grande ({0} MB). El máximo es {1} MB.</value></data>
+  <data name="Receipt_ImageUnreadable"><value>El navegador no pudo leer esta imagen. Es posible que el formato no sea compatible (p. ej. HEIC): prueba con un JPG o PNG, o con una captura de pantalla del ticket.</value></data>
+  <data name="Receipt_ScanServiceError"><value>El servicio de escaneo devolvió un error: {0}</value></data>
+  <data name="Receipt_ScanNetworkError"><value>No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.</value></data>
   <data name="Receipt_SelectAction"><value>Seleccionar Acción Destino</value></data>
   <data name="Receipt_SelectActionHint"><value>Elige la acción rastreada donde se importarán los artículos del ticket como entradas.</value></data>
   <data name="Receipt_NoActions"><value>No hay acciones con importación de recibos habilitada. Habilítela en la pestaña Importación de Recibos de la acción primero.</value></data>

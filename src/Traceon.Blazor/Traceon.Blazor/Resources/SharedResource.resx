@@ -950,6 +950,10 @@
   <data name="Receipt_ScanNow"><value>Scan Receipt</value></data>
   <data name="Receipt_Scanning"><value>Scanning...</value></data>
   <data name="Receipt_ScanFailed"><value>Failed to scan the receipt. Please try again with a clearer image.</value></data>
+  <data name="Receipt_FileTooLarge"><value>The image is too large ({0} MB). The maximum is {1} MB.</value></data>
+  <data name="Receipt_ImageUnreadable"><value>The browser could not read this image. The format may not be supported (e.g. HEIC) — try a JPG or PNG, or a screenshot of the receipt.</value></data>
+  <data name="Receipt_ScanServiceError"><value>The scan service returned an error: {0}</value></data>
+  <data name="Receipt_ScanNetworkError"><value>Could not reach the server. Check your connection and try again.</value></data>
   <data name="Receipt_SelectAction"><value>Select Target Action</value></data>
   <data name="Receipt_SelectActionHint"><value>Choose the tracked action where receipt items will be imported. Only actions with receipt import enabled are shown.</value></data>
   <data name="Receipt_NoActions"><value>No actions with receipt import enabled. Enable it in the action's Receipt Import tab first.</value></data>

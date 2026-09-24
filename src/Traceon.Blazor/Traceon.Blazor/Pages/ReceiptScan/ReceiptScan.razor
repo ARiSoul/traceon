@@ -1200,12 +1200,22 @@
         _errors = [];
     }
 
+    // Max size of the original photo; it is compressed client-side before upload
+    private const long MaxSelectedFileBytes = 50 * 1024 * 1024;
+
     private async Task ScanReceiptAsync()
     {
         if (_selectedFile is null) return;
 
-        _scanning = true;
         _errors = [];
+
+        if (_selectedFile.Size > MaxSelectedFileBytes)
+        {
+            _errors = [L["Receipt_FileTooLarge", _selectedFile.Size / (1024 * 1024), MaxSelectedFileBytes / (1024 * 1024)]];
+            return;
+        }
+
+        _scanning = true;
 
         try
         {
@@ -1217,7 +1227,7 @@
             if (_selectedFile.Size > maxBytes)
             {
                 // Compress client-side via canvas JS interop
-                using var rawStream = _selectedFile.OpenReadStream(20 * 1024 * 1024);
+                using var rawStream = _selectedFile.OpenReadStream(MaxSelectedFileBytes);
                 var dotNetStreamRef = new DotNetStreamReference(rawStream);
                 imageBytes = await JS.InvokeAsync<byte[]>("compressImage", dotNetStreamRef, maxWidth, maxBytes);
             }
@@ -1247,13 +1257,35 @@
             // Move to field mapping (action was already selected in step 0)
             await LoadFieldsAndProceed();
         }
-        catch
+        catch (JSException ex)
         {
+            // Browser could not decode the image (e.g. HEIC in Chrome/Edge)
+            LogScanError(ex);
+            _errors = [L["Receipt_ImageUnreadable"]];
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is not null)
+        {
+            LogScanError(ex);
+            _errors = [L["Receipt_ScanServiceError", ex.Message]];
+        }
+        catch (HttpRequestException ex)
+        {
+            LogScanError(ex);
+            _errors = [L["Receipt_ScanNetworkError"]];
+        }
+        catch (Exception ex)
+        {
+            LogScanError(ex);
             _errors = [L["Receipt_ScanFailed"]];
         }
 
         _scanning = false;
     }
+
+    // Written to the browser DevTools console so the real cause is visible
+    private void LogScanError(Exception ex) =>
+        Console.Error.WriteLine(
+            $"Receipt scan failed for '{_selectedFile?.Name}' ({_selectedFile?.ContentType}, {_selectedFile?.Size} bytes): {ex}");
 
     private async Task LoadActionsAsync()
     {
