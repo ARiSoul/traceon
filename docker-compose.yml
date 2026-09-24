@@ -1,6 +1,16 @@
+# Log rotation for every container (Docker's json-file driver has no limit by default)
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
 
   # ── SQL Server ──────────────────────────────────────────────
+  # Bound to 127.0.0.1 only: the API reaches it via the internal Docker network (Server=sqlserver).
+  # Docker bypasses UFW, so "1433:1433" would expose SQL Server to the whole internet.
+  # For ad-hoc access use an SSH tunnel (see docs/deployment-hetzner.md).
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: traceon-db
@@ -8,7 +18,7 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "${DB_SA_PASSWORD}"   # set in .env
     ports:
-      - "1433:1433"
+      - "127.0.0.1:1433:1433"
     volumes:
       - sqldata:/var/opt/mssql
     healthcheck:
@@ -17,6 +27,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+    logging: *default-logging
     restart: unless-stopped
 
   # ── API ─────────────────────────────────────────────────────
@@ -40,10 +51,12 @@ services:
       Azure__DocumentIntelligence__Key: "${AZURE_DI_KEY}"
       GitHub__Token: "${GITHUB_TOKEN}"
       AllowedOrigins__0: "https://${BLAZOR_DOMAIN}"
+    # Only reachable from the host itself; public traffic goes through Caddy.
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - api-logs:/app/logs
+    logging: *default-logging
     restart: unless-stopped
 
   # ── Blazor WASM ─────────────────────────────────────────────
@@ -54,8 +67,10 @@ services:
     container_name: traceon-blazor
     depends_on:
       - api
+    # Only reachable from the host itself; public traffic goes through Caddy.
     ports:
-      - "8081:80"
+      - "127.0.0.1:8081:80"
+    logging: *default-logging
     restart: unless-stopped
 
   # ── Caddy (reverse proxy + automatic HTTPS) ────────────────
@@ -76,6 +91,7 @@ services:
     depends_on:
       - api
       - blazor
+    logging: *default-logging
     restart: unless-stopped
 
 volumes:

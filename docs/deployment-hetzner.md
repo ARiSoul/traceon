@@ -143,6 +143,12 @@ sudo ufw enable
 
 Type `y` to confirm. This blocks everything except SSH, HTTP, and HTTPS.
 
+> ⚠️ **Docker bypasses UFW.** Ports published by Docker (`ports:` in `docker-compose.yml`) are inserted directly into iptables and are reachable from the internet **even if UFW blocks them**. That is why `docker-compose.yml` binds SQL Server, the API and Blazor to `127.0.0.1` — only Caddy (80/443) is public. Never change `127.0.0.1:1433:1433` back to `1433:1433`.
+
+### 4.3 — Enable the Hetzner Cloud Firewall (recommended)
+
+Because it sits *outside* the server, Docker cannot bypass it. In the Hetzner console → **Firewalls** → **Create Firewall**, add inbound rules for TCP `22`, `80`, `443` and UDP `443` only, then apply it to the server.
+
 ---
 
 ## 5. Install Docker
@@ -371,6 +377,74 @@ docker compose logs -f api
 docker compose logs -f sqlserver
 ```
 
+> `docker compose logs -f` without `--tail` replays the **entire** history first. Always limit it.
+
+#### Filtered / recent logs
+
+```bash
+# Last 200 lines of the API, then keep following
+docker compose logs -f --tail 200 api
+
+# Only the last hour / today (also accepts timestamps: --since 2026-09-24T08:00)
+docker compose logs --since 1h api
+docker compose logs --since 24h --timestamps api
+
+# Only warnings and errors from the API (Serilog prefixes lines with [WRN] / [ERR] / [FTL])
+docker compose logs --since 24h api | grep -E "\[(WRN|ERR|FTL)\]|Exception" -A 5
+
+# Receipt scan problems (Azure Document Intelligence / OpenAI)
+docker compose logs --since 24h api | grep -iE "receipt|openai|document intelligence|ocr" -A 5
+
+# Container restarts / startup crashes
+docker compose ps
+docker compose logs --since 24h api | grep -E "Unhandled exception|Application started" -A 10
+```
+
+#### API log files (Serilog)
+
+The API also writes one file per day to the `api-logs` volume, keeping the last 30 days:
+
+```bash
+docker exec traceon-api ls -lh /app/logs
+docker exec traceon-api sh -c 'tail -n 200 /app/logs/traceon-$(date +%Y%m%d).log'
+docker exec traceon-api sh -c 'grep -E "\[(ERR|FTL)\]" -A 5 /app/logs/traceon-$(date +%Y%m%d).log'
+```
+
+#### SQL Server login failures
+
+Repeated `Login failed for user 'sa'` lines mean something is trying to brute-force the database. With the default `docker-compose.yml` port 1433 is only bound to `127.0.0.1`, so these should not appear. If they do:
+
+```bash
+# How many failures in the last 24h
+docker compose logs --since 24h sqlserver | grep -c "Login failed"
+
+# Which IPs are trying (top 20)
+docker compose logs sqlserver | grep "Login failed" | grep -oE "CLIENT: [0-9.]+" | sort | uniq -c | sort -rn | head -20
+
+# Confirm 1433 is not publicly exposed (should show 127.0.0.1:1433, not 0.0.0.0:1433)
+sudo ss -tlnp | grep 1433
+```
+
+#### Log size and rotation
+
+Every container uses the `json-file` driver with rotation (`max-size: 10m`, `max-file: 5`, i.e. at most ~50 MB per container) — see `x-logging` in `docker-compose.yml`. Changing the logging config only applies to **recreated** containers (`docker compose up -d` does that automatically when the config changes).
+
+```bash
+# Disk usage
+df -h /
+docker system df
+```
+
+### Access SQL Server from your PC (SSH tunnel)
+
+SQL Server is only bound to `127.0.0.1` on the server. To connect with SSMS / Azure Data Studio from your PC:
+
+```bash
+ssh -L 14330:127.0.0.1:1433 deploy@49.13.xx.xx
+```
+
+Then connect to `localhost,14330` with the `sa` credentials while the SSH session is open.
+
 ### Deploy an update
 
 ```bash
@@ -435,6 +509,7 @@ docker compose logs <service-name>
 | Caddy shows certificate error | DNS not pointing to server yet | Wait for propagation; run `nslookup` to verify |
 | Blazor shows "Failed to fetch" | API URL wrong in `appsettings.json` | Rebuild Blazor after editing: `docker compose up -d --build blazor` |
 | Port 80/443 already in use | Another service on the VPS | `sudo lsof -i :80` to find it; stop it or remove it |
+| API crashes with `Database 'TraceonDb' already exists` (error 1801) | On startup EF Core could not open `TraceonDb` (still recovering after a SQL Server restart, disk full, or offline) and so tried to create it | Check `df -h /` and the DB state: `SELECT name, state_desc FROM sys.databases` — it must be `ONLINE`. Then `docker compose restart api` |
 
 ### Check if ports are open from your local machine
 
@@ -469,7 +544,6 @@ docker compose up -d
 ## What's Next?
 
 - [ ] Set up a **GitHub Actions** CI/CD pipeline to auto-deploy on push to `main`
-- [ ] Add **Hetzner Cloud Firewall** rules via the dashboard for an extra layer
 - [ ] Configure **automated backups** (Hetzner snapshots or cron + `sqlcmd`)
 - [ ] Monitor with **Uptime Kuma** (self-hosted) or an external service
 - [ ] Add a **staging environment** with a separate `.env` and subdomain

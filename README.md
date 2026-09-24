@@ -226,9 +226,9 @@ A full Docker Compose setup is provided for production deployment:
 
 | Service | Image / Build | Port |
 |---|---|---|
-| `sqlserver` | `mcr.microsoft.com/mssql/server:2022-latest` | 1433 |
-| `api` | Custom build (ASP.NET Core) | 8080 |
-| `blazor` | Custom build (nginx + WASM) | 80 |
+| `sqlserver` | `mcr.microsoft.com/mssql/server:2022-latest` | 1433 (localhost only) |
+| `api` | Custom build (ASP.NET Core) | 8080 (localhost only) |
+| `blazor` | Custom build (nginx + WASM) | 8081 → 80 (localhost only) |
 | `caddy` | `caddy:2-alpine` | 80, 443 |
 
 See [`docs/deployment-hetzner.md`](docs/deployment-hetzner.md) for a step-by-step guide to deploying on a VPS.
