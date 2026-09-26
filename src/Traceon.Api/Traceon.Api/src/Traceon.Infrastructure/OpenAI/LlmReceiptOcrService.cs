@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Traceon.Application.Common;
 using Traceon.Application.Interfaces;
 using Traceon.Contracts.ReceiptScan;
+using Traceon.Infrastructure.ReceiptScan;
 
 namespace Traceon.Infrastructure.OpenAI;
 
@@ -26,13 +27,15 @@ public sealed class LlmReceiptOcrService(
         Return ONLY valid JSON with no markdown, no code fences, no explanation.
 
         Rules:
+        - COPY the exact numbers printed on the receipt. NEVER calculate, estimate or round any value; all arithmetic is done afterwards by code.
         - Skip category headers (lines with no price that group products)
-        - Quantity defaults to 1 if not shown
-            - If totalPrice is missing, calculate from (quantity × unitPrice) - discount
+        - Quantity defaults to 1 if not shown (for weighed items it is the weight, e.g. 1,736)
+        - unitPrice is the price per unit / per kg exactly as printed
+        - lineAmount is the amount printed on the item's own line, copied exactly. Example: a row "1,144 x 12,99 = 14,86" → lineAmount = 14.86. Use null if the item line has no amount of its own.
         - Discounts can be item-level (e.g. "2 for $5") or separate lines (e.g. "20% off -$1.00"). Sometimes it may appear in an idented line below the item it applies to, or on the same line in parentheses. Always try to associate discounts with the correct item.
         - For separate discount lines, attach the discount to the preceding item rather than creating a new item
-        - discount is the absolute amount subtracted from that item (always positive or null)
-        - totalPrice is the final price AFTER discount for that item. CRITICAL: many receipts print the gross line extension (quantity × unitPrice) on the item line and the discount on a separate line below — in that case you MUST subtract the discount yourself, not copy the printed gross. Example: a row "1,144 x 12,99 = 14,86" followed by a discount line "-2,29" must produce totalPrice = 12.57 (= 1.144 × 12.99 − 2.29), NOT 14.86.
+        - discount is the absolute amount printed for that item's discount (always positive or null), copied exactly
+        - totalDiscount is ONLY a receipt-wide discount applied after the subtotal; do not sum per-item discounts into it. Otherwise null.
         - Use null for any value you cannot determine
         - Dates must be in ISO 8601 format (yyyy-MM-ddTHH:mm:ss)
         - All monetary values are numbers (no currency symbols)
@@ -43,13 +46,15 @@ public sealed class LlmReceiptOcrService(
           "transactionDate": "ISO 8601 string or null",
           "subtotal": number or null,
           "tax": number or null,
+          "totalDiscount": number or null,
           "total": number or null,
           "items": [
             {
               "description": "string",
               "quantity": number or null,
               "unitPrice": number or null,
-              "totalPrice": number or null
+              "lineAmount": number or null,
+              "discount": number or null
             }
           ]
         }
@@ -125,19 +130,20 @@ public sealed class LlmReceiptOcrService(
                 return Result<ReceiptScanResponse>.Failure("Failed to parse AI response.", ResultErrorType.Validation);
             }
 
-            var items = (parsed.Items ?? []).Select(i =>
+            var items = (parsed.Items ?? []).Select(i => new ReceiptScanLineItemResponse
             {
-                var totalPrice = Hybrid.HybridReceiptOcrService.ReconcileLineTotal(i.Quantity, i.UnitPrice, i.Discount, i.TotalPrice);
-
-                return new ReceiptScanLineItemResponse
-                {
-                    Description = i.Description ?? "—",
-                    Quantity = i.Quantity ?? 1,
-                    UnitPrice = i.UnitPrice,
-                    TotalPrice = totalPrice,
-                    Discount = i.Discount
-                };
+                Description = i.Description ?? "—",
+                Quantity = i.Quantity ?? 1,
+                UnitPrice = i.UnitPrice,
+                TotalPrice = ReceiptLineMath.ComputeLineTotal(i.Quantity, i.UnitPrice, i.Discount, i.LineAmount, i.TotalPrice),
+                Discount = i.Discount
             }).ToList();
+
+            var mismatch = ReceiptLineMath.TotalMismatch(items.Select(i => i.TotalPrice), parsed.TotalDiscount, parsed.Total);
+            if (mismatch is { } diff && Math.Abs(diff) > 0.05m)
+                logger.LogWarning(
+                    "LLM receipt scan: line totals differ from receipt total by {Difference} for {FileName} (Total={Total}).",
+                    diff, fileName, parsed.Total);
 
             logger.LogInformation(
                 "LLM receipt scan: Merchant={Merchant}, Items={ItemCount}, Total={Total}, Model={Model}",
@@ -213,7 +219,9 @@ public sealed class LlmReceiptOcrService(
         public string? Description { get; set; }
         public decimal? Quantity { get; set; }
         public decimal? UnitPrice { get; set; }
+        public decimal? LineAmount { get; set; }
         public decimal? Discount { get; set; }
+        // No longer requested; only used as a fallback if the model still returns it
         public decimal? TotalPrice { get; set; }
     }
 }

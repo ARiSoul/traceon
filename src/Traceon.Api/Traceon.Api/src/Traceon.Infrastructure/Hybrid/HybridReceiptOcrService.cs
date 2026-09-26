@@ -11,6 +11,7 @@ using Traceon.Application.Common;
 using Traceon.Application.Interfaces;
 using Traceon.Contracts.ReceiptScan;
 using Traceon.Infrastructure.OpenAI;
+using Traceon.Infrastructure.ReceiptScan;
 
 namespace Traceon.Infrastructure.Hybrid;
 
@@ -39,15 +40,15 @@ public sealed class HybridReceiptOcrService(
         Extract structured data and return ONLY valid JSON.
 
         Rules:
-        - The OCR text is accurate — use the EXACT numbers from the text, do NOT estimate or round
+        - The OCR text is accurate — COPY the EXACT numbers from the text. NEVER calculate, estimate or round any value; all arithmetic is done afterwards by code.
         - Skip category headers (lines with no price that group products like "DAIRY", "PRODUCE", etc.)
-        - Quantity defaults to 1 if not shown
-        - If totalPrice is missing, calculate from (quantity × unitPrice) - discount
+        - Quantity defaults to 1 if not shown (for weighed items it is the weight, e.g. 1,736)
+        - unitPrice is the price per unit / per kg exactly as printed
+        - lineAmount is the amount printed on the item's own line, copied exactly. Example: a row "1,144 x 12,99 = 14,86" → lineAmount = 14.86. For "2 x 14,35    28,70" → lineAmount = 28.70. Use null if the item line has no amount of its own.
         - Discounts can be item-level (e.g. "2 for $5") or separate lines (e.g. "20% off -$1.00")
         - Discount lines may appear indented below the item, on the same line in parentheses, or as a separate line with a negative value
         - For separate discount lines, attach the discount to the preceding item rather than creating a new item
-        - discount is the absolute amount subtracted from that item (always positive or null)
-        - totalPrice is the final price AFTER discount for that item. CRITICAL: many receipts print the gross line extension (quantity × unitPrice) on the item line and the discount on a separate line below — in that case you MUST subtract the discount yourself, not copy the printed gross. Example: a row "1,144 x 12,99 = 14,86" followed by a discount line "-2,29" must produce totalPrice = 12.57 (= 1.144 × 12.99 − 2.29), NOT 14.86.
+        - discount is the absolute amount printed for that item's discount (always positive or null), copied exactly
         - totalDiscount is ONLY a receipt-wide / receipt-scoped discount applied AFTER the subtotal (e.g. "10% off total", "$5 loyalty credit", coupon on the whole order). DO NOT sum per-item discounts into totalDiscount. If there is no explicit receipt-wide discount line, return null.
         - Use null for any value you cannot determine
         - Dates must be in ISO 8601 format (yyyy-MM-ddTHH:mm:ss)
@@ -66,8 +67,8 @@ public sealed class HybridReceiptOcrService(
               "description": "string",
               "quantity": number or null,
               "unitPrice": number or null,
-              "discount": number or null,
-              "totalPrice": number or null
+              "lineAmount": number or null,
+              "discount": number or null
             }
           ]
         }
@@ -195,19 +196,20 @@ public sealed class HybridReceiptOcrService(
             return Result<ReceiptScanResponse>.Failure("Failed to parse AI response.", ResultErrorType.Validation);
         }
 
-        var items = (parsed.Items ?? []).Select(i =>
+        var items = (parsed.Items ?? []).Select(i => new ReceiptScanLineItemResponse
         {
-            var totalPrice = ReconcileLineTotal(i.Quantity, i.UnitPrice, i.Discount, i.TotalPrice);
-
-            return new ReceiptScanLineItemResponse
-            {
-                Description = i.Description ?? "—",
-                Quantity = i.Quantity ?? 1,
-                UnitPrice = i.UnitPrice,
-                Discount = i.Discount,
-                TotalPrice = totalPrice
-            };
+            Description = i.Description ?? "—",
+            Quantity = i.Quantity ?? 1,
+            UnitPrice = i.UnitPrice,
+            Discount = i.Discount,
+            TotalPrice = ReceiptLineMath.ComputeLineTotal(i.Quantity, i.UnitPrice, i.Discount, i.LineAmount, i.TotalPrice)
         }).ToList();
+
+        var mismatch = ReceiptLineMath.TotalMismatch(items.Select(i => i.TotalPrice), parsed.TotalDiscount, parsed.Total);
+        if (mismatch is { } diff && Math.Abs(diff) > 0.05m)
+            logger.LogWarning(
+                "Hybrid receipt scan: line totals differ from receipt total by {Difference} for {FileName} (Total={Total}).",
+                diff, fileName, parsed.Total);
 
         logger.LogInformation(
             "Hybrid receipt scan: Merchant={Merchant}, Items={ItemCount}, Total={Total}, Model={Model}",
@@ -224,31 +226,6 @@ public sealed class HybridReceiptOcrService(
             Total = parsed.Total,
             Confidence = 0.9
         });
-    }
-
-    // ── Line total reconciliation ───────────────────────────────
-
-    // Some receipts print the gross extension (qty × unitPrice) on the item line and the
-    // discount on a separate line; the LLM occasionally returns the printed gross instead
-    // of subtracting the discount. When the returned totalPrice matches the gross within
-    // rounding tolerance and a discount is present, recompute as gross − discount.
-    internal static decimal? ReconcileLineTotal(decimal? quantity, decimal? unitPrice, decimal? discount, decimal? totalPrice)
-    {
-        if (!quantity.HasValue || !unitPrice.HasValue)
-        {
-            if (totalPrice.HasValue) return totalPrice;
-            return unitPrice.HasValue ? unitPrice.Value - (discount ?? 0) : null;
-        }
-
-        var gross = quantity.Value * unitPrice.Value;
-        var net = gross - (discount ?? 0);
-
-        if (!totalPrice.HasValue) return net;
-        if ((discount ?? 0) <= 0) return totalPrice;
-
-        var matchesGross = Math.Abs(totalPrice.Value - gross) < 0.02m;
-        var matchesNet = Math.Abs(totalPrice.Value - net) < 0.02m;
-        return matchesGross && !matchesNet ? net : totalPrice;
     }
 
     // ── Internal DTOs ───────────────────────────────────────────
@@ -284,7 +261,9 @@ public sealed class HybridReceiptOcrService(
         public string? Description { get; set; }
         public decimal? Quantity { get; set; }
         public decimal? UnitPrice { get; set; }
+        public decimal? LineAmount { get; set; }
         public decimal? Discount { get; set; }
+        // No longer requested; only used as a fallback if the model still returns it
         public decimal? TotalPrice { get; set; }
     }
 }
