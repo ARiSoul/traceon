@@ -983,6 +983,7 @@
   <data name="Receipt_TypeNewValue"><value>Type new value…</value></data>
   <data name="Receipt_NewValuesWillBeCreated"><value>New dropdown values will be created</value></data>
   <data name="Receipt_SelectedTotal"><value>Selected total</value></data>
+  <data name="Receipt_TotalDiscounts"><value>Total discounts</value></data>
   <data name="Receipt_EntryDate"><value>Entry date</value></data>
   <data name="Receipt_ReviewImport"><value>Review &amp; Import</value></data>
   <data name="Receipt_ReviewTitle"><value>Review Import</value></data>

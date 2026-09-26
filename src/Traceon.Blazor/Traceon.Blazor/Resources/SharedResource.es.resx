@@ -980,6 +980,7 @@
   <data name="Receipt_TypeNewValue"><value>Escribe nuevo valor…</value></data>
   <data name="Receipt_NewValuesWillBeCreated"><value>Se crearán nuevos valores en los desplegables</value></data>
   <data name="Receipt_SelectedTotal"><value>Total seleccionado</value></data>
+  <data name="Receipt_TotalDiscounts"><value>Total descuentos</value></data>
   <data name="Receipt_EntryDate"><value>Fecha del registro</value></data>
   <data name="Receipt_ReviewImport"><value>Revisar e Importar</value></data>
   <data name="Receipt_ReviewTitle"><value>Revisar Importación</value></data>

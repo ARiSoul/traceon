@@ -139,7 +139,7 @@ public sealed class LlmReceiptOcrService(
                 Discount = i.Discount
             }).ToList();
 
-            var mismatch = ReceiptLineMath.TotalMismatch(items.Select(i => i.TotalPrice), parsed.TotalDiscount, parsed.Total);
+            var mismatch = ReceiptLineMath.TotalMismatch(items.Select(i => (i.TotalPrice, i.Discount)).ToList(), parsed.TotalDiscount, parsed.Total);
             if (mismatch is { } diff && Math.Abs(diff) > 0.05m)
                 logger.LogWarning(
                     "LLM receipt scan: line totals differ from receipt total by {Difference} for {FileName} (Total={Total}).",

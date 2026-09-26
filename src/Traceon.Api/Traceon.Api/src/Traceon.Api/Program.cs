@@ -86,6 +86,7 @@ app.MapEntryTemplateEndpoints().RequireAuthorization();
 app.MapTagEndpoints().RequireAuthorization();
 app.MapDataPortabilityEndpoints();
 app.MapFeedbackEndpoints();
+app.MapClientErrorEndpoints();
 app.MapTemplateEndpoints();
 app.MapTrashEndpoints();
 

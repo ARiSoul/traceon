@@ -43,14 +43,21 @@ public static class ReceiptLineMath
     }
 
     /// <summary>
-    /// Difference between the receipt's printed total and the sum of the computed lines
-    /// (minus any receipt-wide discount), or null when there is no total to compare against.
+    /// Difference between the sum of the computed lines (minus any receipt-scoped discount) and
+    /// the receipt's printed total, or null when there is no total to compare against.
     /// </summary>
-    public static decimal? TotalMismatch(IEnumerable<decimal?> lineTotals, decimal? totalDiscount, decimal? receiptTotal)
+    public static decimal? TotalMismatch(
+        IReadOnlyCollection<(decimal? Total, decimal? Discount)> lines, decimal? totalDiscount, decimal? receiptTotal)
     {
         if (!receiptTotal.HasValue) return null;
 
-        var computed = lineTotals.Sum(t => t ?? 0) - (totalDiscount ?? 0);
+        // The model often reports the sum of per-item discounts (e.g. Pingo Doce's "Poupança")
+        // as totalDiscount; those are already subtracted in each line. Only the excess is
+        // receipt-scoped — same rule as ComputeReceiptScopedDiscount in ReceiptScan.razor.
+        var perItemDiscounts = lines.Sum(l => l.Discount is > 0 ? l.Discount.Value : 0);
+        var receiptScoped = Math.Max((totalDiscount ?? 0) - perItemDiscounts, 0);
+
+        var computed = lines.Sum(l => l.Total ?? 0) - receiptScoped;
         return Round(computed - receiptTotal.Value);
     }
 

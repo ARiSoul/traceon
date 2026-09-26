@@ -54,6 +54,7 @@ builder.Services.AddScoped<ReceiptImportConfigService>();
 builder.Services.AddScoped<ChartVisibilityService>();
 builder.Services.AddScoped<CustomChartApiService>();
 builder.Services.AddScoped<FeedbackService>();
+builder.Services.AddScoped<ClientErrorService>();
 builder.Services.AddScoped<TemplateService>();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<LocalizationService>();

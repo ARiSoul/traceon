@@ -435,10 +435,18 @@
                         }
                     </tbody>
                     <tfoot class="table-active">
+                        @if (SelectedDiscountTotal > 0)
+                        {
+                            <tr>
+                                <td colspan="5" class="text-end fw-semibold">@L["Receipt_TotalDiscounts"]:</td>
+                                <td class="text-end fw-bold text-danger">-@SelectedDiscountTotal.ToString("F2")</td>
+                                <td colspan="@(_perItemDropdownFields.Count + 2)"></td>
+                            </tr>
+                        }
                         <tr>
                             <td colspan="6" class="text-end fw-semibold">@L["Receipt_SelectedTotal"]:</td>
                             <td class="text-end fw-bold text-primary">
-                                @_receiptItems.Where(i => i.Include).Sum(i => i.TotalPrice ?? 0).ToString("F2")
+                                @SelectedTotal.ToString("F2")
                             </td>
                             <td colspan="@(_perItemDropdownFields.Count + 1)"></td>
                         </tr>
@@ -593,10 +601,19 @@
 
         <div class="card bg-body-tertiary mb-3">
             <div class="card-body py-2 text-center">
-                <span class="fw-semibold">@L["Receipt_SelectedTotal"]:</span>
-                <span class="fw-bold text-primary ms-1">
-                    @_receiptItems.Where(i => i.Include).Sum(i => i.TotalPrice ?? 0).ToString("F2")
-                </span>
+                @if (SelectedDiscountTotal > 0)
+                {
+                    <div class="mb-1">
+                        <span class="fw-semibold">@L["Receipt_TotalDiscounts"]:</span>
+                        <span class="fw-bold text-danger ms-1">-@SelectedDiscountTotal.ToString("F2")</span>
+                    </div>
+                }
+                <div>
+                    <span class="fw-semibold">@L["Receipt_SelectedTotal"]:</span>
+                    <span class="fw-bold text-primary ms-1">
+                        @SelectedTotal.ToString("F2")
+                    </span>
+                </div>
             </div>
         </div>
 
@@ -1071,6 +1088,7 @@
     [Inject] private ReceiptImportConfigService RcptConfigService { get; set; } = default!;
     [Inject] private ReceiptScanDraftService DraftService { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private ClientErrorService ClientErrors { get; set; } = default!;
 
     private readonly (int Step, string Label, string Icon)[] _wizardSteps =
     [
@@ -1200,6 +1218,11 @@
         _errors = [];
     }
 
+    private decimal SelectedTotal => _receiptItems.Where(i => i.Include).Sum(i => i.TotalPrice ?? 0);
+
+    // Per-item discounts only (the receipt-scoped discount is entered separately in the review step)
+    private decimal SelectedDiscountTotal => _receiptItems.Where(i => i.Include).Sum(i => i.Discount is > 0 ? i.Discount.Value : 0);
+
     // Max size of the original photo; it is compressed client-side before upload
     private const long MaxSelectedFileBytes = 50 * 1024 * 1024;
 
@@ -1216,6 +1239,7 @@
         }
 
         _scanning = true;
+        var stage = "read-file";
 
         try
         {
@@ -1227,6 +1251,7 @@
             if (_selectedFile.Size > maxBytes)
             {
                 // Compress client-side via canvas JS interop
+                stage = "compress";
                 using var rawStream = _selectedFile.OpenReadStream(MaxSelectedFileBytes);
                 var dotNetStreamRef = new DotNetStreamReference(rawStream);
                 imageBytes = await JS.InvokeAsync<byte[]>("compressImage", dotNetStreamRef, maxWidth, maxBytes);
@@ -1240,10 +1265,12 @@
                 imageBytes = ms.ToArray();
             }
 
+            stage = "upload";
             using var stream = new MemoryStream(imageBytes);
             _scanResult = await ScanService.ScanAsync(stream, _selectedFile.Name);
 
             // Initialize receipt item rows
+            stage = "process-result";
             _receiptItems = _scanResult.Items.Select(i => new ReceiptItemRow
             {
                 Description = i.Description,
@@ -1260,32 +1287,36 @@
         catch (JSException ex)
         {
             // Browser could not decode the image (e.g. HEIC in Chrome/Edge)
-            LogScanError(ex);
+            LogScanError(ex, stage);
             _errors = [L["Receipt_ImageUnreadable"]];
         }
         catch (HttpRequestException ex) when (ex.StatusCode is not null)
         {
-            LogScanError(ex);
+            LogScanError(ex, stage);
             _errors = [L["Receipt_ScanServiceError", ex.Message]];
         }
         catch (HttpRequestException ex)
         {
-            LogScanError(ex);
+            LogScanError(ex, stage);
             _errors = [L["Receipt_ScanNetworkError"]];
         }
         catch (Exception ex)
         {
-            LogScanError(ex);
+            LogScanError(ex, stage);
             _errors = [L["Receipt_ScanFailed"]];
         }
 
         _scanning = false;
     }
 
-    // Written to the browser DevTools console so the real cause is visible
-    private void LogScanError(Exception ex) =>
-        Console.Error.WriteLine(
-            $"Receipt scan failed for '{_selectedFile?.Name}' ({_selectedFile?.ContentType}, {_selectedFile?.Size} bytes): {ex}");
+    // Written to the browser console and sent to the API logs (the console is not visible on phones)
+    private void LogScanError(Exception ex, string stage)
+    {
+        var message = $"Receipt scan failed at stage '{stage}' for '{_selectedFile?.Name}' " +
+                      $"({_selectedFile?.ContentType}, {_selectedFile?.Size} bytes): {ex}";
+        Console.Error.WriteLine(message);
+        _ = ClientErrors.ReportAsync("ReceiptScan", message);
+    }
 
     private async Task LoadActionsAsync()
     {

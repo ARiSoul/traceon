@@ -205,7 +205,7 @@ public sealed class HybridReceiptOcrService(
             TotalPrice = ReceiptLineMath.ComputeLineTotal(i.Quantity, i.UnitPrice, i.Discount, i.LineAmount, i.TotalPrice)
         }).ToList();
 
-        var mismatch = ReceiptLineMath.TotalMismatch(items.Select(i => i.TotalPrice), parsed.TotalDiscount, parsed.Total);
+        var mismatch = ReceiptLineMath.TotalMismatch(items.Select(i => (i.TotalPrice, i.Discount)).ToList(), parsed.TotalDiscount, parsed.Total);
         if (mismatch is { } diff && Math.Abs(diff) > 0.05m)
             logger.LogWarning(
                 "Hybrid receipt scan: line totals differ from receipt total by {Difference} for {FileName} (Total={Total}).",
